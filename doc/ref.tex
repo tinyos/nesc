@@ -472,127 +472,277 @@ call-kind: \emph{also one of}\\
 \section{Configurations}
 \label{sec:configuration}
 
-discussion below talks about interface instances only for clarity, but
-rules for a provided or used interface instance X are the same as for
-provided or used command or event Y.
+Configurations implement a component specification by connecting, or wiring,
+other components:
+\emph{\begin{tabbing}
+\hspace*{2cm}\= \\ \kill
+configuration-implementation:\\
+\>	\kw{implementation} \kw{\{} component-list\opt connection-list \kw{\}}\\
+\end{tabbing}}
 
-name space
-C
-configuration specification
-components list
+The \emph{component-list} lists the components that are used to build this
+configuration, the \emph{connection-list} specifies how these components
+are wired together and to the configuration's specification.
 
-two parts: list of components and wiring.
+The name space inside a module has the following hierarchical structure:
+\begin{itemize}
+\item The outermost scope (the C global scope) contains the C declarations
+(see Section~\ref{sec:c}).
+\item The next scope (a per-component-specification scope) contains the
+specification element names from the configuration's specification.
+\item The next scope (a per-component-implementation scope) contains the
+names of the components used in this configuration.
+\end{itemize}
+
+In the rest of this section, we call specification elements from the
+configuration's specification \emph{external},
+and specification elements from one of the configuration's components
+\emph{internal}.
 
 \subsection{Included components}
-list of components: optional renaming for convenience and easier component
-subsitution (no need to change wiring); these components are called the
-``internal components'' in the rest of this section.
 
-compile-time error if use the same name for two internal components (e.g.,
-components foo, bar as foo)
+The \emph{component-list} specifies the components used to build this
+configuration. These components can be optionally renamed within the
+configuration, either to avoid name conflicts with the configuration's
+specification elements, or to simplify changing the components a
+configuration uses (to avoid having to change the wiring):
+\emph{\begin{tabbing}
+\hspace*{2cm}\= \\ \kill
+component-list:\\
+\>	components\\
+\>	component-list components\\
+\\
+components:\\
+\>	\kw{components} component-line \kw{;}\\
+\\
+component-line:\\
+\>	renamed-identifier\\
+\>	component-line \kw{,} renamed-identifier\\
+\\
+renamed-identifier:\\
+\>	identifier\\
+\>	identifier \kw{as} identifier\\
+\end{tabbing}}
 
-Components are not multiply instantiated: if the same component is used
-in two different configurations you still get only one instance of that
-component (``foo as bar'' does not change this).
+A compile-time error occurs if two components are given the same name using \kw{as} (e.g., \code{components X, Y as X}).
+
+There is only ever a single instance of a component: if a component $X$
+is used in two different configurations (or even twice within the same
+configuration) there is still only instance of $X$ (and its variables)
+in the program.
 
 \subsection{Wiring}
 
-- connect an interface instance of this configuration with an interface
-instance of an internal component (``equate'')
-- connect a provided interface instance of this configuration to a used
-interface instance of this configuration (``pass through'')
-- connect a used interface instance or an internal componment to a provided
-interface instance of an internal component (``link'')
+Wiring is used to connect specification elements (interfaces, commands,
+events) together. Taken together, all the wiring statements of a particular
+program determine which functions get called at each \kw{call} and
+\kw{signal} statement:
+\emph{\begin{tabbing}
+\hspace*{2cm}\= \\ \kill
+connection-list:\\
+\>	connection\\
+\>	connection-list connection\\
+\\
+connection:\\
+\>	endpoint \kw{=} endpoint\\
+\>	endpoint \kw{->} endpoint\\
+\>	endpoint \kw{<-} endpoint\\
+\\
+endpoint:\\
+\>	identifier-path \\
+\>	identifier-path \kw{[} argument-expression-list \kw{]}\\
+\\
+identifier-path:\\
+\>	identifier\\
+\>	identifier-path \kw{.} identifier\\
+\end{tabbing}}
 
-It is legal to wire the same interface multiple times. See the discussion
-of wiring semantics below for more details.
+Wiring statements connect two \emph{endpoints}. The \emph{identifier-path}
+of an \emph{endpoint} specifies a specification element. The
+\emph{argument-expression-list} optionally specifies some parameter
+values. We say that an endpoint is parameterised if its specification
+element is parameterised and the endpoint has no parameter values. A
+compile-time error occurs if an endpoint has parameter values and any of
+the following is true:
+\begin{itemize}
+\item The parameter values are not all constant expressions.
+\item The endpoint's specification element is not parameterised.
+\item The parameter values are not in range for the specification element's
+parameter types.
+\end{itemize}
 
-All provided and used interfaces of this configuration must be wired in the
-wiring section (or compile-time error). However, all interfaces of the
-internal components need not be wired (note: they may be wired in another
-configuration, or they may be left unwired if the modules have the
-appropriate default event or command handlers).
+A compile-time error occurs if the \emph{identifier-path} of an \emph{endpoint} is not of the three following forms:
+\begin{itemize}
+\item $X$, where $X$ names an external specification element.
+\item $C.X$ where $C$ is a component from the \emph{component-list} and
+$X$ is a specification element of $C$.
+\item $C$ where $C$ is a component name from the \emph{component-list}.
+This form is used in implicit connections, discussed in
+Section~\ref{sec:implicit}. Note that this form cannot be used when
+parameter values are specified.
+\end{itemize}
 
-interface instance specification: `interface instance'  optional-parameter-values
+There are three wiring statements in \nesc:
+\begin{itemize}
+\item \emph{endpoint}$_1$ \code{=} \emph{endpoint}$_2$ \ (equate wires):
+Any connection involving an external specification element. These
+effectively make two specification elements equivalent.
 
-interface instance:
-- <name> for interface instances of this configuration
-- <component name>.<interface instance> (component name is the
-optionally renamed name from the list of components): name a particular
-instance of a configuration
-- <component name> only: see implicit connections discussion below (note:
-this form cannot be used when parameter values are specified)
-- compile-time error if none of the above
+Let $S_1$ be the specification element of \emph{endpoint}$_1$ and $S_2$
+that of \emph{endpoint}$_2$. One of the following two conditions must hold
+or a compile-time error occurs:
+\begin{itemize}
+\item $S_1$ is internal, $S_2$ is external (or vice-versa) and $S_1$ and
+$S_2$ are both provided or both used,
+\item $S_1$ and $S_2$ are both external and one is provided and the other used.
+\end{itemize}
 
-optional-parameter-values: '[' val1, ..., valn ']'. interface instance name
-must specify parameterised interface with n parameters, val1 through valn
-must be compile-time integer constants (note: see the discussion of
-compile-time-constant-functions below). parameter value n must be in the
-range of the corresponding parameter type. compile-time error for all
-these failures.
+\item \emph{endpoint}$_1$ \code{->} \emph{endpoint}$_2$ \ (link wires): A
+connection involving two internal specification elements. Link wires always
+connect a used specification element specified by \emph{endpoint}$_1$ to a
+provided one specified by \emph{endpoint}$_2$ . If these two conditions do
+not hold, a compile-time error occurs.
 
-an intf instance spec is parameterised if the interface instance name
-named a parmaterised interface instance and no parameter values were
-specified.
+\item \emph{endpoint}$_1$ \code{<-} \emph{endpoint}$_2$ is equivalent to
+\emph{endpoint}$_2$ \code{->} \emph{endpoint}$_1$.
+\end{itemize}
 
-syntax:
-equate: intf-spec1 `=' intf-spec2. compile-time error if not both 
-provided or both used. exactly one of the two intfs must belong
-to this configuration, compile-time error otherwise. 
+In all three kinds of wiring, the two specification elements specified must
+be compatible, i.e., they must both be commands, or both be events, or both
+be interface instances. Also, if they are commands (or events), then they
+must both have the same function signature. If they are interface instances
+they must be of the same interface type. If these conditions do not hold,
+a compile-time error occurs.
 
-pass through, link: intf-spec1 `->' intf-spec2 (or, equivalently
-intf-spec2 `<-' intf-spec1). intf-spec1 must be used, intf-spec2
-must be provided, compile-time error otherwise. Note: somewhat
-counter-intuitive for pass through.
+If one endpoint is parameterised, the other must be too and must have the
+same parameter types; otherwise a compile-time error occurs.
 
-In both cases, intf-spec1 and intf-spec2 must be:
-- instances of the same interface type
-- either: neither is parameterised, or both are and the specified interface
-instances have identical parameter types
+It is legal to wire the same specification element multiple times. The
+discussion of wiring semantics in Section~\ref{sec:wiring} explains \nesc's
+behaviour in this case.
+
+All external specification elements must be wired or a compile-time error
+occurs. However, internal specification elements may be left unconnected
+(these may be wired in another configuration, or they may be left unwired
+if the modules have the appropriate \kw{default} event or command
+functions).
 
 \subsection{Implicit Connections}
+\label{sec:implicit}
 
-It is possible to write `component1 <-/=/-> component2.interfaceinstance2',
-or `component1.interfaceinstance1 <-/=/-> component2'. This syntax iterates
-through the interface instances of component1 (resp. component2) to find
-all interfaceinstance1s (resp. interfaceinstance2s) which would form a
-valid connection. A compile-time error is reported if no such
-interfaceinstance1 (resp. interfaceinstance2) can be found, or if more
-than one such match can be found.
+It is possible to write \code{C1 <- C2.I} or \code{C1.I <- C2} (and the
+same with \kw{=}, or \kw{->}). This syntax iterates through the
+specification elements of \code{C1} (resp. \code{C2}) to find a
+specification element \code{J} such that \code{C1.J <- C2.I}
+(resp. \code{C1.I <- C2.J}) forms a valid connection. If exactly one such
+\code{J} can be found, then the connection is made, otherwise a
+compile-time error occurs.
 
-give examples
+For instance, with:
+\begin{verbatim}
+module M1 {                              module M2 {
+  provides interface StdControl;           uses interface StdControl as SC;
+} ...                                    } ...
+
+              configuration C { }
+              implementation {
+                components M1, M2;
+                M2.SC -> M1;
+              }
+\end{verbatim}
+The \code{M2.SC -> M1} line is equivalent to \code{M2.SC -> M1.StdControl}.
 
 \subsection{Wiring Semantics}
 \label{sec:wiring}
 
-explain the directed-graph based semantics
+The semantics of wiring are defined in terms of the program's wiring graph,
+a directed graph which connects nodes representing command or event calls
+to nodes representing command or event definitions.
 
-per-configuration graph
+The program's wiring graph is built by assembling the \emph{configuration
+graphs} of each configuration (by unioning their node and edge sets).
+A \emph{configuration graph} is a directed graph representing the wiring
+specified in a single configuration.
 
-whole-program graph
+We first introduce some notation. Node names are of the form $C.F.P$ for
+command or event $F$ in component $C$'s specification with parameter values
+$P$, $C.I.F.P$ for command or event $F$ in interface instance $I$ of $C$'s
+specification with parameter values $P$. We write the empty tuple as $()$.
+All endpoints in the wiring can be viewed as being of the form $D.I.P$ with
+$P = ()$ when no parameters are specified and $D = C$ if $I$ is an external
+specification element.  All wires can be viewed as being of the form
+$C_1.I_1.P_1 \kw{to} C_2.I_2.P_2$ where $I_1$ is used if $C_1 \not= C$ and
+provided if $C_1 = C$, and $I_2$ is provided if $C_2 \not= C$ and used if
+$C_2 = C$.
 
-meaning of command, event call (graph exploration). two possible
-compile-time errors: 
-- no reachable command or event defn and no default handler at callee.
-- cycle in whole-program graph
+The functions of specification element $I$ of component $C$ with parameters
+$P$, $\FSE(C, I, P)$, are defined as:
+\begin{itemize}
+\item $\FSE(C, I, P) = \{ C.I.P \}$ if $I$ is a command or event.
+\item $\FSE(C, I, P) = \{ C.I.F.P | F \mbox{is a command or event of} I \}$ if
+$I$ is an interface instance.
+\end{itemize}
 
-multiple reachable commands/events: arbitrary sequential call order,
-arbitrary result (of one of the calls) 
-% should I specify the result is at least the result of the last call?
+We define a connection function for connecting two endpoints:
+$\connect(ep_1, ep_2)$ returns a set of directed edges as follows:
+\begin{itemize}
+\item $\connect(C_1.I_1.P_1, C_2.I_2.P_2) = \{ (C_1.I_1.P_1, C_2.I_2.P_2)
+\}$ if $I_1$ is a command or event.
+\item $\connect(C_1.I_1.P_1, C_2.I_2.P_2) = 
+\{ C_1.I_1.F.P_1, C_2.I_2.F.P_2) | F \mbox{is a command in} I_1 \} \cup
+\{ C_2.I_2.F.P_2, C_1.I_1.F.P_1) | F \mbox{is an event in} I_1 \}$ if $I_1$ is an interface instance.
+\end{itemize}
 
-parameterised calls:
-- from non-parameterised to parameterised: parameter values collected
-from configuration
-- from parameterised to non-parameterised: conditional call based on
-values specified at call site and in configuration (must be =)
-- from parameterised to parameterised: values passed through
+Configuration graph $(V,E)$ for configuration $C$ is the smallest graph
+such that:
+\begin{itemize}
+\item For each wire $C_1.I_1.P_1 \kw{to} C_2.I_2.P_2$:
+$\FSE(C_1, I_1, ()) \cup \FSE(C_2, I_2, ()) \cup \FSE(C_1, I_1, P_1) \cup
+\FSE(C_2, I_2, P_2) \in V$.
 
-parameterised calls meet multiple connections:
-- parameterised to multiple non-parameterised: ``dispatch table''. must
-provide default handler.
-- parameterised to multiple non-parameterised and at least one
-parameterised: ``dispatch table'' for non-parameterised. as above
-for parameterised. default handler not required.
+\item For each wire $C_1.I_1.P_1 \kw{to} C_2.I_2.P_2$:
+$\connect(C_1.I_1.P_1, C_2.I_2.P_2) \in E$. If $P_1 \not= ()$ then
+$\connect(C_1.I_1.(), C_1.I_1.P_1) \in E$. If $P_2 \not= ()$ then
+$\connect(C_2.I_2.P_2, C_2.I_2.()) \in E$.
+\end{itemize}
+
+The semantics of a call to a command or event $F$ of interface $I$ in
+module $M$ are now easily defined, given the whole program graph $G$,
+
+First, if there is a cycle in $G$ starting at $M.I.F.()$ a compile-time
+error occurs.
+
+Otherwise, set $S$ is the set of reachable command or event definitions
+from $M.I.F.()$. 
+
+% This is still missing parameter value collection
+
+If $F$ is a non-parameterised call, then:
+\begin{itemize}
+\item If $S$ is empty and $M$ has no default defintion for $I.F$, a
+compile-time error occurs.
+\item If $S$ is empty and $M$ has a default defintion $F'$ for $I.F$, then
+$F'$ is called.
+\item If $S$ is non-empty: the elements of $S$ are called in an arbitrary
+order.
+\end{itemize}
+
+If $F$ is a parameterised call with parameter values $P$ (computed at
+runtime in $M$), then $S$ is split into two sets: $S_1$ contains the
+parameterised definitions, $S_2$ the non-parameterised ones whose
+condition matches $P$.
+\begin{itemize}
+\item If $S_1$ is empty and there is no default definition for $I.F$, then
+a compile-time error occurs.
+\item If $S_1 \cup S_2$ is empty and $M$ has a default definition
+$F'$ for $I.F$, then $F'$ is called.
+\item If $S_1 \cup S_2$ is non-empty: the elements of $S_1 \cup S_2$ are
+called in an arbitrary order.
+\end{itemize}
+
+The result of $I.F$ is the result of one of the functions called (note that
+the rules above guarantee that at least one function will always be called).
+% we could change this to ``last function called''
 
 \section{C}
 \label{sec:c}
@@ -873,12 +1023,12 @@ connection:\\
 \>	endpoint \kw{<-} endpoint\\
 \\
 endpoint:\\
-\>	parameterised-identifier\\
-\>	endpoint \kw{.} parameterised-identifier\\
+\>	identifier-path \\
+\>	identifier-path \kw{[} argument-expression-list \kw{]}\\
 \\
-parameterised-identifier:\\
+identifier-path:\\
 \>	identifier\\
-\>	identifier \kw{[} argument-expression-list \kw{]}\\
+\>	identifier-path \kw{.} identifier\\
 \\
 specification:\\
 \>	\kw{\{} uses-provides-list \kw{\}}\\
