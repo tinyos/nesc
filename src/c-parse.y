@@ -334,13 +334,7 @@ interface:
         includes_list
 	INTERFACE { $<u.docstring>$ = get_docstring(); } idword '{' uses_or_defines_list '}' 
 		{
-		  parsed_nesc_decl = CAST(nesc_decl, new_interface(pr, $2.location, $4, interface_functions_reverse($6)));
-                  if( $<u.docstring>3 ) 
-                  {
-                    nesc_declaration idecl = require(l_interface, $2.location, $4->cstring.data);
-                    assert( idecl );
-                    separate_short_docstring($<u.docstring>3, &(idecl->short_docstring), &(idecl->long_docstring));
-                  }
+		  parsed_nesc_decl = CAST(nesc_decl, new_interface(pr, $2.location, $4, $<u.docstring>3, interface_functions_reverse($6)));
 		}
 	;
 
@@ -395,26 +389,14 @@ component: includes_list module
 
 module: MODULE { $<u.docstring>$ = get_docstring(); } idword '{' requires_or_provides_list '}' imodule
 	{ 
-	  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $1.location, $3, rp_interface_reverse($5), $7));
+	  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $1.location, $3, $<u.docstring>2, rp_interface_reverse($5), $7));
 
-          if( $<u.docstring>2 ) 
-          {
-            nesc_declaration cdecl = require(l_component, $1.location, $3->cstring.data );
-            assert( cdecl );
-            separate_short_docstring($<u.docstring>2, &(cdecl->short_docstring), &(cdecl->long_docstring));
-          }
         }
 	;
 
 configuration: CONFIGURATION { $<u.docstring>$ = get_docstring(); } idword '{' requires_or_provides_list '}' iconfiguration
         { 
-	  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $1.location, $3, rp_interface_reverse($5), $7));
-          if( $<u.docstring>2 ) 
-          {
-            nesc_declaration cdecl = require(l_component, $1.location, $3->cstring.data );
-            assert( cdecl );
-            separate_short_docstring($<u.docstring>2, &(cdecl->short_docstring), &(cdecl->long_docstring));
-          }
+	  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $1.location, $3, $<u.docstring>2, rp_interface_reverse($5), $7));
         }
         ;
 

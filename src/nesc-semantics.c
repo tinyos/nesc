@@ -219,12 +219,12 @@ nesc_decl dummy_nesc_decl(source_language sl, const char *name)
       implementation impl = CAST(implementation,
 	new_module(parse_region, dummy_location, NULL, NULL));
       nd = CAST(nesc_decl,
-	new_component(parse_region, dummy_location, wname, NULL, impl));
+	new_component(parse_region, dummy_location, wname, NULL, NULL, impl));
       break;
     }
     case l_interface:
       nd = CAST(nesc_decl,
-		new_interface(parse_region, dummy_location, wname, NULL));
+	new_interface(parse_region, dummy_location, wname, NULL, NULL));
       break;
     default:
       assert(0);
@@ -238,6 +238,10 @@ void build(nesc_declaration decl, environment env, nesc_decl ast)
 {
   decl->env = env;
   decl->ast = parsed_nesc_decl;
+
+  if (ast->docstring)
+    separate_short_docstring(ast->docstring, &decl->short_docstring,
+			     &decl->long_docstring);
 
   switch (decl->kind)
     {

@@ -132,6 +132,7 @@
 (deffield ids parameterised_identifier (init tree))
 (deffield external bool (init))
 (deffield ienv environment (init))
+(deffield docstring "char *" (init))
 
 (deffield cdecl nesc_declaration ())
 
@@ -501,8 +502,9 @@ DDECL is the magic_string declaration for this string.")
 ;; the different kinds of files
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftype nesc_decl declaration (word1)
-  "a supertype for interface/component declarations of WORD1")
+(deftype nesc_decl declaration (word1 docstring)
+  "a supertype for interface/component declarations of WORD1, with
+documentation string DOCSTRING")
 
 (deftype interface nesc_decl (interface_functions)
   "interface WORD1 { INTERFACE_FUNCTIONS }")
