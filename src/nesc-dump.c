@@ -30,7 +30,38 @@ region dump_region;
 
 /* What to output */
 enum { wiring_none, wiring_user, wiring_functions } wiring = wiring_none;
-xml_list components, interfaces, interfacedefs, tags;
+
+static bool tdecl_addfilter(void *entry);
+static bool ndecl_addfilter(void *entry);
+static bool ddecl_addfilter(void *entry);
+
+static void dump_component(void *entry);
+static void dump_interface(void *entry);
+static void dump_interfacedef(void *entry);
+static void dump_tag(void *entry);
+
+static void select_components(nd_option opt, dd_list comps);
+static void select_interfaces(nd_option opt, dd_list comps);
+static void select_interfacedefs(nd_option opt, dd_list comps);
+static void select_tags(nd_option opt, dd_list comps);
+
+/* lists */
+static struct {
+  const char *name;
+  bool (*addfilter)(void *entry);
+  void (*select)(nd_option opt, dd_list comps);
+  void (*dump)(void *entry);
+  xml_list *referenced;
+  xml_list l;
+} lists[] = {
+  { "components", ndecl_addfilter, select_components, dump_component, &xl_components },
+  { "interfaces", ddecl_addfilter, select_interfaces, dump_interface, &xl_interfaces },
+  { "interfacedefs", ndecl_addfilter, select_interfacedefs, dump_interfacedef, &xl_interfacedefs },
+  { "tags", tdecl_addfilter, select_tags, dump_tag, &xl_tags }
+};
+enum { dl_components, dl_interfaces, dl_interfacedefs, dl_tags };
+
+#define NLISTS (sizeof lists / sizeof *lists)
 
 static bool tdecl_addfilter(void *entry)
 {
@@ -309,7 +340,7 @@ static void dump_list(const char *name, xml_list l,
 /* The toplevel requests supported -fnesc-dump */
 /* ------------------------------------------- */
 
-void process_components(nd_option opt, dd_list comps)
+static void select_components(nd_option opt, dd_list comps)
 {
   dd_list_pos scan_components;
 
@@ -324,7 +355,7 @@ void process_components(nd_option opt, dd_list comps)
       nesc_declaration comp = DD_GET(nesc_declaration, scan_components);
 
       if (dump_filter_ndecl(comp))
-	xml_list_add(components, comp);
+	xml_list_add(lists[dl_components].l, comp);
     }
 }
 
@@ -340,11 +371,11 @@ static void process_component_interfaces(nesc_declaration comp)
       data_declaration ddecl = decl;
 
       if (ddecl->kind == decl_interface_ref && dump_filter_ddecl(ddecl))
-	xml_list_add(interfaces, ddecl);
+	xml_list_add(lists[dl_interfaces].l, ddecl);
     }
 }
 
-void process_interfaces(nd_option opt, dd_list comps)
+static void select_interfaces(nd_option opt, dd_list comps)
 {
   dd_list_pos scan_components;
 
@@ -378,12 +409,12 @@ static void add_defs(int kind, xml_list l)
     }
 }
 
-void process_interfacedefs(nd_option opt)
+static void select_interfacedefs(nd_option opt, dd_list comps)
 {
-  add_defs(l_interface, interfacedefs);
+  add_defs(l_interface, lists[dl_interfacedefs].l);
 }
 
-void process_tags(nd_option opt)
+static void select_tags(nd_option opt, dd_list comps)
 {
   env_scanner scan;
   const char *name;
@@ -395,11 +426,11 @@ void process_tags(nd_option opt)
       tag_declaration tdecl = decl;
 
       if (dump_filter_tdecl(tdecl))
-	xml_list_add(tags, tdecl);
+	xml_list_add(lists[dl_tags].l, tdecl);
     }
 }
 
-void process_wiring(nd_option opt, dd_list comps)
+static void select_wiring(nd_option opt, dd_list comps)
 {
   nd_arg arg;
 
@@ -424,7 +455,7 @@ void process_wiring(nd_option opt, dd_list comps)
       error("bad argument to wiring");
 }
 
-void process_referenced(nd_option opt)
+static void select_referenced(nd_option opt)
 {
   nd_arg arg;
 
@@ -432,16 +463,15 @@ void process_referenced(nd_option opt)
     if (is_nd_token(arg))
       {
 	const char *req = nd_tokenval(arg);
+	int i;
 
-	if (!strcmp(req, "tags"))
-	  xl_tags = tags;
-	else if (!strcmp(req, "components"))
-	  xl_components = components;
-	else if (!strcmp(req, "interfaces"))
-	  xl_interfaces = interfaces;
-	else if (!strcmp(req, "interfacedefs"))
-	  xl_interfacedefs = interfacedefs;
-	else
+	for (i = 0; i < NLISTS; i++)
+	  if (!strcmp(req, lists[i].name))
+	    {
+	      *lists[i].referenced = lists[i].l;
+	      break;
+	    }
+	if (i == NLISTS)
 	  error("unknown referenced request for `%s'", req);
       }
     else
@@ -494,10 +524,10 @@ static void do_wiring(cgraph cg, cgraph userg)
 
 static void do_lists(void)
 {
-  dump_list("interfaces", interfaces, dump_interface);
-  dump_list("components", components, dump_component);
-  dump_list("interfacedefs", interfacedefs, dump_interfacedef);
-  dump_list("tags", tags, dump_tag);
+  int i;
+
+  for (i = 0; i < NLISTS; i++)
+    dump_list(lists[i].name, lists[i].l, lists[i].dump);
 }
 
 void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
@@ -505,30 +535,31 @@ void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
 {
   dd_list_pos scan_opts;
   bool list_change = FALSE;
+  int i;
 
-  components = new_xml_list(dump_region, &list_change, ndecl_addfilter);
-  interfaces = new_xml_list(dump_region, &list_change, ddecl_addfilter);
-  interfacedefs = new_xml_list(dump_region, &list_change, ndecl_addfilter);
-  tags = new_xml_list(dump_region, &list_change, tdecl_addfilter);
+  for (i = 0; i < NLISTS; i++)
+    lists[i].l = new_xml_list(dump_region, &list_change, lists[i].addfilter);
 
   dd_scan (scan_opts, opts)
     {
       nd_option opt = DD_GET(nd_option, scan_opts);
+      int i;
 
       dump_set_filter(opt);
 
-      if (!strcmp(opt->name, "components"))
-	process_components(opt, comps);
-      else if (!strcmp(opt->name, "interfaces"))
-	process_interfaces(opt, comps);
-      else if (!strcmp(opt->name, "interfacedefs"))
-	process_interfacedefs(opt);
-      else if (!strcmp(opt->name, "tags"))
-	process_tags(opt);
+      for (i = 0; i < NLISTS; i++)
+	if (!strcmp(opt->name, lists[i].name))
+	  {
+	    lists[i].select(opt, comps);
+	    break;
+	  }
+
+      if (i < NLISTS)
+	;
       else if (!strcmp(opt->name, "wiring"))
-	process_wiring(opt, comps);
+	select_wiring(opt, comps);
       else if (!strcmp(opt->name, "referenced"))
-	process_referenced(opt);
+	select_referenced(opt);
       else
 	error("unknown dump request `%s'", opt->name);
     }
@@ -543,10 +574,8 @@ void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
       list_change = FALSE;
     }
 
-  xml_list_reset(components);
-  xml_list_reset(interfaces);
-  xml_list_reset(interfacedefs);
-  xml_list_reset(tags);
+  for (i = 0; i < NLISTS; i++)
+    xml_list_reset(lists[i].l);
 
   xml_start(stdout);
   indentedtag("nesc");
