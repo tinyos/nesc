@@ -46,8 +46,9 @@ static data_declaration add_network_temporary(function_decl fn, type t)
 }
 
 static AST_walker_result network_assignment(AST_walker spec, void *data,
-					    assignment a)
+					    assignment *n)
 {
+  assignment a = *n;
   function_decl fn = data;
 
   validate_network_lvalue(a->arg1);
@@ -62,8 +63,9 @@ static AST_walker_result network_assignment(AST_walker spec, void *data,
 }
 
 static AST_walker_result network_increment(AST_walker spec, void *data,
-					   increment i)
+					   increment *n)
 {
+  increment i = *n;
   function_decl fn = data;
 
   validate_network_lvalue(i->arg1);
@@ -80,9 +82,9 @@ static AST_walker_result network_increment(AST_walker spec, void *data,
 }
 
 static AST_walker_result network_fdecl(AST_walker spec, void *data,
-						function_decl fd)
+				       function_decl *fd)
 {
-  AST_walk_children(spec, fd, CAST(node, fd));
+  AST_walk_children(spec, fd, CAST(node, *fd));
   return aw_done;
 }
 

@@ -1061,7 +1061,10 @@ void prt_tag_ref(tag_ref tr, pte_options options)
   set_location(tr->location);
   /* There's a #define for nw_struct, nw_union in the header (this is not
      an issue as these are keywords) */
-  output("%s ", tagkind_name(tr->kind));
+  if (tr->kind == kind_attribute_ref)
+    output("struct ");
+  else
+    output("%s ", tagkind_name(tr->kind));
 
   if (tr->word1)
     {
