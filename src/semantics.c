@@ -134,7 +134,7 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->nuses = NULL;
   dd->fn_uses = NULL;
   dd->connections = NULL;
-  dd->spontaneous = FALSE;
+  dd->spontaneous = 0;
   dd->magic_reduce = NULL;
   dd->makeinline = FALSE;
   dd->container_function = NULL;
@@ -142,6 +142,7 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->async_access = dd->async_write = FALSE;
   dd->norace = FALSE;
   dd->instantiation = NULL;
+  dd->call_contexts = 0;
 }
 
 data_declaration lookup_id(const char *s, bool this_level_only)
@@ -1471,6 +1472,14 @@ int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
 	      pedwarn("static declaration for `%s' follows non-static", decl_printname(olddecl));
 	      previous_message = pedwarn_with_decl;
 	    }
+
+	  /* Warn for mismatched async */
+	  if (newdecl->async != olddecl->async)
+	    {
+	      error("`%s': async mismatch with declaration",
+		    decl_printname(olddecl));
+	      previous_message = error_with_decl;
+	    }
 	}
       else if (newdecl->kind == decl_variable)
 	{
@@ -1568,9 +1577,10 @@ int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
   olddecl->Cname |= newdecl->Cname;
   if (newdecl->spontaneous && !olddecl->spontaneous)
     {
-      olddecl->spontaneous = TRUE;
+      olddecl->spontaneous = newdecl->spontaneous;
       dd_add_last(parse_region, spontaneous_calls, olddecl);
     }
+  olddecl->norace |= newdecl->norace;
 
   /* For functions, static overrides non-static.  */
   if (newdecl->kind == decl_function)
@@ -3545,6 +3555,6 @@ void start_semantics(source_language l, nesc_declaration container,
   current.function_decl = NULL;
   current.pending_invalid_xref = NULL;
   current.container = container;
-  current.in_atomic = 0;
+  current.in_atomic = NULL;
 }
 

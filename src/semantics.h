@@ -196,7 +196,8 @@ struct semantic_state
   tag_ref pending_invalid_xref;	/* Internal use */
   bool component_requires;	/* FALSE if in provides section, TRUE in requires */
 
-  unsigned in_atomic;		/* >0 while lexically within an atomic section */
+  atomic_stmt in_atomic;		/* The lexically containing atomic statement
+				   (NULL for none) */
   char *preprocessed_file;	/* Temp file holding preprocessor output */
 };
 

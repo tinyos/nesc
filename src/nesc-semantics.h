@@ -101,4 +101,8 @@ declaration declare_template_parameter(declarator d, type_element elements,
 
 nesc_declaration original_component(nesc_declaration c);
 
+/* Some macros to make nesc_error easier to deal with */
+#define nesc_warning (nesc_error ? error : warning)
+#define nesc_warning_with_location (nesc_error ? error_with_location : warning_with_location)
+
 #endif

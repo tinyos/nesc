@@ -32,6 +32,12 @@ void fail_in_atomic(const char *context)
     error("%s not allowed in atomic statements", context);
 }
 
+void fail_different_atomic(atomic_stmt target)
+{
+  if (target != current.in_atomic)
+    error("control transfer crosses atomic statement boundary");
+}
+
 void check_condition(const char *context, expression e)
 {
   type etype = default_conversion(e);
@@ -101,6 +107,9 @@ label_declaration new_label_declaration(region r, const char *name, id_label fir
   ldecl->firstuse = firstuse;
   ldecl->definition = NULL;
   ldecl->containing_function = current.function_decl;
+  /* The label "belongs" to the atomic statement in force the first time
+     it's mentioned */
+  ldecl->containing_atomic = current.in_atomic;
 
   return ldecl;
 }
@@ -131,6 +140,10 @@ void lookup_label(id_label label)
       ldecl = new_label_declaration(parse_region, label->cstring.data, label);
       env_add(current.function_decl->base_labels, label->cstring.data, ldecl);
     }
+  else
+    if (ldecl->containing_atomic != current.in_atomic)
+      error("label %s is referenced in different atomic statements",
+	    label->cstring.data);
 
   label->ldecl = ldecl;
 }
@@ -157,8 +170,6 @@ void define_label(id_label label)
     duplicate_label_error(label);
   else
     label->ldecl->definition = label;
-
-  fail_in_atomic("labels");
 }
 
 void declare_label(id_label label)
@@ -203,6 +214,7 @@ void push_loop(statement loop_statement)
 {
   loop_statement->parent_loop = current.function_decl->current_loop;
   current.function_decl->current_loop = loop_statement;
+  loop_statement->containing_atomic = current.in_atomic;
 }
 
 void pop_loop(void)
@@ -239,6 +251,8 @@ static statement containing_switch(label l)
 	  last = &(*last)->next_label;
 	}
 
+      fail_different_atomic(sw->containing_atomic);
+
       *last = l;
     }
 
@@ -265,7 +279,6 @@ void check_case(label label0)
     check_case_value(label->arg2);
   /* XXX: no range check (compared to switched type), no empty range check */
   /* XXX: no check for unreachable code */
-  fail_in_atomic("case labels");
 }
 
 void check_default(label default_label)
@@ -275,16 +288,18 @@ void check_default(label default_label)
   if (!sw)
     error("default label not within a switch statement");
   /* XXX: no check for unreachable code */
-  fail_in_atomic("default");
 }
 
 void check_break(statement break_statement)
 {
-  if (!current.function_decl->current_loop)
-    error("break statement not within loop or switch");
+  statement current_loop = current.function_decl->current_loop;
 
-  break_statement->parent_loop = current.function_decl->current_loop;
-  fail_in_atomic("break");
+  if (!current_loop)
+    error("break statement not within loop or switch");
+  else
+    fail_different_atomic(current_loop->containing_atomic);
+
+  break_statement->parent_loop = current_loop;
 }
 
 void check_continue(statement continue_statement)
@@ -297,7 +312,8 @@ void check_continue(statement continue_statement)
 
   if (!loop)
     error("continue statement not within a loop");
+  else
+    fail_different_atomic(loop->containing_atomic);
 
   continue_statement->parent_loop = loop;
-  fail_in_atomic("continue");
 }

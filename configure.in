@@ -24,7 +24,7 @@ dnl -*- m4 -*-
 # force autoconf 2.5 on Debian systems
 AC_PREREQ(2.50)
 
-AC_INIT(nesc, 1.1beta1)
+AC_INIT(nesc, 1.1)
 AC_CONFIG_AUX_DIR(config-aux)
 AC_CANONICAL_HOST
 
@@ -39,7 +39,7 @@ case $host in
 esac
 AC_SUBST(CYGWINHACKS)
 
-AM_INIT_AUTOMAKE(nesc, 1.1beta1)
+AM_INIT_AUTOMAKE(nesc, 1.1)
 
 AC_CONFIG_SUBDIRS(src)
 
@@ -73,7 +73,7 @@ AC_OUTPUT(
 	tools/ncg
 	tools/ncc
 	tools/nescc
-	tools/set-mote-id
+	tools/nesdoc
 	tools/avr-as/Makefile
 	tools/avr-as/make-avr-as
 	tools/avr-as/install-avr-as

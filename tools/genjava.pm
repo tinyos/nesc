@@ -26,13 +26,10 @@ sub gen() {
     &usage("no classname name specified") if !defined($java_classname);
 
     $java_extends = "net.tinyos.message.Message" if !defined($java_extends);
+    # See if name has a package specifier
     if ($java_classname =~ /(.*)\.([^.]*)$/) {
 	$package = $1;
 	$java_classname = $2;
-    }
-    else {
-	print STDERR "no package specification in class name $java_classname\n";
-	exit 2;
     }
 
     print "/**\n";
@@ -41,7 +38,7 @@ sub gen() {
     print " * message type.\n";
     print " */\n\n";
 
-    print "package $package;\n\n";
+    print "package $package;\n\n" if $package;
 
     print "public class $java_classname extends $java_extends {\n\n";
 
@@ -237,11 +234,12 @@ sub gen() {
 	  print "     * WARNING: This field is not byte-aligned (bit offset $offset).\n";
 	}
 	print "     */\n";
+
 	print "    public static int offset_$javafield($argspec) {\n";
 	if ($isarray) {
-	  printoffset($base + $offset, $amax, $abitsize, $aoffset, 0);
+	    printoffset($base + $offset, $amax, $abitsize, $aoffset, 0);
 	} else {
-	  print "        return ($offset / 8);\n";
+	    print "        return ($offset / 8);\n";
 	}
 	print "    }\n\n";
 

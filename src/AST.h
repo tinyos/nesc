@@ -52,7 +52,7 @@ typedef struct AST_node *noderef;
 
 enum { struct_type, union_type, enum_type };
 
-typedef enum { command_call, event_signal, post_task, c_call } nesc_call_kind;
+typedef enum { command_call, event_signal, post_task, normal_call } nesc_call_kind;
 
 #include "AST_defs.h"
 

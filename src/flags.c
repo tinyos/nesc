@@ -252,3 +252,7 @@ int warn_async;
 /* Warn when no combiner function and multiple fns called */
 int warn_no_combiner;
 
+/* If true, warn_fnptr, warn_data_race, warn_async and warn_no_combiner
+   are treated as errors */
+int nesc_error;
+

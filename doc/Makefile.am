@@ -1,8 +1,15 @@
 AUTOMAKE_OPTIONS = foreign
 
 EXTRA_DIST =					\
+	debugging.html				\
+	debugging_files/complete-setup.jpg	\
+	debugging_files/jtagpod.jpg		\
+	debugging_files/micamod.jpg		\
+	debugging_files/progboard.jpg		\
 	mig.html				\
 	ncc.html                                \
+	ncg.html                                \
+	nesdoc.html                             \
 	ref.pdf
 
 ref.pdf: ref.tex

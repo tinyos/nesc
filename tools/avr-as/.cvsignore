@@ -1,5 +1,6 @@
 .deps
 Makefile
+Makefile.in
 as
 gas-2.11.2-avr-dollar-patch
 gas-2.13.2.1-avr-dollar-patch

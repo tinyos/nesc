@@ -15,6 +15,7 @@ ncc - nesC compiler for TinyOS
 ncc [<b>-target=pc|mica|mica2|mica2dot|...</b>]
 [<b>-tosdir=</b><u>dir</u>]
 [<b>-print-tosdir</b>]
+[<b>-print-platforms</b>]
 [<b>-nostdinc</b>]
 [<b>-board=micasb|basicsb|micawb|...</b>]
 [<b>-docdir=</b><u>dir</u>]
@@ -46,7 +47,11 @@ The additional options recognized by ncc over gcc are:
 for this compilation. If pc is specified, the compilation uses the tossim
 environment and produces a locally executable file. The default target is
 mica, the possible targets are set by the TinyOS distribution (see the 
-tos/platforms directory).</blockquote>
+tos/platforms directory). A platform that is not in the TinyOS distribution
+can be used if its directory is specified with an explicit -I directive
+(the platform name is taken from the directory's name, platform directories
+are recognised by the presence of a <code>.platform</code> file).
+</blockquote>
 
 <b>-tosdir=</b><u>dir</u><blockquote> specify the location of TinyOS. This
 location can also be specified with the `TOSDIR' environment variable. If the
@@ -58,6 +63,10 @@ ncc uses its compiled-in TinyOS directory.</blockquote>
 exit, taking into account the -tosdir option and `TOSDIR' environment
 variable. No compilation occurs when -print-tosdir is used.</blockquote>
 
+<b>-print-platforms</b><blockquote> print the valid TinyOS platforms,
+including those made available by explicit -I directives (see -target 
+discussion above).</blockquote>
+
 <b>-nostdinc</b><blockquote> do not automatically include the TinyOS
 directories in the search path. See the discussion of search paths below
 for more details.</blockquote>
@@ -65,7 +74,9 @@ for more details.</blockquote>
 <b>-board=Y</b><blockquote> specify one (or more) sensor boards. This
 effects the search path and preprocessor symbols. The set of boards is set
 by the TinyOS distribution (see the tos/sensorboards
-directory).</blockquote>
+directory). As with targets, a sensorboard directory can be made
+available via an explicit -I directive (sensorboard directories are
+recognised by the presence of a <code>.sensor</code> file).</blockquote>
 
 <b>-docdir=</b><u>dir</u><blockquote> generate documentation for the
 compiled component in directory <u>dir</u>.</blockquote>
@@ -113,6 +124,8 @@ with /**) are seen.
 
 <li><b>all</b>: Turns on <b>fnptr</b>, <b>async</b>, <b>combine</b> and
 <b>data-race</b>.
+<li><b>error</b>: Turns the <b>fnptr</b>, <b>async</b>, <b>combine</b> and
+<b>data-race</b> warnings into errors.
 </blockquote>
 
 <p>
@@ -149,8 +162,10 @@ as follows, where <u>tosdir</u> is the TinyOS directory requested and
 <li>./
 <li><b>-I</b> directives (in option order)
 <li>%T/sensorboards/<u>boardname</u>, for each
-<b>-board=</b><u>boardname</u> option specified (in option order)
-<li>%T/platform/%p
+<b>-board=</b><u>boardname</u> option specified (in option order) -
+except if the sensorboard was found via an explicit -I directive
+<li>%T/platform/%p  - except if the platform was found via an
+explicit -I directive
 <li>Additional directories requested by the selected target (e.g.,
 %T/platform/avrmote for the mica target)
 <li>%T/interfaces
@@ -175,6 +190,9 @@ When <b>-nostdinc</b> is specified, the search path is simply:
 ncc defines the following preprocessor symbols:
 
 <ul>
+<li>
+NESC (since v1.1) set to XYZ where x.yz is the nesC version
+
 <li>
 PLATFORM_<u>target</u> (where <u>target</u> is the selected target name,
 converted to upper case)
@@ -202,12 +220,18 @@ nesC components.
 gcc(1), avr-gcc(1)
 </blockquote>
 
-<h3>NOTE</h3>
+<h3>NOTES</h3>
 
 ncc is built over nescc, which handles the non-TinyOS-specific
 functionality of ncc. Users of nesC in a non-TinyOS context may
 prefer to use nescc (see the source code of ncc and nescc for
 details).
+
+The warnings for the new nesC 1.1 features (see <code>-Wnesc-all</code>)
+are off by default to increase compatibility with nesC 1.0 code. To match
+the language specification in the nesC 1.1 reference manual, you should
+compile with <code>-Wnesc-all</code> and <code>-Wnesc-error</code>. These
+options will become the default in future releases.
 
 </body>
 </html>

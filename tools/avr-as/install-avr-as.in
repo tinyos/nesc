@@ -23,10 +23,11 @@ $ncclibdir = $ARGV[0];
 open GCCV, "avr-gcc 2>&1 -v |";
 
 while (<GCCV>) {
-  $version = $1 if (/^gcc version ([0-9.]+)/);
+  $version = $1 if (/^gcc version ([^ \n]+)/);
 }
 die "Could not determine avr-gcc version" if !defined($version);
 
 die "Could not install AVR assembler" if
-  system("install -D as $ncclibdir/avr/$version/as");
+  (system("mkdir -p $ncclibdir/avr/$version")
+   || system("install as $ncclibdir/avr/$version/as"));
 

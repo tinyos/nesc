@@ -21,7 +21,7 @@ SUBDIRS = avr-as
 
 ncclibdir=$(libdir)/ncc
 
-bin_SCRIPTS = mig ncg ncc nescc set-mote-id
+bin_SCRIPTS = mig ncg ncc nescc nesdoc
 
 ncclib_DATA = genjava.pm gencstjava.pm gencsharp.pm migdecode.pm
 

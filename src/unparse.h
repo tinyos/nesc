@@ -42,6 +42,7 @@ struct location output_location(void);
 void output(char *format, ...) __attribute__((format (printf, 1, 2)));
 void outputln(char *format, ...) __attribute__((format (printf, 1, 2)));
 void output_stripped_cstring(cstring s);
+void output_string(const char *s);
 void output_cstring(cstring s);
 void output_stripped_string(const char *s);
 void output_stripped_string_dollar(const char *s);

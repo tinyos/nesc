@@ -91,6 +91,11 @@ if ($?) {
     exit 1;
 }
 
+if (!-f "$NCDIR/gen$target.pm") {
+    print STDERR "Unknown tool $target\n";
+    exit 2;
+}
+
 if ($ofile) {
     close STDOUT;
     if (!open STDOUT, ">$ofile") {
@@ -101,6 +106,7 @@ if ($ofile) {
 
 require "gen$target.pm";
 &gen($classname, @spec);
+$completed = 1;
 
 sub usage()
 {
@@ -186,3 +192,6 @@ sub arraybitsize()
     return @bitsize;
 }
 
+sub END() {
+    unlink $ofile unless !$ofile || $completed;
+}

@@ -192,6 +192,12 @@ void output_cstring(cstring s)
   fwrite(s.data, s.length, 1, of);
 }
 
+void output_string(const char *s)
+{
+  output_indent_if_needed();
+  fwrite(s, strlen(s), 1, of);
+}
+
 void output_stripped_string(const char *s)
 {
   output_indent_if_needed();
@@ -204,7 +210,7 @@ void output_stripped_string(const char *s)
 void output_stripped_string_dollar(const char *s)
 {
   output_stripped_string(s);
-  output(function_separator);
+  output_string(function_separator);
 }
 
 static void output_line_directive(location l, bool include_filename)
@@ -620,7 +626,7 @@ void prt_plain_ddecl(data_declaration ddecl, psd_options options)
 	    ddecl->ftype == function_command)))
       {
         output("default");
-        output(function_separator);
+        output_string(function_separator);
       }
 
     }
@@ -1292,7 +1298,7 @@ void prt_interface_deref(interface_deref e, int context_priority)
 			e->cstring.data);
 
   prt_expression(e->arg1, P_CALL);
-  output(function_separator);
+  output_string(function_separator);
   output_stripped_cstring(e->cstring);
 }
 
@@ -1341,7 +1347,7 @@ void prt_unary(unary e, int context_priority)
   set_location(e->location);
   if (op)
     {
-      output(op);
+      output_string(op);
       if (is_unary(e->arg1))
 	output(" "); /* Catch weirdness such as - - x */
       if (!pri)
@@ -1349,7 +1355,7 @@ void prt_unary(unary e, int context_priority)
     }
   prt_expression(e->arg1, pri ? pri : P_CALL);
   if (postop)
-    output(postop);
+    output_string(postop);
   CLOSE(P_CAST);
 }
 

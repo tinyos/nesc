@@ -18,6 +18,7 @@ Boston, MA 02111-1307, USA. */
 #include "parser.h"
 #include "constants.h"
 #include "nesc-uses.h"
+#include "nesc-semantics.h"
 #include "AST_utils.h"
 #include "AST_walk.h"
 #include "c-parse.h"
@@ -57,7 +58,7 @@ use new_use(location l, context c)
   use u = ralloc(rr, struct use);
 
   u->l = l;
-
+  u->fn = current_function;
   u->c = use_context(c);
 
   return u;
@@ -147,8 +148,7 @@ static void collect_uses_expr(expression expr, context c)
       else if (c & c_read)
 	c = (c & ~c_read) | c_addressed;
     }
-
-  if (expr->cst)
+  else if (expr->cst)
     c |= c_constant;
 
   switch (expr->kind)
@@ -208,11 +208,16 @@ static void collect_uses_expr(expression expr, context c)
       else if (!(is_interface_deref(fce->arg1) ||
 	    is_generic_call(fce->arg1) ||
 	    (is_identifier(fce->arg1) &&
-	     CAST(identifier, fce->arg1)->ddecl->kind == decl_function) ||
+	     (CAST(identifier, fce->arg1)->ddecl->kind == decl_function ||
+	      CAST(identifier, fce->arg1)->ddecl->kind == decl_magic_function)) ||
 	    fce->va_arg_call))
 	{
-	  if (warn_fnptr)
-	    warning_with_location(fce->location, "call via function pointer");
+	  /* We allow a function pointer calls in C code on the assumption
+	     that this represents runtime implementation stuff (e.g., 
+	     the task scheduler, or tossim stuff) */
+	  if (warn_fnptr && 
+	      (!current_function || current_function->container))
+	    nesc_warning_with_location(fce->location, "call via function pointer");
 	  collect_uses_expr(fce->arg1, exe_c | c_read);
 	}
       else

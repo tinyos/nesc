@@ -339,7 +339,7 @@ static bool lookup_endpoint(environment configuration_env, endpoint ep,
       if (gparms)
 	check_generic_arguments(lep->args, gparms);
       else
-	error_with_location(ep->location, "endpoint is not generic");
+	error_with_location(ep->location, "endpoint is not a parameterised interface");
     }
 
   return TRUE;

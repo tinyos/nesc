@@ -106,6 +106,11 @@ if ($?) {
     exit 1;
 }
 
+if (!-f "$NCDIR/gencst$target.pm") {
+    print STDERR "Unknown tool $target\n";
+    exit 2;
+}
+
 if ($ofile) {
     close STDOUT;
     if (!open STDOUT, ">$ofile") {
@@ -116,6 +121,7 @@ if ($ofile) {
 
 require "gencst$target.pm";
 &gen($classname, %csts);
+$completed = 1;
 
 sub usage()
 {
@@ -146,4 +152,8 @@ sub extractarg {
 	$arg = substr($ARGV[$i], 2);
     }
     return ($i, $arg);
+}
+
+sub END() {
+    unlink $ofile unless !$ofile || $completed;
 }

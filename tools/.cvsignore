@@ -2,6 +2,7 @@ mig
 ncc
 ncg
 nescc
+nesdoc
 set-mote-id
 Makefile
 Makefile.in

@@ -71,12 +71,25 @@ void handle_decl_attribute(attribute attr, data_declaration ddecl)
   else if (!strcmp(name, "spontaneous"))
     {
       if (ddecl->kind == decl_function && ddecl->ftype == function_normal)
-	ddecl->spontaneous = TRUE;
+	{
+	  /* The test avoids overriding the effect of signal */
+	  if (!ddecl->spontaneous)
+	    ddecl->spontaneous = c_call_nonatomic;
+	}
       else
 	error_with_location(attr->location, "`spontaneous' attribute is for external functions only");
     }
-  else if (!strcmp(name, "signal") || !strcmp(name, "interrupt"))
-    ddecl->async = TRUE;
+  /* XXX: signal, interrupt are avr-specific, should be elsewhere */
+  else if (!strcmp(name, "signal"))
+    {
+      ddecl->async = TRUE;
+      ddecl->spontaneous = c_call_atomic;
+    }
+  else if (!strcmp(name, "interrupt"))
+    {
+      ddecl->async = TRUE;
+      ddecl->spontaneous = c_call_nonatomic;
+    }
   else
     handle_type_attribute(attr, &ddecl->type);
   /*else

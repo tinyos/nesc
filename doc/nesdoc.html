@@ -6,13 +6,12 @@
 <h1 align="center">nesC Source Documentation</h1>
 
 
-<h3>Overview</h3>
-The nesC compiler includes a facility for automatically generating
-documentation from nesC source code.  The basic structure of the
-generated documentation is taken from the source code, with one HTML
-file produced from each nesC source file.  (NOTE: documentation is
-currently not produced for items in included C files, or header files
-- although limited support for this is planned for a future release.)
+<h3>Overview</h3> The nesC compiler includes a facility for
+automatically generating documentation from nesC source code.  The
+basic structure of the generated documentation is taken from the
+source code, with one HTML file produced from each nesC source file.
+Documentation is not produced for items in included C files, or header
+files.
 <p>
 
 Program authors can augment the automatically generated documentation
@@ -24,7 +23,7 @@ Java language specification</a>.
 <p>
 
 
-<h3>Documentaiton Comment Style</h3>
+<h3>Documentation Comment Style</h3>
 
 Documentation comments in nesC must begin with the characters
 <code>/**</code>.  (Note the additional <code>*</code> character,
@@ -56,6 +55,13 @@ color="blue">text text text</font>
 <dt><b>@return</b> <font color="blue">text text text</font>
 <dd>Describes the return value of a function
 
+<dt><b>@author</b> <font color="blue">text text text</font>
+<dd>Lists an author of the file; multiple @author strings are allowed.
+
+<dt><b>@modified</b> <font color="blue">text text text</font>
+<dd>Lists a modification.
+
+
 </dl>
 </menu>
 <p>
@@ -78,6 +84,11 @@ documentation-style comments.
  * One-line component description.
  *
  * More text goes here, to give more details to the description.
+ *
+ * @author Alice
+ * @author Bob
+ * @modified 3/3/2003 Added meaningful documentation.
+ *
  **/
 module Foo {
   provides {
@@ -128,8 +139,12 @@ implementation {
 <h3>Generating documentation</h3>
 
 Documentation generation is enabled by passing appropriate arguments
-to the <code>ncc</code> program.  For descriptions of these arguments,
-please see the <a href="ncc.html">ncc man page</a>.
+to the <code>nesdoc</code> program.  It has similar syntax to the
+<code>ncc</code> compiler. For descriptions of these arguments, please
+see the <a href="ncc.html">ncc man page</a>. To generate
+documentation, passing the same arguments to <code>nesdoc</code> as
+one passes to <code>ncc</code> to compile generally works.
+		  
 
 
 <h3>Installing Graphviz</h3>

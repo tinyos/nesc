@@ -136,6 +136,7 @@
 (deffield docstring "char *" (init))
 (deffield designator designator (init tree))
 (deffield abstract bool (init))
+(deffield containing_atomic atomic_stmt ())
 
 (deffield cdecl nesc_declaration ())
 
@@ -149,15 +150,19 @@
 (deftype declaration node ()
   "The common type of all definitions")
 
-(deftype statement node (parent_loop break_dest continue_dest)
+(deftype statement node (parent_loop containing_atomic)
   "The common type of all statements
 PARENT_LOOP: 
   - for break and continue: the containing for/while/do-while/switch
     statement they escape from
   - for for/while/do-while: the containing for/while/do-while/switch
     statement
-BREAK_DEST and CONTINUE_DEST: for for/while/do-while/switch statements
-the CFG node to which break or continue should go to")
+CONTAINING_ATOMIC
+  - for labels and looping statements, their containing atomic statement
+(or NULL for none). Used to check that break, continue and goto do not
+break in or out of an atomic statement.
+(Note: for nested atomic statements, CONTAINING_ATOMIC will point to a
+dangling node as we drop these nested statements from the AST)")
 
 (deftype expression node (lvalue side_effects cst bitfield isregister
 			  type static_address converted_to_pointer)
@@ -404,7 +409,7 @@ DEAD_USE is true for identifiers used as the target of a regular assignment")
 If VA_ARG_CALL is non-null, this is actually a call to the pseudo-function
 __builtin_va_arg(args, va_arg_call) (where va_arg_call is a type). In 
 this case arg1 is a dummy identifier.
-CALL_KIND is one of c_call, post_task, command_call or event_signal.")
+CALL_KIND is one of normal_call, post_task, command_call or event_signal.")
 
 (defnode array_ref binary "ARG1[ARG2]")
 

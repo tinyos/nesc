@@ -33,6 +33,9 @@ process. The C type must be defined with `struct <u>message-type'</u> or
 any other files, then you can specify the .h file directly as the
 <u>msg-format-file</u>.
 
+<p>If you also need access to some constants from your nesC application,
+please consult the <a href="ncg.html">ncg</a> man page.
+
 <p>
 If an enum constant named AM_<u>message_type</u> (with <u>message_type</u>
 capitalized) is found, then the value of that constant is assumed to be the
@@ -51,9 +54,9 @@ mig works by invoking ncc. It will generally be necessary to pass some options
 through to ncc so that your file can be compiled. Some commonly necessary
 options are:
 <p>
-<b>-target=pc|mica|rene2</b> <blockquote> specify the target architecture
-of your TinyOS application which is generating or receiving messages. So,
-if compiling your application for tossim, generate mig tools with
+<b>-target=<u>known-tinyos-platform</u></b> <blockquote> specify the target
+architecture of your TinyOS application which is generating or receiving
+messages. So, e.g., if compiling your application for tossim specify
 -target=pc. The default target is ncc's default target.</blockquote>
 
 
@@ -61,9 +64,9 @@ if compiling your application for tossim, generate mig tools with
 for nesC components.</blockquote>
 
 
-<b>-board=micasb|basicsb|micawb</b><blockquote> specify one (or more)
-sensor boards. This effects the search path and preprocessor symbols (and
-may therefore be necessary when feeding a file to mig).</blockquote>
+<b>-board=<u>known-tinyos-sensorboard</u></b><blockquote> specify one (or
+more) sensor boards. This effects the search path and preprocessor symbols
+(and may therefore be necessary when feeding a file to mig).</blockquote>
 
 </blockquote>
 
@@ -74,41 +77,66 @@ may therefore be necessary when feeding a file to mig).</blockquote>
 <p>
 This tool generates a java class to encode or decode a TinyOS packet,
 basing itself on the net.tinyos.message infrastructure. For each field
-fname of structure <u>message-type</u>, there are the following methods
-(fname is capitalised in the method names):
+<i>fname</i> of structure <u>message-type</u>, there are the following methods
+(the bit offset and size methods are useful for structures containing
+bitfields):
 
 <ul>
-<li>getFname: get field's value
-<li>setFname: set field's value
-<li>offsetFname: return bit offset of field in <u>message-type</u>
-<li>sizeFname: return size in bits of field
+<li><code>get_</code><i>fname</i>: get field's value
+<li><code>set_</code><i>fname</i>: set field's value
+<li><code>offsetBits_</code><i>fname</i>: return bit offset of field in <u>message-type</u>
+<li><code>offset_</code><i>fname</i>: return byte offset of field in <u>message-type</u> 
+<li><code>sizeBits_</code><i>fname</i>: return size in bits of field (not for arrays)
+<li><code>size_</code><i>fname</i>: return size in bytes of field (not for arrays)
+(absent if <i>fname</i> is a bitfield)
+<li><code>isSigned_</code><i>fname</i>: return true if <i>fname</i> is of a signed type
+<li><code>isArray_</code><i>fname</i>: return true if <i>fname</i> is an array
 </ul>
 
 Embedded structures in <u>message-type</u> are expanded, using _ to
 separate the structure name and its fields.
 
 <p>
-If a field is an array then the get, set and offset methods take one
-argument per array dimension. These methods report errors if the array
-index is out of bounds. If an array has a maximum size of 0, mig assumes
-it represents a variable-size array and does not check the corresponding
-array index.
+A number of extra methods are present for fields that are arrays:
 
-The generated class has constructors that:
 <ul>
-<li> create an unitialised message, with optional explicit packet size
-argument
-
-<li> create a message initialised from an argument byte array, with optional
-explicit packet size argument
-
-<li> create a message initialised from an argument
-net.tinyos.message.ByteArray interface, with optional explicit
-packet size argument
+<li><code>getElement_</code><i>fname</i>: get an element of the array
+<li><code>setElement_</code><i>fname</i>: set an element of the array
+<li><code>elementSize_</code><i>fname</i>: return size in bytes of array elements
+<li><code>elementSizeBits_</code><i>fname</i>: return size in bits of array elements
+<li><code>numDimensions_</code><i>fname</i>: return number of dimensions of the array
+<li><code>numElements_</code><i>fname</i>: return number of elements of the array for a given
+dimension (left-most dimension is numbered 0) - the dimension is optional 
+for 1-dimensional arrays
+<li><code>totalSize_</code><i>fname</i>: return size in bytes of the array (absent if the array
+is variable-size)
+<li><code>totalSizeBits_</code><i>fname</i>: return size in bits of the array (absent if the array
+is variable-size)
 </ul>
 
-The optional packet size argument overrides the default size of
-sizeof(message-type); this is useful for variable-size messages.
+If the array is 1-dimensional and the elements are one byte, then the
+following methods exist:
+<li><code>getString_</code><i>fname</i>: build a Java string from the array assuming it contains
+a C-style null-terminated string
+<li><code>setString_</code><i>fname</i>: set the array to a C-style null-terminated string given
+a java string
+</ul>
+
+<p>
+The <code>getElement_..., setElement_...,offset_...</code> and
+<code>offsetBits_...</code> methods take one argument per array
+dimension. These methods report errors if the array index is out of
+bounds. If an array has a maximum size of 0, mig assumes it represents a
+variable-size array and does not check the corresponding array index.
+
+The data for a message is stored in an array, with explicit base and length
+information. The constructors can either allocate this array, receive it as
+an explicit argument or extract if from another message. The base and
+length can also be optionally passed to these constructors.  
+
+<p>The optional length argument overrides the default size of
+sizeof(message-type); this is useful for variable-size messages. The use of
+an explicit base is helpful for messages embedded in other messages.
 
 <p>
 The generated class also has an amType() method which returns the message's
@@ -119,8 +147,9 @@ The java tool accepts the following options:
 
 <p>
 <b>-java-classname=</b><u>full-class-name</u> <blockquote> this option is
- required and specifies the package and name of the generated
- class.</blockquote>
+ required and specifies the package and name of the generated class. If the
+ full-class-name has no '.', then no package directive is included in the
+ output.</blockquote>
 
 <b>-java-extends=</b><u>class-name</u>: <blockquote> specify the class the
 generated class will extend.  The default is
@@ -132,7 +161,7 @@ net.tinyos.message.Message.</blockquote>
 
 <blockquote>
         APPDIR=`ncc -print-tosdir`/../apps/Ident<br>
-	mig java -I $APPDIR  -java-classname=net.tinyos.ident.IdentMsg $APPDIR/App.td IdentMsg -o IdentMsg.java
+	mig java -I $APPDIR  -java-classname=net.tinyos.ident.IdentMsg $APPDIR/App.nc IdentMsg -o IdentMsg.java
 
 </blockquote>
 
@@ -147,6 +176,7 @@ mig reports an error if ncc cannot compile <u>msg-format-file</u>, if
 
 <blockquote>
 <a href="ncc.html">ncc</a>
+<a href="ncg.html">ncg</a>
 </blockquote>
 
 </body>

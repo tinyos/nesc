@@ -1,0 +1,119 @@
+<html>
+<head>
+<title>ncg - extract constants from nesC files</title>
+</head>
+<body>
+<h3>NAME</h3>
+
+<blockquote>
+ncg - extract constants from nesC files
+</blockquote>
+
+<h3>SYNOPSIS</h3>
+
+<blockquote>
+ncg [any ncc option] 
+[<b>-o</b> <u>output-file</u>]
+[<b>-java-classname=</b><u>full-class-name</u>]
+[<b>-java-extends=</b><u>class-name</u>]
+<u>tool</u> <u>nesC-file</u> <u>filenames-or-constant-names...</u>
+</blockquote>
+
+<h3>DESCRIPTION</h3>
+
+<blockquote>
+
+ncg is a tool to extract constants from nesC files for use with other
+applications. It is typically used in conjunction with <a
+href="mig.html">mig</a> (which generates code to process TinyOS messages)
+to extract constants that are used in particular TinyOS messages (e.g.,
+constants representing various commands).  
+
+<p>The <u>tool</u> argument specifies what tool should be generated, the
+<u>nesC-file</u> specifies your application's top-level nesC file.  If your
+constants are all in a single .h file that does not depend on any other
+files, then you can specify the .h file directly as the
+<u>msg-format-file</u>.
+
+Each <u>filenames-or-constant-names</u> is either a constant name (if it
+consists only of letters, numbers and _) or a filename. In the former case,
+the specified constant will be extracted, in the latter case all constants
+from the specified C file will be extracted. Only constants declared in C
+files will be found by ncg.
+
+<p>
+Currently there is only one tool, <b>java</b>, which generates a java class
+that contains the values of the requested constants. The <b>-java-*</b>
+options are specific to this tool. It is described below.
+
+<p>
+<b>-o</b> <u>output-file</u> <blockquote> specify the file in which to
+output the generated code.</blockquote>
+
+ncg works by invoking ncc. It will generally be necessary to pass some options
+through to ncc so that your file can be compiled. Some commonly necessary
+options are:
+<p>
+<b>-target=<u>known-tinyos-platform</u></b> <blockquote> specify the target
+architecture of your TinyOS application which is generating or receiving
+messages. So, e.g., if compiling your application for tossim specify
+-target=pc. The default target is ncc's default target.</blockquote>
+
+
+<b>-I</b> <u>dir</u> <blockquote> specify an additional search directory
+for nesC components.</blockquote>
+
+
+<b>-board=<u>known-tinyos-sensorboard</u></b><blockquote> specify one (or
+more) sensor boards. This effects the search path and preprocessor symbols
+(and may therefore be necessary when feeding a file to ncg).</blockquote>
+
+</blockquote>
+
+
+<h3>JAVA TOOL</h3>
+
+<blockquote>
+<p>
+This tool generates a java class with the values of the requested constants.
+These constant will be <code>public final static</code> and have a type chosen
+from <code>byte, short, char, int, long</code> (the chosen type will be the 
+first one in this list that can hold the constants value - this reduces
+the need for casts).
+
+<p>
+The java tool accepts the following options:
+
+<p>
+<b>-java-classname=</b><u>full-class-name</u> <blockquote> this option is
+ required and specifies the package and name of the generated class. If the
+ full-class-name has no '.', then no package directive is included in the
+ output.</blockquote>
+
+<b>-java-extends=</b><u>class-name</u>: <blockquote> specify the class the
+generated class will extend.  The default is
+net.tinyos.message.Message.</blockquote>
+
+<h3>EXAMPLE</h3>
+
+<blockquote>
+        APPDIR=`ncc -print-tosdir`/lib/FS<br>
+	ncg -I%T/lib/FS -java-classname=net.tinyos.matchbox.FS java
+$APPDIR/Remote.nc Matchbox.h Remote.h -oFS.java
+</blockquote>
+
+<h3>ERRORS</h3>
+
+<blockquote>
+ncg reports an error if ncc cannot compile <u>nesC-file</u>.
+</blockquote>
+
+<h3>SEE ALSO</h3>
+
+<blockquote>
+<a href="ncc.html">ncc</a>
+<a href="mig.html">mig</a>
+</blockquote>
+
+</body>
+</html>

@@ -1368,7 +1368,7 @@ bool check_arguments(type fntype, expression arglist,
 
 expression make_function_call(location loc, expression fn, expression arglist)
 {
-  expression result = CAST(expression, new_function_call(parse_region, loc, fn, arglist, NULL, c_call));
+  expression result = CAST(expression, new_function_call(parse_region, loc, fn, arglist, NULL, normal_call));
   type fntype = default_conversion(fn), rettype;
   bool argumentsok;
 
@@ -1408,7 +1408,7 @@ expression make_function_call(location loc, expression fn, expression arglist)
 expression make_va_arg(location loc, expression arg, asttype type)
 {
   expression va_arg_id = build_identifier(parse_region, loc, builtin_va_arg_decl);
-  expression result = CAST(expression, new_function_call(parse_region, loc, va_arg_id, arg, type, c_call));
+  expression result = CAST(expression, new_function_call(parse_region, loc, va_arg_id, arg, type, normal_call));
 
   if (!type_equal_unqualified(arg->type, builtin_va_list_type))
     error("first argument to `va_arg' not of type `va_list'");

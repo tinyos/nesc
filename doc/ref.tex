@@ -362,7 +362,6 @@ Here is a full specification example:
 configuration GenericComm {
   provides {
     interface StdControl as Control;
-    interface SendVarLenPacket;
     
     // The interface are parameterised by the active message id
     interface SendMsg[uint8_t id];
@@ -379,8 +378,6 @@ In this example, \code{GenericComm}:
 \begin{itemize}
 \item Provides simple interface instance \code{Control} of type
 \code{StdControl}.
-\item Provides simple interface instance \code{SendVarLenPacket} of type
-\code{SendVarLenPacket}.
 \item Provides parameterised instances of interface type \code{SendMsg} and
 \code{ReceiveMsg}; the parameterised instances are named \code{SendMsg} and
 \code{ReceiveMsg} respectively.
@@ -602,11 +599,11 @@ updates to concurrent data structures, etc. A simple example is:
   }
 \end{verbatim}
 
-Atomic sections should be short; to help meet this requirement, \nesc
-forbids calling commands or signaling events inside atomic statements.  The
-following constructions are also forbidden inside atomic statements (but
-may be allowed in future versions of \nesc): \kw{goto}, \kw{return},
-\kw{break}, \kw{continue}, \kw{case}, \kw{default} and labels.
+Atomic sections should be short, though this is not currently enforced in
+any way.  Control may only flow ``normally'' in or out of on atomic
+statement: any \kw{goto}, \kw{break} or \kw{continue} that jumps in or out
+of an atomic statement is an error. A \kw{return} statement is never
+allowed inside an atomic statement.
 
 Section~\ref{sec:concurrency} discusses the relation between \kw{atomic} and
 \nesc's concurrency model and data-race detector.

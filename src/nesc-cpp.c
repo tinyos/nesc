@@ -93,6 +93,94 @@ static void mktempfile(char *name)
   close(fd);
 }
 
+#ifdef __CYGWIN__
+#include <process.h>
+
+static bool safe_dup(int from, int to, int save)
+{
+  if (dup2(to, save) < 0)
+    return FALSE;
+
+  return dup2(from, to) >= 0;
+}
+
+static void dup_restore(int to, int save)
+{
+  if (dup2(save, to) < 0)
+    {
+      perror("internal problem - canot restore file descriptor");
+      exit(2);
+    }
+}
+
+static FILE *exec_gcc(char *gcc_output_template, bool redirect_errors, 
+		      int nargs,
+		      void (*setargs)(void *data, const char **argv), void *data)
+{
+  int gcc_stat, res, destfd;
+  const char **argv;
+  static int tmpfd1 = -1, tmpfd2 = -1;
+
+  if (tmpfd1 < 0 || tmpfd2 < 0)
+    {
+      tmpfd1 = open("/dev/null", O_RDONLY);
+      tmpfd2 = open("/dev/null", O_RDONLY);
+
+      if (tmpfd1 < 0 || tmpfd2 < 0)
+	{
+	  fprintf(stderr, "Internal error (can't open /dev/null !?)\n");
+	  exit(2);
+	}
+    }
+
+  mktempfile(gcc_output_template);
+  destfd = creat(gcc_output_template, 0666);
+
+  if (destfd < 0)
+    return NULL;
+
+  if (!safe_dup(destfd, 1, tmpfd1))
+    return NULL;
+
+  if (redirect_errors)
+    if (!safe_dup(destfd, 2, tmpfd2))
+      {
+	dup_restore(1, tmpfd1);
+	return NULL;
+      }
+
+  close(destfd);
+
+  argv = alloca((nargs + 2) * sizeof *argv);
+  argv[0] = target->gcc_compiler;
+  setargs(data, argv + 1);
+
+  /* It's really spammy with this on */
+  if (flag_verbose >= 2)
+    {
+      int i;
+
+      for (i = 0; argv[i]; i++)
+	fprintf(stderr, "%s ", argv[i]);
+      fprintf(stderr, "\n");
+    }
+
+  gcc_stat = spawnvp(_P_WAIT, target->gcc_compiler, argv);
+  if (WIFEXITED(gcc_stat))
+    res = WEXITSTATUS(gcc_stat);
+  else
+    res = 2;
+
+  dup_restore(1, tmpfd1);
+  if (redirect_errors)
+    dup_restore(2, tmpfd2);
+
+  if (res == 0) /* gcc succeeded */
+    return fopen(gcc_output_template, "r");
+  else
+    return NULL;
+}
+#else
 static FILE *exec_gcc(char *gcc_output_template, bool redirect_errors, 
 		      int nargs,
 		      void (*setargs)(void *data, const char **argv), void *data)
@@ -163,6 +251,7 @@ static FILE *exec_gcc(char *gcc_output_template, bool redirect_errors,
   else
     return NULL;
 }
+#endif
 
 void preprocess_cleanup(void)
 {

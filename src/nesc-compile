@@ -23,8 +23,8 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 
     if (/^-/) {
 	$nocompile = 1 if ($_ eq "-fsyntax-only");
-	if (/^-[WwvpfmD]/ || /^-pedantic/ || /^-ansi/) {
-	    push @nesc_args, $_ unless /^-fnesc-.*cfile=/;
+	if (/^-[_WwvpfmD]/ || /^-pedantic/ || /^-ansi/) {
+	    push @nesc_args, $_ unless /^-_?fnesc-.*cfile=/;
 	    $verbose = 1 if /^-v/;
 	}
 
@@ -38,17 +38,17 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	elsif (/^-S/) {
 	    $asmonly = 1;
 	}
-	elsif (/^-fnesc-/) {
-	    if (/^-fnesc-cfile=(.*)$/) {
+	elsif (/^-_?fnesc-/) {
+	    if (/^-_?fnesc-cfile=(.*)$/) {
 		$ctarget = $1;
 	    }
-	    if (/^-fnesc-tmpcfile=(.*)$/) {
+	    if (/^-_?fnesc-tmpcfile=(.*)$/) {
 		$ctarget = $1;
 		$delcfile = 1;
 	    }
 	}
 	elsif (!(/^-D/)) {
-	    if (!(/^-W(no-)?nesc/)) {
+	    if (!(/^-_?W(no-)?nesc/)) {
 		push @gcc_args, $_;
 	    }
 	}

@@ -125,7 +125,7 @@ void doc_use_graphviz(const bool use)
 
 
 /**
- * Set the graphviz flag
+ * Set the app flag
  **/
 void doc_is_app(const bool val)
 {
@@ -153,7 +153,8 @@ void doc_add_topdir(const char *dir)
   init_doc_region();
 
   assert(dir);
-  assert(num_topdirs < MAX_TOPDIRS);
+  if (num_topdirs >= MAX_TOPDIRS)
+    fatal("ERROR: Too many `topdirs' (-fnesc-topdir) directories specified.\n");
 
   // canonicalize the path
   if(realpath(dir, realdir) == NULL) {
@@ -876,7 +877,7 @@ static void output_docstring(char *docstring, location loc)
     
     // output the rest, if there are no more @ directives
     if(at == NULL) {
-      output(pos);
+      output_string(pos);
       if(context == in_param) output("</menu></menu>\n");
       if(context != in_main) 
         output("</td></tr></table>\n");
@@ -888,7 +889,7 @@ static void output_docstring(char *docstring, location loc)
     if(space >= docstring && (*space==' ' || *space=='\t' || *space=='\n' || *space=='\r' || *space=='(') )
     {
       // output up to the @
-      *at='\0'; output(pos); *at='@';
+      *at='\0'; output_string(pos); *at='@';
       pos = at+1;
       
       // do some formatting, based on the command
@@ -1037,7 +1038,7 @@ static void output_docstring(char *docstring, location loc)
       // do a quick check to see if it might be an email address, and format it nicely if so.
       if( check_email_address(docstring, at, &begin, &end) ) {
         // output to the beginning of the address
-        save=*begin; *begin='\0'; output(pos); *begin=save;
+        save=*begin; *begin='\0'; output_string(pos); *begin=save;
 
         // print the mailto: URL and the address
         end++;
@@ -1051,7 +1052,7 @@ static void output_docstring(char *docstring, location loc)
 
       // not an email address, just output normally
       else {
-        *at='\0'; output(pos); *at='@';
+        *at='\0'; output_string(pos); *at='@';
         pos = at+1;
         output("@");
       }
@@ -1453,28 +1454,27 @@ static bool connection_already_printed(dhash_table table,
 
 
   // sort out which is the "requires" side, and which is the "provides" side
-  {
-    // use interface->required to determine the direction of
-    // the arrow.
-    // 
-    // FIXME: is this correct?
-    //
-    // FIXME: we don't currently have any good way to keep information
-    // on the _labels_ of multiply used interfaces.  This could be
-    // done by generating the interface connection graph ourselves.
-
-    // keep the direction, if there is no interface or if ep1 is the requires side
-    if( !ep1->interface || ep1->interface->required ) {
+  // For interfaces: ep1 is req, ep2 is prov if connecting a command,
+  // 		     the other way round if connecting an event
+  // For functions: the direction in the graph is always the one we want
+  if (ep1->interface)
+    {
+      if (ep1->function->ftype == function_command)
+	{
+	  *req = ep1;
+	  *prov = ep2;
+	}
+      else
+	{
+	  *req = ep2;
+	  *prov = ep1;
+	}
+    }
+  else
+    {
       *req = ep1;
       *prov = ep2;
     }
-
-    // ep1 must have been the provides side, so reverse the direction
-    else {
-      *req = ep2;
-      *prov = ep1;
-    }
-  }
 
   // special case: if the interface is empty, we always show the connection
   if((*prov)->interface == NULL) {
@@ -1486,82 +1486,6 @@ static bool connection_already_printed(dhash_table table,
   if( !strcmp(iface_node_name(ep1),iface_node_name(ep2)) ) {
     return TRUE;
   }
-
-  // special case: connection is a pass-through, via the '=' operator
-  if( ep1->interface->required == ep2->interface->required ) {
-    endp left, right;
-
-    // figure out which is on the left, and which is on the right
-    if( ep1->component && ep2->component ) {
-      left=ep1; right=ep2;
-    } else{
-      // the side that isn't in a component (ie, it has no def) is on
-      // the left hand side of the equals sign.
-      if( ep1->component == NULL ) 
-        left=ep1, right=ep2;
-      else
-        left=ep2, right=ep1;
-    }
-
-    // set the arrow direction.  If the right-hand component requires
-    // the interface, have the arrow go from right to left.  If it
-    // provides it, have the arrow go from left to right.
-    if( right->interface->required ) {
-      *req = right;
-      *prov = left;
-    } else {
-      *req = left;
-      *prov = right;
-    }
-
-    // FIXME: just use the order things are already in.
-    if( ep1->function->defined ) {
-      left = ep1;
-      right = ep2;
-    } else {
-      left = ep2;
-      right = ep1;
-    }
-    if(ep1->interface->required) {
-      endp temp = left;
-      left = right;
-      right = temp;
-    }
-
-    *req = left;
-    *prov = right;
-
-    /*
-    fprintf(stderr,"%d.  ",fixme_graph_num);
-    fprintf(stderr,"%-15s ", left->interface->name);
-    {
-      const char *a = iface_node_name(left);
-      const char *b = iface_node_name(right);
-      const char *temp;
-      if(left->component) a = left->component->name;
-      if(right->component) b = right->component->name;
-      if(b[0] < a[0]) {
-        temp = a;
-        a = b; 
-        b = temp;
-      }
-      fprintf(stderr,"%s / %s %*s ", a, b, 25-strlen(a)-strlen(b), "");
-    }
-    fprintf(stderr,"   %-10s = %10s    ", 
-            iface_node_name(left),
-            iface_node_name(right));
-    //        left->component ? left->component->name : "null",
-    //        right->component ? right->component->name : "null");
-
-    fprintf(stderr,"%-15s ", left->function->name);
-    fprintf(stderr," r/d  %d %d    ",left->interface->required, left->function->defined);
-    fprintf(stderr,"\n");
-    assert(left->function->defined == right->function->defined); 
-    assert(left->interface->required == right->interface->required);
-    */
-  }
-
-
 
   // see if this one has already been printed.  This is done by checking a hashtable for the tripple of req,prov,iface
   {
@@ -1613,7 +1537,7 @@ static void print_cg_html(const char *component_name, const char *component_file
     int ret;
     checked_graphviz_version = TRUE;
 
-    ret = system("dot -Tnosuchlanguage </dev/null 2>&1 | grep cmap > /dev/null");
+    ret = system("echo digraph '{' '}' | dot -Tnosuchlanguage 2>&1 | grep cmap > /dev/null");
     if(ret == 0)
       graphviz_supports_cmap = TRUE;
     else 
@@ -1804,9 +1728,9 @@ DOC WARNING: your version of `dot' does not support client-side \n\
 
               // arrow
               if(prov->interface && req->interface->required == prov->interface->required) 
-                fprintf(text_file, "    <td align=\"center\">&nbsp;->&nbsp;</td>\n");
-              else 
                 fprintf(text_file, "    <td align=\"center\">&nbsp;=&nbsp;</td>\n");
+              else 
+                fprintf(text_file, "    <td align=\"center\">&nbsp;->&nbsp;</td>\n");
 
               // provides side
               fprintf(text_file, "    <td align=\"left\"><a href=\"%s\">%s</a>.",
@@ -1854,6 +1778,7 @@ DOC WARNING: your version of `dot' does not support client-side \n\
   // finish up the text output
   {
     fprintf(text_file, "</table>\n</center>\n\n");
+    fprintf(text_file, "<hr>Generated by <a href=\"../../../nesc/doc/nesdoc.html\">nesdoc</a><br>\n");
     if( use_graphviz ) {
       fprintf(text_file, "</body>\n");
       fprintf(text_file, "</html>\n");
@@ -2477,6 +2402,7 @@ static void print_index_file(navbar_mode nmode, index_sort_type sort, file_index
   // cleanup
   fprintf(f, "</table>\n");
   fprintf(f, "</center>\n");
+  fprintf(f, "<hr>Generated by <a href=\"../../../nesc/doc/nesdoc.html\">nesdoc</a><br>\n");
   fprintf(f, "</body>\n");
   fprintf(f, "</html>\n");
   fclose(f);
@@ -2553,6 +2479,7 @@ static void print_hierarchical_index_file(const char *filename, file_index *ind)
   // cleanup
   fprintf(f, "</table>\n");
   fprintf(f, "</center>\n");
+  fprintf(f, "<hr>Generated by <a href=\"../../../nesc/doc/nesdoc.html\">nesdoc</a><br>\n");
   fprintf(f, "</body>\n");
   fprintf(f, "</html>\n");
   fclose(f);
@@ -2711,7 +2638,7 @@ static void generate_app_page(const char *filename, cgraph cg)
 
 
   print_cg_html(appname, filename, cg, TRUE);
-
+  fprintf(f, "<hr>Generated by <a href=\"../../../nesc/doc/nesdoc.html\">nesdoc</a><br>\n");
   fprintf(f, "</body>\n");
   fprintf(f, "</html>\n");
 
@@ -2789,11 +2716,11 @@ arrow indicates that the original wiring is \"<em>C = D</em>\".<p>\n\
 //////////////////////////////////////////////////
 // Generate all docs
 //////////////////////////////////////////////////
-void generate_docs(const char *filename, cgraph cg)
+bool generate_docs(const char *filename, cgraph cg)
 {
   // if no docdir is specified, then the user didn't request doc generation
   if( !docdir ) 
-    return;
+    return FALSE;
 
   // Initialization
   {
@@ -2905,6 +2832,7 @@ void generate_docs(const char *filename, cgraph cg)
 
     assert(chdir(original_wd) == 0);
   }
+  return TRUE;
 }
 
 

@@ -961,6 +961,12 @@ bool type_compatible_unqualified(type t1, type t2)
   if (t1->kind != t2->kind)
     return 0;
 
+#if 0
+  /* The combiners must match too */
+  if (t1->combiner != t2->combiner)
+    return 0;
+#endif
+
   /* sameregion, traditional and parentptr qualifiers must always match */
   if ((t1->qualifiers & ~(const_qualifier | volatile_qualifier | restrict_qualifier | transparent_qualifier)) !=
       (t2->qualifiers & ~(const_qualifier | volatile_qualifier | restrict_qualifier | transparent_qualifier)))
@@ -1081,6 +1087,7 @@ static int common_primitive_type(type t1, type t2)
 type common_type(type t1, type t2)
 {
   type rtype;
+  data_declaration combiner;
 
   /* Save time if the two types are the same.  */
   if (t1 == t2)
@@ -1092,6 +1099,10 @@ type common_type(type t1, type t2)
   if (t2 == error_type)
     return t1;
 
+  combiner = NULL;
+  if (t1->combiner == t2->combiner)
+    combiner = t1->combiner;
+
   /* Special enum handling: if same enum, just merge qualifiers.  otherwise
      treat an enum type as the unsigned integer type of the same width.
      Note that gcc does not check for the same enum. Some weird behaviour...
@@ -1100,7 +1111,7 @@ type common_type(type t1, type t2)
   if (type_enum(t1))
     {
       if (type_equal_unqualified(t1, t2))
-	return qualify_type2(t1, t1, t2);
+	return make_combiner_type(qualify_type2(t1, t1, t2), combiner);
       t1 = qualify_type1(type_for_size(type_size(t1), TRUE), t1);
     }
   if (type_enum(t2))
@@ -1205,7 +1216,9 @@ type common_type(type t1, type t2)
 	assert(0); return NULL;
       }
 
-  return qualify_type2(rtype, t1, t2);
+  rtype = qualify_type2(rtype, t1, t2);
+
+  return make_combiner_type(rtype, combiner);
 }
 
 
@@ -1734,8 +1747,12 @@ bool type_functional(type t)
 
 type make_combiner_type(type t, data_declaration combiner)
 {
-  type nt = copy_type(t);
+  type nt;
 
+  if (!combiner)
+    return t;
+
+  nt = copy_type(t);
   nt->combiner = combiner;
 
   return nt;
