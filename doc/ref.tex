@@ -25,9 +25,9 @@
 
 \begin{document}
 
-\title{\nesc 1.1 Language Reference Manual}
+\title{\nesc 1.2 Language Reference Manual}
 \author{David Gay, Philip Levis, David Culler, Eric Brewer}
-\date{May 2003}
+\date{July 2004}
 
 \maketitle
 
@@ -37,8 +37,8 @@
 concepts and execution model of \tinyos~\cite{tinyos}. \tinyos is an
 event-driven operating system designed for sensor network nodes that have
 very limited resources (e.g., 8K bytes of program memory, 512 bytes of
-RAM). \tinyos has been reimplemented in \nesc. This manual describes v1.1 of
-\nesc, changes from v1.0 are summarised in Section~\ref{sec:changes}.
+RAM). \tinyos has been reimplemented in \nesc. This manual describes v1.2 of
+\nesc, changes from v1.0 and v1.1 are summarised in Section~\ref{sec:changes}.
 
 The basic concepts behind \nesc are:
 \begin{itemize}
@@ -64,12 +64,12 @@ interface to represent a complex interaction between components (e.g.,
 registration of interest in some event, followed by a callback when
 that event happens). This is critical because all lengthy commands in
 \tinyos (e.g. send packet) are non-blocking; their completion is
-signaled through an event (send done). By specifying interfaces, a
-component cannot call the \code{send} command unless it provides an
-implementation of the \code{sendDone} event.
+signaled through an event (send packet done). The interface forces a
+component that calls the ``send packet'' command to provide an
+implementation for the ``send packet done'' event.
 
-Typically commands call downwards, i.e., from application components to
-those closer to the hardware, while events call upwards. Certain primitive
+Typically commands call ``downwards'', i.e., from application components to
+those closer to the hardware, while events call ``upwards''. Certain primitive
 events are bound to hardware interrupts (the nature of this binding is
 system-dependent, so is not described further in this reference manual).
 
@@ -91,11 +91,13 @@ This document is a reference manual for \nesc rather than a tutorial. The
 http://webs.cs.berkeley.edu} presents a gentler introduction to \nesc.
 
 The rest of this document is structured as follows:
+Section~\ref{sec:changes} summarises the new features in \nesc since v1.0.
 Section~\ref{sec:notation} presents the notation used in the reference
-manual. Section~\ref{sec:changes} summarises the new features in \nesc
-1.1. Sections~\ref{sec:interface},~\ref{sec:component},~\ref{sec:module},
-and~\ref{sec:configuration} present \nesc interfaces and
-components. Section~\ref{sec:concurrency} presents \nesc's concurrency
+manual, and Section~\ref{sec:scoping} the scoping and naming rules of
+\nesc. Sections~\ref{sec:interface} and~\ref{sec:component} present
+interfaces and components, while Sections~\ref{sec:module}
+and~\ref{sec:configuration} explain how components are
+implemented. Section~\ref{sec:concurrency} presents \nesc's concurrency
 model and data-race detection. Section~\ref{sec:app} explains how C files,
 \nesc interfaces and components are assembled into an
 application. Section~\ref{sec:misc} covers the remaining miscellaneous
@@ -104,6 +106,45 @@ features of \nesc. Finally, Appendix~\ref{sec:grammar} fully defines
 Kernighan and Ritchie (K\&R) ~\cite[pp234--239]{kandr}), and
 Appendix~\ref{sec:glossary} is a glossary of the terms used in this
 reference manual.
+
+\section{Changes}
+\label{sec:changes}
+
+The changes from \nesc 1.1 to 1.2 are:
+\begin{itemize}
+\item Generic interfaces: interfaces can now take type parameters
+(allowing, e.g., a single interface definition for a queue of any type of
+values).
+
+\item Generic components: components can now be instantiated (at
+compile-time), and can take value and type arguments (e.g., a generic queue
+component would take type and queue size arguments).
+\end{itemize}
+
+The changes from \nesc 1.0 to 1.1 are:
+\begin{enumerate}
+\item \kw{atomic} statements. These simplify implementation of concurrent
+data structures, and are understood by the new compile-time data-race
+detector.
+
+\item Compile-time data-race detection gives warnings for variables that
+are potentially accessed concurrently by two interrupt handlers, or an
+interrupt handler and a task.
+
+\item Commands and events which can safely be executed by interrupt
+handlers must be explicitly marked with the \kw{async} storage class
+specifier.
+
+\item The results of calls to commands or events with ``fan-out'' are
+automatically combined by new type-specific combiner functions.
+
+\item \code{uniqueCount} is a new \emph{constant function}
+(Section~\ref{sec:constant-functions}) which counts uses of \code{unique}.
+
+\item The \kw{NESC} preprocessor symbol indicates the language version. It
+is 110 for \nesc 1.1, 120 for \nesc 1.2.
+ 
+\end{enumerate}
 
 \section{Notation}
 \label{sec:notation}
@@ -128,36 +169,9 @@ grammar fragments. In these fragments, we sometimes use \ldots to represent
 elided productions (irrelevant to the construct at
 hand). Appendix~\ref{sec:grammar} presents the full \nesc grammar.
 
-Several examples use the \code{uint8\_t} and \code{uint16\_t} types from
-the C99 standard \file{inttypes.h} file.
-
-\section{Changes}
-\label{sec:changes}
-
-The changes from \nesc 1.0 to 1.1 are:
-\begin{enumerate}
-\item \kw{atomic} statements. These simplify implementation of concurrent
-data structures, and are understood by the new compile-time data-race
-detector.
-
-\item Compile-time data-race detection gives warnings for variables that
-are potentially accessed concurrently by two interrupt handlers, or an
-interrupt handler and a task.
-
-\item Commands and events which can safely be executed by interrupt
-handlers must be explicitly marked with the \kw{async} storage class
-specifier.
-
-\item The results of calls to commands or events with ``fan-out'' are
-automatically combined by new type-specific combiner functions.
-
-\item \kw{uniqueCount} is a new ``constant function'' which counts
-uses of \kw{unique}.
-
-\item The \kw{NESC} preprocessor symbol indicates the language version. It
-is 110 for \nesc 1.1.
- 
-\end{enumerate}
+Several examples use the \code{uint8\_t} and \code{uint16\_t} types (from
+the C99 standard \file{inttypes.h} file) and the standard TinyOS
+\code{result\_t} type (which represents success vs failure of an operation).
 
 \section{Scopes and Name Spaces in \nesc}
 \label{sec:scoping}
@@ -223,8 +237,8 @@ same type.
 
 A component's \emph{specification} is the set of interfaces that it
 provides and uses. Component specifications can also contain \emph{bare}
-commands and events (i.e., not contained in an interface), for clarity of
-exposion we defer discussion of these to Section~\ref{sec:bare}. Each
+commands and events (i.e., not contained in an interface), to simplify the
+exposition we defer discussion of these to Section~\ref{sec:bare}. Each
 provided or used interface has a name and an interface type.
 
 For instance, the following source code
@@ -252,10 +266,11 @@ and the \code{MyMessage.sendDone} event. It can call the
 \code{MyMessage.send} command.
 
 The rest of this section covers interface definitions, interface types and
-component specifications in detail.  The sections on component
-implementations (Sections~\ref{sec:module} and~\ref{sec:configuration})
-explain how commands and events are called and implemented, and how
-components are linked together through their interfaces.
+component specifications in detail. The sections on component definition
+(Section~\ref{sec:component}) and implementations
+(Sections~\ref{sec:module} and~\ref{sec:configuration}) explain how
+commands and events are called and implemented, and how components are
+linked together through their interfaces.
 
 \subsection{Interface Definitions}
 
@@ -304,9 +319,9 @@ storage-class-specifier: \emph{also one of}\\
 \end{tabbing}
 \end{quote}
 The optional \kw{async} keyword indicates that the command or event can be
-executed in an interrupt handler (see Section~\ref{sec:concurrency}). These
-functions belong to the object name space of the interface's scope
-(Section~\ref{sec:scoping}).
+executed in an interrupt handler (see Section~\ref{sec:concurrency}). The
+interface's commands and events belong to the object name space of the
+interface's scope (Section~\ref{sec:scoping}).
 
 
 The example code above showed two simple interface definitions
@@ -352,7 +367,8 @@ C type. Example interface types are \kw{interface SendMsg} and
 \subsection{Component Specification}
 \label{sec:component-spec}
 
-A component's specification is a declaration of provided or used
+The first part of a component's definition (see Section~\ref{sec:component})
+is its \emph{specification}, a declaration of provided or used
 specification elements, where each element is an interface (or,
 Section~\ref{sec:bare}, a bare command or event):
 \begin{quote} \grammarshift \em \begin{tabbing}
@@ -407,7 +423,7 @@ If the name is omitted, the interface's name is the same as the name of the
 interface definition specified by the interface type: \code{interface
 SendMsg} means the same thing as \code{interface SendMsg as SendMsg} and
 \code{interface Queue<int>} is the same as \code{interface Queue<int> as
-Queue}. Note that a specification can contain independent interfaces of the
+Queue}. A specification can contain independent interfaces of the
 same interface type, e.g., 
 \begin{quote}
   \begin{verbatim}
@@ -416,7 +432,9 @@ uses interface X as X2;
   \end{verbatim}
 \end{quote}
 The interface names belong to the object name space of the specification's
-scope (Section~\ref{sec:scoping}).
+scope (Section~\ref{sec:scoping}), thus there is no confusion between
+interface names and interface definition names (the latter are in the
+component name space).
 
 An interface declaration without \emph{instance-parameters} (e.g.,
 \code{interface X as Y}) declares a \emph{simple interface} to this
@@ -428,7 +446,11 @@ S[uint8\_t id, uint8\_t id2]} declares 256 * 256 interfaces of type
 \code{SendMsg}). The types of the \emph{parameters} must be integral types
 (\kw{enum}s are not allowed at this time).
 
-Here is a full specification example:
+The specification for \code{AMStandard}, a component that dispatches
+messages received from the serial port and the radio to the application
+based on the ``active message id'' stored in the message, and sends
+messages to the radio or serial port depending on the selected destination
+address, is typical of many TinyOS system components:
 \begin{quote} \begin{verbatim}
 module AMStandard {
   provides {
@@ -449,20 +471,18 @@ module AMStandard {
   }
 } ...
 \end{verbatim} \end{quote}
-\code{AMStandard} dispatches messages received from the serial port and the
-radio to the application based on the ``active message id'' stored in the
-message, and sends messages to the radio or serial port depending on the
-selected destination address. To support this, it
+It provides or uses nine interfaces:
 \begin{itemize}
-\item provides interface \code{StdControl} of type \code{StdControl} 
-(initialisation of \code{AMStandard}).
-\item provides parameterised interfaces of type \code{SendMsg} and
-\code{ReceiveMsg}; these interfaces are named \code{SendMsg} and
-\code{ReceiveMsg} respectively (these support dispatching of received
-messages and sending of messages with a particular active message id).
-\item uses interfaces to control, send and receive messages from the radio
-and serial port (to interface with the lower-level components providing
-radio and serial port networking).
+\item The provided interface \code{StdControl} of type \code{StdControl}
+supports initialisation of \code{AMStandard}.
+\item The provided parameterised interfaces of type \code{SendMsg} and
+\code{ReceiveMsg} (named \code{SendMsg} and
+\code{ReceiveMsg} respectively) support dispatching of received
+messages and sending of messages with a particular active message id
+\item The used interfaces control, send and receive messages from the radio
+and serial port respectively (another TinyOS component, the
+\code{GenericComm} configuration wires \code{AMStandard} to the lower-level
+components providing radio and serial port networking).
 \end{itemize}
 
 \subsection{Bare Commands and Events}
@@ -493,7 +513,7 @@ send[uint8\_t id](int x)}:
 \begin{quote} \grammarshift \em \begin{tabbing}
 \grammarindent
 direct-declarator: \emph{also}\\
-\>	direct-declarator interface-parameters \kw{(} parameter-type-list \kw{)}\\
+\>	direct-declarator instance-parameters \kw{(} parameter-type-list \kw{)}\\
 \>	\ldots
 \end{tabbing} \end{quote}
 
@@ -502,6 +522,10 @@ instance parameters, or \emph{parameterised commands} (\emph{parameterised
 events}) if instance parameters are specified. Note that instance
 parameters are only allowed on commands or events within component
 specifications, not within interface definitions.
+
+Module \code{M} of Figure~\ref{fig:wiring}
+(Section~\ref{sec:wiring-semantics}) shows an example of a component
+specification with a bare command.
 
 \subsection{Command and Event Terminology}
 
@@ -520,14 +544,16 @@ nature of interfaces).
 
 We use greek letters $\alpha, \beta, \ldots$ to refer to any command or
 event of a component when the distinction between bare commands (events)
-and commands (events) in interfaces is not relevant.
+and commands (events) in interfaces is not relevant. Commands or events
+$\alpha$ of $K$ may be parameterised or simple, depending on the
+parameterised or simple status of the specification element to which they
+correspond.
 
 We will often simply refer to the ``command or event $\alpha$ of $K$'' when
-the used/provided distinction is not relevant.  Commands or events $\alpha$
-of $K$ may be parameterised or simple, depending on the parameterised or
-simple status of the specification element to which they correspond.
+the used/provided distinction is not relevant.  
 
 \section{Component Definition}
+\label{sec:component}
 
 A \nesc component definition has a name, optional arguments, a
 specification and an implementation:
