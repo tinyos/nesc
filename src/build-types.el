@@ -63,6 +63,10 @@
 		  kind_type basename))
   (insert (format "\nextern %s %s_post_kind[]; /* indexed by kind - kind_node */\n"
 		  kind_type basename))
+  (insert (format "\nextern size_t %s_sizeof[]; /* indexed by kind - kind_node */\n"
+		  basename))
+  (insert (format "\nextern type_t %s_typeof[]; /* indexed by kind - kind_node */\n"
+		  basename))
   (mapc #'write-is-test all-type-names)
   (mapc #'write-reverse all-type-names)
 )
@@ -161,7 +165,9 @@
   (insert "\n\n")
   (mapc #'write-list-source all-type-names)
   (write-parent-kinds)
-  (write-post-kinds))
+  (write-post-kinds)
+  (write-sizes)
+  (write-types))
 
 (defun write-creator-source (name type)
   (write-creator-header name type)
@@ -206,6 +212,27 @@
   (insert (format "%s %s_post_kind[] = {\n" kind_type basename))
   (mapc #'(lambda (dfs_entry)
 	    (insert (format "  postkind_%s,\n" (car dfs_entry))))
+	dfsnumbering)
+  (insert "};\n\n"))
+
+(defun struct-name (name)
+  (let ((node-entry (assoc name nodes)))
+    (if node-entry (node-type node-entry)
+      name)))
+
+(defun write-sizes ()
+  (insert (format "size_t %s_sizeof[] = {\n" basename))
+  (mapc #'(lambda (dfs_entry)
+	    (insert (format "  sizeof(struct %s_%s),\n"
+			    basename (struct-name (car dfs_entry)))))
+	dfsnumbering)
+  (insert "};\n\n"))
+
+(defun write-types ()
+  (insert (format "type_t %s_typeof[] = {\n" basename))
+  (mapc #'(lambda (dfs_entry)
+	    (insert (format "  rctypeof(struct %s_%s),\n"
+			    basename (struct-name (car dfs_entry)))))
 	dfsnumbering)
   (insert "};\n\n"))
 

@@ -23,6 +23,7 @@ Boston, MA 02111-1307, USA.  */
 #include "semantics.h"
 #include "constants.h"
 #include "c-parse.h"
+#include "expr.h"
 
 /* define this to forbid linking a single function from an interface
    independently of the whole interface */
@@ -555,17 +556,46 @@ static void process_connections(configuration c)
       }
 }
 
+void check_component_arguments(data_declaration ddecl,
+			       declaration parms, expression arglist)
+{
+  data_decl parm;
+  location loc = ddecl->ast->location;
+  int parmnum = 1;
+
+  parm = CAST(data_decl, parms);
+  while (parm && arglist)
+    {
+      variable_decl vparm = CAST(variable_decl, parm->decls);
+      type parmtype = vparm->ddecl->type;
+
+      if (type_incomplete(parmtype))
+	error("type of formal parameter %d is incomplete", parmnum);
+      else
+	check_assignment(parmtype, default_conversion_for_assignment(arglist),
+			 arglist, NULL, ddecl, parmnum);
+
+      parmnum++;
+      arglist = CAST(expression, arglist->next);
+      parm = CAST(data_decl, parm->next);
+    }
+
+  if (parm)
+    error_with_location(loc, "too few arguments to component `%s'",
+			ddecl->name);
+  else if (arglist)
+    error_with_location(loc, "too many arguments to component `%s'",
+			ddecl->name);
+}
+
 static void require_components(region r, configuration c)
 {
   component_ref comp;
-  nesc_declaration cdecl = c->cdecl;
 
-  cdecl->connections = new_cgraph(r);
-  
   scan_component_ref (comp, c->components)
     {
       struct data_declaration tempdecl;
-      data_declaration old_decl;
+      data_declaration old_decl, ddecl;
       const char *cname = comp->word1->cstring.data;
       const char *asname =
 	(comp->word2 ? comp->word2 : comp->word1)->cstring.data;
@@ -575,7 +605,6 @@ static void require_components(region r, configuration c)
       init_data_declaration(&tempdecl, CAST(declaration, comp), asname,
 			    void_type);
       tempdecl.kind = decl_component_ref;
-      tempdecl.ctype = comp->cdecl;
 
       current.env = c->ienv;
       old_decl = lookup_id(asname, TRUE);
@@ -586,7 +615,28 @@ static void require_components(region r, configuration c)
 	}
       if (old_decl)
 	error_with_location(comp->location, "redefinition of `%s'", asname);
-      declare(c->ienv, &tempdecl, FALSE);
+      ddecl = declare(c->ienv, &tempdecl, FALSE);
+
+      /* If the component is abstract, we make a copy of its specification
+	 so that we produce an accurate connection graph. We don't
+	 actually instantiate the component until later.
+         This copy is "abstract" (will need further copying) if we are
+	 processing an abstract configuration */
+      if (comp->cdecl->abstract)
+	{
+	  comp->cdecl = specification_copy(r, comp->cdecl, c->cdecl->abstract);
+	  if (!comp->abstract)
+	    error_with_location(comp->location, "abstract component `%s' requires instantiation arguments", cname);
+	  else
+	    check_component_arguments(ddecl, comp->cdecl->parameters, comp->args);
+	}
+      else
+	{
+	  if (comp->abstract)
+	    error_with_location(comp->location, "component `%s' is not abstract", cname);
+	}
+
+      ddecl->ctype = comp->cdecl;
     }
 }
 

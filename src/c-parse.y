@@ -201,7 +201,7 @@ void yyerror();
 /* nesC reserved words */
 %token <u.itoken> ATOMIC USES INTERFACE COMPONENTS PROVIDES MODULE 
 %token <u.itoken> INCLUDES CONFIGURATION AS TASTNIOP IMPLEMENTATION CALL 
-%token <u.itoken> SIGNAL POST
+%token <u.itoken> SIGNAL POST ABSTRACT
 
 %type <u.itoken> callkind
 %type <u.decl> datadef_list parameter_list parameter
@@ -210,12 +210,18 @@ void yyerror();
 %type <u.rplist> requires provides requires_or_provides requires_or_provides_list
 %type <u.decl> parameterised_interface_list parameterised_interface
 %type <u.decl> parameterised_interfaces 
-%type <u.iref> interface_ref
+%type <u.decl> interface_parms interface_parm_list interface_parm
+%type <u.decl> component_parms
+%type <u.decl> template_parms template_parmlist template_parm
+%type <u.iref> interface_ref interface_type
 %type <u.cref> component_ref component_list uses cuses
 %type <u.conn> connection connection_list
 %type <u.ep> endpoint
 %type <u.pid> parameterised_identifier
 %type <u.impl> iconfiguration imodule
+%type <abstract> abstract
+%type <u.expr> generic_arglist generic_arg generic_args
+
 
 %{
 /* Region in which to allocate parse structures. Idea: the AST user can set
@@ -425,13 +431,41 @@ include_list:
 
 interface: 
           includes_list
-	  INTERFACE { $<u.docstring>$ = get_docstring(); 
-		      /* force matching kind in current nesc declaration */
-		      current.container->kind = l_interface; } 
-	  idword '{' datadef_list '}' 
+	  INTERFACE 
+		{ $<u.docstring>$ = get_docstring(); 
+		  /* force matching kind in current nesc declaration */
+		  current.container->kind = l_interface; 
+		  current.container->env = current.env; 
+		} 
+	  idword interface_parms '{' datadef_list '}' 
 		{
-		  parsed_nesc_decl = CAST(nesc_decl, new_interface(pr, $2.location, $4, $<u.docstring>3, declaration_reverse($6)));
+		  parsed_nesc_decl = CAST(nesc_decl, new_interface(pr, $2.location, $4, $<u.docstring>3, declaration_reverse($7)));
+		  if (current.container->abstract)
+		    poplevel();
 		}
+	;
+
+interface_parms:
+	  /* empty */ { $$ = NULL; }
+	| '(' interface_parm_list ')' 
+		{
+		  /* Template intfs need a new level for the actual intf */
+		  pushlevel(FALSE);
+		  current.container->env = current.env;
+		  current.container->abstract = TRUE;
+		  current.container->parameters = $2;
+		  $$ = $2;
+		}
+	;
+
+interface_parm_list:
+	  interface_parm
+	| interface_parm_list ',' interface_parm
+		{ $$ = declaration_chain($1, $3); }
+	;
+
+interface_parm:
+	  IDENTIFIER { $$ = declare_interface_parm($1.location, $1.id); }
 	;
 
 datadef_list: 
@@ -473,24 +507,81 @@ component:
 	;
 
 module: 
-	  MODULE { $<u.docstring>$ = get_docstring(); 
-		   /* force matching kind in current nesc declaration */
-	  	   current.container->kind = l_component; } 
-	  idword '{' requires_or_provides_list '}' imodule
+	  abstract MODULE 
+	        { $<u.docstring>$ = get_docstring(); 
+		  /* force matching kind in current nesc declaration */
+	  	  current.container->kind = l_component; 
+		  current.container->env = current.env; 
+		  current.container->abstract = $1; 
+		} 
+	  idword component_parms '{' requires_or_provides_list '}' imodule
 		{ 
-		  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $1.location, $3, $<u.docstring>2, rp_interface_reverse($5), $7));
+		  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $2.location, $4, $<u.docstring>3, $1, rp_interface_reverse($7), $9));
 	        }
 	;
 
 configuration:
-	  CONFIGURATION { $<u.docstring>$ = get_docstring(); 
-	  		  /* force matching kind in current nesc declaration */
-			  current.container->kind = l_component; } 
-	  idword '{' requires_or_provides_list '}' iconfiguration
+	  abstract CONFIGURATION
+	       { $<u.docstring>$ = get_docstring(); 
+		 /* force matching kind in current nesc declaration */
+		 current.container->kind = l_component; 
+		 current.container->env = current.env; 
+		 current.container->abstract = $1; 
+	       } 
+	  idword component_parms '{' requires_or_provides_list '}' iconfiguration
 	        { 
-		  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $1.location, $3, $<u.docstring>2, rp_interface_reverse($5), $7));
+		  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $2.location, $4, $<u.docstring>3, $1, rp_interface_reverse($7), $9));
 	        }
         ;
+
+abstract: ABSTRACT { $$ = TRUE; }
+	| /* empty */ { $$ = FALSE; }
+	;
+
+component_parms:
+	  /* empty */
+		{
+		  if (current.container->abstract)
+		    error("abstract components require a parameter list");
+		    /* We don't create the extra environment level for this
+		       abstract component as nothing actually requires its 
+		       existence */
+		  $$ = NULL;
+		}
+	| '(' template_parms ')'
+		{
+		  if (!current.container->abstract)
+		    error("only abstract components can have a parameter list");
+		  /* abstract components need a new level for the 
+		     specification */
+		  pushlevel(FALSE);
+		  current.container->env = current.env;
+		  current.container->parameters = $2;
+		  $$ = $2;
+		}
+	;
+
+template_parms:
+	/* empty */ { $$ = NULL; }
+      | template_parmlist
+      ;
+
+template_parmlist:
+	  template_parm
+	| template_parmlist ',' template_parm
+		{ $$ = declaration_chain($1, $3); }
+	;
+
+/* A declaration of a template parameter, i.e., a regular
+   parameter-like declaration (name required) */
+template_parm:
+	  declspecs_ts xreferror after_type_declarator maybe_attribute
+		{ $$ = declare_template_parameter($3, $1, $4); }
+	| declspecs_ts xreferror notype_declarator maybe_attribute
+		{ $$ = declare_template_parameter($3, $1, $4); }
+	| declspecs_nots xreferror notype_declarator maybe_attribute
+		{ $$ = declare_template_parameter($3, $1, $4); }
+	;
 
 requires_or_provides_list: 
 	  requires_or_provides_list requires_or_provides
@@ -539,10 +630,20 @@ parameterised_interface:
 	;
 
 interface_ref: 
-	  INTERFACE idword 
+	  interface_type
+	| interface_type AS idword { $$ = $1; $$->word2 = $3; }
+	;
+
+interface_type:
+	  INTERFACE idword
 		{ $$ = new_interface_ref(pr, $1.location, $2, NULL, NULL); }
-	| INTERFACE idword AS idword
-		{ $$ = new_interface_ref(pr, $1.location, $2, $4, NULL); }
+	| INTERFACE idword '(' typelist ')'
+		{ $$ = new_interface_ref(pr, $1.location, $2, NULL, NULL); }
+	;
+
+typelist:
+	  typename { }
+	| typelist ',' typename { }
 	;
 
 iconfiguration:
@@ -568,8 +669,29 @@ component_list:
 	;
 
 component_ref: 
-	  idword { $$ = new_component_ref(pr, $1->location, $1, NULL); }
-	| idword AS idword { $$ = new_component_ref(pr, $1->location, $1, $3); }
+	  idword { $$ = new_component_ref(pr, $1->location, $1, NULL,
+					  FALSE, NULL); }
+	| idword AS idword
+		 { $$ = new_component_ref(pr, $1->location, $1, $3,
+					  FALSE, NULL); }
+	| idword '(' generic_args ')' AS idword
+		 { $$ = new_component_ref(pr, $1->location, $1, $6,
+					  TRUE, $3); }
+	;
+
+generic_args:
+	  /* empty */ { $$ = NULL; }
+	| generic_arglist
+	;
+
+generic_arglist:
+	  generic_arg
+	| generic_arglist ',' generic_arg { $$ = expression_chain($1, $3); }
+	;
+
+generic_arg:
+	  expr_no_commas
+	| typename { $$ = CAST(expression, new_type_argument(pr, $1->location, $1)); }
 	;
 
 connection_list: 

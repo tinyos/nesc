@@ -1180,7 +1180,16 @@ void prt_identifier(identifier e, int context_priority)
     error_with_location(e->location, "%s not connected", e->cstring.data);
 
   set_location(e->location);
-  prt_plain_ddecl(decl, 0);
+#if 0
+  if (decl->kind == decl_constant)
+    {
+      output_indent_if_needed();
+      constant_print(of, decl->value);
+    }
+  else
+#endif
+    prt_plain_ddecl(decl, 0);
+      
   if (use_nido && is_module_variable(decl))
     output("[%s]", nido_mote_number);
 }

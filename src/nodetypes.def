@@ -133,6 +133,7 @@
 (deffield ienv environment (init))
 (deffield docstring "char *" (init))
 (deffield designator designator (init tree))
+(deffield abstract bool (init))
 
 (deffield cdecl nesc_declaration ())
 
@@ -530,8 +531,9 @@ documentation string DOCSTRING")
 (deftype interface nesc_decl (decls)
   "interface WORD1 { DECLS }")
 
-(deftype component nesc_decl (rplist implementation)
-  "configuration/module WORD1 { RPLIST } IMPLEMENTATION")
+(deftype component nesc_decl (abstract rplist implementation)
+  "ABSTRACT configuration/module WORD1 { RPLIST } IMPLEMENTATION
+If ABSTRACT is true, this is an abstract component.")
 
 (deftype implementation node (ienv cdecl)
   "a base type for module and configuration implementations
@@ -559,9 +561,11 @@ interface WORD1 WORD2 [ PARMS ]
 WORD2 is optional
 if PARMS == null, then this is just 'interface WORD1 WORD2'")
 
-(deftype component_ref declaration (word1 word2 cdecl)
+(deftype component_ref declaration (word1 word2 abstract args cdecl)
   "a reference to component WORD1 'as' WORD2
 WORD2 is optional
+ABSTRACT is true for abstract component instantiations, false otherwise
+ARGS is the argument list for abstract component instantiations
 CDECL is filled in to point to the loaded component")
 
 (deftype connection node (ep1 ep2)
@@ -604,3 +608,14 @@ DDECL is the command or event's declaration")
 (deftype atomic_stmt statement (stmt)
   "ATOMIC stmt
 An atomic_stmt is not made for lexically nested atomic statements")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; types for the polymorphic extensions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(deftype interface_parm_decl declaration (cstring ddecl)
+  "A declaration of interface type parameter CSTRING")
+
+(deftype type_argument expression (asttype)
+  "ASTTYPE used as a template argument")
+

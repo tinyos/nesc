@@ -80,6 +80,8 @@ struct yystype {
     cstring id;
     data_declaration decl;
   } idtoken;
+
+  bool abstract;
 };
 
 #define YYSTYPE struct yystype

@@ -90,6 +90,8 @@ libparser_a_SOURCES =				\
 	input.h					\
 	machine.c				\
 	machine.h				\
+	nesc-abstract.c				\
+	nesc-abstract.h				\
 	nesc-c.c				\
 	nesc-c.h				\
 	nesc-cg.c				\

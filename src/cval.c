@@ -931,10 +931,10 @@ void cval_print(FILE *f, cval c)
     case cval_float:
     case cval_float_complex:
       break;
-    case cval_uint: printf("%llu", c.ui); break;
-    case cval_uint_complex: printf("%llu %llu", c.ui, c.ui_i); break;
-    case cval_sint: printf("%lld", c.si); break;
-    case cval_sint_complex: printf("%lld %lld", c.si, c.si_i); break;
+    case cval_uint: fprintf(f, "%llu", c.ui); break;
+    case cval_uint_complex: fprintf(f, "%llu %llu", c.ui, c.ui_i); break;
+    case cval_sint: fprintf(f, "%lld", c.si); break;
+    case cval_sint_complex: fprintf(f, "%lld %lld", c.si, c.si_i); break;
     default: assert(0); break;
     }
 }

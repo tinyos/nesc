@@ -378,8 +378,9 @@ known_cst foldaddress_field_ref(known_cst object, field_declaration fdecl)
   if (constant_unknown(object))
     return make_unknown_cst(object->type);
 
-  return fold_add(object->type, object,
-		  make_unsigned_cst(fdecl->offset / BITSPERBYTE, size_t_type));
+  return make_cst(cval_add(object->cval,
+			   make_cval_unsigned(fdecl->offset / BITSPERBYTE, size_t_type)),
+		  make_pointer_type(fdecl->type));
 }
 
 #ifndef HAVE_STRTOLD
@@ -515,4 +516,54 @@ char *string_cst_to_c(region r, string_cst s)
   assert(length_as_str >= 0);
 
   return str;
+}
+
+static void complex_print(FILE *f, known_cst c)
+{
+  assert(0);
+}
+
+void constant_print(FILE *f, known_cst c)
+/* Requires: (constant_integral(c) || constant_float(c)) &&
+   	     type_arithmetic(c->type)
+   Effects: prints a parsable representable of c to f
+ */
+{
+  type t = c->type;
+
+  if (type_complex(t))
+    {
+      complex_print(f, c);
+      return;
+    }
+
+  if (type_floating(t))
+    {
+      assert(0);
+    }
+  else
+    {
+      assert(type_integral(t));
+
+      if (type_unsigned(t))
+	fprintf(f, "%llu", constant_uint_value(c));
+      else
+	fprintf(f, "%lld", constant_sint_value(c));
+
+      if (type_size(t) <= type_size(int_type))
+	{
+	  if (type_unsigned(t))
+	    putc('U', f);
+	}
+      else if (type_long(t))
+	putc('L', f);
+      else if (type_unsigned_long(t))
+	fputs("UL", f);
+      else if (type_long_long(t))
+	fputs("LL", f);
+      else if (type_unsigned_long_long(t))
+	fputs("ULL", f);
+      else
+	assert(0);
+    }
 }

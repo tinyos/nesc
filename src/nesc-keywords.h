@@ -1,3 +1,4 @@
+K(abstract, ABSTRACT, NORID)
 K(as, AS, NORID)
 K(atomic, ATOMIC, NORID)
 K(async, SCSPEC, RID_ASYNC)

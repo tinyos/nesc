@@ -32,6 +32,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-msg.h"
 #include "nesc-magic.h"
 #include "nesc-uses.h"
+#include "nesc-abstract.h"
 #include "edit.h"
 #include "machine.h"
 
@@ -97,7 +98,12 @@ static void connect(nesc_declaration cdecl,
 	  configuration c = CAST(configuration, cdecl->impl);
 
 	  scan_component_ref (comp, c->components)
-	    connect(comp->cdecl, cg, modules, components);
+	    {
+	      if (comp->cdecl->original)
+		instantiate(comp->cdecl);
+
+	      connect(comp->cdecl, cg, modules, components);
+	    }
 	}
     }
 }
@@ -227,6 +233,7 @@ void nesc_compile(const char *filename, const char *target_name)
   init_nesc_paths_end();
   init_magic_functions();
   init_uses();
+  init_abstract();
 
   toplevel.filename = "<commandline>";
   toplevel.lineno = 0;
@@ -245,11 +252,14 @@ void nesc_compile(const char *filename, const char *target_name)
 	{
 	  cgraph cg = NULL;
 
-	  if (!dump_msg_layout() && program->kind == l_component)
+	  if (!dump_msg_layout() && program->kind == l_component &&
+	      !program->abstract)
 	    {
 	      dd_list modules, components;
 
 	      connect_graphs(parse_region, program, &cg, &modules, &components);
+	      /*fold_constants(parse_region, program, NULL);*/
+
 	      generate_c_code(program, target_name, cg, modules);
 	    }
 	  generate_docs(filename, cg);

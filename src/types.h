@@ -219,6 +219,19 @@ type make_generic_type(type t, typelist argtypes);
 type make_combiner_type(type t, data_declaration combiner);
 data_declaration type_combiner(type t);
 
+/* Type variables */
+type make_variable_type(data_declaration tdecl);
+/* Requires: tdecl->kind == decl_typedef.
+*/
+
+bool type_variable(type t);
+data_declaration type_variable_decl(type t);
+
+/* Instantiate a type with type variables based on the instantiation of
+   the variable (found in type_variable_decl(typevartype)->instantiation->type
+*/
+type instantiate_type(type t);
+
 const char *type_name(region r, type t);
 
 unsigned long type_hash(type t);

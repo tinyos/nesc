@@ -39,14 +39,6 @@ Boston, MA 02111-1307, USA. */
 #include "machine.h"
 #include "attributes.h"
 
-/* Storage specifier "flags" (inline, e.g.) */
-typedef enum {
-  scf_inline = 1,
-  scf_default = 2,
-  scf_async = 4,
-  scf_norace = 8
-} scflags;
-
 /* Predefined __builtin_va_list type */
 type builtin_va_list_type;
 data_declaration builtin_va_arg_decl;
@@ -149,6 +141,7 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->use_summary = 0;
   dd->async_access = FALSE;
   dd->norace = FALSE;
+  dd->instantiation = NULL;
 }
 
 data_declaration lookup_id(const char *s, bool this_level_only)
@@ -237,12 +230,14 @@ data_declaration declare(environment b, data_declaration from,
     dd->container_function = current.function_decl->ddecl;
 
   env_add(b->id_env, dd->name, dd);
-  /* C names go all the way to the top... */
-  if (dd->Cname)
-    env_add(global_env->id_env, dd->name, dd);
-  if (dd->spontaneous ||
-      (getenv("ALLCODE") && dd->kind == decl_function))
-    dd_add_last(parse_region, spontaneous_calls, dd);
+  if (!dd->container || (dd->container && !dd->container->abstract))
+    {
+      /* C names go all the way to the top... */
+      if (dd->Cname)
+	env_add(global_env->id_env, dd->name, dd);
+      if (dd->spontaneous || (getenv("ALLCODE") && dd->kind == decl_function))
+	dd_add_last(parse_region, spontaneous_calls, dd);
+    }
 
   /* init doc stuff to NULL */
   dd->short_docstring = NULL;
@@ -1262,8 +1257,8 @@ void show_previous_decl(void (*message)(declaration d, const char *format, ...),
    When DIFFERENT_BINDING_LEVEL is true, NEWDECL is an external declaration,
    and OLDDECL is in an outer binding level and should thus not be changed.  */
 
-static int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
-			   bool different_binding_level, bool newinitialised)
+int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
+		    bool different_binding_level, bool newinitialised)
 {
   type oldtype = olddecl->type;
   type newtype = newdecl->type;
@@ -3214,9 +3209,12 @@ type_element finish_enum(type_element t, declaration names,
   else
     enum_reptype = type_largest;
 
-  /* int is the smallest possible type for an enum (except if the 
-     enum has the packed attribute) */
-  if (!tdecl->packed && type_size(enum_reptype) < type_size(int_type))
+  /* We use int as the enum type if that fits, except if both:
+     - the values fit in a (strictly) smaller type
+     - the packed attribute was specified 
+  */
+  if (cval_inrange(smallest, int_type) && cval_inrange(largest, int_type) &&
+      !(tdecl->packed && type_size(enum_reptype) < type_size(int_type)))
     enum_reptype = int_type;
 
   tdecl->reptype = enum_reptype;

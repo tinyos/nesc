@@ -29,6 +29,8 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-interface.h"
 #include "edit.h"
 #include "c-parse.h"
+#include "semantics.h"
+#include "attributes.h"
 
 #include <errno.h>
 
@@ -163,15 +165,14 @@ const char *language_name(source_language l)
     }
 }
 
-environment compile(location loc, source_language l,
-		    const char *name, bool name_is_path,
-		    nesc_declaration container, environment parent_env)
+void compile(location loc, source_language l,
+	     const char *name, bool name_is_path,
+	     nesc_declaration container, environment parent_env)
 {
   const char *path =
     name_is_path ? name : find_nesc_file(parse_region, l, name);
   FILE *f = NULL;
   struct semantic_state old_semantic_state;
-  environment env;
 
   old_semantic_state = current;
 
@@ -185,34 +186,21 @@ environment compile(location loc, source_language l,
 
       if (!f)
 	error_with_location(loc, "failed to preprocess %s", path);
-    }
+      else
+	{
+	  set_input(f, path);
+	  start_lex(l);
+	  start_semantics(l, container, parent_env);
+	  current.fileregion = newregion();
+	  parse();
+	  deleteregion_ptr(&current.fileregion);
+	  end_input();
 
-  if (!f)
-    {
-      env = new_environment(parse_region, global_env, TRUE, FALSE);
-      if (container)
-	container->env = env;
-    }
-  else
-    {	
-      set_input(f, path);
-
-      start_lex(l);
-      start_semantics(l, container, parent_env);
-      current.fileregion = newregion();
-      env = current.env;
-      if (container)
-	container->env = env;
-      parse();
-      deleteregion_ptr(&current.fileregion);
-      end_input();
-
-      preprocess_file_end();
+	  preprocess_file_end();
+	}
     }
 
   current = old_semantic_state;
-
-  return env;
 }
 
 nesc_decl dummy_nesc_decl(source_language sl, const char *name)
@@ -226,7 +214,7 @@ nesc_decl dummy_nesc_decl(source_language sl, const char *name)
       implementation impl = CAST(implementation,
 	new_module(parse_region, dummy_location, NULL, NULL));
       nd = CAST(nesc_decl,
-	new_component(parse_region, dummy_location, wname, NULL, NULL, impl));
+	new_component(parse_region, dummy_location, wname, NULL, FALSE, NULL, impl));
       break;
     }
     case l_interface:
@@ -276,6 +264,11 @@ nesc_declaration load(source_language sl, location l,
 
   parsed_nesc_decl = NULL;
   compile(l, sl, name, name_is_path, decl, global_env);
+
+  /* If things went badly wrong give the decl a dummy environment */
+  if (!decl->env)
+    decl->env = new_environment(parse_region, global_env, TRUE, FALSE);
+
   if (!parsed_nesc_decl)
     parsed_nesc_decl = dummy_nesc_decl(sl, element);
 
@@ -395,4 +388,71 @@ void handle_combine_attribute(location loc, const char *combiner, type *t)
 
   if (ok)
     *t = make_combiner_type(*t, cdecl);
+}
+
+/* Create definition for template parameter 'elements d' with attributes
+   attributes.
+   Returns the declaration for the parameter.
+*/
+declaration declare_template_parameter(declarator d, type_element elements,
+				       attribute attributes)
+{
+  /* There must be at least a declarator or some form of type specification */
+  location l =
+    d ? d->location : elements->location;
+  variable_decl vd =
+    new_variable_decl(parse_region, l, d, attributes, NULL, NULL, NULL);
+  data_decl dd =
+    new_data_decl(parse_region, l, elements, CAST(declaration, vd));
+  data_declaration ddecl = NULL, old_decl = NULL;
+  struct data_declaration tempdecl;
+  dd_list extra_attr;
+  int class;
+  scflags scf;
+  const char *name;
+  bool defaulted_int;
+  type parm_type;
+
+  parse_declarator(elements, vd->declarator, FALSE, FALSE,
+		   &class, &scf, NULL, &name, &parm_type,
+		   &defaulted_int, NULL, &extra_attr);
+  vd->declared_type = parm_type;
+
+  /* Storage class checks */
+  if (class)
+    {
+      error("storage class specified for parameter `%s'", name);
+      class = 0;
+    }
+
+  check_variable_scflags(scf, vd->location, "parameter", name);
+
+#if 0
+ XXX: Is this meaningful? (and if not, is it an error to have array or fn
+			   args?)
+  /* A parameter declared as an array of T is really a pointer to T.
+     One declared as a function is really a pointer to a function.  */
+  if (type_array(parm_type))
+    /* Transfer const-ness of array into that of type pointed to.  */
+    parm_type =
+      make_pointer_type(qualify_type1(type_array_of(parm_type), parm_type));
+  else if (type_function(parm_type))
+    parm_type = make_pointer_type(parm_type);
+#endif
+
+  init_data_declaration(&tempdecl, CAST(declaration, vd), name, parm_type);
+  tempdecl.kind = decl_constant;
+  tempdecl.definition = tempdecl.ast;
+
+  old_decl = lookup_id(tempdecl.name, TRUE);
+  if (old_decl && duplicate_decls(&tempdecl, old_decl, FALSE, FALSE))
+    ddecl = old_decl;
+  else
+    ddecl = declare(current.env, &tempdecl, FALSE);
+  vd->ddecl = ddecl;
+
+  ignored_dd_attributes(extra_attr);
+  ignored_attributes(attributes);
+
+  return CAST(declaration, dd);
 }

@@ -91,6 +91,10 @@ struct data_declaration {
   /* nesC commands/events: point to original interface declaration */
   struct data_declaration *shadowed;
 
+  /* In abstract configurations or modules: The latest instantiation
+     of this declaration */
+  struct data_declaration *instantiation;
+
   /* interface/module/configuration this declaration belongs to.
      NULL for declarations from C files */
   nesc_declaration container;

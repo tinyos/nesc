@@ -25,7 +25,7 @@ struct AST_walker
 };
 
 static AST_walker_result default_walker(AST_walker spec, void *data,
-					node n)
+					node *n)
 {
   return aw_walk;
 }
@@ -54,18 +54,18 @@ void AST_walker_handle(AST_walker spec, AST_kind kind, AST_walker_fn fn)
 }
 
 /* Just execute the walker function for node-type 'kind' */
-AST_walker_result AST_walker_call(AST_walker spec, AST_kind kind, void *data, node n)
+AST_walker_result AST_walker_call(AST_walker spec, AST_kind kind, void *data, node *n)
 {
-  assert(kind >= 0 && kind < postkind_node && IS_A(n, kind));
+  assert(kind >= 0 && kind < postkind_node && IS_A(*n, kind));
   return spec->walkers[kind - kind_node](spec, data, n);
 }
 
-void AST_walk_list(AST_walker s, void *d, node n)
+void AST_walk_list(AST_walker s, void *d, node *n)
 {
-  while (n)
+  while (*n)
     {
       AST_walk(s, d, n);
-      n = n->next;
+      n = &(*n)->next;
     }
 }
 
@@ -80,11 +80,11 @@ void AST_walk_children(AST_walker s, void *d, node n)
 }
 
 /* Recursive walk from n */
-void AST_walk(AST_walker spec, void *data, node n)
+void AST_walk(AST_walker spec, void *data, node *n)
 {
   for (;;)
     {
-      AST_kind k = n->kind;
+      AST_kind k = (*n)->kind;
 
       switch (AST_walker_call(spec, k, data, n))
 	{
@@ -95,7 +95,7 @@ void AST_walk(AST_walker spec, void *data, node n)
 	    return;
 	  break;
 	case aw_walk:
-	  AST_walk_children(spec, data, n);
+	  AST_walk_children(spec, data, *n);
 	  return;
 	}
     }

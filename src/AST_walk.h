@@ -19,11 +19,17 @@ Boston, MA 02111-1307, USA. */
 #define AST_WALK_H
 
 /* A generic, OO-ish AST walker.
-   This is probably a visitor, for those into that kind of thing. */
+   This is probably a visitor, for those into that kind of thing. 
+   The walker functions receive a node * rather than a node, 
+   so can modify the tree during the walk. This allows, e.g., 
+   cloning the AST.
+*/
 
 /* Untyped to make declaration easier. Actual signature is
      AST_walker_result AST_walker_fn(AST_walker spec, void *data,
-  				     <your node type> n);
+  				     <your node type> *n);
+   Note: the aw_walk and aw_call_parent results will be applied to
+   *n after the walker function returns, not to the orignal node.
 */
 typedef enum {
   aw_walk, /* walk children */
@@ -45,15 +51,19 @@ void AST_walker_handle(AST_walker spec, AST_kind kind, AST_walker_fn fn);
 */
 
 /* Recursive walk from n */
-void AST_walk(AST_walker spec, void *data, node n);
+void AST_walk(AST_walker spec, void *data, node *n);
 
-void AST_walk_list(AST_walker spec, void *data, node n);
+void AST_walk_list(AST_walker spec, void *data, node *n);
+/* Effects: Walks through the list starting at *n
+     The walker "divert" AST_walk_list if they modify the
+     node or node pointer they receive.
+*/
 
 /* Walk children of n */
 void AST_walk_children(AST_walker spec, void *data, node n);
 
 /* Just execute the walker function for node-type 'kind' */
 AST_walker_result AST_walker_call(AST_walker spec, AST_kind kind,
-				  void *data, node n);
+				  void *data, node *n);
 
 #endif

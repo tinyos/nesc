@@ -135,4 +135,9 @@ char *string_cst_to_c(region r, string_cst s);
      string and wcstombs failed)
 */
 
+void constant_print(FILE *f, known_cst c);
+/* Requires: constant_integral(c) || constant_float(c)
+   Effects: prints a parsable representable of c to f
+ */
+
 #endif

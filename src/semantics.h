@@ -23,6 +23,14 @@ Boston, MA 02111-1307, USA. */
 #ifndef SEMANTICS_H
 #define SEMANTICS_H
 
+/* Storage specifier "flags" (inline, e.g.) */
+typedef enum {
+  scf_inline = 1,
+  scf_default = 2,
+  scf_async = 4,
+  scf_norace = 8
+} scflags;
+
 /* Predefined __builtin_va_list type */
 extern type builtin_va_list_type;
 extern data_declaration builtin_va_arg_decl;
@@ -196,5 +204,19 @@ extern struct semantic_state current;
 
 extern dd_list spontaneous_calls;
 /* List of spontaneously-called functions */
+
+void check_variable_scflags(scflags scf,
+			    location l, const char *kind, const char *name);
+
+void parse_declarator(type_element modifiers, declarator d, bool bitfield, 
+		      bool require_parm_names,
+		      int *oclass, scflags *oscf,
+		      const char **ointf, const char **oname,
+		      type *ot, bool *owarn_defaulted_int,
+		      function_declarator *ofunction_declarator,
+		      dd_list *oattributes);
+
+int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
+		    bool different_binding_level, bool newinitialised);
 
 #endif

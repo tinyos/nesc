@@ -1618,8 +1618,8 @@ static void print_cg_html(const char *component_name, const char *component_file
       graphviz_supports_cmap = TRUE;
     else 
       warning("\
-DOC WARNING: your version of `dot' does not support client-side 
-             image maps.  Upgrade to graphviz >= 1.8.8 to enable 
+DOC WARNING: your version of `dot' does not support client-side \n\
+             image maps.  Upgrade to graphviz >= 1.8.8 to enable \n\
              clickable wiring diagrams.\n");
   }
   
@@ -1669,15 +1669,15 @@ DOC WARNING: your version of `dot' does not support client-side
 
   // start the dot output
   if( use_graphviz ) {
-    char *graphviz_opts = "
-    rankdir=LR;
-    ratio=compress;
-    margin=\"0,0\";
-    ranksep=0.0005; 
-    nodesep=0.1; 
-    node [shape=ellipse style=filled fillcolor=\"#e0e0e0\"];
-    node [fontsize=10 height=.1 width=.1];
-    edge [fontsize=9 arrowsize=.8];
+    char *graphviz_opts = "\n\
+    rankdir=LR;\n\
+    ratio=compress;\n\
+    margin=\"0,0\";\n\
+    ranksep=0.0005; \n\
+    nodesep=0.1; \n\
+    node [shape=ellipse style=filled fillcolor=\"#e0e0e0\"];\n\
+    node [fontsize=10 height=.1 width=.1];\n\
+    edge [fontsize=9 arrowsize=.8];\n\
 ";
 
     iface_file = fopen(iface_dot, "w");  
@@ -1972,18 +1972,18 @@ static void generate_component_html(nesc_declaration cdecl)
 
     add_source_symlink(cdecl->ast->location->filename, sourcelink);
 
-    output("
-<html>
-<head>
-<title>Component: %s</title>
-</head>
-<body>
+    output("\n\
+<html>\n\
+<head>\n\
+<title>Component: %s</title>\n\
+</head>\n\
+<body>\n\
 ", cdecl->name);
 
     print_navbar(outfile, NAV_OTHER, sourcelink, sourcetext);
 
-    output("
-<h1 align=\"center\">Component: %s</h1>
+    output("\n\
+<h1 align=\"center\">Component: %s</h1>\n\
 ", cdecl->name);
   }  
 
@@ -2198,18 +2198,18 @@ static void generate_interface_html(nesc_declaration idecl)
 
     add_source_symlink(idecl->ast->location->filename, sourcelink);
 
-    output("
-<html>
-<head>
-<title>Interface: %s</title>
-</head>
-<body>
+    output("\n\
+<html>\n\
+<head>\n\
+<title>Interface: %s</title>\n\
+</head>\n\
+<body>\n\
 ", idecl->name);
 
     print_navbar(outfile, NAV_OTHER, sourcelink, sourcetext);
 
-    output("
-<h1 align=\"center\">Interface: %s</h1>
+    output("\n\
+<h1 align=\"center\">Interface: %s</h1>\n\
 ", idecl->name);
   }  
   if( idecl->short_docstring ) {
@@ -2752,34 +2752,34 @@ static void generate_cg_help_page()
   print_navbar(f, NAV_OTHER, NULL, NULL);
   fprintf(f, "<h1 align=\"center\">Connection Graph Help</h1>\n");
 
-  fprintf(f, "
-<table border=\"0\" width=\"80%%\" align=\"center\">
-<tr>
-<td>
-<img src=\"cg_help.gif\" border=\"0\" align=\"left\">
-</td>
-
-<td>&nbsp;&nbsp;&nbsp;</td>
-<td>
-
-<ul>
-
-<li><em>A</em> requires interface <em>I</em>, <em>B</em> provides <em>I</em>, and <em>A</em> and <em>B</em> are wired
-together.<p>
-
-<li><em>C</em> and <em>D</em> both require or both provide <em>J</em>.  The direction of the
-arrow indicates that the original wiring is \"<em>C = D</em>\".<p>
-
-<li><em>E</em> requires function <em>f</em>, and F provides function <em>f</em>.<p>
-
-</ul>
-</td>
-</tr>
-</table>
-<p>
-
-</body>
-</html>
+  fprintf(f, "\n\
+<table border=\"0\" width=\"80%%\" align=\"center\">\n\
+<tr>\n\
+<td>\n\
+<img src=\"cg_help.gif\" border=\"0\" align=\"left\">\n\
+</td>\n\
+\n\
+<td>&nbsp;&nbsp;&nbsp;</td>\n\
+<td>\n\
+\n\
+<ul>\n\
+\n\
+<li><em>A</em> requires interface <em>I</em>, <em>B</em> provides <em>I</em>, and <em>A</em> and <em>B</em> are wired\n\
+together.<p>\n\
+\n\
+<li><em>C</em> and <em>D</em> both require or both provide <em>J</em>.  The direction of the\n\
+arrow indicates that the original wiring is \"<em>C = D</em>\".<p>\n\
+\n\
+<li><em>E</em> requires function <em>f</em>, and F provides function <em>f</em>.<p>\n\
+\n\
+</ul>\n\
+</td>\n\
+</tr>\n\
+</table>\n\
+<p>\n\
+\n\
+</body>\n\
+</html>\n\
 ");
   fclose(f);
 

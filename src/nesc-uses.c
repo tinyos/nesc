@@ -435,26 +435,26 @@ static void collect_uses_stmt(statement stmt, context c)
 static AST_walker collect_uses_walker;
 
 static AST_walker_result collect_uses_ast_expr(AST_walker spec, void *data,
-					  expression e)
+					  expression *e)
 {
-  collect_uses_expr(e, exe_context(*(context *)data) | c_read);
+  collect_uses_expr(*e, exe_context(*(context *)data) | c_read);
   return aw_done;
 }
 
 static AST_walker_result collect_uses_ast_stmt(AST_walker spec, void *data,
-					  statement s)
+					       statement *s)
 {
-  collect_uses_stmt(s, exe_context(*(context *)data));
+  collect_uses_stmt(*s, exe_context(*(context *)data));
   return aw_done;
 }
 
 static AST_walker_result collect_uses_ast_fdecl(AST_walker spec, void *data,
-						function_decl fd)
+						function_decl *fd)
 {
   data_declaration oldfn = current_function;
 
-  current_function = fd->ddecl;
-  AST_walk_children(spec, data, CAST(node, fd));
+  current_function = (*fd)->ddecl;
+  AST_walk_children(spec, data, CAST(node, *fd));
   current_function = oldfn;
 
   return aw_done;
@@ -473,7 +473,9 @@ static void init_collect_uses_walker(void)
 
 static void collect_uses_ast(void *n, context c)
 {
-  AST_walk_list(collect_uses_walker, &c, CAST(node, n));
+  node nn = CAST(node, n);
+
+  AST_walk_list(collect_uses_walker, &c, &nn);
 }
 
 static void collect_uses_children(void *n, context c)

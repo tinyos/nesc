@@ -25,11 +25,20 @@ typedef struct nesc_declaration {
   struct environment *env;
   char *short_docstring;  /* For documentation comments */
   char *long_docstring;
+  bool abstract;		/* true for abstract components and
+				   generic interfaces */
+  declaration parameters;	/* Parameters for abstract components and
+				   generic interfaces */
 
   /* for components */
   implementation impl;
   struct cgraph *connections;
   dd_list local_statics;	/* Local static variables (for nido) */
+  size_t instance_count;	/* For abstract components, the
+				   instance count (used to give each
+				   instance a unique name) */
+  struct nesc_declaration *original; /* For instances of abstract components,
+					the "original" component */
 } *nesc_declaration;
 
 #endif

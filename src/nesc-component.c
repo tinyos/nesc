@@ -86,14 +86,16 @@ static typelist make_gparm_typelist(declaration gparms)
   return gtypes;
 }
 
-void copy_interface_functions(data_declaration iref)
+static void copy_interface_functions(region r, nesc_declaration container,
+				     data_declaration iref,
+				     environment fns)
 {
-  environment icopy = new_environment(parse_region, NULL, TRUE, FALSE);
+  environment icopy = new_environment(r, NULL, TRUE, FALSE);
   env_scanner scanif;
   const char *fnname;
   void *fnentry;
 
-  env_scan(iref->itype->env->id_env, &scanif);
+  env_scan(fns->id_env, &scanif);
   while (env_next(&scanif, &fnname, &fnentry))
     {
       data_declaration fndecl = fnentry, fncopy;
@@ -102,7 +104,7 @@ void copy_interface_functions(data_declaration iref)
       fncopy->fn_uses = NULL;
       fncopy->nuses = NULL;
       fncopy->shadowed = fndecl;
-      fncopy->container = current.container;
+      fncopy->container = container;
       fncopy->interface = iref;
       /* required events and provided commands are defined */
       fncopy->defined = (fncopy->ftype == function_command) ^ iref->required;
@@ -114,6 +116,77 @@ void copy_interface_functions(data_declaration iref)
     }
 
   iref->functions = icopy;
+}
+
+static cgraph build_external_graph(region r, nesc_declaration cdecl);
+
+nesc_declaration specification_copy(region r, nesc_declaration component,
+				    bool copy_is_abstract)
+/* Effects: Make a "shallow" copy of `component' (in region r), i.e., make
+     a copy of the environment with copies of the original interfaces as
+     in copy_interface_functions.
+   Returns: The shallow copy
+*/
+{
+  nesc_declaration copy;
+  environment envcopy;
+  env_scanner scanenv;
+  const char *specname;
+  void *specentry;
+
+  assert(component->kind == l_component);
+
+  copy = new_nesc_declaration(r, l_component, component->name);
+  copy->parameters = component->parameters;
+  copy->ast = component->ast;
+  copy->short_docstring = component->short_docstring;
+  copy->long_docstring = component->long_docstring;
+  copy->impl = component->impl;
+  copy->abstract = copy_is_abstract;
+  if (!copy_is_abstract)
+    {
+      /* Give it a new name */
+      /* component may itself be a copy of the real original abstract
+	 component */
+      nesc_declaration abs_component =
+	component->original ? component->original : component;
+      char *newname = rstralloc(r, strlen(copy->name) + 20);
+
+      sprintf(newname, "%s$%d", copy->name, abs_component->instance_count++);
+      copy->name = newname;
+    }
+
+  /* Copy all the specification elements */
+  envcopy = new_environment(r, component->env->parent, TRUE, FALSE);
+  copy->env = envcopy;
+  env_scan(component->env->id_env, &scanenv);
+  while (env_next(&scanenv, &specname, &specentry))
+    {
+      data_declaration specdecl = specentry, speccopy;
+
+      speccopy = declare(envcopy, specdecl, TRUE);
+      speccopy->shadowed = specdecl;
+      specdecl->instantiation = speccopy;
+      speccopy->container = copy;
+
+      if (speccopy->kind == decl_function)
+	{
+	  speccopy->fn_uses = NULL;
+	  speccopy->nuses = NULL;
+	}
+      else
+	{
+	  assert(speccopy->kind == decl_interface_ref);
+	  copy_interface_functions(r, copy, speccopy, speccopy->functions);
+	}
+    }
+
+  /* Give the copy an "empty" specification graph */
+  copy->connections = build_external_graph(r, copy);
+
+  copy->original = component;
+
+  return copy;
 }
 
 void declare_interface_ref(interface_ref iref, declaration gparms,
@@ -141,7 +214,8 @@ void declare_interface_ref(interface_ref iref, declaration gparms,
      the syntax for invoking or defining a function on a generic interface
      is interfacename.functionname[generic args](...) */
   ddecl->type = make_interface_type(ddecl);
-  copy_interface_functions(ddecl);
+  copy_interface_functions(parse_region, current.container, ddecl,
+			   ddecl->itype->env);
 }
 
 void check_generic_parameter_type(location l, data_declaration gparm)

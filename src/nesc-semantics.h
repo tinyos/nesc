@@ -33,9 +33,9 @@ const char *element_name(region r, const char *path);
      The returned string is allocated in region r.
 */
 
-environment compile(location loc, source_language l,
-		    const char *name, bool name_is_path,
-		    nesc_declaration container, struct environment *parent_env);
+void compile(location loc, source_language l,
+	     const char *name, bool name_is_path,
+	     nesc_declaration container, struct environment *parent_env);
 
 nesc_declaration load(source_language sl, location l,
 		      const char *name, bool name_is_path);
@@ -95,5 +95,8 @@ void handle_combine_attribute(location loc, const char *combiner, type *t);
 /* Effects: handle combine attribute specifying function 'combiner', 
      modifying *t as appropriate
  */
+
+declaration declare_template_parameter(declarator d, type_element elements,
+				       attribute attributes);
 
 #endif

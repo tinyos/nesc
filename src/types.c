@@ -30,7 +30,7 @@ Boston, MA 02111-1307, USA. */
 struct type
 {
   enum { tk_primitive, tk_complex, tk_tagged, tk_error, tk_void,
-	 tk_pointer, tk_function, tk_array, tk_iref } kind;
+	 tk_pointer, tk_function, tk_array, tk_iref, tk_variable } kind;
   type_quals qualifiers;
   data_declaration combiner;
 
@@ -102,6 +102,9 @@ struct type
 
     /* tk_iref */
     data_declaration iref;
+
+    /* tk_variable */
+    data_declaration tdecl;
   } u;
 };
 
@@ -774,6 +777,9 @@ bool type_equal_unqualified(type t1, type t2)
       return type_equal(t1->u.array.arrayof, t2->u.array.arrayof) &&
 	(!s1 || !s2 || cval_intcompare(s1->cval, s2->cval) == 0);
     }
+    case tk_variable:
+      return t1->u.tdecl == t2->u.tdecl;
+
     default: assert(0); return FALSE;
     }
 }
@@ -986,6 +992,9 @@ bool type_compatible_unqualified(type t1, type t2)
 
     case tk_iref:
       return t1->u.iref->itype == t2->u.iref->itype;
+
+    case tk_variable:
+      return t1->u.tdecl == t2->u.tdecl;
     }
     default: assert(0); return 0;
     }
@@ -1117,7 +1126,7 @@ type common_type(type t1, type t2)
 	  break;
 	}
 
-      case tk_void: case tk_tagged:
+      case tk_void: case tk_tagged: case tk_variable:
 	rtype = t1;
 	break;
 
@@ -1736,6 +1745,35 @@ data_declaration type_combiner(type t)
 {
   return t->combiner;
 }
+
+/* Type variables */
+type make_variable_type(data_declaration tdecl)
+/* Requires: tdecl->kind == decl_typedef.
+*/
+{
+  type nt = new_type(tk_variable);
+  nt->u.tdecl = tdecl;
+
+  /* Type variables have no intrinsic size or alignment */
+
+  return nt;
+}
+
+bool type_variable(type t)
+{
+  return t->kind == tk_variable;
+}
+
+data_declaration type_variable_decl(type t)
+{
+  assert(type_variable(t));
+  return t->u.tdecl;
+}
+
+/* Instantiate a type with type variables based on the instantiation of
+   the variable (found in type_variable_decl(typevartype)->instantiation->type
+*/
+type instantiate_type(type t);
 
 static char *primname[] = {
   NULL,

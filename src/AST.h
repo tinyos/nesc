@@ -86,6 +86,8 @@ void AST_set_parents(node n);
 void set_parent(node sameregion *nptr, node parent);
 void set_parent_list(node sameregion *list, node parent);
 
+node AST_clone(region r, node n);
+
 void AST_print(node n);
 
 #define AST_SET(parent, ptr, value) \

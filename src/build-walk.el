@@ -46,6 +46,6 @@
   (insert (format "case kind_%s: " name)))
 
 (defun write-walk-field (field)
-  (insert (format "  AST_walk_list(s, d, (node)x->%s);\n" field field)))
+  (insert (format "  AST_walk_list(s, d, (node *)&x->%s);\n" field field)))
 
 (build-file "walk_children.c")

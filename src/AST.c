@@ -173,6 +173,20 @@ void AST_set_parents(node n)
   AST_set_parent_list(&n, NULL);
 }
 
+node AST_clone(region r, node n)
+{
+  int k = n->kind - kind_node;
+  node copy;
+
+  /* Copy all of n's field except parent, parent_ptr */
+  copy = typed_ralloc(r, AST_sizeof[k], AST_typeof[k]);
+  typed_rarraycopy(copy, n, 1, AST_sizeof[k], AST_typeof[k]);
+  copy->parent = NULL;
+  copy->parent_ptr = NULL;
+
+  return copy;
+}
+
 static void AST_print_list(int indent, void *vn);
 
 static void pindent(int by)
