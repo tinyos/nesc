@@ -87,6 +87,8 @@ static void usage(const char *progname)
 	    progname);
     fprintf(stderr, "Options:\n");
     fprintf(stderr,
+	    "  --help                      Print this message.\n\n");
+    fprintf(stderr,
 	    "  -d, --debug                 Enable printing of debug "
 	    "information.\n\n");
     fprintf(stderr,
@@ -132,11 +134,6 @@ int main(int argc, char **argv)
     statusOut("AVaRICE version %s, %s %s\n\n",
 	      PACKAGE_VERSION, __DATE__, __TIME__);
 
-    if (argc < 2)
-    {
-	usage(argv[0]);
-    }
-
     //
     // Chew over the command line.
     //
@@ -180,7 +177,7 @@ int main(int argc, char **argv)
             {
                 readFusesAndQuitOnly = true;
             }
-	    else
+	    else // includes --help ...
 	    {
 		usage(argv[0]);
 	    }
@@ -191,16 +188,19 @@ int main(int argc, char **argv)
 	    {
 		hostName = argv[j];
 	    }
-	    else
+	    else if (!hostPortNumber)
 	    {
 		hostPortNumber = (int)strtol(argv[j],(char **)0, 0);
-
-		if (hostPortNumber <= 0)
-		{
-		    usage(argv[0]);
-		}
+	    }
+	    else
+	    {
+		usage(argv[0]);
 	    }
 	}
+    }
+    if (!hostName || hostPortNumber <= 0)
+    {
+	usage(argv[0]);
     }
 
     // And say hello to the JTAG box

@@ -16,4 +16,8 @@ define ice-restart
   target-ice
 end
 
+define hook-quit
+  shell kill-avarice
+end
+
 target-ice
