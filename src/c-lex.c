@@ -1885,54 +1885,93 @@ done:
   return value;
 }
 
-int
-yylex(struct yystype *lvalp)
-{
-  int token;
+/* We keep a 2-element queue of pre-read tokens to deal with the 
+   lookahead of checking for typedef references in components,
+   stored in token_s1/l1, token_s2/l2.
+   - gettoken returns the next token from the queue, or reads the
+   next token if the queue is empty.
+   - pushtoken pushes a token onto the queue
+   - yylex does the special component.typedef processing. 
 
-  /* Two element token stack for use by hacks */
+   This code could be optimised to use token_[sl][12] directly in
+   yylex, but then it would be even more confusing.
+*/
+
+static int poptoken(struct yystype *lvalp)
+{
+  /* Check the queue first */
   if (token_s1 != -1)
     {
-      token = token_s1;
+      int token = token_s1;
       *lvalp = token_l1;
 
       token_s1 = token_s2;
       token_l1 = token_l2;
       token_s2 = -1;
+
+      return token;
+    }
+  else
+    return lextoken(lvalp);
+}
+
+static void pushtoken(int t, struct yystype *lvalp)
+{
+  /* Save token on our 2-element queue */
+  if (token_s1 == -1)
+    {
+      token_s1 = t;
+      token_l1 = *lvalp;
     }
   else
     {
-      token = lextoken(lvalp);
+      token_s2 = t;
+      token_l2 = *lvalp;
+    }
+}
 
-      /* Detect component-ref '.' identifier, where the
-	 identifier denotes a typedef in the referenced component --
-         we can't do this in the parser as the resulting grammer is not
-         context-free. So instead we detect it here, and mark the 
-	 component-ref as special. */
-      if (token == COMPONENTREF)
+int
+yylex(struct yystype *lvalp)
+{
+
+  int token = poptoken(lvalp);
+
+  /* Detect component-ref '.' identifier, where the
+     identifier denotes a typedef in the referenced component --
+     we can't do this in the parser as the resulting grammer is not
+     context-free. So instead we detect it here, and mark the 
+     component-ref as special. */
+  if (token == COMPONENTREF)
+    {
+      struct yystype val1;
+      int token1 = poptoken(&val1);
+
+      token = IDENTIFIER; /* default to regular identifier */
+      if (token1 == '.')
 	{
-	  token_s1 = lextoken(&token_l1);
-	  if (token_s1 == '.')
+	  struct yystype val2;
+	  int token2 = poptoken(&val2);
+
+	  if (token2 == IDENTIFIER || token2 == TYPENAME ||
+	      token2 == MAGIC_STRING)
 	    {
-	      token_s2 = lextoken(&token_l2);
+	      data_declaration cref = lvalp->idtoken.decl;
+	      data_declaration fdecl = env_lookup(cref->ctype->env->id_env, token_l2.idtoken.id.data, TRUE);
 
-	      if (token_s2 == IDENTIFIER ||
-		  token_s2 == TYPENAME ||
-		  token_s2 == MAGIC_STRING)
+	      if (fdecl && fdecl->kind == decl_typedef)
 		{
-		  data_declaration cref = lvalp->idtoken.decl;
-		  data_declaration fdecl = env_lookup(cref->ctype->env->id_env, token_l2.idtoken.id.data, TRUE);
-
-		  if (fdecl->kind == decl_typedef)
-		    {
-		      token_l2.idtoken.decl = fdecl;
-		      return token;
-		    }
+		  /* The special typedef reference case. Fix the tokens */
+		  token = COMPONENTREF;
+		  token2 = IDENTIFIER;
+		  val2.idtoken.decl = fdecl;
 		}
 	    }
-	  /* Not the special case, treat as regular identifier */
-	  token = IDENTIFIER;
+	  pushtoken(token1, &val1);
+	  pushtoken(token2, &val2);
 	}
+      else
+	pushtoken(token1, &val1);
+	
     }
 
   return token;
