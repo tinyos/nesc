@@ -153,6 +153,7 @@ if (!$nostdinc) {
     push @new_args, "-I$TOSDIR/platform/$target";
     push @new_args, map "-I$TOSDIR/platform/$_", @commonplatforms;
     push @new_args, "-I$TOSDIR/interfaces";
+    push @new_args, "-I$TOSDIR/types";
     push @new_args, "-I$TOSDIR/system";
     push @new_args, "-I$TOSDIR/lib";
 }
