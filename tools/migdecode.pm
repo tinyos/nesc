@@ -41,7 +41,6 @@ true;
 sub decode() {
     @spec = @_;
 
-#print STDERR @spec;
     $_ = shift @spec;
     /^(struct|union) .* ([0-9]+) ([-0-9]+)/ or die;
     $size = $2;
