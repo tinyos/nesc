@@ -257,15 +257,15 @@ void prt_data_decl(data_decl d);
 void prt_ellipsis_decl(ellipsis_decl d);
 void prt_function_decl(function_decl d);
 void prt_variable_decl(variable_decl d);
-void prt_type_elements(type_element elements, bool duplicate);
-void prt_type_element(type_element em, bool duplicate);
+void prt_type_elements(type_element elements, pte_options options);
+void prt_type_element(type_element em, pte_options options);
 void prt_typename(typename tname);
 void prt_typeof_expr(typeof_expr texpr);
 void prt_typeof_type(typeof_type ttype);
 void prt_attribute(attribute a);
-void prt_rid(rid r);
+void prt_rid(rid r, pte_options options);
 void prt_qualifier(qualifier q);
-void prt_tag_ref(tag_ref sr, bool duplicate);
+void prt_tag_ref(tag_ref sr, pte_options options);
 void prt_fields(declaration flist);
 void prt_enumerators(declaration elist, tag_declaration ddecl);
 void prt_field_declaration(declaration d);
@@ -438,7 +438,7 @@ static type_element interesting_element(type_element elems)
   return NULL;
 }
 
-static void static_hack(data_declaration ddecl)
+static pte_options prefix_decl(data_declaration ddecl)
 {
   /* Hack to add static to all defined functions */
   if (ddecl->kind == decl_function &&
@@ -448,19 +448,22 @@ static void static_hack(data_declaration ddecl)
       output("static ");
       if (ddecl->makeinline)
 	output("inline ");
+      return pte_noextern;
     }
+  return 0;
 }
 
 void prt_data_decl(data_decl d)
 {
   declaration vd;
-  bool first = TRUE;
+  pte_options opts = 0;
   type_element interesting;
 
   scan_declaration (vd, d->decls)
     {
       variable_decl vdd = CAST(variable_decl, vd);
       data_declaration vdecl = vdd->ddecl;
+      pte_options extraopts = 0;
 
       if (vdecl) /* because of build_declaration */
 	{
@@ -471,18 +474,19 @@ void prt_data_decl(data_decl d)
 	       && !vdecl->isused && !vdecl->islocal))
 	    continue;
 
-	  static_hack(vdecl);
+	  extraopts = prefix_decl(vdecl);
 	}
 
-      prt_type_elements(d->modifiers, !first);
-      first = FALSE;
+      prt_type_elements(d->modifiers, opts | extraopts);
+      opts |= pte_duplicate;
       prt_variable_decl(vdd);
       outputln(";");
     }
 
-  if (first && (interesting = interesting_element(d->modifiers)))
+  if (!(opts & pte_duplicate) &&
+      (interesting = interesting_element(d->modifiers)))
     {
-      prt_type_element(interesting, FALSE);
+      prt_type_element(interesting, opts);
       outputln(";");
     }
 }
@@ -511,7 +515,7 @@ void prt_function_decl(function_decl d)
 {
   if (d->ddecl->isused && !d->ddecl->suppress_definition)
     {
-      static_hack(d->ddecl);
+      prefix_decl(d->ddecl);
       prt_declarator(d->declarator, d->modifiers, d->attributes, d->ddecl,
 		     psd_print_default);
       outputln(";");
@@ -526,7 +530,7 @@ void prt_function_body(function_decl d)
 	 messages */
       current.function_decl = d;
 
-      static_hack(d->ddecl);
+      prefix_decl(d->ddecl);
       prt_declarator(d->declarator, d->modifiers, d->attributes, d->ddecl,
 		     psd_print_default);
       startline();
@@ -556,8 +560,8 @@ void prt_variable_decl(variable_decl d)
 void prt_declarator(declarator d, type_element elements, attribute attributes,
 		    data_declaration ddecl, psd_options options)
 {
-  prt_type_elements(elements, FALSE);
-  prt_type_elements(CAST(type_element, attributes), FALSE);
+  prt_type_elements(elements, 0);
+  prt_type_elements(CAST(type_element, attributes), 0);
   prt_simple_declarator(d, ddecl,
 			(options | psd_need_paren_for_qual)
 			& ~psd_need_paren_for_star);
@@ -631,7 +635,7 @@ void prt_simple_declarator(declarator d, data_declaration ddecl,
 	  set_location(qd->modifiers->location);
 	  if (options & psd_need_paren_for_qual)
 	    output("(");
-	  prt_type_elements(qd->modifiers, FALSE);
+	  prt_type_elements(qd->modifiers, 0);
 	  prt_simple_declarator(qd->declarator, ddecl,
 				options & ~psd_need_paren_for_qual);
 	  if (options & psd_need_paren_for_qual)
@@ -672,18 +676,18 @@ void prt_simple_declarator(declarator d, data_declaration ddecl,
       }
 }
 
-void prt_type_elements(type_element elements, bool duplicate)
+void prt_type_elements(type_element elements, pte_options options)
 {
   type_element em;
 
   scan_type_element (em, elements)
     {
-      prt_type_element(em, duplicate);
+      prt_type_element(em, options);
       output(" ");
     }
 }
 
-void prt_type_element(type_element em, bool duplicate)
+void prt_type_element(type_element em, pte_options options)
 {
   switch (em->kind)
     {
@@ -691,11 +695,13 @@ void prt_type_element(type_element em, bool duplicate)
       PRTCASE(typeof_expr, em);
       PRTCASE(typeof_type, em);
       PRTCASE(attribute, em);
-      PRTCASE(rid, em);
       PRTCASE(qualifier, em);
+    case kind_rid:
+      prt_rid(CAST(rid, em), options);
+      break;
     default:
       if (is_tag_ref(em))
-	prt_tag_ref(CAST(tag_ref, em), duplicate);
+	prt_tag_ref(CAST(tag_ref, em), options);
       else
 	assert(0);
       break;
@@ -747,15 +753,21 @@ void prt_attribute(attribute a)
     }
 }
 
-void prt_rid(rid r)
+void prt_rid(rid r, pte_options options)
 {
   switch (r->id)
     {
     case RID_COMMAND: case RID_EVENT: case RID_TASK: 
-      if(documentation_mode) output("%s", rid_name(r));  // show these in documenation mode, but not otherwise
+      // show these in documenation mode, but not otherwise
+      if (documentation_mode)
+	output("%s", rid_name(r));
       break;
     case RID_DEFAULT:
       break;
+    case RID_EXTERN:
+      if (options & pte_noextern)
+	return;
+      /* FALLTHROUGH */
     default:
       set_location(r->location);
       output("%s", rid_name(r));
@@ -769,7 +781,7 @@ void prt_qualifier(qualifier q)
   output("%s", qualifier_name(q->id));
 }
 
-void prt_tag_ref(tag_ref tr, bool duplicate)
+void prt_tag_ref(tag_ref tr, pte_options options)
 {
   name_tag(tr->tdecl);
 
@@ -788,7 +800,7 @@ void prt_tag_ref(tag_ref tr, bool duplicate)
 	output_stripped_string_dollar(tr->tdecl->container->name);
       prt_word(tr->word1);
     }
-  if (!duplicate && tr->defined)
+  if (!(options & pte_duplicate) && tr->defined)
     {
       if (tr->kind == kind_enum_ref)
 	prt_enumerators(tr->fields, tr->tdecl);
@@ -798,7 +810,7 @@ void prt_tag_ref(tag_ref tr, bool duplicate)
   if (tr->attributes)
     {
       output(" ");
-      prt_type_elements(CAST(type_element, tr->attributes), FALSE);
+      prt_type_elements(CAST(type_element, tr->attributes), 0);
     }
 }
 
@@ -853,7 +865,7 @@ void prt_field_data_decl(data_decl d)
 {
   declaration fd;
 
-  prt_type_elements(d->modifiers, FALSE);
+  prt_type_elements(d->modifiers, 0);
 
   scan_declaration (fd, d->decls)
     {
@@ -1517,7 +1529,7 @@ void prt_asm_stmt_plain(asm_stmt s)
   set_location(s->location);
   output(" __asm ");
   if (s->qualifiers)
-    prt_type_elements(s->qualifiers, FALSE);
+    prt_type_elements(s->qualifiers, 0);
   output("(");
   prt_expression(s->arg1, P_TOP);
   if (s->asm_operands1 || s->asm_operands2 || s->asm_clobbers)

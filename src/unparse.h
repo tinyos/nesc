@@ -67,7 +67,13 @@ void prt_toplevel_declaration(declaration d);
 void prt_nelements(expression array);
 void prt_expressions(expression elist, bool isfirst);
 void prt_expression(expression e, int context_priority);
-void prt_type_elements(type_element elements, bool duplicate);
+
+typedef enum {
+  pte_duplicate = 1,
+  pte_noextern = 2
+} pte_options;
+
+void prt_type_elements(type_element elements, pte_options options);
 
 typedef enum {
   psd_need_paren_for_star = 1,
