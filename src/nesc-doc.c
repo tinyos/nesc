@@ -332,13 +332,17 @@ static char *component_docfile_name(const char *component_name) {
 static void copy_file(const char *srcfile, const char *destfile)
 {
   char buf[1024 * 4];
-  FILE *in = fopen(srcfile, "r");
-  FILE *out = fopen(destfile, "w");
+  FILE *in;
+  FILE *out;
   size_t nread;
   size_t nwritten;
 
-  assert(in);
-  assert(out);
+  assert(chdir(original_wd) == 0);
+  *in = fopen(srcfile, "r"); assert(in);
+  assert(chdir(docdir) == 0);
+
+  *out = fopen(destfile, "w"); assert(out);
+
   
   while( !feof(in) ) {
     nread = fread(buf, 1, sizeof(buf), in);
