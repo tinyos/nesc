@@ -170,7 +170,7 @@ dangling node as we drop these nested statements from the AST)")
 
 (deftype expression node (lvalue side_effects cst bitfield isregister
 			  type static_address converted_to_pointer
-			  cst_checked spelling parens)
+			  cst_checked spelling parens ivalueptr)
   "Expression nodes are subtypes of this type.
 LVALUE is true if this expression can be used in a context requiring an lvalue.
 BITFIELD is true if this lvalue is a bitfield.
@@ -187,7 +187,12 @@ constantness, and associated constant value (used to avoid duplicate error
 messages in repeated constant folding passes)
 SPELLING saves the `spelling' (a user-friendly name) of expressions used
 in initialisers.
-PARENS is TRUE if the expression is in parentheses")
+PARENS is TRUE if the expression is in parentheses
+IVALUE is a pointer to an ivalue (see init.h) holding the value of an
+  initialiser expression. On an init_list or in an expression used as
+  a simple initialiser (e.g., '3 + 2' in 'int x = 3 + 2'), this is the
+  value of the initialiser. Inside these initialisers, ivalue points into
+  the ivalue structure of the containing initialiser.")
 
 (deftype type_element node ()
   "A common super-type for all type-building elements (qualifiers, etc)")

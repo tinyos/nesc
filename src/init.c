@@ -398,6 +398,9 @@ static size_t constructor_count;
 /* The SPELLING_DEPTH of this constructor.  */
 static int constructor_depth;
 
+/* The value currently being initialised */
+ivalue constructor_value;
+
 static int require_constant_value;
 
 /* DECL node for which an initializer is being read.
@@ -434,6 +437,7 @@ struct constructor_stack
   largest_int index;
   largest_int array_size;
   largest_int max_index;
+  ivalue value;
   size_t count;
   int offset;
   int depth;
@@ -584,6 +588,50 @@ void finish_init(void)
   free (p);
 }
 
+/* ivalue constructors */
+static ivalue new_ivalue(int kind, type t)
+{
+  ivalue newp = ralloc(parse_region, ivalue);
+
+  newp->kind = kind;
+  newp->type = t;
+
+  if (newp->kind == iv_base)
+    newp->u.base = cval_top;
+}
+
+static void add_ivalue_array(ivalue to, largest_int index, ivalue element)
+{
+  largest_int end = index;
+  struct ivalue_array *newp;
+
+  assert(to->kind == iv_array);
+
+  /* Detect when pushing a range initialiser */
+  if (constructor_range_stack && constructor_range_stack->has_end)
+    end = constructor_range_stack->range_end;
+
+  newp = ralloc(parse_region, struct ivalue_array);
+  newp->next = to->u.array;
+  to->u.array = newp;
+  newp->from = index;
+  newp->to = end;
+  newp->value = element;
+}
+
+static void add_ivalue_field(ivalue to, field_declaration field, ivalue element)
+{
+  struct ivalue_field *newp;
+
+  assert(to->kind == iv_structured);
+
+  newp = ralloc(parse_region, struct ivalue_field);
+  newp->next = to->u.structured;
+  to->u.structured = newp;
+  newp->field = field;
+  newp->value = element;
+}
+
 static struct constructor_stack *push_constructor_stack(int implicit)
 {
   struct constructor_stack *p
@@ -595,6 +643,7 @@ static struct constructor_stack *push_constructor_stack(int implicit)
   p->index = constructor_index;
   p->array_size = constructor_array_size;
   p->max_index = constructor_max_index;
+  p->value = constructor_value;
   p->count = constructor_count;
   p->depth = constructor_depth;
   p->implicit = implicit;
@@ -688,6 +737,19 @@ void push_init_level(int implicit)
 
   if (!new_constructor_type())
     warning_init ("braces around scalar initializer");
+
+  switch (p->kind)
+    {
+    case c_aggregate:
+      add_ivalue_field(p->value, p->fields, constructor_value);
+      break;
+    case c_array:
+      add_ivalue_array(p->value, p->index, constructor_value);
+      break;
+    case c_scalar:
+      break;
+    default: assert(0); break;
+    }
 }
 
 /* Set state for new constructor type (constructor_kind and associated state)
@@ -695,11 +757,15 @@ void push_init_level(int implicit)
 static bool new_constructor_type(void)
 {
   if (!constructor_type)
-    constructor_kind = c_none;
+    {
+      constructor_kind = c_none;
+      constructor_value = NULL;
+    }
   else if (type_aggregate(constructor_type))
     {
       constructor_kind = c_aggregate;
       constructor_fields = skip_unnamed_bitfields(type_fields(constructor_type));
+      constructor_value = new_ivalue(iv_structured, constructor_type);
     }
   else if (type_array(constructor_type))
     {
@@ -711,12 +777,14 @@ static bool new_constructor_type(void)
       else
 	constructor_max_index = cval_sint_value(max) - 1;
       constructor_index = constructor_array_size = 0;
+      constructor_value = new_ivalue(iv_array, constructor_type);
     }
   else
     {
       /* Handle the case of int x = {5}; */
       constructor_kind = c_scalar;
       constructor_index = 0;
+      constructor_value = new_ivalue(iv_base, constructor_type);
 
       return FALSE;
     }
@@ -792,6 +860,7 @@ static type pop_init_level(void)
   constructor_index = p->index;
   constructor_array_size = p->array_size;
   constructor_max_index = p->max_index;
+  constructor_value = p->value;
   constructor_count = p->count;
   constructor_designated = p->designated;
   constructor_depth = p->depth;
@@ -985,14 +1054,14 @@ designator set_init_label(location loc, cstring fieldname)
 
 void check_init_element(expression init)
 {
-  /* Arrays are "constant" if they have a static address 
-     (see default_conversion on arrays) - this essentially handles the
-     case of string constants */
   known_cst c;
 
   if (!check_constant_once(init, cst_any))
     return;
 
+  /* Arrays are "constant" if they have a static address 
+     (see default_conversion on arrays) - this essentially handles the
+     case of string constants */
   c = type_array(init->type) ? init->static_address : init->cst;
 
   if (!c)
@@ -1012,7 +1081,11 @@ void check_init_element(expression init)
     }
 #endif
   else
-    constant_overflow_warning(c);
+    {
+      constant_overflow_warning(c);
+      assert(init->ivalue->kind == iv_base);
+      init->ivalue->u.base = cval_cast(c->cval, init->ivalue->type);
+    }
 }
 
 /* "Output" the next constructor element.
@@ -1071,6 +1144,10 @@ void process_init_element(expression value)
       /* We also set constructor_array_size so that the size is known for
 	 make_init_list */
       constructor_array_size = CAST(string, value)->ddecl->chars_length + 1;
+      /* XXX: maybe this should stay as a iv_array, and the string should
+	 be broken down into characters? */
+      constructor_value->kind = iv_base;
+      constructor_value->u.base = cval_top;
     }
 
   /* Ignore elements of a brace group if it is entirely superfluous
@@ -1142,6 +1219,30 @@ void process_init_element(expression value)
 	{
 	  push_init_level(1);
 	  goto tryagain;
+	}
+
+      /* This is here rather than in the previous switch because of
+	 the tryagain ("walk-into-array-or-aggregate") case */
+      if (elttype != error_type)
+	{
+	  ivalue valueholder = NULL;
+
+	  switch (constructor_kind)
+	    {
+	    case c_aggregate:
+	      valueholder = new_ivalue(iv_base, elttype);
+	      add_ivalue_field(constructor_value, constructor_fields, valueholder);
+	      break;
+	    case c_array:
+	      valueholder = new_ivalue(iv_base, elttype);
+	      add_ivalue_array(constructor_value, constructor_index, valueholder);
+	      break;
+	    case c_scalar:
+	      valueholder = constructor_value;
+	      break;
+	    default: assert(0); break;
+	    }
+	  value->ivalue = valueholder;
 	}
 
       output_init_element (value, elttype);
@@ -1235,6 +1336,7 @@ expression make_init_list(location loc, expression elist)
   assert(!constructor_range_stack);
 
   ilist = CAST(expression, new_init_list(parse_region, loc, elist));
+  ilist->ivalue = constructor_value;
   itype = pop_init_level();
 
   /* Complete array types based on the initialiser */
@@ -1264,5 +1366,6 @@ expression make_cast_list(location loc, asttype t, expression init)
    The variable being initialised is constructor_decl */
 void simple_init(expression expr)
 {
+  expr->ivalue = new_ivalue(iv_base, constructor_decl->type);
   output_init_element(expr, constructor_decl->type);
 }

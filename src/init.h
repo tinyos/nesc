@@ -24,6 +24,32 @@ Boston, MA 02111-1307, USA. */
 #ifndef INIT_H
 #define INIT_H
 
+/* Types representing a parsed initialiser. Unspecified fields and
+   array elements were unspecified in the initialiser. */
+typedef struct ivalue {
+  enum { iv_base, iv_array, iv_structured } kind;
+
+  type type;
+
+  union {
+    cval base; /* for iv_base */
+    struct ivalue_array *array; /* for iv_array */
+    struct ivalue_structured *structured; /* for iv_structured */
+  } u;
+} *ivalue;
+
+struct ivalue_array {
+  struct ivalue_array *next;
+  largest_int from, to;
+  ivalue value;
+};
+
+struct ivalue_structured {
+  struct ivalue_structured *next;
+  field_declaration field;
+  ivalue value;
+};
+
 void start_init(declaration decl);
 void finish_init(void);
 void simple_init(expression expr);
