@@ -448,7 +448,7 @@ static void static_hack(data_declaration ddecl)
       !ddecl->spontaneous && ddecl->definition)
     {
       output("static ");
-      if (!ddecl->isinline)
+      if (ddecl->makeinline)
 	output("inline ");
     }
 }

@@ -124,6 +124,7 @@ typedef struct data_declaration {
   bool defined;			/* nesC: true if defined, false if used */
   bool suppress_definition;	/* Prevent code generation */
   bool uncallable;		/* Error if called */
+  bool makeinline;		/* Mark this function inline when generating code */
   struct data_declaration *interface;	/* nesC: interface this cmd/event belongs to */
   typelist oldstyle_args; /* Type of arguments from old-style declaration */
   dd_list uses;			/* list of declarations of identifiers used */

@@ -132,6 +132,7 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->connections = NULL;
   dd->spontaneous = FALSE;
   dd->magic_reduce = NULL;
+  dd->makeinline = FALSE;
 }
 
 data_declaration lookup_id(const char *s, bool this_level_only)
