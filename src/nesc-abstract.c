@@ -31,6 +31,8 @@ Boston, MA 02111-1307, USA.  */
 #include "expr.h"
 #include "nesc-env.h"
 #include "init.h"
+#include "attributes.h"
+#include "nesc-attributes.h"
 
 static AST_walker clone_walker;
 
@@ -1018,6 +1020,8 @@ void check_abstract_arguments(const char *kind, data_declaration ddecl,
 
   while (parms && arglist)
     {
+      const char *errmsg = NULL;
+
       if (arglist->type == error_type)
 	;
       else if (is_data_decl(parms))
@@ -1026,9 +1030,9 @@ void check_abstract_arguments(const char *kind, data_declaration ddecl,
 	  type parmtype = vparm->ddecl->type;
 
 	  if (type_incomplete(parmtype))
-	    error_with_location(loc, "type of formal parameter %d is incomplete", parmnum);
+	    errmsg = "type of formal parameter %d is incomplete";
 	  else if (is_type_argument(arglist))
-	    error_with_location(loc, "formal parameter %d must be a value", parmnum);
+	    errmsg = "formal parameter %d must be a value";
 	  else 
 	    {
 	      set_error_location(arglist->location);
@@ -1038,17 +1042,35 @@ void check_abstract_arguments(const char *kind, data_declaration ddecl,
 	}
       else /* type argument */
 	{
+	  type_parm_decl tparm = CAST(type_parm_decl, parms);
+
 	  if (!is_type_argument(arglist))
-	    error_with_location(loc, "formal parameter %d must be a type", parmnum);
-	  else if (type_array(arglist->type))
-	    error_with_location(loc, "type parameter cannot be an array type (parameter %d)",
-		  parmnum);
-	  else if (type_function(arglist->type))
-	    error_with_location(loc, "type parameter cannot be a function type (parameter %d)",
-		  parmnum);
-	  else if (type_incomplete(arglist->type))
-	    error_with_location(loc, "type parameter %d is an incomplete type", parmnum);
+	    errmsg = "formal parameter %d must be a type";
+	  else switch (tparm->ddecl->typevar_kind)
+	    {
+	    case typevar_normal: 
+	      /* These tests ensure the type can be used in assignments 
+	         and as a function argument. */
+	      if (type_array(arglist->type))
+		errmsg = "type parameter cannot be an array type (parameter %d)";
+	      else if (type_function(arglist->type))
+		errmsg = "type parameter cannot be a function type (parameter %d)";
+	      else if (type_incomplete(arglist->type))
+		errmsg = "type parameter %d is an incomplete type";
+	      break;
+	    case typevar_integer:
+	      if (!type_integer(arglist->type))
+		errmsg = "parameter %d must be an integer type";
+	      break;
+	    case typevar_number:
+	      if (!type_integer(arglist->type))
+		errmsg = "parameter %d must be a numerical type";
+	      break;
+	    default: assert(0); break;
+	    }
 	}
+      if (errmsg)
+	error_with_location(loc, errmsg, parmnum);
       parmnum++;
       arglist = CAST(expression, arglist->next);
       parms = CAST(declaration, parms->next);
@@ -1157,7 +1179,30 @@ nesc_declaration specification_copy(region r, component_ref cref,
   return copy;
 }
 
+static void typevar_attr(nesc_attribute attr, data_declaration ddecl,
+			 int kind)
+{
+  if (ddecl->typevar_kind != typevar_normal)
+    ignored_nesc_attribute(attr);
+  else
+    ddecl->typevar_kind = kind;
+}
+
+static void handle_integer_decl(nesc_attribute attr, data_declaration ddecl)
+{
+  typevar_attr(attr, ddecl, typevar_integer);
+}
+
+static void handle_number_decl(nesc_attribute attr, data_declaration ddecl)
+{
+  typevar_attr(attr, ddecl, typevar_number);
+}
+
 void init_abstract(void)
 {
   init_clone();
+  define_internal_attribute("integer", NULL, handle_integer_decl, NULL, NULL,
+			    NULL);
+  define_internal_attribute("number", NULL, handle_number_decl, NULL, NULL,
+			    NULL);
 }

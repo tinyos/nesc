@@ -364,7 +364,7 @@ static void set_nesc_parse_tree(void *tree)
   nesc_declaration cdecl = current.container;
   nesc_decl nd = CAST(nesc_decl, tree);
 
-  handle_nesc_decl_attributes(nd->attributes, cdecl);
+  handle_nescdecl_attributes(nd->attributes, cdecl);
   nd->cdecl = cdecl;
   cdecl->ast = nd;
   parse_tree = CAST(node, nd);

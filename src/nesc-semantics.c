@@ -537,6 +537,7 @@ declaration declare_type_parameter(location l, cstring id, attribute attribs,
       init_data_declaration(&tempdecl, CAST(declaration, d), id.data,
 			    error_type);
       tempdecl.kind = decl_typedef;
+      tempdecl.typevar_kind = typevar_normal;
       tempdecl.definition = tempdecl.ast;
       handle_decl_attributes(attribs, &tempdecl);
       handle_decl_dd_attributes(extra_attr, &tempdecl);

@@ -187,6 +187,18 @@ type default_conversion(expression e)
       return make_pointer_type(type_array_of(from));
     }
 
+  if (type_variable(from))
+    {
+      data_declaration vdecl = type_variable_decl(from);
+
+      switch (vdecl->typevar_kind)
+	{
+	case typevar_integer: return unknown_int_type;
+	case typevar_number: return unknown_number_type;
+	default: break;
+	}
+    }
+
   return from;
 }
 

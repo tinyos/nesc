@@ -142,7 +142,8 @@ static string_cst build_string_cst(region r, location loc, const char *s)
 
 expression build_string(region r, location loc, const char *str)
 {
-  string s = new_string(r, loc, build_string_cst(r, loc, str), NULL);
+  string_cst elems = build_string_cst(r, loc, str);
+  string s = new_string(r, loc, CAST(expression, elems), NULL);
   size_t total_length;
 
   total_length = strlen(str);

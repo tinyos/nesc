@@ -88,6 +88,9 @@ struct type
 
 	   tp_first_floating,
 	   tp_float = tp_first_floating, tp_double, tp_long_double,
+
+	   /* Like tp_unknown_int, but might be a real or integer */
+	   tp_unknown_number,
 	   tp_last
     } primitive;
 
@@ -191,7 +194,7 @@ type float_type, double_type, long_double_type,
   unsigned_char_type, signed_char_type, void_type, ptr_void_type,
   size_t_type, ptrdiff_t_type, intptr_type,
   int2_type, uint2_type, int4_type, uint4_type, int8_type, uint8_type,
-  unknown_int_type, error_type;
+  unknown_int_type, unknown_number_type, error_type;
 
 static bool legal_array_size(cval c) 
 {
@@ -339,38 +342,35 @@ bool type_network(type t)
    Requires: must be called at most once for each pk, from types_init
 */
 
-static type make_primitive(int pk, int size, int alignment)
+static type make_primitive0(int pk, cval size, cval alignment,
+			    cval complex_size)
 {
   type nt = new_type(tk_primitive), ct;
 
   nt->u.primitive = pk;
-  nt->size = make_type_cval(size);
-  nt->alignment = make_type_cval(alignment);
+  nt->size = size;
+  nt->alignment = alignment;
   primitive_types[pk] = nt;
 
   ct = new_type(tk_complex);
   ct->u.primitive = pk;
-  ct->size = make_type_cval(size * 2);
+  ct->size = complex_size; /* can't compute as types not available yet */
   ct->alignment = nt->alignment; /* ASSUME: alignof(complex t) == alignof(t) */
   complex_types[pk] = ct;
 
   return nt;
 }
 
-static type make_unknown_int()
+static type make_primitive(int pk, int size, int alignment)
 {
-  type nt = new_type(tk_primitive), ct;
+  return make_primitive0(pk, make_type_cval(size), make_type_cval(alignment),
+			 make_type_cval(size * 2));
+}
 
-  nt->u.primitive = tp_unknown_int;
-  nt->size = nt->alignment = cval_unknown_number;
-  primitive_types[tp_unknown_int] = nt;
-
-  ct = new_type(tk_complex);
-  ct->u.primitive = tp_unknown_int;
-  ct->size = ct->alignment = cval_unknown_number;
-  complex_types[tp_unknown_int] = ct;
-
-  return nt;
+static type make_unknown_primitive(int pk)
+{
+  return make_primitive0(pk, cval_unknown_number, cval_unknown_number,
+			 cval_unknown_number);
 }
 
 static type lookup_primitive(int default_kind, int size, int alignment,
@@ -463,7 +463,8 @@ void init_types(void)
   int8_type = lookup_primitive(tp_int8, 8, target->int8_align, FALSE);
   uint8_type = lookup_primitive(tp_uint8, 8, target->int8_align, TRUE);
 
-  unknown_int_type = make_unknown_int();
+  unknown_int_type = make_unknown_primitive(tp_unknown_int);
+  unknown_number_type = make_unknown_primitive(tp_unknown_number);
 
   char_array_type = make_array_type(char_type, NULL);
   error_type = new_type(tk_error);
@@ -589,7 +590,8 @@ bool type_unsigned(type t)
 
 bool type_floating(type t)
 {
-  return t->kind == tk_primitive && t->u.primitive >= tp_first_floating;
+  return t->kind == tk_primitive && t->u.primitive >= tp_first_floating &&
+    t->u.primitive < tp_unknown_number;
 }
 
 bool type_plain_char(type t)
@@ -665,6 +667,11 @@ bool type_double(type t)
 bool type_long_double(type t)
 {
   return t->kind == tk_primitive && t->u.primitive == tp_long_double;
+}
+
+bool type_unknown_number(type t)
+{
+  return t->kind == tk_primitive && t->u.primitive == tp_unknown_number;
 }
 
 bool type_char(type t)
@@ -866,6 +873,10 @@ bool type_equal_unqualified(type t1, type t2)
   if (t1 == error_type || t2 == error_type)
     return TRUE;
 
+  /* The unknown types are actually not equal to themselves... */
+  if (type_unknown_int(t1) || type_unknown_number(t1))
+    return FALSE;
+
   /* Short-circuit easy case */
   if (t1 == t2)
     return TRUE;
@@ -913,7 +924,6 @@ bool type_self_promoting(type t)
   if (t->kind != tk_primitive)
     return TRUE;
 
-  /* Could also use array. Hmm. */
   switch (t->u.primitive)
     {
     case tp_float: case tp_char: case tp_unsigned_char: case tp_signed_char:
@@ -1105,6 +1115,10 @@ bool type_compatible_unqualified(type t1, type t2)
   if (t1 == error_type || t2 == error_type)
     return 1;
 
+  /* The unknown types are actually not compatible with themselves... */
+  if (type_unknown_int(t1) || type_unknown_number(t1))
+    return FALSE;
+
   /* Short-circuit easy case */
   if (t1 == t2)
     return 1;
@@ -1233,7 +1247,8 @@ static int common_primitive_type(type t1, type t2)
     }
 
   /* Floating point types follow the order specified in the enum and win
-     over all integral types */
+     over all integral types. This includes unknown_number winning over
+     everybody. */
   return pk;
 }
 
@@ -1392,12 +1407,14 @@ type type_base(type t)
 
 bool type_integer(type t)
 {
-  return type_integral(t) || type_enum(t);
+  return type_integral(t) || type_enum(t) ||
+    (type_variable(t) && type_variable_decl(t)->typevar_kind == typevar_integer);
 }
 
 bool type_real(type t)
 {
-  return type_integer(t) || type_floating(t);
+  return type_integer(t) || type_floating(t) || type_unknown_number(t) ||
+    (type_variable(t) && type_variable_decl(t)->typevar_kind == typevar_number);
 }
 
 bool type_arithmetic(type t)
@@ -1433,7 +1450,7 @@ type make_unsigned_type(type t)
     case tp_int8: return qualify_type1(uint8_type, t);
     default: break;
     }
-  assert(type_unsigned(t));
+  assert(type_unknown_int(t) || type_unknown_number(t) || type_unsigned(t));
 
   return t;
 }
@@ -1768,6 +1785,18 @@ type type_default_conversion(type from)
 
   if (type_array(from))
     return make_pointer_type(type_array_of(from));
+
+  if (type_variable(from))
+    {
+      data_declaration vdecl = type_variable_decl(from);
+
+      switch (vdecl->typevar_kind)
+	{
+	case typevar_integer: return unknown_int_type;
+	case typevar_number: return unknown_number_type;
+	default: break;
+	}
+    }
 
   return from;
 }
@@ -2136,7 +2165,7 @@ type instantiate_type(type t)
 }
 
 static char *primname[] = {
-  NULL,
+  NULL, /* error */
   "int16_t",
   "uint16_t",
   "int32_t",
@@ -2154,9 +2183,11 @@ static char *primname[] = {
   "unsigned long",
   "long long",
   "unsigned long long",
+  "unknown int",
   "float",
   "double",
-  "long double"
+  "long double",
+  "unknown number"
 };
 
 static const char *rconcat(region r, const char *s1, const char *s2)

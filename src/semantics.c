@@ -150,6 +150,7 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->dumped = FALSE;
   dd->encoder = dd->decoder = NULL;
   dd->basetype = NULL;
+  dd->typevar_kind = typevar_none;
 }
 
 data_declaration lookup_id(const char *s, bool this_level_only)
@@ -3783,4 +3784,3 @@ void start_semantics(source_language l, nesc_declaration container,
   current.in_atomic = NULL;
   current.spec_section = spec_normal;
 }
-

@@ -2,6 +2,7 @@
 #include "attributes.h"
 #include "semantics.h"
 #include "nesc-semantics.h"
+#include "nesc-attributes.h"
 #include "machine.h"
 #include "c-parse.h"
 
@@ -14,6 +15,11 @@ void ignored_attribute(attribute attr)
 }
 
 void ignored_gcc_attribute(gcc_attribute attr)
+{
+  ignored_attribute(CAST(attribute, attr));
+}
+
+void ignored_nesc_attribute(nesc_attribute attr)
 {
   ignored_attribute(CAST(attribute, attr));
 }
@@ -181,17 +187,9 @@ void handle_gcc_tag_attribute(gcc_attribute attr, tag_declaration tdecl)
     /*ignored_gcc_attribute(attr)*/;
 }
 
-static void handle_nesc_attribute(attribute attr, dd_list *alist)
+void handle_nescdecl_attribute(attribute attr, nesc_declaration ndecl)
 {
-  assert(is_nesc_attribute(attr));
-  if (!*alist)
-    *alist = dd_new_list(parse_region);
-  dd_add_last(parse_region, *alist, attr);
-}
-
-void handle_nesc_decl_attribute(attribute attr, nesc_declaration ndecl)
-{
-  handle_nesc_attribute(attr, &ndecl->attributes);
+  handle_nesc_nescdecl_attribute(CAST(nesc_attribute, attr), ndecl);
 }
 
 void handle_decl_attribute(attribute attr, data_declaration ddecl)
@@ -199,7 +197,7 @@ void handle_decl_attribute(attribute attr, data_declaration ddecl)
   if (is_gcc_attribute(attr))
     handle_gcc_decl_attribute(CAST(gcc_attribute, attr), ddecl);
   else
-    handle_nesc_attribute(attr, &ddecl->attributes);
+    handle_nesc_decl_attribute(CAST(nesc_attribute, attr), ddecl);
 }
 
 void handle_field_attribute(attribute attr, field_declaration fdecl)
@@ -207,7 +205,7 @@ void handle_field_attribute(attribute attr, field_declaration fdecl)
   if (is_gcc_attribute(attr))
     handle_gcc_field_attribute(CAST(gcc_attribute, attr), fdecl);
   else
-    handle_nesc_attribute(attr, &fdecl->attributes);
+    handle_nesc_field_attribute(CAST(nesc_attribute, attr), fdecl);
 }
 
 void handle_tag_attribute(attribute attr, tag_declaration tdecl)
@@ -215,7 +213,7 @@ void handle_tag_attribute(attribute attr, tag_declaration tdecl)
   if (is_gcc_attribute(attr))
     handle_gcc_tag_attribute(CAST(gcc_attribute, attr), tdecl);
   else
-    handle_nesc_attribute(attr, &tdecl->attributes);
+    handle_nesc_tag_attribute(CAST(nesc_attribute, attr), tdecl);
 }
 
 bool handle_type_attribute(attribute attr, type *t)
@@ -232,10 +230,10 @@ bool handle_type_attribute(attribute attr, type *t)
 
 /* Functions to handle regular and dd list of attributes */
 
-void handle_nesc_decl_attributes(attribute alist, nesc_declaration ndecl)
+void handle_nescdecl_attributes(attribute alist, nesc_declaration ndecl)
 {
   scan_attribute (alist, alist)
-    handle_nesc_decl_attribute(alist, ndecl);
+    handle_nescdecl_attribute(alist, ndecl);
 }
 
 void handle_decl_attributes(attribute alist, data_declaration ddecl)
@@ -256,13 +254,13 @@ void handle_tag_attributes(attribute alist, tag_declaration tdecl)
     handle_tag_attribute(alist, tdecl);
 }
 
-void handle_nesc_decl_dd_attributes(dd_list alist, nesc_declaration ndecl)
+void handle_nescdecl_dd_attributes(dd_list alist, nesc_declaration ndecl)
 {
   dd_list_pos attr;
 
   if (alist)
     dd_scan (attr, alist)
-      handle_nesc_decl_attribute(DD_GET(attribute, attr), ndecl);
+      handle_nescdecl_attribute(DD_GET(attribute, attr), ndecl);
 }
 
 void handle_decl_dd_attributes(dd_list alist, data_declaration ddecl)

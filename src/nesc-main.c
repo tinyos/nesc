@@ -36,6 +36,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-magic.h"
 #include "nesc-uses.h"
 #include "nesc-abstract.h"
+#include "nesc-attributes.h"
 #include "nesc-constants.h"
 #include "nesc-dump.h"
 #include "nesc-network.h"
@@ -322,6 +323,7 @@ void nesc_compile(const char *filename, const char *target_name)
 
   parse_region = newregion();
   preprocess_init();
+  init_nesc_attributes();
   cval_init();
   init_types();
   init_lex();
