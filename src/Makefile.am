@@ -131,13 +131,7 @@ BUILT_SOURCES =					\
 	c-gperf.h				\
 	c-parse.tab.c				\
 	c-parse.tab.h				\
-	c-parse.output				\
-	config.h				\
-	config.h.in				\
-	aclocal.m4				\
-	autom4te.cache				\
-	Makefile.in				\
-	stamp-h1
+	c-parse.output
 
 EXTRA_DIST = 					\
 	build-basics.el				\
