@@ -431,10 +431,11 @@ static bool find_reachable_functions(struct connections *c, gnode n,
     }
   if (graph_node_markedp(n))
     return TRUE;
-  else if (ep->function->defined &&
+  else if (!ep->args && ep->function->defined &&
 	   is_module(((component_declaration)ep->function->container)->impl))
     {
       full_connection target = new_full_connection(c->r, ep, gcond, gargs);
+
 
       assert(!graph_first_edge_out(n));
 
