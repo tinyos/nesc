@@ -40,7 +40,7 @@ The following is a summary of the changes in nesC 1.1:
   o the -fnesc-include=<filename> option includes a C file before compiling
     the requested component (used by ncc to include tos.h...)
     You can specify several -fnesc-include=... options
-  o A hardware platform X can now more easily added:
+  o A hardware platform X can now more easily be added:
     - create directory .../tos/platforms/X
     - place a .platform file in .../tos/platforms/X. Look at existing
       .platform files for inspiration.
