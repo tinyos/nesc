@@ -1,7 +1,7 @@
 typedef int /*test.conf1*/conf$0$t;
-typedef conf$0$t */*test.conf1.themod*/mod$0$t;
+typedef /*test.conf1*/conf$0$t */*test.conf1.themod*/mod$0$t;
 typedef float */*test.conf2*/conf$1$t;
-typedef conf$1$t */*test.conf2.themod*/mod$1$t;
+typedef /*test.conf2*/conf$1$t */*test.conf2.themod*/mod$1$t;
 static  void /*test.conf1.themod*/mod$0$sc$init(void);
 static  void /*test.conf2.themod*/mod$1$sc$init(void);
 static  
@@ -10,28 +10,28 @@ void main$sc$init(void);
 # 5 "main.nc"
 void  main$entry(void);
 # 5 "mod.nc"
-struct mod$0$oops {
-  mod$0$t x;
+struct /*test.conf1.themod*/mod$0$oops {
+  /*test.conf1.themod*/mod$0$t x;
 } /*test.conf1.themod*/mod$0$a;
 static inline 
-mod$0$t /*test.conf1.themod*/mod$0$f(mod$0$t x);
+/*test.conf1.themod*/mod$0$t /*test.conf1.themod*/mod$0$f(/*test.conf1.themod*/mod$0$t x);
 static inline  
 
 
 void /*test.conf1.themod*/mod$0$sc$init(void);
 #line 5
-struct mod$1$oops {
-  mod$1$t x;
+struct /*test.conf2.themod*/mod$1$oops {
+  /*test.conf2.themod*/mod$1$t x;
 } /*test.conf2.themod*/mod$1$a;
 static inline 
-mod$1$t /*test.conf2.themod*/mod$1$f(mod$1$t x);
+/*test.conf2.themod*/mod$1$t /*test.conf2.themod*/mod$1$f(/*test.conf2.themod*/mod$1$t x);
 static inline  
 
 
 void /*test.conf2.themod*/mod$1$sc$init(void);
 static inline 
 #line 9
-mod$1$t /*test.conf2.themod*/mod$1$f(mod$1$t x)
+/*test.conf2.themod*/mod$1$t /*test.conf2.themod*/mod$1$f(/*test.conf2.themod*/mod$1$t x)
 #line 9
 {
   return x;
@@ -45,7 +45,7 @@ static inline  void /*test.conf2.themod*/mod$1$sc$init(void)
 
 static inline 
 #line 9
-mod$0$t /*test.conf1.themod*/mod$0$f(mod$0$t x)
+/*test.conf1.themod*/mod$0$t /*test.conf1.themod*/mod$0$f(/*test.conf1.themod*/mod$0$t x)
 #line 9
 {
   return x;

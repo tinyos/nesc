@@ -3,34 +3,34 @@ typedef char *main$sc2$t2;
 typedef int main$sc1$t1;
 typedef int main$sc1$t2;
 typedef int /*test.conf1*/conf$0$t;
-typedef conf$0$t /*test.conf1.themod*/mod$0$t;
+typedef /*test.conf1*/conf$0$t /*test.conf1.themod*/mod$0$t;
 typedef int /*test.conf1.themod*/mod$0$sc$t1;
-typedef mod$0$t /*test.conf1.themod*/mod$0$sc$t2;
+typedef /*test.conf1.themod*/mod$0$t /*test.conf1.themod*/mod$0$sc$t2;
 typedef char */*test.conf2*/conf$1$t;
-typedef conf$1$t /*test.conf2.themod*/mod$1$t;
+typedef /*test.conf2*/conf$1$t /*test.conf2.themod*/mod$1$t;
 typedef int /*test.conf2.themod*/mod$1$sc$t1;
-typedef mod$1$t /*test.conf2.themod*/mod$1$sc$t2;
-static  mod$0$sc$t1 /*test.conf1.themod*/mod$0$sc$init(mod$0$sc$t2 arg_0x82f4818, int arg_0x82f4968);
-static  mod$1$sc$t1 /*test.conf2.themod*/mod$1$sc$init(mod$1$sc$t2 arg_0x82f4818, int arg_0x82f4968);
+typedef /*test.conf2.themod*/mod$1$t /*test.conf2.themod*/mod$1$sc$t2;
+static  /*test.conf1.themod*/mod$0$sc$t1 /*test.conf1.themod*/mod$0$sc$init(/*test.conf1.themod*/mod$0$sc$t2 arg_hex, int arg_hex);
+static  /*test.conf2.themod*/mod$1$sc$t1 /*test.conf2.themod*/mod$1$sc$init(/*test.conf2.themod*/mod$1$sc$t2 arg_hex, int arg_hex);
 static  
 # 2 "sc.nc"
-main$sc2$t1 main$sc2$init(main$sc2$t2 arg_0x82f4818, int arg_0x82f4968);
+main$sc2$t1 main$sc2$init(main$sc2$t2 arg_hex, int arg_hex);
 static  
 #line 2
-main$sc1$t1 main$sc1$init(main$sc1$t2 arg_0x82f4818, int arg_0x82f4968);
+main$sc1$t1 main$sc1$init(main$sc1$t2 arg_hex, int arg_hex);
 # 6 "main.nc"
 void  main$entry(void);
 # 5 "mod.nc"
-mod$0$t /*test.conf1.themod*/mod$0$x;
+/*test.conf1.themod*/mod$0$t /*test.conf1.themod*/mod$0$x;
 static inline  
-int /*test.conf1.themod*/mod$0$sc$init(mod$0$t foo, int b);
+int /*test.conf1.themod*/mod$0$sc$init(/*test.conf1.themod*/mod$0$t foo, int b);
 #line 5
-mod$1$t /*test.conf2.themod*/mod$1$x;
+/*test.conf2.themod*/mod$1$t /*test.conf2.themod*/mod$1$x;
 static inline  
-int /*test.conf2.themod*/mod$1$sc$init(mod$1$t foo, int b);
+int /*test.conf2.themod*/mod$1$sc$init(/*test.conf2.themod*/mod$1$t foo, int b);
 static inline  
 #line 7
-int /*test.conf2.themod*/mod$1$sc$init(mod$1$t foo, int b)
+int /*test.conf2.themod*/mod$1$sc$init(/*test.conf2.themod*/mod$1$t foo, int b)
 #line 7
 {
   /*test.conf2.themod*/mod$1$x = foo;
@@ -38,13 +38,13 @@ int /*test.conf2.themod*/mod$1$sc$init(mod$1$t foo, int b)
 }
 
 # 2 "sc.nc"
-inline static  main$sc2$t1 main$sc2$init(main$sc2$t2 arg_0x82f4818, int arg_0x82f4968){
+inline static  main$sc2$t1 main$sc2$init(main$sc2$t2 arg_hex, int arg_hex){
 #line 2
   int result;
 #line 2
 
 #line 2
-  result = /*test.conf2.themod*/mod$1$sc$init(arg_0x82f4818, arg_0x82f4968);
+  result = /*test.conf2.themod*/mod$1$sc$init(arg_hex, arg_hex);
 #line 2
 
 #line 2
@@ -54,7 +54,7 @@ inline static  main$sc2$t1 main$sc2$init(main$sc2$t2 arg_0x82f4818, int arg_0x82
 #line 2
 static inline  
 # 7 "mod.nc"
-int /*test.conf1.themod*/mod$0$sc$init(mod$0$t foo, int b)
+int /*test.conf1.themod*/mod$0$sc$init(/*test.conf1.themod*/mod$0$t foo, int b)
 #line 7
 {
   /*test.conf1.themod*/mod$0$x = foo;
@@ -62,13 +62,13 @@ int /*test.conf1.themod*/mod$0$sc$init(mod$0$t foo, int b)
 }
 
 # 2 "sc.nc"
-inline static  main$sc1$t1 main$sc1$init(main$sc1$t2 arg_0x82f4818, int arg_0x82f4968){
+inline static  main$sc1$t1 main$sc1$init(main$sc1$t2 arg_hex, int arg_hex){
 #line 2
   int result;
 #line 2
 
 #line 2
-  result = /*test.conf1.themod*/mod$0$sc$init(arg_0x82f4818, arg_0x82f4968);
+  result = /*test.conf1.themod*/mod$0$sc$init(arg_hex, arg_hex);
 #line 2
 
 #line 2

@@ -1,10 +1,14 @@
 rm -rf .output
+OUT=/tmp/test.$$.1
+ERR=/tmp/test.$$.2
 mkdir .output
 for i in *; do
   if [ -d $i ]; then
     echo $i
     cd $i
-    ../run1 >../.output/$i.1 2>../.output/$i.2
+    ../run1 >$OUT 2>$ERR
+    sed -e 's/arg_0x[0-9a-f]*/arg_hex/g' $OUT >../.output/$i.1 
+    sed -e 's/arg_0x[0-9a-f]*/arg_hex/g' $ERR >../.output/$i.2 
     cd ..
   fi
 done
@@ -13,3 +17,4 @@ diff --recur -u .ok .output
 if [ $? = 0 ]; then
   echo All tests passed
 fi
+rm -f $OUT $ERR
