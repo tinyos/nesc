@@ -3488,7 +3488,7 @@ void layout_enum_end(tag_declaration tdecl)
 {
   declaration names = tdecl->ast->fields;
   cval smallest, largest;
-  bool enum_isunsigned, enum_unknown = FALSE;
+  bool enum_isunsigned;
   type type_smallest, type_largest, enum_reptype;
   enumerator v, values = CAST(enumerator, names);
 
@@ -3509,7 +3509,7 @@ void layout_enum_end(tag_declaration tdecl)
 
 	  if (cval_isunknown(vv))
 	    {
-	      enum_unknown = TRUE;
+	      smallest = vv;
 	      break;
 	    }
 	  if (cval_intcompare(vv, largest) > 0)
@@ -3519,7 +3519,7 @@ void layout_enum_end(tag_declaration tdecl)
 	}
     }
 
-  if (enum_unknown)
+  if (cval_isunknown(smallest))
     enum_reptype = unknown_int_type;
   else
     {
