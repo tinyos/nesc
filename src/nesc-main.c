@@ -33,6 +33,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-magic.h"
 #include "nesc-uses.h"
 #include "nesc-abstract.h"
+#include "nesc-constants.h"
 #include "edit.h"
 #include "machine.h"
 
@@ -234,6 +235,7 @@ void nesc_compile(const char *filename, const char *target_name)
   init_magic_functions();
   init_uses();
   init_abstract();
+  init_nesc_constants();
 
   toplevel.filename = "<commandline>";
   toplevel.lineno = 0;
@@ -258,7 +260,7 @@ void nesc_compile(const char *filename, const char *target_name)
 	      dd_list modules, components;
 
 	      connect_graphs(parse_region, program, &cg, &modules, &components);
-	      fold_constants(parse_region, program, NULL);
+	      fold_components(parse_region, program, NULL);
 
 	      generate_c_code(program, target_name, cg, modules);
 	    }
