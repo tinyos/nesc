@@ -180,7 +180,7 @@ $(srcdir)/AST_parent.c: build-parent.el nodetypes.def build-basics.el
 $(srcdir)/AST_print.c: build-print.el nodetypes.def build-basics.el
 	cd $(srcdir) && $(EMACS) $(EMACSFLAGS) -batch -load build-print.el AST nodetypes.def
 
-$(srcdir)/c-gperf.h: c-parse.gperf qualifiers.h
+$(srcdir)/c-gperf.h: c-parse.gperf qualifiers.h nesc-keywords.h
 	cd $(srcdir) && $(M4) $(M4FLAGS) c-parse.gperf | grep -v '^$$' | \
 	$(GPERF) $(GPERFFLAGS) -p -j1 -i 1 -g -o -t -G -N is_reserved_word -k1,3,$$ >$@-
 	mv $@- $@
