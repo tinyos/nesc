@@ -49,6 +49,10 @@ sub decode() {
 
     $base = 0;
     for (@spec) {
+	# remove end of line stuff to avoid confusion w/ cygwin
+	chop;
+	s/\r$//;
+
 	/ *(.*)/;
 	split / /, $1;
 	($field, $type, $offset, $bitlength) = @_;
