@@ -1,0 +1,89 @@
+<nesc xmlns="http://www.tinyos.net/nesC">
+  <components>
+  </components>
+  <interfaces>
+  </interfaces>
+  <interfacedefs>
+    <interfacedef qname="StdControl" loc="56:basic/StdControl.nc">
+      <attribute-value>
+        <attribute-ref name="useful" ref="HEX"/>
+        <value-structured>
+          <type-tag size="I:8" alignment="I:4"><attribute-ref name="useful" ref="HEX"/></type-tag>
+          <structured-element field="y" ref="HEX">
+            <value cst="S:yeah">
+              <type-pointer size="I:4" alignment="I:4">
+                <type-int cname="char" size="I:1" alignment="I:1"/>
+              </type-pointer>
+            </value>
+          </structured-element>
+          <structured-element field="x" ref="HEX">
+            <value cst="I:3">
+              <type-int cname="int" size="I:4" alignment="I:4"/>
+            </value>
+          </structured-element>
+        </value-structured>
+      </attribute-value>
+      <function command="" name="init" ref="HEX" loc="63:basic/StdControl.nc">
+        <interfacedef-ref qname="StdControl"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+        <attribute-value>
+          <attribute-ref name="empty" ref="HEX"/>
+          <value-structured>
+            <type-tag size="I:0" alignment="I:1"><attribute-ref name="empty" ref="HEX"/></type-tag>
+          </value-structured>
+        </attribute-value>
+      </function>
+      <function command="" name="start" ref="HEX" loc="70:basic/StdControl.nc">
+        <interfacedef-ref qname="StdControl"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+        <attribute-value>
+          <attribute-ref name="useful" ref="HEX"/>
+          <value-structured>
+            <type-tag size="I:8" alignment="I:4"><attribute-ref name="useful" ref="HEX"/></type-tag>
+            <structured-element field="y" ref="HEX">
+              <value cst="S:start">
+                <type-pointer size="I:4" alignment="I:4">
+                  <type-int cname="char" size="I:1" alignment="I:1"/>
+                </type-pointer>
+              </value>
+            </structured-element>
+            <structured-element field="x" ref="HEX">
+              <value cst="I:1">
+                <type-int cname="int" size="I:4" alignment="I:4"/>
+              </value>
+            </structured-element>
+          </value-structured>
+        </attribute-value>
+      </function>
+      <function command="" name="stop" ref="HEX" loc="78:basic/StdControl.nc">
+        <interfacedef-ref qname="StdControl"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+        <attribute-value>
+          <attribute-ref name="useful" ref="HEX"/>
+          <value-structured>
+            <type-tag size="I:8" alignment="I:4"><attribute-ref name="useful" ref="HEX"/></type-tag>
+            <structured-element field="x" ref="HEX">
+              <value cst="I:2">
+                <type-int cname="int" size="I:4" alignment="I:4"/>
+              </value>
+            </structured-element>
+          </value-structured>
+        </attribute-value>
+      </function>
+    </interfacedef>
+  </interfacedefs>
+  <tags>
+  </tags>
+</nesc>

@@ -1,0 +1,322 @@
+<nesc xmlns="http://www.tinyos.net/nesC">
+  <components>
+  </components>
+  <interfaces>
+  </interfaces>
+  <interfacedefs>
+    <interfacedef qname="Clock" loc="49:basic/Clock.nc">
+      <function command="" name="setCounter" ref="HEX" loc="162:basic/Clock.nc">
+        <interfacedef-ref qname="Clock"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-void size="I:1" alignment="I:1"/>
+          <function-parameters>
+            <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="intEnable" ref="HEX" loc="174:basic/Clock.nc">
+        <interfacedef-ref qname="Clock"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-void size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="setNextScale" ref="HEX" loc="137:basic/Clock.nc">
+        <interfacedef-ref qname="Clock"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-void size="I:1" alignment="I:1"/>
+          <function-parameters>
+            <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="setInterval" ref="HEX" loc="105:basic/Clock.nc">
+        <interfacedef-ref qname="Clock"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-void size="I:1" alignment="I:1"/>
+          <function-parameters>
+            <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="setIntervalAndScale" ref="HEX" loc="148:basic/Clock.nc">
+        <interfacedef-ref qname="Clock"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+            <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+            <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="getScale" ref="HEX" loc="128:basic/Clock.nc">
+        <interfacedef-ref qname="Clock"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="readCounter" ref="HEX" loc="153:basic/Clock.nc">
+        <interfacedef-ref qname="Clock"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="setRate" ref="HEX" loc="96:basic/Clock.nc">
+        <interfacedef-ref qname="Clock"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+            <type-int cname="char" size="I:1" alignment="I:1"/>
+            <type-int cname="char" size="I:1" alignment="I:1"/>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="setNextInterval" ref="HEX" loc="114:basic/Clock.nc">
+        <interfacedef-ref qname="Clock"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-void size="I:1" alignment="I:1"/>
+          <function-parameters>
+            <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="getInterval" ref="HEX" loc="121:basic/Clock.nc">
+        <interfacedef-ref qname="Clock"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="intDisable" ref="HEX" loc="168:basic/Clock.nc">
+        <interfacedef-ref qname="Clock"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-void size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function event="" name="fire" ref="HEX" loc="180:basic/Clock.nc">
+        <interfacedef-ref qname="Clock"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+    </interfacedef>
+    <interfacedef qname="Leds" loc="46:basic/Leds.nc">
+      <function command="" name="yellowOff" ref="HEX" loc="122:basic/Leds.nc">
+        <interfacedef-ref qname="Leds"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="yellowOn" ref="HEX" loc="114:basic/Leds.nc">
+        <interfacedef-ref qname="Leds"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="init" ref="HEX" loc="56:basic/Leds.nc">
+        <interfacedef-ref qname="Leds"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="greenOff" ref="HEX" loc="97:basic/Leds.nc">
+        <interfacedef-ref qname="Leds"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="redOff" ref="HEX" loc="72:basic/Leds.nc">
+        <interfacedef-ref qname="Leds"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="greenToggle" ref="HEX" loc="106:basic/Leds.nc">
+        <interfacedef-ref qname="Leds"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="get" ref="HEX" loc="139:basic/Leds.nc">
+        <interfacedef-ref qname="Leds"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="yellowToggle" ref="HEX" loc="131:basic/Leds.nc">
+        <interfacedef-ref qname="Leds"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="redToggle" ref="HEX" loc="81:basic/Leds.nc">
+        <interfacedef-ref qname="Leds"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="set" ref="HEX" loc="149:basic/Leds.nc">
+        <interfacedef-ref qname="Leds"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+            <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="redOn" ref="HEX" loc="64:basic/Leds.nc">
+        <interfacedef-ref qname="Leds"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="greenOn" ref="HEX" loc="89:basic/Leds.nc">
+        <interfacedef-ref qname="Leds"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+    </interfacedef>
+    <interfacedef qname="StdControl" loc="56:basic/StdControl.nc">
+      <attribute-value>
+        <attribute-ref name="useful" ref="HEX"/>
+        <value-structured>
+          <type-tag size="I:8" alignment="I:4"><attribute-ref name="useful" ref="HEX"/></type-tag>
+          <structured-element field="y" ref="HEX">
+            <value cst="S:yeah">
+              <type-pointer size="I:4" alignment="I:4">
+                <type-int cname="char" size="I:1" alignment="I:1"/>
+              </type-pointer>
+            </value>
+          </structured-element>
+          <structured-element field="x" ref="HEX">
+            <value cst="I:3">
+              <type-int cname="int" size="I:4" alignment="I:4"/>
+            </value>
+          </structured-element>
+        </value-structured>
+      </attribute-value>
+      <function command="" name="init" ref="HEX" loc="63:basic/StdControl.nc">
+        <interfacedef-ref qname="StdControl"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+        <attribute-value>
+          <attribute-ref name="empty" ref="HEX"/>
+          <value-structured>
+            <type-tag size="I:0" alignment="I:1"><attribute-ref name="empty" ref="HEX"/></type-tag>
+          </value-structured>
+        </attribute-value>
+      </function>
+      <function command="" name="start" ref="HEX" loc="70:basic/StdControl.nc">
+        <interfacedef-ref qname="StdControl"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+        <attribute-value>
+          <attribute-ref name="useful" ref="HEX"/>
+          <value-structured>
+            <type-tag size="I:8" alignment="I:4"><attribute-ref name="useful" ref="HEX"/></type-tag>
+            <structured-element field="y" ref="HEX">
+              <value cst="S:start">
+                <type-pointer size="I:4" alignment="I:4">
+                  <type-int cname="char" size="I:1" alignment="I:1"/>
+                </type-pointer>
+              </value>
+            </structured-element>
+            <structured-element field="x" ref="HEX">
+              <value cst="I:1">
+                <type-int cname="int" size="I:4" alignment="I:4"/>
+              </value>
+            </structured-element>
+          </value-structured>
+        </attribute-value>
+      </function>
+      <function command="" name="stop" ref="HEX" loc="78:basic/StdControl.nc">
+        <interfacedef-ref qname="StdControl"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+        <attribute-value>
+          <attribute-ref name="useful" ref="HEX"/>
+          <value-structured>
+            <type-tag size="I:8" alignment="I:4"><attribute-ref name="useful" ref="HEX"/></type-tag>
+            <structured-element field="x" ref="HEX">
+              <value cst="I:2">
+                <type-int cname="int" size="I:4" alignment="I:4"/>
+              </value>
+            </structured-element>
+          </value-structured>
+        </attribute-value>
+      </function>
+    </interfacedef>
+    <interfacedef qname="Timer" loc="42:basic/Timer.nc">
+      <function event="" name="fired" ref="HEX" loc="73:basic/Timer.nc">
+        <interfacedef-ref qname="Timer"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="start" ref="HEX" loc="59:basic/Timer.nc">
+        <interfacedef-ref qname="Timer"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+            <type-int cname="char" size="I:1" alignment="I:1"/>
+            <type-int cname="unsigned int" unsigned="" size="I:4" alignment="I:4"/>
+          </function-parameters>
+        </type-function>
+      </function>
+      <function command="" name="stop" ref="HEX" loc="68:basic/Timer.nc">
+        <interfacedef-ref qname="Timer"/>
+        <type-function size="I:1" alignment="I:1">
+          <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+          <function-parameters>
+          </function-parameters>
+        </type-function>
+      </function>
+    </interfacedef>
+  </interfacedefs>
+  <tags>
+  </tags>
+</nesc>

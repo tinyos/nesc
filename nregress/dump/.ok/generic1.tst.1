@@ -1,0 +1,63 @@
+<nesc xmlns="http://www.tinyos.net/nesC">
+  <components>
+    <component qname="Blink" loc="40:basic/Blink.nc">
+      <configuration/>
+    </component>
+    <component qname="Main" loc="44:basic/Main.nc">
+      <configuration/>
+    </component>
+    <component qname="RealMain" loc="45:basic/RealMain.nc">
+      <module/>
+    </component>
+    <component qname="BlinkM" loc="36:basic/BlinkM.nc">
+      <module/>
+    </component>
+    <component qname="SingleTimer" loc="46:basic/SingleTimer.nc">
+      <configuration/>
+    </component>
+    <component qname="TimerC" loc="51:generic/TimerC.nc">
+      <configuration/>
+    </component>
+    <component qname="TimerC.TimerM" loc="48(TimerC.TimerM):generic/TimerM.nc">
+      <instance number="0">
+        <component-ref qname="TimerM"/>
+        <arguments>
+          <value cst="I:230">
+            <type-int cname="int" size="I:4" alignment="I:4"/>
+          </value>
+        </arguments>
+      </instance>
+      <module/>
+      <attribute-value>
+        <attribute-ref name="useful" ref="HEX"/>
+        <value-structured>
+          <type-tag size="I:8" alignment="I:4"><attribute-ref name="useful" ref="HEX"/></type-tag>
+          <structured-element field="y" ref="HEX">
+            <value cst="V:">
+              <type-pointer size="I:4" alignment="I:4">
+                <type-int cname="char" size="I:1" alignment="I:1"/>
+              </type-pointer>
+            </value>
+          </structured-element>
+          <structured-element field="x" ref="HEX">
+            <value cst="I:230">
+              <type-int cname="int" size="I:4" alignment="I:4"/>
+            </value>
+          </structured-element>
+        </value-structured>
+      </attribute-value>
+    </component>
+    <component qname="ClockC" loc="54:basic/ClockC.nc">
+      <module/>
+    </component>
+    <component qname="NoLeds" loc="46:basic/NoLeds.nc">
+      <module/>
+    </component>
+  </components>
+  <interfaces>
+  </interfaces>
+  <interfacedefs>
+  </interfacedefs>
+  <tags>
+  </tags>
+</nesc>
