@@ -439,14 +439,14 @@ sub javabasetype()
       if ($bitlength < 8) { $jtype = "byte"; }
       elsif ($bitlength < 16) { $jtype = "short"; }
       elsif ($bitlength < 32) { $jtype = "int"; }
-      elsif { $jtype = "long"; }
+      else { $jtype = "long"; }
     }
     elsif ($basetype eq "I") {
       $acc = "SIntElement";
       if ($bitlength <= 8) { $jtype = "byte"; }
       elsif ($bitlength <= 16) { $jtype = "short"; }
       elsif ($bitlength <= 32) { $jtype = "int"; }
-      elsif { $jtype = "long"; }
+      else { $jtype = "long"; }
     }
     elsif ($basetype eq "F" || $basetype eq "D" || $basetype eq "LD") {
       $acc = "FloatElement";
