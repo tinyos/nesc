@@ -92,31 +92,81 @@ static bool ddecl_addfilter(void *entry)
   return TRUE;
 }
 
+static void dump_attributes(dd_list/*nesc_attribute*/ attributes)
+{
+  dd_list_pos scan;
+
+  if (!attributes)
+    return;
+
+  dd_scan (scan, attributes)
+    {
+      nesc_attribute attr = DD_GET(nesc_attribute, scan);
+
+      indentedtag("attribute-value");
+      nxml_tdecl_ref(attr->tdecl);
+      nxml_value(attr->arg1->ivalue);
+      indentedtag_pop();
+    }
+}
+
+void dump_ddecl(data_declaration ddecl)
+{
+  switch (ddecl->kind)
+    {
+    case decl_variable: indentedtag_start("variable"); break;
+    case decl_constant:
+      indentedtag_start("constant");
+      xml_attr_cval("cst", ddecl->value->cval);
+      break;
+    case decl_function: indentedtag_start("function"); break;
+    case decl_typedef: indentedtag_start("typedef"); break;
+    case decl_interface_ref:
+      indentedtag_start("interface");
+      xml_attr_int("provided", !ddecl->required);
+      break;
+    case decl_component_ref: indentedtag_start("internal-component"); break;
+    default: assert(0);
+    }
+  xml_attr("name", ddecl->name);
+  xml_attr_ptr("ref", ddecl);
+  xml_tag_end();
+
+  nxml_type(ddecl->type);
+  dump_attributes(ddecl->attributes);
+
+  switch (ddecl->kind)
+    {
+    case decl_interface:
+      nxml_ndecl_ref(ddecl->container);
+      nxml_instance(ddecl->itype);
+      if (ddecl->gparms)
+	nxml_typelist("interface-parameters", ddecl->gparms);
+      break;
+    default: break;
+    }
+
+  indentedtag_pop();
+}
+
 static void dump_parameter(declaration parm)
 {
-  if (is_type_parm_decl(parm))
-    {
-      data_declaration pdecl = CAST(type_parm_decl, parm)->ddecl;
-
-      xml_tag_start("parameter-type");
-      xml_attr_ptr("ref", pdecl);
-      xml_tag_end_pop();
-      xnewline();
-    }
-  else if (is_data_decl(parm)) /* regular parameter */
+  /* ignore (void) parameters */
+  if (is_data_decl(parm)) /* regular parameter */
     {
       data_decl data = CAST(data_decl, parm);
       variable_decl vdecl = CAST(variable_decl, data->decls);
 
-      if (vdecl->ddecl) /* ignore (void) parameter */
-	nxml_type(vdecl->ddecl->type);
+      if (!vdecl->ddecl)
+	return;
     }
-  else
+  if (is_ellipsis_decl(parm))
     {
-      assert(is_ellipsis_decl(parm));
       xml_qtag("varargs");
       xnewline();
+      return;
     }
+  dump_ddecl(parm);
 }
 
 static void dump_parameters(const char *name, declaration parms)
@@ -185,56 +235,9 @@ static void dump_component(void *entry)
   indentedtag_pop();
 }
 
-static void dump_attributes(dd_list/*nesc_attribute*/ attributes)
-{
-  dd_list_pos scan;
-
-  if (!attributes)
-    return;
-
-  dd_scan (scan, attributes)
-    {
-      nesc_attribute attr = DD_GET(nesc_attribute, scan);
-
-      indentedtag_start("attribute-value");
-      xml_attr("name", attr->word1->cstring.data);
-      xml_tag_end();
-      nxml_value(attr->arg1->ivalue);
-      indentedtag_pop();
-    }
-}
-
-static void nxml_typelist(const char *name, typelist types)
-{
-  typelist_scanner scantypes;
-  type t;
-
-  indentedtag(name);
-  typelist_scan(types, &scantypes);
-  while ((t = typelist_next(&scantypes)))
-    nxml_type(t);
-  indentedtag_pop();
-}
-
 static void dump_interface(void *entry)
 {
-  data_declaration iref = entry;
-
-  assert(iref->kind == decl_interface_ref);
-
-  indentedtag_start("interface");
-  xml_attr("name", iref->name);
-  xml_attr_ptr("ref", iref);
-  xml_attr_int("provided", !iref->required);
-  xml_tag_end();
-
-  xstartline(); nxml_ndecl_ref(iref->container);
-  nxml_instance(iref->itype);
-  dump_attributes(iref->attributes);
-  if (iref->gparms)
-    nxml_typelist("parameters", iref->gparms);
-
-  indentedtag_pop();
+  dump_ddecl(entry);
 }
 
 static void dump_interfacedef(void *entry)
@@ -301,11 +304,7 @@ static void dump_tag(void *entry)
   dump_attributes(tdecl->attributes);
 
   if (tdecl->kind == kind_enum_ref)
-    {
-      indentedtag("enum-rep");
-      nxml_type(tdecl->reptype);
-      indentedtag_pop();
-    }
+    nxml_type(tdecl->reptype);
   else
     {
       field_declaration fields;

@@ -2271,18 +2271,9 @@ void nxml_type(type t)
     case tk_function:
       xml_tag_end();
       xnewline(); xindent();
-      if (!t->u.fn.oldstyle)
-	{
-	  typelist_scanner scanargs;
-	  type argt;
-
-	  typelist_scan(t->u.fn.argtypes, &scanargs);
-	  while ((argt = typelist_next(&scanargs)))
-	    nxml_type(argt);
-	}
-      indentedtag("function-returns");
       nxml_type(t->u.fn.returns);
-      indentedtag_pop();
+      if (!t->u.fn.oldstyle)
+	nxml_typelist("function-parameters", t->u.fn.argtypes);
       xunindent(); xml_pop();
       break;
     case tk_tagged:
@@ -2311,6 +2302,19 @@ void nxml_type(type t)
   if (quals)
     indentedtag_pop();
 }
+
+void nxml_typelist(const char *name, typelist types)
+{
+  typelist_scanner scantypes;
+  type t;
+
+  indentedtag(name);
+  typelist_scan(types, &scantypes);
+  while ((t = typelist_next(&scantypes)))
+    nxml_type(t);
+  indentedtag_pop();
+}
+
 
 
 enum {

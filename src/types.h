@@ -273,5 +273,8 @@ bool type_chararray(type t, bool no_size_allowed);
 void nxml_type(type t);
 /* Effects: Outputs XML representation of type t.
 */
+void nxml_typelist(const char *name, typelist types);
+/* Effects: Outputs XML representartion of typelist types wrapped in tag 'name'
+*/
 
 #endif
