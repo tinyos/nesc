@@ -1,0 +1,81 @@
+<dsd xmlns="http://www.brics.dk/DSD/2.0"
+     xmlns:m="http://www.brics.dk/DSD/2.0/meta"
+     xmlns:nesc="http://www.tinyos.net/nesC">
+
+  <m:doc>A reference to a C object, i.e., a variable, constant, function,
+    typedef, interface, or component-within-a-configuration. The "ref"
+    attribute uniquely identifiers the particular object.</m:doc>
+  <if>
+    <or>
+      <element name="nesc:variable-ref"/>
+      <element name="nesc:constant-ref"/>
+      <element name="nesc:function-ref"/>
+      <element name="nesc:typedef-ref"/>
+      <element name="nesc:interface-ref"/>
+      <element name="nesc:internal-component-ref"/>
+    </or>
+    <declare>
+      <required>
+        <attribute name="name"/>
+        <attribute name="ref"/>
+      </required>
+      <attribute name="scoped"/>
+    </declare>
+  </if>
+
+  <m:doc>Definition of a C object</m:doc>
+  <if>
+    <or>
+      <element name="nesc:variable"/>
+      <element name="nesc:constant"/>
+      <element name="nesc:function"/>
+      <element name="nesc:typedef"/>
+      <element name="nesc:interface"/>
+      <element name="nesc:internal-component"/>
+    </or>
+    <declare>
+      <required>
+        <attribute name="name"/>
+        <attribute name="ref"/>
+      </required>
+      <m:doc>Order of these elements is unimportant</m:doc>
+      <contents><boolexp ref="nesc:type"/></contents>
+      <contents><contenttype ref="nesc:attributes"/></contents>
+      <contents><contenttype ref="nesc:container"/></contents>
+    </declare>
+  </if>
+
+
+  <if>
+    <element name="nesc:interface"/>
+    <declare>
+      <required>
+	<attribute name="provided"><stringtype ref="nesc:bool"/></attribute>
+      </required>
+
+      <m:doc>Order of these elements is unimportant</m:doc>
+      <contents><element name="nesc:instance"/></contents>
+      <contents>
+        <m:doc>Present for parameterised interfaces</m:doc>
+        <optional><element name="nesc:interface-parameters"/></optional>
+      </contents>
+    </declare>
+  </if>
+
+  <if>
+    <element name="nesc:interface-parameters"/>
+    <declare>
+      <contents>
+        <sequence><boolexp ref="nesc:type"/></sequence>
+      </contents>
+    </declare>
+  </if>
+
+  <if>
+    <element name="nesc:constant"/>
+    <declare>
+      <required><attribute ref="nesc:cst"/></required>
+    </declare>
+  </if>
+
+</dsd>

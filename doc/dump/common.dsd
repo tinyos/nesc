@@ -41,8 +41,8 @@
         <sequence>
           <repeat>
 	    <or>
-	      <boolexp ref="nesc:type"/>
-	      <element name="nesc:parameter-type"/>
+	      <element name="nesc:variable"/>
+	      <element name="nesc:typedef"/>
 	    </or>
           </repeat>
 	  <optional><element name="nesc:varargs"/></optional>
@@ -51,13 +51,13 @@
     </declare>
   </if>
 
-  <m:doc>A type parameter. The ref will match uses of the parameter 
-    in type-var elements.</m:doc>
+  <m:doc>Interface list</m:doc>
   <if>
-    <element name="nesc:parameter-type"/>
+    <element name="nesc:interfaces"/>
     <declare>
-      <required><attribute name="ref"/></required>
-      <contents><boolexp ref="nesc:type"/></contents>
+      <contents>
+        <repeat><element name="nesc:interface"/></repeat>
+      </contents>
     </declare>
   </if>
 

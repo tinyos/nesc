@@ -9,10 +9,10 @@
   <import href="attributes.dsd"/>
   <import href="basic.dsd"/>
   <import href="common.dsd"/>
+  <import href="cobject.dsd"/>
 
   <m:doc>Top-level elements</m:doc>
   <import href="component.dsd"/>
-  <import href="interface.dsd"/>
   <import href="interfacedef.dsd"/>
   <import href="tag.dsd"/>
   <import href="wiring.dsd"/>

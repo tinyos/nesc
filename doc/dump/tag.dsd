@@ -2,6 +2,29 @@
      xmlns:m="http://www.brics.dk/DSD/2.0/meta"
      xmlns:nesc="http://www.tinyos.net/nesC">
 
+  <m:doc>A reference to a tag (enum, struct, union)</m:doc>
+  <boolexp id="nesc:tag-ref">
+    <or>
+      <element name="nesc:enum-ref"/>
+      <element name="nesc:struct-ref"/>
+      <element name="nesc:union-ref"/>
+      <element name="nesc:nw_struct-ref"/>
+      <element name="nesc:nw_union-ref"/>
+      <element name="nesc:attribute-ref"/>
+    </or>
+  </boolexp>
+
+  <if>
+    <boolexp ref="nesc:tag-ref"/>
+    <declare>
+      <required>
+        <attribute name="ref"/>
+      </required>
+      <attribute name="name"/>
+      <attribute name="scoped"/>
+    </declare>
+  </if>
+
   <if>
     <element name="nesc:tags"/>
     <declare>
@@ -90,15 +113,7 @@
   <if>
     <element name="nesc:enum"/>
     <declare>
-      <contents><element name="nesc:enum-rep"/></contents>
-    </declare>
-  </if>
-
-  <if>
-    <element name="nesc:enum-rep"/>
-    <declare>
       <contents><boolexp ref="nesc:type"/></contents>
     </declare>
   </if>
-
 </dsd>
