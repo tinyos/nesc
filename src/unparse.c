@@ -351,7 +351,7 @@ static void static_hack(data_declaration ddecl)
   /* Hack to add static to all defined functions */
   if (ddecl->kind == decl_function &&
       ddecl->ftype != function_static && !ddecl->isexterninline &&
-      !ddecl->spontaneous)
+      !ddecl->spontaneous && ddecl->definition)
     {
       output("static ");
       if (!ddecl->isinline)

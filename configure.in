@@ -21,35 +21,12 @@
 
 dnl -*- m4 -*-
 
-AC_INIT(c-parse.y)
-AC_CONFIG_AUX_DIR(../config-aux)
+AC_INIT()
+AC_CONFIG_AUX_DIR(config-aux)
 AM_INIT_AUTOMAKE(nesc,0.0)
-AM_CONFIG_HEADER(config.h)
 
-: ${CFLAGS=-g}
-
-AC_PROG_CC
-AC_PROG_RANLIB
-AC_PROG_MAKE_SET
-
-CPARSE_TRY_CFLAGS(-Wall)
-CPARSE_GCCDIR
-
-AC_MSG_CHECKING(whether we are using rcc)
-AC_TRY_COMPILE([], [void * traditional pointer;], RCC=yes, RCC=no)
-AM_CONDITIONAL(USING_RCC, test "$RCC" = yes)
-AC_MSG_RESULT($RCC)
-
-AC_CHECK_SIZEOF(long long)
-AC_CHECK_SIZEOF(double)
-AC_CHECK_SIZEOF(long double)
-
-AC_FUNC_ALLOCA
-
-AC_REPLACE_FUNCS(strtold)
-RC_CHECK_DECL(strtold, stdlib.h)
+AC_CONFIG_SUBDIRS(src)
 
 AC_OUTPUT(
 	Makefile
-	libcompat/Makefile
 )

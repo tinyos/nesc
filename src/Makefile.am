@@ -139,11 +139,12 @@ EXTRA_DIST = 					\
 	build-types.el				\
 	c-parse.gperf				\
 	c-parse.y				\
-	config-aux				\
 	nodetypes.def				\
 	AST_defs.c				\
 	AST_parent.c				\
-	AST_print.c
+	AST_print.c				\
+	tdspecs					\
+	nesc-compile
 
 BISON = bison
 EMACS = emacs
