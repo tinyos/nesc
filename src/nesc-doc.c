@@ -146,15 +146,15 @@ static void find_currdir_prefix(char *cwd)
   }
 
   if( !currdir_prefix ) {
-    error( "ERROR: The current directory is not a subdir of one\n");
-    error( "       of the source topdirs!  Please correct or add\n");
-    error( "       the -nesc-topdir= options\n");
-    error( "\n");
-    error( "CWD: %s\n",cwd);
-    error( "\n");
-    error( "TOPDIRS:\n");
+    error( "ERROR: The current directory is not a subdir of one");
+    error( "       of the source topdirs!  Please correct or add");
+    error( "       the -nesc-topdir= options");
+    error( "");
+    error( "CWD: %s",cwd);
+    error( "");
+    error( "TOPDIRS:");
     for(i=0; i<num_topdirs; i++) {
-      error( "     %s\n", topdir[i]);
+      error( "     %s", topdir[i]);
     }
     exit(1);
   }
