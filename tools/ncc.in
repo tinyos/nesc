@@ -28,6 +28,7 @@ $prefix = "@prefix@";
 $exec_prefix = "@exec_prefix@";
 $NCDIR = "@libdir@/ncc";
 $TOSDIR = "@TOSDIR@";
+$TOSDIR = $ENV{"TOSDIR"} if defined($ENV{"TOSDIR"});
 
 # Runtime configuration
 $ENV{"PATH"} = "$NCDIR:$ENV{PATH}";
@@ -42,6 +43,13 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	    &fail("multiple targets specified") if defined($target);
 	    $target = $1;
 	    $strip = 1;
+	}
+	elsif (/^-tosdir=(.*)/) {
+	    $TOSDIR = $1;
+	    $strip = 1;
+	}
+	elsif (/^-nostdinc$/) {
+	    $nostdinc = 1;
 	}
 	elsif (/^-board=(.*)/) {
 	    push @boards, $1;
@@ -83,12 +91,14 @@ if ($cygwin) {
 unshift @new_args, "-specs=$tdspecs";
 unshift @new_args, $gcc;
 
-push @new_args, "-I$TOSDIR/platform/$target";
-push @new_args, "-I$TOSDIR/interfaces";
-push @new_args, "-I$TOSDIR/system";
-push @new_args, "-I$TOSDIR/lib";
-push @new_args, "-I$TOSDIR/raw-C";
-push @new_args, map "-I$TOSDIR/sensorboards/$_", @boards;
+if (!$nostdinc) {
+    push @new_args, "-I$TOSDIR/platform/$target";
+    push @new_args, "-I$TOSDIR/interfaces";
+    push @new_args, "-I$TOSDIR/system";
+    push @new_args, "-I$TOSDIR/lib";
+    push @new_args, "-I$TOSDIR/raw-C";
+    push @new_args, map "-I$TOSDIR/sensorboards/$_", @boards;
+}
 
 #print STDERR join(' ', @new_args), "\n";
 exec @new_args;
