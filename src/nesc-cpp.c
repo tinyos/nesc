@@ -69,7 +69,9 @@ void save_option(const char *option)
 }
 
 static char kwd_macros[] = "/tmp/nesccppkXXXXXX";
-static char cpp_macros[] = "/tmp/nesccppmXXXXXX";
+static char cpp_macros1[] = "/tmp/nesccppm1XXXXXX";
+static char cpp_macros2[] = "/tmp/nesccppm2XXXXXX";
+static char *cpp_macros = cpp_macros1;
 
 static char *nesc_keywords[] = {
 #define K(name, token, rid) #name,
@@ -255,7 +257,8 @@ static FILE *exec_gcc(char *gcc_output_template, bool redirect_errors,
 
 void preprocess_cleanup(void)
 {
-  cpp_unlink(cpp_macros);
+  cpp_unlink(cpp_macros1);
+  cpp_unlink(cpp_macros2);
   cpp_unlink(kwd_macros);
 }
 
@@ -324,7 +327,8 @@ void preprocess_init(void)
 {
   atexit(preprocess_cleanup);
 
-  mktempfile(cpp_macros);
+  mktempfile(cpp_macros1);
+  mktempfile(cpp_macros2);
   mktempfile(kwd_macros);
 
   create_nesc_keyword_macros(kwd_macros);
@@ -358,18 +362,17 @@ static void preprocess_setargs(void *data, const char **argv)
 
   argv[arg++] = "-E";
   argv[arg++] = "-C";
+  argv[arg++] = "-dD"; /* ask cpp to output macros */
 
-  /* For C files, we define keywords away (kwd_macros) and ask cpp
-     to output macros */
+  /* For C files, we define keywords away (kwd_macros) */
   if (closure->l == l_c)
     {
-      argv[arg++] = "-dD";
       argv[arg++] = "-imacros";
       argv[arg++] = fix_filename(filename_region, kwd_macros);
     }
   else
     {
-      argv[arg++] = "-x";
+      argv[arg++] = "-x"; /* preprocess as C file */
       argv[arg++] = "c";
     }
 
@@ -396,15 +399,24 @@ FILE *preprocess(const char *filename, source_language l)
 
   if (output)
     {
-      /* Save the macros for C */
-      /* (note: this only works with a global macros file because we
-	 don't reenter the parser when parsing a C file) */
-      if (l == l_c)
-	{
-	  macros_file = fopen(cpp_macros, macros_mode);
-	  if (!macros_file)
-	    error("failed to create temporary file");
-	}
+      /* Save macros */
+      /* Note: this works with a global macros file because we use it one
+	 of two modes:
+	 - old style with 'includes': 
+	   we only keep macros from C files, which don't cause any other files
+	   to be loaded
+	 - new style with #include:
+	   we only keep macros from before the module, interface, configuration
+	   or component keyword => we complete using the file before loading
+	   the next one.
+      */
+      if (cpp_macros == cpp_macros1)
+	cpp_macros = cpp_macros2;
+      else
+	cpp_macros = cpp_macros1;
+      macros_file = fopen(cpp_macros, macros_mode);
+      if (!macros_file)
+	error("failed to create temporary file");
 
       return output;
     }
@@ -431,13 +443,17 @@ void handle_directive(const char *directive, const char *args)
     fprintf(macros_file, "#%s %s\n", directive, args);
 }
 
+void end_macro_saving(void)
+{
+  fclose(macros_file);
+  macros_file = NULL;
+}
+
 void preprocess_file_end(void)
 {
   if (macros_file)
-    {
-      fclose(macros_file);
-      macros_file = NULL;
-    }
+    end_macro_saving();
+
   cpp_unlink(current.preprocessed_file);
 }
 

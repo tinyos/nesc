@@ -189,6 +189,11 @@ static void handle_nesc_attribute(attribute attr, dd_list *alist)
   dd_add_last(parse_region, *alist, attr);
 }
 
+void handle_nesc_decl_attribute(attribute attr, nesc_declaration ndecl)
+{
+  handle_nesc_attribute(attr, &ndecl->attributes);
+}
+
 void handle_decl_attribute(attribute attr, data_declaration ddecl)
 {
   if (is_gcc_attribute(attr))
@@ -227,6 +232,12 @@ bool handle_type_attribute(attribute attr, type *t)
 
 /* Functions to handle regular and dd list of attributes */
 
+void handle_nesc_decl_attributes(attribute alist, nesc_declaration ndecl)
+{
+  scan_attribute (alist, alist)
+    handle_nesc_decl_attribute(alist, ndecl);
+}
+
 void handle_decl_attributes(attribute alist, data_declaration ddecl)
 {
   scan_attribute (alist, alist)
@@ -243,6 +254,15 @@ void handle_tag_attributes(attribute alist, tag_declaration tdecl)
 {
   scan_attribute (alist, alist)
     handle_tag_attribute(alist, tdecl);
+}
+
+void handle_nesc_decl_dd_attributes(dd_list alist, nesc_declaration ndecl)
+{
+  dd_list_pos attr;
+
+  if (alist)
+    dd_scan (attr, alist)
+      handle_nesc_decl_attribute(DD_GET(attribute, attr), ndecl);
 }
 
 void handle_decl_dd_attributes(dd_list alist, data_declaration ddecl)

@@ -34,6 +34,10 @@ void select_dump(char *what);
      Errors are signaled through the usual 'error' call.
  */
 
+void select_dumpfile(char *name);
+/* Effects: Select target file for dump
+ */
+
 bool dump_selected(void);
 /* Effects: Return true if any calls to select_dump where made.
  */

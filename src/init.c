@@ -595,9 +595,9 @@ void finish_init(void)
 }
 
 /* ivalue constructors */
-static ivalue new_ivalue(int kind, type t)
+ivalue new_ivalue(region r, int kind, type t)
 {
-  ivalue newp = ralloc(parse_region, struct ivalue);
+  ivalue newp = ralloc(r, struct ivalue);
 
   newp->kind = kind;
   newp->type = t;
@@ -773,7 +773,7 @@ static bool new_constructor_type(void)
     {
       constructor_kind = c_aggregate;
       constructor_fields = skip_unnamed_bitfields(type_fields(constructor_type));
-      constructor_value = new_ivalue(iv_structured, constructor_type);
+      constructor_value = new_ivalue(parse_region, iv_structured, constructor_type);
     }
   else if (type_array(constructor_type))
     {
@@ -785,14 +785,14 @@ static bool new_constructor_type(void)
       else
 	constructor_max_index = cval_sint_value(max) - 1;
       constructor_index = constructor_array_size = 0;
-      constructor_value = new_ivalue(iv_array, constructor_type);
+      constructor_value = new_ivalue(parse_region, iv_array, constructor_type);
     }
   else
     {
       /* Handle the case of int x = {5}; */
       constructor_kind = c_scalar;
       constructor_index = 0;
-      constructor_value = new_ivalue(iv_base, constructor_type);
+      constructor_value = new_ivalue(parse_region, iv_base, constructor_type);
 
       return FALSE;
     }
@@ -1113,6 +1113,7 @@ static void output_init_element(expression init, type t)
 {
   assert(init->ivalue->kind == iv_base);
   init->ivalue->u.base.expr = init;
+  init->ivalue->u.base.require_constant_value = require_constant_value;
 
   if (require_constant_value)
     {
@@ -1245,11 +1246,11 @@ void process_init_element(expression value)
 	  switch (constructor_kind)
 	    {
 	    case c_aggregate:
-	      valueholder = new_ivalue(iv_base, elttype);
+	      valueholder = new_ivalue(parse_region, iv_base, elttype);
 	      add_ivalue_field(constructor_value, constructor_fields, valueholder);
 	      break;
 	    case c_array:
-	      valueholder = new_ivalue(iv_base, elttype);
+	      valueholder = new_ivalue(parse_region, iv_base, elttype);
 	      add_ivalue_array(constructor_value, constructor_index, valueholder);
 	      break;
 	    case c_scalar:
@@ -1260,7 +1261,7 @@ void process_init_element(expression value)
 	  value->ivalue = valueholder;
 	}
       else
-	value->ivalue = new_ivalue(iv_base, error_type);
+	value->ivalue = new_ivalue(parse_region, iv_base, error_type);
 
       output_init_element (value, elttype);
     }
@@ -1383,6 +1384,6 @@ expression make_cast_list(location loc, asttype t, expression init)
    The variable being initialised is constructor_decl */
 void simple_init(expression expr)
 {
-  expr->ivalue = new_ivalue(iv_base, constructor_decl->type);
+  expr->ivalue = new_ivalue(parse_region, iv_base, constructor_decl->type);
   output_init_element(expr, constructor_decl->type);
 }

@@ -187,6 +187,10 @@ bool nesc_option(char *p)
     {
       select_dump(p + strlen("fnesc-dump="));
     }
+  else if (!strncmp (p, "fnesc-dumpfile=", strlen("fnesc-dumpfile=")))
+    {
+      select_dumpfile(p + strlen("fnesc-dumpfile="));
+    }
   else if (!strncmp (p, "fnesc-target=", strlen("fnesc-target=")))
     {
       select_target(p + strlen("fnesc-target="));
@@ -368,10 +372,7 @@ void nesc_compile(const char *filename, const char *target_name)
       gencode = FALSE;
     }
   if (dump_selected())
-    {
-      dump_info(program, cg, userg, modules, components);
-      gencode = FALSE;
-    }
+    dump_info(program, cg, userg, modules, components);
   if (gencode)
     generate_c_code(program, target_name, cg, modules, components);
 }

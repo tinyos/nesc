@@ -30,6 +30,7 @@ Boston, MA 02111-1307, USA.  */
 #include "c-lex.h"
 #include "expr.h"
 #include "nesc-env.h"
+#include "init.h"
 
 static AST_walker clone_walker;
 
@@ -198,16 +199,128 @@ static void forward_tdecl(region r, tag_ref tref)
   copy->container = current.container;
 }
 
+static ivalue instantiate_ivalue(region r, ivalue value);
+
+static void instantiate_ivalue_array(region r, ivalue copy, ivalue value)
+{
+  ivalue_array elem, *new_elems = &copy->u.array;
+
+  for (elem = value->u.array; elem; elem = elem->next)
+    {
+      ivalue_array copy_elem = ralloc(r, struct ivalue_array);
+
+      *new_elems = copy_elem;
+      new_elems = &copy_elem->next;
+
+      copy_elem->from = elem->from;
+      copy_elem->to = elem->to;
+      copy_elem->value = instantiate_ivalue(r, elem->value);
+    }
+}
+
+static void instantiate_ivalue_structured(region r, ivalue copy, ivalue value)
+{
+  ivalue_field field, *new_fields = &copy->u.structured;
+
+  for (field = value->u.structured; field; field = field->next)
+    {
+      ivalue_field copy_field = ralloc(r, struct ivalue_field);
+
+      *new_fields = copy_field;
+      new_fields = &copy_field->next;
+
+      if (field->field->instantiation)
+	copy_field->field = field->field->instantiation;
+      else
+	copy_field->field = field->field;
+      copy_field->value = instantiate_ivalue(r, field->value);
+    }
+}
+
+static ivalue instantiate_ivalue(region r, ivalue value)
+{
+  ivalue copy;
+
+  // If already instantiated on this pass, return instantiation
+  if (value->instantiation)
+    return value->instantiation;
+
+  copy = new_ivalue(r, value->kind, instantiate_type(value->type));
+  value->instantiation = copy;
+  switch (value->kind)
+    {
+    case iv_base:
+      copy->u.base.require_constant_value = value->u.base.require_constant_value;
+      break;
+    case iv_array: instantiate_ivalue_array(r, copy, value); break;
+    case iv_structured: instantiate_ivalue_structured(r, copy, value); break;
+    default: assert(0); 
+    }
+  return copy;
+}
+
+static void clear_ivalue_instantiations(ivalue value);
+
+static void clear_ivalue_array(ivalue value)
+{
+  ivalue_array elem;
+
+  for (elem = value->u.array; elem; elem = elem->next)
+    clear_ivalue_instantiations(elem->value);
+}
+
+static void clear_ivalue_structured(ivalue value)
+{
+  ivalue_field field;
+
+  for (field = value->u.structured; field; field = field->next)
+    clear_ivalue_instantiations(field->value);
+}
+
+static void clear_ivalue_instantiations(ivalue value)
+{
+  // We've cleared here and beneath if instantiation is already NULL.
+  if (!value->instantiation)
+    return;
+  value->instantiation = NULL;
+
+  switch (value->kind)
+    {
+    case iv_base: break;
+    case iv_array: clear_ivalue_array(value); break;
+    case iv_structured: clear_ivalue_structured(value); break;
+    default: assert(0); 
+    }
+}
+
 static AST_walker_result clone_expression(AST_walker spec, void *data,
 					  expression *n)
 {
   expression new = clone(data, n);
+  ivalue old_ivalue = NULL;
 
   /* A few nodes (related to initialisation) don't have types */
   if (new->type)
     new->type = instantiate_type(new->type);
 
-  return aw_walk;
+  if (new->ivalue)
+    {
+      ivalue copy = instantiate_ivalue(data, new->ivalue);
+
+      old_ivalue = new->ivalue;
+      new->ivalue = copy;
+      if (copy->kind == iv_base)
+	copy->u.base.expr = new;
+    }
+
+  AST_walk_children(spec, data, CAST(node, new));
+
+  // clear instantiation field in ivalues to be ready for next
+  // instantiation attempt
+  if (old_ivalue)
+    clear_ivalue_instantiations(old_ivalue);
+
+  return aw_done;
 }
 
 static AST_walker_result clone_asttype(AST_walker spec, void *data, asttype *n)
@@ -248,23 +361,19 @@ static AST_walker_result clone_function_decl(AST_walker spec, void *data,
 static AST_walker_result clone_identifier(AST_walker spec, void *data,
 					  identifier *n)
 {
-  identifier new = clone(data, n);
+  clone_expression(spec, data, CASTPTR(expression, n));
+  forward(&(*n)->ddecl);
 
-  new->type = instantiate_type(new->type);
-  forward(&new->ddecl);
-
-  return aw_walk;
+  return aw_done;
 }
 
 static AST_walker_result clone_interface_deref(AST_walker spec, void *data,
 					       interface_deref *n)
 {
-  interface_deref new = clone(data, n);
+  clone_expression(spec, data, CASTPTR(expression, n));
+  forward(&(*n)->ddecl);
 
-  new->type = instantiate_type(new->type);
-  forward(&new->ddecl);
-
-  return aw_walk;
+  return aw_done;
 }
 
 static AST_walker_result clone_component_deref(AST_walker spec, void *data,
@@ -362,13 +471,14 @@ static AST_walker_result clone_tag_ref(AST_walker spec, void *data,
 static AST_walker_result clone_field_ref(AST_walker spec, void *data,
 					 field_ref *n)
 {
-  field_ref new = clone(data, n);
+  field_ref new;
 
-  new->type = instantiate_type(new->type);
+  clone_expression(spec, data, CASTPTR(expression, n));
+  new = *n;
   if (new->fdecl->instantiation)
     new->fdecl = new->fdecl->instantiation;
 
-  return aw_walk;
+  return aw_done;
 }
 
 static void set_ddecl_instantiation1(data_declaration fndecl, void *data)
@@ -677,6 +787,29 @@ node instantiate_ast_list(region r, node n)
   return n;
 }
 
+node instantiate_ast(region r, node n)
+{
+  AST_walk(clone_walker, r, &n);
+  AST_set_parents(n);
+
+  return n;
+}
+
+dd_list instantiate_dd_list(region r, dd_list l)
+{
+  dd_list copy;
+  dd_list_pos scan;
+
+  if (!l)
+    return NULL;
+
+  copy = dd_new_list(r);
+  dd_scan (scan, l)
+    dd_add_last(r, copy, instantiate_ast(r, DD_GET(node, scan)));
+
+  return copy;
+}
+
 void instantiate(nesc_declaration component, expression arglist)
 /* Effects: Actually instantiate an abstract component
      For modules: temp noop
@@ -827,6 +960,7 @@ static bool fold_components(nesc_declaration cdecl, int pass)
 {
   bool done;
   declaration spec;
+  dd_list_pos attr;
 
   if (cdecl->folded == pass)
     return TRUE;
@@ -834,6 +968,9 @@ static bool fold_components(nesc_declaration cdecl, int pass)
 
   spec = CAST(component, cdecl->ast)->decls;
   done = fold_constants_list(CAST(node, spec), pass);
+  if (cdecl->attributes)
+    dd_scan (attr, cdecl->attributes)
+      done = fold_constants_list(DD_GET(node, attr), pass) && done;
   done = fold_constants_list(CAST(node, cdecl->impl), pass) && done;
 
   if (cdecl->configuration)
@@ -946,6 +1083,7 @@ nesc_declaration_copy(region r, nesc_declaration old, expression args,
   copy->parameters = instantiate_parameters(r, old->parameters);
   copy->arguments = args;
   set_parameter_values(copy, args);
+  copy->attributes = instantiate_dd_list(r, old->attributes);
 
   current.env = copy->env;
   //current.container = copy;

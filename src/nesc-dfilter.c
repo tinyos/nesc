@@ -109,7 +109,7 @@ static bool fddecl_attribute(ndf_op op, data_declaration ddecl)
 
 static bool fndecl_attribute(ndf_op op, nesc_declaration ndecl)
 {
-  return FALSE;//filter_attribute(op, ndecl->attributes);
+  return filter_attribute(op, ndecl->attributes);
 }
 
 static bool ftdecl_attribute(ndf_op op, tag_declaration tdecl)

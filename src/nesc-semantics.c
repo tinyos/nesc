@@ -227,12 +227,12 @@ nesc_decl dummy_nesc_decl(source_language sl, location loc, const char *name,
       implementation impl = CAST(implementation,
 	new_module(parse_region, loc, NULL, NULL));
       nd = CAST(nesc_decl,
-	new_component(parse_region, dummy_location, wname, FALSE, NULL, NULL, impl));
+		new_component(parse_region, dummy_location, wname, NULL, FALSE, NULL, NULL, impl));
       break;
     }
     case l_interface:
       nd = CAST(nesc_decl,
-	new_interface(parse_region, loc, wname, NULL));
+		new_interface(parse_region, loc, wname, NULL, NULL));
       break;
     default:
       assert(0);
@@ -483,10 +483,11 @@ declaration declare_template_parameter(declarator d, type_element elements,
   if (class)
     {
       /* Detect "typedef t", to declare a type parameter */
-      if (class == RID_TYPEDEF && defaulted_int && !attributes &&
+      if (class == RID_TYPEDEF && defaulted_int &&
 	  is_identifier_declarator(d))
 	return declare_type_parameter(d->location,
-				      CAST(identifier_declarator, d)->cstring);
+				      CAST(identifier_declarator, d)->cstring,
+				      attributes, extra_attr);
       error("storage class specified for parameter `%s'", name);
       class = 0;
     }
@@ -521,7 +522,8 @@ declaration declare_template_parameter(declarator d, type_element elements,
   return CAST(declaration, dd);
 }
 
-declaration declare_type_parameter(location l, cstring id)
+declaration declare_type_parameter(location l, cstring id, attribute attribs,
+				   dd_list extra_attr)
 {
   type_parm_decl d = new_type_parm_decl(parse_region, l, id, NULL);
   data_declaration ddecl;
@@ -536,6 +538,8 @@ declaration declare_type_parameter(location l, cstring id)
 			    error_type);
       tempdecl.kind = decl_typedef;
       tempdecl.definition = tempdecl.ast;
+      handle_decl_attributes(attribs, &tempdecl);
+      handle_decl_dd_attributes(extra_attr, &tempdecl);
       ddecl = declare(current.env, &tempdecl, FALSE);
       ddecl->type = make_variable_type(ddecl);
     }

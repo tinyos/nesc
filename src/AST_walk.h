@@ -55,7 +55,7 @@ void AST_walk(AST_walker spec, void *data, node *n);
 
 void AST_walk_list(AST_walker spec, void *data, node *n);
 /* Effects: Walks through the list starting at *n
-     The walker "divert" AST_walk_list if they modify the
+     The walkers "divert" AST_walk_list if they modify the
      node or node pointer they receive.
 */
 

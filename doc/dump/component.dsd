@@ -27,6 +27,7 @@
         <m:doc>Present for generic components</m:doc>
         <optional><element name="nesc:parameters"/></optional>
       </contents>
+      <contents><contenttype ref="nesc:attributes"/></contents>
       <contents>
         <or>
 	  <element name="nesc:configuration"/>

@@ -21,5 +21,6 @@ Boston, MA 02111-1307, USA.  */
 extern declaration all_cdecls;
 
 void load_c(location l, const char *name, bool name_is_path);
+void add_cdecls(declaration cdecls);
 
 #endif

@@ -18,8 +18,13 @@
         <attribute name="qname"/>
         <attribute name="loc"/>
       </required>
+      <m:doc>Order of these elements is unimportant</m:doc>
       <contents>
         <optional><element name="nesc:parameters"/></optional>
+      </contents>
+      <contents><contenttype ref="nesc:attributes"/></contents>
+      <contents>
+	<repeat><element name="nesc:function"/></repeat>
       </contents>
     </declare>
   </if>

@@ -192,8 +192,6 @@ struct data_declaration {
   enum { variable_register, variable_static, variable_normal } vtype;
   bool islocal;			/* True for non-static local vars */
   bool isparameter; 		/* implies islocal */
-  bool isgeneric; 		/* generic parameters of commands and events,
-				   implies isparameter */
   bool async_access;		/* Some kind of access in an async context */
   bool async_write;		/* A write in async context */
   bool norace;

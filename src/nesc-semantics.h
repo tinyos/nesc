@@ -104,7 +104,8 @@ void handle_nxbase_attribute(location loc, const char *fnbasename,
 
 declaration declare_template_parameter(declarator d, type_element elements,
 				       attribute attributes);
-declaration declare_type_parameter(location l, cstring id);
+declaration declare_type_parameter(location l, cstring id, attribute attribs,
+				   dd_list extra_attr);
 
 expression make_type_argument(asttype t);
 

@@ -46,6 +46,8 @@ typedef struct nesc_declaration {
   struct environment *parameter_env;
   struct nesc_declaration *original; /* For instances: the "original" component
 					or interface */
+  /* All '@'-style attributes attached to this declaration */
+  dd_list/*nesc_attribute*/ attributes;
 
   /* for components */
   /* Binary components are mostly treated like modules. */

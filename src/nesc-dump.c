@@ -46,6 +46,7 @@ Boston, MA 02111-1307, USA.  */
 /* The current set of dump requests */
 static dd_list/*nd_option*/ opts;
 region dump_region; /* for dump request allocations */
+static const char *dumpfile;
 
 /* What to output */
 enum { wiring_none, wiring_user, wiring_functions } wiring = wiring_none;
@@ -320,6 +321,7 @@ static void dump_component(void *entry)
   if (comp->abstract)
     dump_parameters("parameters", comp->parameters);
   xml_qtag(comp->configuration ? "configuration" : "module");
+  dump_attributes(comp->attributes);
   indentedtag_pop();
 }
 
@@ -342,10 +344,16 @@ static void dump_interfacedef(void *entry)
 
   if (idef->abstract)
     dump_parameters("parameters", idef->parameters);
+  dump_attributes(idef->attributes);
 
   env_scan(idef->env->id_env, &fns);
   while (env_next(&fns, &fnname, &fnentry))
-    dump_ddecl(fnentry);
+    {
+      data_declaration fndecl = fnentry;
+
+      if (fndecl->kind != decl_magic_string)
+	dump_ddecl(fnentry);
+    }
 
   indentedtag_pop();
 }
@@ -430,8 +438,8 @@ static void dump_list(const char *name, xml_list l,
   indentedtag_pop();
 }
 
-/* The toplevel requests supported -fnesc-dump */
-/* ------------------------------------------- */
+/* The toplevel requests supported by -fnesc-dump */
+/* ---------------------------------------------- */
 /* Most of these are handled via the lists system (see above) */
 
 static void select_components(xml_list l, nd_option opt, dd_list comps)
@@ -603,6 +611,11 @@ void select_dump(char *what)
     }
 }
 
+void select_dumpfile(char *name)
+{
+  dumpfile = name;
+}
+
 bool dump_selected(void)
 {
   return opts != NULL;
@@ -630,6 +643,7 @@ void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
   dd_list_pos scan_opts;
   bool list_change = FALSE;
   int i;
+  FILE *dumpf = NULL;
 
   for (i = 0; i < NLISTS; i++)
     lists[i].l = new_xml_list(dump_region, &list_change, lists[i].addfilter);
@@ -678,7 +692,18 @@ void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
   for (i = 0; i < NLISTS; i++)
     xml_list_reset(lists[i].l);
 
-  xml_start(stdout);
+  if (!dumpfile)
+    xml_start(stdout);
+  else
+    {
+      dumpf = fopen(dumpfile, "w");
+      if (!dumpf)
+	{
+	  perror("couldn't create dump file");
+	  return;
+	}
+      xml_start(dumpf);
+    }
   indentedtag_start("nesc");
   xml_attr("xmlns", "http://www.tinyos.net/nesC");
   xml_tag_end(); xnewline();
@@ -688,6 +713,9 @@ void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
 
   indentedtag_pop();
   xml_end();
+
+  if (dumpf)
+    fclose(dumpf);
 
   /* Nothing should have been added to the lists in the actual output pass */
   assert(!list_change);

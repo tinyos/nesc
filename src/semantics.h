@@ -103,8 +103,7 @@ declaration finish_decl(declaration decl, expression init);
    Returns the declaration for the parameter.
 */
 declaration declare_parameter(declarator d, type_element elements,
-			      attribute attributes,
-			      bool generic);
+			      attribute attributes);
 
 /* Mark parms as forward-declared parameters */
 void mark_forward_parameters(declaration parms);

@@ -25,7 +25,7 @@ void declare_interface_ref(interface_ref iref, declaration gparms,
 void make_implicit_interface(data_declaration fndecl,
 			     function_declarator fdeclarator);
 
-void check_generic_parameter_type(location l, data_declaration gparm);
+void check_interface_parameter_types(declaration parms);
 
 environment start_implementation(void);
 

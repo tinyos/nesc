@@ -379,7 +379,7 @@ void prt_typename(typename tname);
 void prt_typeof_expr(typeof_expr texpr);
 void prt_typeof_type(typeof_type ttype);
 void prt_gcc_attribute(gcc_attribute a);
-//void prt_nesc_attribute(nesc_attribute a);
+void prt_nesc_attribute(nesc_attribute a);
 void prt_rid(rid r, pte_options options);
 void prt_qualifier(qualifier q);
 void prt_tag_ref(tag_ref sr, pte_options options);
@@ -959,7 +959,7 @@ void prt_type_element(type_element em, pte_options options)
       PRTCASE(typeof_expr, em);
       PRTCASE(typeof_type, em);
       PRTCASE(gcc_attribute, em);
-      //PRTCASE(nesc_attribute, em);
+      PRTCASE(nesc_attribute, em);
       PRTCASE(qualifier, em);
     case kind_rid:
       prt_rid(CAST(rid, em), options);
@@ -1014,6 +1014,11 @@ void prt_gcc_attribute(gcc_attribute a)
 	}
       output("))");
     }
+}
+
+void prt_nesc_attribute(nesc_attribute a)
+{
+  /* We just ignore these. */
 }
 
 void prt_rid(rid r, pte_options options)

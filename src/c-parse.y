@@ -54,6 +54,8 @@ Boston, MA 02111-1307, USA. */
 #include "nesc-c.h"
 #include "nesc-attributes.h"
 #include "nesc-task.h"
+#include "nesc-cpp.h"
+#include "attributes.h"
 
 int yyparse(void) deletes;
 
@@ -222,9 +224,8 @@ void yyerror();
 %token <u.itoken> ABSTRACT COMPONENT EXTENDS
 
 %type <u.itoken> callkind
-%type <u.decl> datadef_list parameter_list parameter
+%type <u.decl> datadef_list 
 %type <u.decl> parameters parameters1
-%type <u.telement> parameter_type
 %type <u.decl> requires provides requires_or_provides requires_or_provides_list
 %type <u.decl> requires_or_provides_list_
 %type <u.decl> parameterised_interface_list parameterised_interface
@@ -363,6 +364,7 @@ static void set_nesc_parse_tree(void *tree)
   nesc_declaration cdecl = current.container;
   nesc_decl nd = CAST(nesc_decl, tree);
 
+  handle_nesc_decl_attributes(nd->attributes, cdecl);
   nd->cdecl = cdecl;
   cdecl->ast = nd;
   parse_tree = CAST(node, nd);
@@ -455,6 +457,15 @@ dispatch:
 	| DISPATCH_C { parse_tree = NULL; }
 	;
 
+ncheader:
+	  { end_macro_saving(); } includes_list
+	| extdefs 
+		  { 
+		    end_macro_saving(); 
+		    add_cdecls(declaration_reverse($1));
+		  }
+	;
+
 includes_list: 
 	  includes_list includes 
 	| /* empty */
@@ -472,14 +483,14 @@ include_list:
 	;
 
 interface: 
-          includes_list
+          ncheader
 	  INTERFACE idword
 		{ 
 		  start_nesc_entity(l_interface, $3);
 		} 
-	  interface_parms '{' datadef_list '}' 
+	  interface_parms nesc_attributes '{' datadef_list '}' 
 		{
-		  interface intf = new_interface(pr, $2.location, $3, declaration_reverse($7));
+		  interface intf = new_interface(pr, $2.location, $3, $6, declaration_reverse($8));
 
 		  set_nesc_parse_tree(intf);
 
@@ -514,7 +525,8 @@ interface_parm_list:
 	;
 
 interface_parm:
-	  type_parm { $$ = declare_type_parameter($1.location, $1.id); }
+	  type_parm nesc_attributes 
+		{ $$ = declare_type_parameter($1.location, $1.id, $2, NULL); }
 	;
 
 type_parm:
@@ -530,34 +542,18 @@ parameters:
 		{ /* poplevel done in users of parameters */ $$ = $3; } ;
 
 parameters1: 
-	  parameter_list ']' { $$ = declaration_reverse($1); }
+	  parms ']'
+	  	{
+		  $$ = declaration_reverse($1);
+		  check_interface_parameter_types($$); 
+		}
 	| error ']' { $$ = make_error_decl(); }
 	;
 
-parameter_list: 
-	  parameter
-	| parameter_list ',' parameter { $$ = declaration_chain($3, $1); } ;
-
-parameter: 
-	  parameter_type identifier
-   		{ 
-		  declarator id =
-		    make_identifier_declarator($2.location, $2.id);
-		  $$ = declare_parameter(id, $1, NULL, TRUE);
-		}
-	;
-
-parameter_type: 
-	  type_spec_nonattr
-	| parameter_type type_spec_nonattr { $$ = type_element_chain($1, $2); }
-	;
-
-
-
 component: 
-	  includes_list module
-	| includes_list configuration
-	| includes_list binary_component
+	  ncheader module
+	| ncheader configuration
+	| ncheader binary_component
 	;
 
 module: 
@@ -566,10 +562,10 @@ module:
 		  start_nesc_entity(l_component, $3);
 		  current.container->abstract = $1; 
 		} 
-	  component_parms '{' requires_or_provides_list '}'
+	  component_parms nesc_attributes '{' requires_or_provides_list '}'
 	  imodule
 		{ 
-		  set_nesc_parse_tree(new_component(pr, $2.location, $3, $1, $5, declaration_reverse($7), $9));
+		  set_nesc_parse_tree(new_component(pr, $2.location, $3, $6, $1, $5, declaration_reverse($8), $10));
 	        }
 	;
 
@@ -580,22 +576,22 @@ configuration:
 		  current.container->abstract = $1; 
 		  current.container->configuration = TRUE;
 		} 
-	  component_parms '{' requires_or_provides_list '}'
+	  component_parms nesc_attributes '{' requires_or_provides_list '}'
 	  iconfiguration
 		{ 
-		  set_nesc_parse_tree(new_component(pr, $2.location, $3, $1, $5, declaration_reverse($7), $9));
+		  set_nesc_parse_tree(new_component(pr, $2.location, $3, $6, $1, $5, declaration_reverse($8), $10));
 	        }
         ;
 
 binary_component: 
-	  COMPONENT idword 
+	  COMPONENT idword
 	        { 
 		  start_nesc_entity(l_component, $2);
 		} 
-	  '{' requires_or_provides_list '}'
+	  nesc_attributes '{' requires_or_provides_list '}'
 		{ 
 		  binary_component dummy = new_binary_component(pr, $1.location, start_implementation());
-		  component c = new_component(pr, $1.location, $2, FALSE, NULL, declaration_reverse($5), CAST(implementation, dummy));
+		  component c = new_component(pr, $1.location, $2, $4, FALSE, NULL, declaration_reverse($6), CAST(implementation, dummy));
 		  set_nesc_parse_tree(c);
 	        }
 	;
@@ -2580,19 +2576,19 @@ parms:
    as found in a parmlist.  */
 parm:
 	  declspecs_ts xreferror parm_declarator maybe_attribute
-		{ $$ = declare_parameter($3, $1, $4, FALSE); }
+		{ $$ = declare_parameter($3, $1, $4); }
 	| declspecs_ts xreferror notype_declarator maybe_attribute
-		{ $$ = declare_parameter($3, $1, $4, FALSE); }
+		{ $$ = declare_parameter($3, $1, $4); }
 	| declspecs_ts xreferror absdcl
-		{ $$ = declare_parameter($3, $1, NULL, FALSE); }
+		{ $$ = declare_parameter($3, $1, NULL); }
 	| declspecs_ts xreferror absdcl1_noea attributes
-		{ $$ = declare_parameter($3, $1, $4, FALSE); }
+		{ $$ = declare_parameter($3, $1, $4); }
 	| declspecs_nots xreferror notype_declarator maybe_attribute
-		{ $$ = declare_parameter($3, $1, $4, FALSE); }
+		{ $$ = declare_parameter($3, $1, $4); }
 	| declspecs_nots xreferror absdcl
-		{ $$ = declare_parameter($3, $1, NULL, FALSE); }
+		{ $$ = declare_parameter($3, $1, NULL); }
 	| declspecs_nots xreferror absdcl1_noea attributes 
-		{ $$ = declare_parameter($3, $1, $4, FALSE); }
+		{ $$ = declare_parameter($3, $1, $4); }
 	;
 
 xreferror: { pending_xref_error(); } ;

@@ -28,52 +28,37 @@
  * Intel Research Berkeley, 2150 Shattuck Avenue, Suite 1300, Berkeley, CA, 
  * 94704.  Attention:  Intel License Inquiry.
  */
+/* 
+ * Authors:  Su Ping,  (converted to nesC by Sam Madden)
+ *           David Gay,      Intel Research Berkeley Lab
+ *           Phil Levis
+ * Date:     4/12/2002
+ * NesC conversion: 6/28/2002
+ * interface cleanup: 7/16/2002
+ * Configuration:     8/12/2002
+ */
 
 /**
- * The TinyOS standard control interface. All components that require
- * initialization or can be powered down should provide this
- * interface. start() and stop() are synonymous with powering on and
- * off, when appropriate.
- *
- * On boot, the init() of all wired components must be called. init()
- * may be called multiple times, and in subcomponents before some of
- * their supercomponents (e.g. if they are the subcomponent of
- * multiple components). After init() has been called, start() and
- * stop() may be called multiple times, in any order. The call
- * sequence is therefore:
- *
- * <p>init* (start|stop)*</p>
- *
- * @author Jason Hill
+ * @author Su Ping
+ * @author (converted to nesC by Sam Madden)
  * @author David Gay
- * @author Philip Levis
- * @modified  6/25/02
- *
- *
+ * @author Intel Research Berkeley Lab
+ * @author Phil Levis
  */
 
 
-interface StdControl @useful(3, "yeah")
-{
-  /**
-   * Initialize the component and its subcomponents.
-   *
-   * @return Whether initialization was successful.
-   */
-  command result_t init() @empty();
 
-  /**
-   * Start the component and its subcomponents.
-   *
-   * @return Whether starting was successful.
-   */
-  command result_t start() @useful(1, "start");
+configuration TimerC {
+  provides interface Timer[uint8_t id];
+  provides interface StdControl;
+}
 
-  /**
-   * Stop the component and pertinent subcomponents (not all
-   * subcomponents may be turned off due to wakeup timers, etc.).
-   *
-   * @return Whether stopping was successful.
-   */
-  command result_t stop() @useful(2);
+implementation {
+  components new TimerM(230), ClockC, NoLeds;
+
+  TimerM.Leds -> NoLeds;
+  TimerM.Clock -> ClockC;
+
+  StdControl = TimerM;
+  Timer = TimerM;
 }

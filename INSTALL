@@ -1,7 +1,5 @@
 To build nesC: in this directory
-./configure TOSDIR=<location of your TinyOS tos directory>
-  (note: if you don't specify TOSDIR, configure will try and find a directory
-         named ../tos, then ../../tos, then $HOME/nest/tos before failing)
+./configure [--prefix=<where you want to install nesc]
 make
 
 To install:
@@ -9,3 +7,8 @@ make install
 
 To install a nesC editor mode (currently, emacs, vim, kde):
 Read <installdir>/lib/ncc/editor-modes/<your-editor-name>/readme.txt
+
+To use nesC with TinyOS, you need to install the ncc, mig, etc TinyOS
+frontends for nesC. These are found in tinyos-1.x/tools/src/ncc. Please
+follow the installation directions you find there.
+

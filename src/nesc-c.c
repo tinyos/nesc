@@ -25,8 +25,13 @@ Boston, MA 02111-1307, USA.  */
 
 declaration all_cdecls;
 
+void add_cdecls(declaration cdecls)
+{
+  all_cdecls = declaration_chain(all_cdecls, CAST(declaration, cdecls));
+}
+
 void load_c(location l, const char *name, bool name_is_path)
 {
   node cdecls = compile(l, l_c, name, name_is_path);
-  all_cdecls = declaration_chain(all_cdecls, CAST(declaration, cdecls));
+  add_cdecls(CAST(declaration, cdecls));
 }

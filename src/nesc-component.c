@@ -115,6 +115,13 @@ void copy_interface_functions(region r, nesc_declaration container,
     {
       data_declaration fndecl = fnentry, fncopy;
 
+      /* Strings acquire a magic_string decl which we don't care about
+	 legal example: 
+	  command int (*init())[sizeof "aa"];
+      */
+      if (fndecl->kind == decl_magic_string)
+	continue;
+
       fncopy = declare(icopy, fndecl, FALSE);
       fncopy->fn_uses = NULL;
       fncopy->nuses = NULL;
@@ -192,13 +199,28 @@ void declare_interface_ref(interface_ref iref, declaration gparms,
   ddecl->type = make_interface_type(ddecl);
 }
 
-void check_generic_parameter_type(location l, data_declaration gparm)
+void check_interface_parameter_types(declaration parms)
 {
-  if (!type_integral(gparm->type))
+  declaration parm;
+
+  scan_declaration (parm, parms)
     {
-      error_with_location(l, "integral type required for generic parameter `%s'",
-			  gparm->name);
-      gparm->type = int_type;
+      data_decl dd = CAST(data_decl, parm);
+      variable_decl vd = CAST(variable_decl, dd->decls);
+
+      if (!vd->ddecl)
+	{
+	  error_with_location(vd->location,
+			      "integral type required for generic parameter");
+	  vd->ddecl = bad_decl;
+	}
+      else if (!type_integral(vd->ddecl->type))
+      	{
+	  error_with_location(vd->location,
+			      "integral type required for generic parameter `%s'",
+			      vd->ddecl->name);
+	  vd->ddecl->type = int_type;
+	}
     }
 }
 

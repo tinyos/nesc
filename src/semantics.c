@@ -128,7 +128,6 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->actual_async = FALSE;
   dd->required = FALSE;
   dd->itype = NULL;
-  dd->isgeneric = FALSE;
   dd->gparms = NULL;
   dd->ctype = NULL;
   dd->container = NULL;
@@ -2765,7 +2764,7 @@ declaration finish_decl(declaration decl, expression init)
    Returns the declaration for the parameter.
 */
 declaration declare_parameter(declarator d, type_element elements,
-			      attribute attributes, bool generic)
+			      attribute attributes)
 {
   /* There must be at least a declarator or some form of type specification */
   location l =
@@ -2790,7 +2789,7 @@ declaration declare_parameter(declarator d, type_element elements,
       ddecl = old_decl;
       ddecl->isused = TRUE;
     }
-  else if (generic || !type_void(tempdecl.type))
+  else if (!type_void(tempdecl.type))
     ddecl = declare(current.env, &tempdecl, FALSE);
 
   if (ddecl)
@@ -2798,11 +2797,6 @@ declaration declare_parameter(declarator d, type_element elements,
       /* Forward transparent union property from union to parameter */
       if (type_union(ddecl->type) && type_tag(ddecl->type)->transparent_union)
 	transparent_union_argument(ddecl);
-
-      ddecl->isgeneric = generic;
-      if (generic)
-	check_generic_parameter_type(l, ddecl);
-
 
       handle_decl_attributes(attributes, ddecl);
       handle_decl_dd_attributes(extra_attr, ddecl);

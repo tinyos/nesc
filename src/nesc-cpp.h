@@ -31,5 +31,6 @@ void preprocess_file_end(void);
 
 void handle_directive(const char *directive, const char *args);
 void save_option(const char *option);
+void end_macro_saving(void);
 
 #endif

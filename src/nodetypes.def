@@ -572,9 +572,10 @@ DDECL is the magic_string declaration for this string.")
 ;; the different kinds of files
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftype nesc_decl declaration (word1 cdecl)
+(deftype nesc_decl declaration (word1 attributes cdecl)
   "a supertype for interface/component declarations of WORD1
-CDECL is the declaration for this interface/component")
+CDECL is the declaration for this interface/component
+ATTRIBUTES are its attributes")
 
 (deftype interface nesc_decl (decls)
   "interface WORD1 { DECLS }")

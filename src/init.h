@@ -31,9 +31,12 @@ struct ivalue {
 
   type type;
 
+  ivalue instantiation;
+
   union {
     struct {			/* for iv_base */
       expression expr;		/* not an init_list */
+      bool require_constant_value;
       cval value; 		/* value if constant, cval_top otherwise */
     } base;
     struct ivalue_array *array; /* for iv_array */
@@ -52,6 +55,8 @@ typedef struct ivalue_field {
   field_declaration field;
   ivalue value;
 } *ivalue_field;
+
+ivalue new_ivalue(region r, int kind, type t);
 
 void start_init(declaration decl, const char *attribute);
 void finish_init(void);

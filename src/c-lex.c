@@ -31,6 +31,7 @@ Boston, MA 02111-1307, USA. */
 #include "input.h"
 #include "semantics.h"
 #include "constants.h"
+#include "nesc-cpp.h"
 
 #include <ctype.h>
 
