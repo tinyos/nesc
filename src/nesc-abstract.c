@@ -131,6 +131,7 @@ static void clone_ddecl(data_declaration ddecl)
 
   copy = declare(current.env, ddecl, TRUE);
   ddecl->instantiation = copy;
+  copy->instantiation = NULL;
   copy->fn_uses = NULL;
   copy->nuses = NULL;
   copy->shadowed = ddecl;
