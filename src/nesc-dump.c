@@ -18,12 +18,13 @@ Boston, MA 02111-1307, USA.  */
 #include "parser.h"
 #include "nesc-dump.h"
 #include "nesc-dspec.h"
+#include "nesc-dfilter.h"
 #include "nesc-xml.h"
 #include "nesc-cg.h"
 
 dd_list/*nd_option*/ opts;
 
-void dump_component(component comp)
+static void dump_nesc_container(nesc_declaration comp)
 {
   if (comp->configuration)
     xml_tag_start("configuration");
@@ -31,7 +32,74 @@ void dump_component(component comp)
     xml_tag_start("module");
   xml_attr("name", comp->instance_name);
   xml_qtag_end();
+  xnewline();
 }
+
+static void dump_attributes(dd_list/*nesc_attribute*/ attributes)
+{
+  dd_list_pos scan;
+
+  if (!attributes)
+    return;
+
+  dd_scan (scan, attributes)
+    {
+      nesc_attribute attr = DD_GET(nesc_attribute, scan);
+
+      xml_tag_start("attribute");
+      xml_attr("name", attr->word1->cstring.data);
+      xml_tag_end();
+      /* Should have value here */
+      xml_pop();
+      xnewline();
+    }
+}
+
+static bool dump_interface_ref(data_declaration iref)
+{
+  assert(iref->kind == decl_interface_ref);
+
+  if (!dump_filter_ddecl(iref))
+    return FALSE;
+
+  xml_tag_start("interface");
+  xml_attr("name", iref->name);
+  xml_attr_int("provided", !iref->required);
+  xml_tag_end();
+  xnewline(); 
+
+  xindent();
+  dump_nesc_container(iref->container);
+  dump_attributes(iref->attributes);
+  xunindent();
+
+  xstartline(); xml_pop();
+  xnewline();
+  
+  return TRUE;
+}
+
+static void dump_component_interfaces(nesc_declaration comp)
+{
+  env_scanner scan;
+  const char *name;
+  void *decl;
+  bool any = FALSE;
+
+  env_scan(comp->env->id_env, &scan);
+  while (env_next(&scan, &name, &decl))
+    {
+      data_declaration ddecl = decl;
+
+      if (ddecl->kind == decl_interface_ref)
+	any = dump_interface_ref(decl) || any;
+    }
+  if (any)
+    xnewline();
+}
+
+/* The toplevel requests supported -fnesc-dump */
+
 
 void dump_components(nd_option opt, nesc_declaration program, cgraph cg,
 		     dd_list modules, dd_list components)
@@ -51,8 +119,32 @@ void dump_components(nd_option opt, nesc_declaration program, cgraph cg,
     {
       nesc_declaration comp = DD_GET(nesc_declaration, scan_components);
 
-      dump_component(comp);
-      xnewline();
+      dump_nesc_container(comp);
+    }
+  xunindent();
+  xstartline(); xml_pop();
+  xnewline();
+}
+
+void dump_interfaces(nd_option opt, nesc_declaration program, cgraph cg,
+		     dd_list modules, dd_list components)
+
+{
+  dd_list_pos scan_components;
+
+  if (!components)
+    {
+      error("interfaces can only be requested on an actual program");
+      return;
+    }
+
+  xml_tag("interfaces");
+  xnewline(); xindent();
+  dd_scan (scan_components, components)
+    {
+      nesc_declaration comp = DD_GET(nesc_declaration, scan_components);
+
+      dump_component_interfaces(comp);
     }
   xunindent();
   xml_pop();
@@ -100,8 +192,12 @@ void dump_info(nesc_declaration program, cgraph cg,
     {
       nd_option opt = DD_GET(nd_option, scan_opts);
 
+      dump_set_filter(opt);
+
       if (!strcmp(opt->name, "components"))
 	dump_components(opt, program, cg, modules, components);
+      else if (!strcmp(opt->name, "interfaces"))
+	dump_interfaces(opt, program, cg, modules, components);
       else
 	error("unknown dump request `%s'", opt->name);
     }

@@ -19,6 +19,7 @@ Boston, MA 02111-1307, USA.  */
 #include "parser.h"
 #include "nesc-dspec.h"
 #include "nesc-dspec-int.h"
+#include "nesc-dfilter.h"
 
 static nd_option opt;
 %}
@@ -27,6 +28,11 @@ static nd_option opt;
 %token <integer> ND_INTEGER
 %type <token> name
 %type <nd_arg> args arg
+%type <nd_filter> filter
+
+%left '|'
+%left '&'
+%nonassoc '!'
 
 %%
 
@@ -45,6 +51,17 @@ args:
 arg:
     ND_TOKEN  { $$ = CAST(nd_arg, new_nd_token(permanent, $1)); }
   | ND_INTEGER { $$ = CAST(nd_arg, new_nd_int(permanent, $1)); }
+  | filter { $$ = CAST(nd_arg, $1); }
+  ;
+
+filter:
+    filter '|' filter { $$ = CAST(nd_filter, new_ndf_or(permanent, $1, $3)); }
+  | filter '&' filter { $$ = CAST(nd_filter, new_ndf_and(permanent, $1, $3)); }
+  | '!' filter  { $$ = CAST(nd_filter, new_ndf_not(permanent, $2)); }
+  | '(' filter ')' { $$ = $2; }
+  | ND_TOKEN '(' args ')' {
+      $$ = make_ndf_op(permanent, $1, $3);
+    }
   ;
 
 %%

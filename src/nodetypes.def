@@ -591,12 +591,11 @@ where DECLS include regular declarations, component_refs and connections")
 either a data_decl or an interface_ref). REQUIRED is true for 'requires',
 false for 'provides' clauses")
 
-(deftype interface_ref declaration (word1 args word2 gparms ddecl)
+(deftype interface_ref declaration (word1 args word2 gparms attributes ddecl)
   "an interface which is required or provided by a component:
-interface WORD1 TYPELIST WORD2 [ PARMS ]
+interface WORD1 < ARGS > WORD2 [ GPARMS ] ATTRIBUTES
 ARGS is a list of type_arguments for template interfaces
-WORD2 is optional
-if PARMS == null, then this is just 'interface WORD1 WORD2'")
+WORD2 is optional, GPARMS, ARGS, ATTRIBUTES are optional")
 
 (deftype component_ref declaration (word1 word2 abstract args cdecl)
   "a reference to component WORD1 'as' WORD2

@@ -161,6 +161,11 @@ void xml_attr(const char *name, const char *val)
   xputs("\"");
 }
 
+void xml_attr_int(const char *name, largest_int val)
+{
+  xprintf(" %s=\"%lld\"", name, val);
+}
+
 void xml_start(FILE *f)
 {
   xml_region = newregion();

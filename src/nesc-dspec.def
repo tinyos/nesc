@@ -1,9 +1,32 @@
+;; -*- lisp -*-
+
+; This file is part of the nesC compiler.
+;    Copyright (C) 2004-2005 Intel Corporation
+; 
+; The attached "nesC" software is provided to you under the terms and
+; conditions of the GNU General Public License Version 2 as published by the
+; Free Software Foundation.
+; 
+; nesC is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+; 
+; You should have received a copy of the GNU General Public License
+; along with nesC; see the file COPYING.  If not, write to
+; the Free Software Foundation, 59 Temple Place - Suite 330,
+; Boston, MA 02111-1307, USA.
+
 (deffield name "const char *" (init))
 (deffield str "const char *" (init))
 (deffield val largest_int (init))
 (deffield count int (init))
 (deffield args nd_arg (init tree))
 (deffield next nd_arg ())
+(deffield filter1 nd_filter (init tree))
+(deffield filter2 nd_filter (init tree))
+(deffield info "void *" ())
+(deffield filter_index int ())
 
 (deftype nd_option nil (name args count)
   "the dump option NAME(ARGS).
@@ -18,3 +41,20 @@ COUNT is the number of elements in ARGS")
 
 (deftype nd_token nd_arg (str)
   "some token argument STR")
+
+(deftype nd_filter nd_arg ()
+  "a filter")
+
+(deftype ndf_and nd_filter (filter1 filter2)
+  "FILTER1 & FILTER2")
+
+(deftype ndf_or nd_filter (filter1 filter2)
+  "FILTER1 | FILTER2")
+
+(deftype ndf_not nd_filter (filter1)
+  "!FILTER1")
+
+(deftype ndf_op nd_filter (name args count info filter_index)
+  "the basic filter NAME(ARGS).
+COUNT is the number of elements in ARGS (>= 1)
+INFO can be used to save extra information (e.g., compiled regexp info)")

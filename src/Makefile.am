@@ -113,6 +113,8 @@ libparser_a_SOURCES =				\
 	nesc-cpp.c				\
 	nesc-cpp.h				\
 	nesc-decls.h				\
+	nesc-dfilter.c				\
+	nesc-dfilter.h				\
 	nesc-dspec-int.h			\
 	nesc-dspec.tab.c			\
 	nesc-dspec.tab.h			\
@@ -231,10 +233,10 @@ $(srcdir)/nesc-dspec.tab.c $(srcdir)/nesc-dspec.tab.h: nesc-dspec.y
 $(srcdir)/lex.nd.c: nesc-dspec.l
 	$(FLEX) -Pnd -s $<
 
-$(srcdir)/ND_types.c $(srcdir)/ND_types.h $(srcdir)/ND_defs.h: build-types.el nodetypes.def build-basics.el
+$(srcdir)/ND_types.c $(srcdir)/ND_types.h $(srcdir)/ND_defs.h: build-types.el nesc-dspec.def build-basics.el
 	cd $(srcdir) && $(EMACS) $(EMACSFLAGS) -batch -load build-types.el ND nesc-dspec.def 10000
 
-$(srcdir)/ND_list_nd_arg.c $(srcdir)/ND_list_nd_arg.h: build-list.el nodetypes.def build-basics.el
+$(srcdir)/ND_list_nd_arg.c $(srcdir)/ND_list_nd_arg.h: build-list.el nesc-dspec.def build-basics.el
 	cd $(srcdir) && $(EMACS) $(EMACSFLAGS) -batch -load build-list.el ND nesc-dspec.def nd_arg
 
 $(srcdir)/AST_types.c $(srcdir)/AST_types.h $(srcdir)/AST_defs.h: build-types.el nodetypes.def build-basics.el

@@ -36,6 +36,7 @@ void xml_tag_end(void);
 void xml_qtag_end(void);
 void xml_pop(void);
 void xml_attr(const char *name, const char *val);
+void xml_attr_int(const char *name, largest_int val);
 void xml_start(FILE *f);
 void xml_end(void);
 

@@ -30,6 +30,7 @@ Boston, MA 02111-1307, USA.  */
 #include "input.h"
 #include "edit.h"
 #include "nesc-abstract.h"
+#include "attributes.h"
 
 void interface_scan(data_declaration iref, env_scanner *scan)
 {
@@ -145,7 +146,7 @@ void set_interface_functions_gparms(environment fns, typelist gparms)
 }
 
 void declare_interface_ref(interface_ref iref, declaration gparms,
-			   environment genv)
+			   environment genv, attribute attribs)
 {
   const char *iname = (iref->word2 ? iref->word2 : iref->word1)->cstring.data;
   nesc_declaration idecl = 
@@ -161,10 +162,13 @@ void declare_interface_ref(interface_ref iref, declaration gparms,
   tempdecl.required = current.spec_section == spec_uses;
   tempdecl.gparms = gparms ? make_gparm_typelist(gparms) : NULL;
 
+  handle_decl_attributes(attribs, &tempdecl);
+
   old_decl = lookup_id(iname, TRUE);
   if (old_decl)
     error("redefinition of `%s'", iname);
   ddecl = declare(current.env, &tempdecl, FALSE);
+  iref->attributes = attribs;
   iref->ddecl = ddecl;
 
   if (idecl->abstract)

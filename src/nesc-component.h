@@ -20,7 +20,7 @@ Boston, MA 02111-1307, USA.  */
 void build_component(region r, nesc_declaration cdecl);
 
 void declare_interface_ref(interface_ref iref, declaration gparms,
-			   environment genv);
+			   environment genv, attribute attribs);
 
 void make_implicit_interface(data_declaration fndecl,
 			     function_declarator fdeclarator);

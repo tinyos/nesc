@@ -15,27 +15,12 @@ along with nesC; see the file COPYING.  If not, write to
 the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
-#ifndef NESC_DSPEC_INT_H
-#define NESC_DSPEC_INT_H
+#ifndef NESC_DFILTER_H
+#define NESC_DFILTER_H
 
-/* Internal definitions for dump specification parsing */
-
-struct ndstype {
-  largest_int integer;
-  union {
-    const char *token;
-    nd_arg nd_arg;
-    nd_filter nd_filter;
-  };
-};
-
-#define YYSTYPE struct ndstype
-
-void nd_read(const char *str);
-void nderror(char *err);
-
-#include "nesc-dspec.tab.h"
-
-int ndlex(void);
+nd_filter make_ndf_op(region r, const char *name, nd_arg args);
+bool dump_filter_ddecl(data_declaration ddecl);
+void dump_set_filter(nd_option opt);
 
 #endif
+

@@ -138,7 +138,8 @@ void yyerror();
 
 %type <u.asm_operand> asm_operand asm_operands nonnull_asm_operands
 %type <u.asm_stmt> maybeasm
-%type <u.attribute> maybe_attribute attributes attribute attribute_list nattrib
+%type <u.attribute> maybe_attribute attributes attribute attribute_list
+%type <u.attribute> nesc_attributes nattrib
 %type <u.gcc_attribute> attrib
 %type <u.constant> CONSTANT
 %type <u.decl> datadecl datadecls datadef decl decls extdef extdefs fndef
@@ -679,15 +680,15 @@ parameterised_interfaces:
 
 parameterised_interface:
 	  just_datadef
-	| interface_ref ';' 
+	| interface_ref nesc_attributes ';' 
 		{
-		  declare_interface_ref($1, NULL, NULL);
+		  declare_interface_ref($1, NULL, NULL, $2);
 		  $$ = CAST(declaration, $1);
 		}
-	| interface_ref parameters ';'
+	| interface_ref parameters nesc_attributes ';'
 		{ 
 		  $1->gparms = $2;
-		  declare_interface_ref($1, $2, poplevel());
+		  declare_interface_ref($1, $2, poplevel(), $3);
 		  $$ = CAST(declaration, $1);
 		}
 	;
@@ -699,9 +700,9 @@ interface_ref:
 
 interface_type:
 	  INTERFACE idword
-		{ $$ = new_interface_ref(pr, $1.location, $2, NULL, NULL, NULL, NULL); }
+		{ $$ = new_interface_ref(pr, $1.location, $2, NULL, NULL, NULL, NULL, NULL); }
 	| INTERFACE idword '<' typelist '>'
-		{ $$ = new_interface_ref(pr, $1.location, $2, $4, NULL, NULL, NULL); }
+		{ $$ = new_interface_ref(pr, $1.location, $2, $4, NULL, NULL, NULL, NULL); }
 	;
 
 typelist:
@@ -1700,6 +1701,12 @@ eattributes:
 	  attributes { $$ = CAST(type_element, $1); }
 	;
 
+nesc_attributes:
+	  /* empty */ { $$ = NULL; }
+	| nesc_attributes nattrib
+		{ $$ = attribute_chain($2, $1); }
+	;
+
 attributes:
 	  attribute
 		{ $$ = $1; }
@@ -1710,8 +1717,7 @@ attributes:
 attribute:
 	  ATTRIBUTE '(' '(' attribute_list ')' ')'
 		{ $$ = $4; }
-	| '@' nattrib
-		{ $$ = $2; }
+	| nattrib
 	;
 
 attribute_list:
@@ -1739,10 +1745,10 @@ attrib:
 	;
 
 nattrib:
-	  idword '(' 
-		 { $<u.tdecl>$ = start_attribute_use($1); }
+	  '@' idword '(' 
+		 { $<u.tdecl>$ = start_attribute_use($2); }
 	  initlist_maybe_comma ')' 
-		{ $$ = finish_attribute_use($1, $4, $<u.tdecl>3); }
+		{ $$ = finish_attribute_use($2, $5, $<u.tdecl>4); }
 	;
 
 /* This still leaves out most reserved keywords,

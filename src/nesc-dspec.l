@@ -43,7 +43,7 @@ HEXDIGIT	[0-9a-fA-F]
 %%
 
 [ \t] 		{ }
-[,()]  		{ return ndtext[0]; }
+[,()|&!]	{ return ndtext[0]; }
 -?({DIGIT}+|0[xX]{HEXDIGIT}+) {
   		  errno = 0;
 		  ndlval.integer = strtoll(ndtext, NULL, 0);
@@ -51,7 +51,7 @@ HEXDIGIT	[0-9a-fA-F]
 	    	    nderror("integer constant out of bounds.");
             	  return ND_INTEGER; 
 		}
-[^, \t()]+	{
+[^, \t()|&!]+	{
   		  ndlval.token = rstrdup(permanent, ndtext);
 		  return ND_TOKEN;
 		}

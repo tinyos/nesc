@@ -127,7 +127,7 @@ void handle_gcc_decl_attribute(gcc_attribute attr, data_declaration ddecl)
     }
   else if (!strcmp(name, "noinline"))
     {
-      ddecl->noinline = TRUE;
+      ddecl->noinlinep = TRUE;
     }
   else if (!(target->decl_attribute &&
 	     target->decl_attribute(attr, ddecl)) &&
