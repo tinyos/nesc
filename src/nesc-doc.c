@@ -469,6 +469,7 @@ typedef struct {
 static env ic_env;
 static implementor_list ic_empty_implementor_list;
 
+/* Debug code
 static void ic_print()
 {
   env_scanner scanner;
@@ -495,6 +496,7 @@ static void ic_print()
   }
   printf("\n\n");
 }
+*/
 
 static void ilist_add(implementor_list *list, char *name)
 {
@@ -504,7 +506,7 @@ static void ilist_add(implementor_list *list, char *name)
   // skip duplicates
   for(i=0; i<list->num; i++) {
     if(strcmp(name, list->comp[i]) == 0) return;
-    if(strcmp(name, list->comp[i]) > 0) break;
+    if(strcmp(name, list->comp[i]) < 0) break;
   }
 
   // first allocation
@@ -583,7 +585,6 @@ static void ic_read()
       fclose(f);
       return;
     }
-    printf("read: %s %d %d %d %s\n",key, is_iface, nreq, nprov, desc);
 
     entry = ic_get_entry(key);
     if(entry == NULL) {
@@ -601,7 +602,6 @@ static void ic_read()
     for(i=0; i<nreq; i++) {
       desc[0] = '\0';
       ret = fscanf(f,"%s",desc);
-      printf(" %s",desc);
       if(ret != 1  ||  desc[0] == '\0') {
         warning("invalid data in info.idx - ignoring remainder of file\n");
         fclose(f);
@@ -612,7 +612,6 @@ static void ic_read()
     for(i=0; i<nprov; i++) {
       desc[0] = '\0';
       ret = fscanf(f,"%s",desc);
-      printf(" %s",desc);
       if(ret != 1  ||  desc[0] == '\0') {
         warning("invalid data in info.idx - ignoring remainder of file\n");
         fclose(f);
@@ -620,15 +619,10 @@ static void ic_read()
       }
       ilist_add(&(entry->p_list), rstrdup(doc_region,desc));
     }
-    if(nprov>0 || nreq>0) printf("\n");
   }
 
   // close the file
   fclose(f);
-
-  //
-  printf("\n\nDONE READING INITIAL IDX FILE\n");
-  ic_print();
 }
 
 
@@ -641,9 +635,6 @@ static void ic_write()
   char *desc, *pos;
   int i;
 
-  printf("\n\nABOUT TO WRITE FINAL FILE\n");
-  ic_print();
-  
   // open the output file
   f = fopen("info.idx", "w");
   if(f == NULL) {
@@ -1831,7 +1822,9 @@ DOC WARNING: your version of `dot' does not support client-side
   // add the HTML
   if( use_graphviz ) {
     start_html_banner();
-    output("<h3>Component Graph &nbsp;&nbsp;<font size=-1>(<a href=\"%s\">text version</a>)</font> </h3>\n", text_only_name);
+    output("<h3>Component Graph &nbsp;&nbsp;");
+    output("<font size=-1>(<a href=\"%s\">text version</a>,",text_only_name);
+    output("&nbsp; &nbsp;<a href=\"cg_help.html\">help</a>)</font> </h3>\n");
     end_html_banner();
 
     // FIXME: add a link to the function graph page here.
@@ -2653,6 +2646,71 @@ static void generate_app_page(const char *filename, cgraph cg)
 }
 
 
+//////////////////////////////////////////////////
+// Generate connection graph help page
+//////////////////////////////////////////////////
+#include "cg_help.c"
+static void generate_cg_help_page()
+{
+  FILE *f;
+
+  // open the gif file
+  f = fopen("cg_help.gif", "w");
+  if( !f ) {
+    warning("can't write to cg_help.gif - no help generated");
+    return;
+  }
+  fwrite(cg_help_gif, 1, sizeof(cg_help_gif), f);
+  fclose(f);
+
+
+  // open the HTML file
+  f = fopen("cg_help.html", "w");
+  if( !f ) {
+    warning("can't write to cg_help.gif - no help generated");
+    return;
+  }
+
+  //  markmark
+  fprintf(f, "<html>\n");
+  fprintf(f, "<head><title>Connection Graph Help</title></head>\n");
+  fprintf(f, "<body>\n");
+  print_navbar(f, NAV_OTHER, NULL, NULL);
+  fprintf(f, "<h1 align=\"center\">Connection Graph Help</h1>\n");
+
+  fprintf(f, "
+<table border=\"0\" width=\"80%%\" align=\"center\">
+<tr>
+<td>
+<img src=\"cg_help.gif\" border=\"0\" align=\"left\">
+</td>
+
+<td>&nbsp;&nbsp;&nbsp;</td>
+<td>
+
+<ul>
+
+<li><em>A</em> requires interface <em>I</em>, <em>B</em> provides <em>I</em>, and <em>A</em> and <em>B</em> are wired
+together.<p>
+
+<li><em>C</em> and <em>D</em> both require or both provide <em>J</em>.  The direction of the
+arrow indicates that the original wiring is \"<em>C = D</em>\".<p>
+
+<li><em>E</em> requires function <em>f</em>, and F provides function <em>f</em>.<p>
+
+</ul>
+</td>
+</tr>
+</table>
+<p>
+
+</body>
+</html>
+");
+  fclose(f);
+
+}
+
 
 //////////////////////////////////////////////////
 // Generate all docs
@@ -2700,6 +2758,9 @@ void generate_docs(const char *filename, cgraph cg)
     // read the information cache
     ic_read();
   }
+
+  // generate the connection graph help file
+  generate_cg_help_page();
 
 
   // update information cache with all loaded components
