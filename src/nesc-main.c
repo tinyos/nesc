@@ -274,8 +274,8 @@ void nesc_compile(const char *filename, const char *target_name)
 
   parse_region = newregion();
   preprocess_init();
-  init_types();
   cval_init();
+  init_types();
   init_lex();
   init_semantics();
   init_nesc_env(parse_region);

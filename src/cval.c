@@ -57,13 +57,13 @@ void cval_init(void)
   cval_unknown.kind = cval_unk;
   cval_zero.kind = cval_sint;
   cval_zero.si = 0;
-  cval_zero.isize = type_size_int(int_type);
+  cval_zero.isize = target->tint.size;
   cval_one.kind = cval_sint;
   cval_one.si = 1;
-  cval_one.isize = type_size_int(int_type);
+  cval_one.isize = target->tint.size;
   cval_bitsperbyte.kind = cval_uint;
   cval_bitsperbyte.ui = BITSPERBYTE;
-  cval_bitsperbyte.isize = type_size_int(size_t_type);
+  cval_bitsperbyte.isize = target->size_t_size;
 }
 
 cval make_cval_unsigned(largest_uint i, type t)
