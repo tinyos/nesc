@@ -117,8 +117,11 @@ The changes from \nesc 1.1 to 1.2 are:
 values).
 
 \item Generic components: components can now be instantiated (at
-compile-time), and can take value and type arguments (e.g., a generic queue
+compile-time), and can take constant and type arguments (e.g., a generic queue
 component would take type and queue size arguments).
+
+\item \kw{return} can be used within \kw{atomic} statements (the atomic
+statement is implicitly terminated by the \kw{return}).
 \end{itemize}
 
 The changes from \nesc 1.0 to 1.1 are:
@@ -153,17 +156,6 @@ The \texttt{typewriter} font is used for \nesc code and for
 filenames. Single symbols in italics, with optional subscripts, are used to
 refer to \nesc entities, e.g., ``component $K$'' or ``value $v$''.
 
-The grammar of \nesc is an extension the ANSI C grammar. We chose to base
-our presentation on the ANSI C grammar from Appendix~A of Kernighan and
-Ritchie (K\&R) ~\cite[pp234--239]{kandr}. We will not repeat productions
-from that grammar here. Words in \emph{italics} are non-terminals and
-non-literal terminals, \kw{typewriter} words and symbols are literal
-terminals. The subscript \emph{opt} indicates optional terminals or
-non-terminals. In some cases, we change some ANSI C grammar rules. We
-indicate this as follows: \emph{also} indicates additional productions for
-existing non-terminals, \emph{replaced by} indicates replacement of an
-existing non-terminal. 
-
 Explanations of \nesc constructs are presented along with the corresponding
 grammar fragments. In these fragments, we sometimes use \ldots to represent
 elided productions (irrelevant to the construct at
@@ -172,6 +164,19 @@ hand). Appendix~\ref{sec:grammar} presents the full \nesc grammar.
 Several examples use the \code{uint8\_t} and \code{uint16\_t} types (from
 the C99 standard \file{inttypes.h} file) and the standard TinyOS
 \code{result\_t} type (which represents success vs failure of an operation).
+
+The grammar of \nesc is an extension the ANSI C grammar. We chose to base
+our presentation on the ANSI C grammar from Appendix~A of Kernighan and
+Ritchie (K\&R) ~\cite[pp234--239]{kandr}. Words in \emph{italics} are
+non-terminals and non-literal terminals, \kw{typewriter} words and symbols
+are literal terminals. The subscript \emph{opt} indicates optional
+terminals or non-terminals. In some cases, we change some ANSI C grammar
+rules. We indicate this as follows: \emph{also} indicates additional
+productions for existing non-terminals, \emph{replaced by} indicates
+replacement of an existing non-terminal. We do not repeat the productions
+from the C grammar here, but Appendix~\ref{sec:grammar} lists and 
+summarises the C grammar rules used by \nesc.
+
 
 \section{Scopes and Name Spaces in \nesc}
 \label{sec:scoping}
@@ -426,10 +431,10 @@ SendMsg} means the same thing as \code{interface SendMsg as SendMsg} and
 Queue}. A specification can contain independent interfaces of the
 same interface type, e.g., 
 \begin{quote}
-  \begin{verbatim}
+\begin{verbatim}
 provides interface X as X1; 
 uses interface X as X2;
-  \end{verbatim}
+\end{verbatim}
 \end{quote}
 The interface names belong to the object name space of the specification's
 scope (Section~\ref{sec:scoping}), thus there is no confusion between
@@ -437,7 +442,7 @@ interface names and interface definition names (the latter are in the
 component name space).
 
 An interface declaration without \emph{instance-parameters} (e.g.,
-\code{interface X as Y}) declares a \emph{simple interface} to this
+\code{interface X as Y}) declares a single interface to this
 component. A declaration with \emph{instance-parameters} (e.g.,
 \code{interface SendMsg S[uint8\_t id]}) declares a \emph{parameterised
 interface}, corresponding to multiple interfaces to this component, one for
@@ -503,10 +508,10 @@ storage-class-specifier: \emph{also one of}\\
 It is a compile-time error if the \emph{declaration} is not a function
 declaration with the \kw{command} or \kw{event} storage class. As in
 interfaces, \kw{async} indicates that the command or event can be called
-from an interrupt handler. These bare command and events also belong to the
+from an interrupt handler. These bare command and events belong to the
 object name space of the specification's scope (Section~\ref{sec:scoping}).
 
-As with interface declarations, commands (events) can have instance
+As with interface declarations, bare commands (bare events) can have instance
 parameters; these are placed before
 the function's regular parameter list, e.g., \code{command void
 send[uint8\_t id](int x)}: 
@@ -517,11 +522,10 @@ direct-declarator: \emph{also}\\
 \>	\ldots
 \end{tabbing} \end{quote}
 
-Commands are \emph{simple commands} (\emph{simple events}) if they have no
-instance parameters, or \emph{parameterised commands} (\emph{parameterised
-events}) if instance parameters are specified. Note that instance
-parameters are only allowed on commands or events within component
-specifications, not within interface definitions.
+If instance parameters are present, the declaration specifies a \emph{bare,
+parameterised command} (\emph{bare, parameterised event}). Note that
+instance parameters are not allowed on commands or events inside interface
+definitions.
 
 Module \code{M} of Figure~\ref{fig:wiring}
 (Section~\ref{sec:wiring-semantics}) shows an example of a component
@@ -529,10 +533,10 @@ specification with a bare command.
 
 \subsection{Command and Event Terminology}
 
-We say that a command (event) $F$ provided in the specification of
+We say that a bare command (event) $F$ provided in the specification of
 component $K$ is \emph{provided command (event)} $F$ of $K$; similarly, a
-command (event) used in the specification of component $K$ is \emph{used
-command (event)} $F$ of $K$.
+bare command (event) used in the specification of component $K$ is
+\emph{used command (event)} $F$ of $K$.
 
 A command $F$ in a provided interface $X$ of component $K$ is
 provided command $X.F$ of $K$; a command $F$ in a used interface
@@ -542,15 +546,14 @@ in a used interface $X$ of $K$ is provided event $X.F$ of $K$
 (note the reversal of used and provided for events due to the bidirectional
 nature of interfaces). 
 
-We use greek letters $\alpha, \beta, \ldots$ to refer to any command or
+We use Greek letters $\alpha, \beta, \ldots$ to refer to any command or
 event of a component when the distinction between bare commands (events)
 and commands (events) in interfaces is not relevant. Commands or events
-$\alpha$ of $K$ may be parameterised or simple, depending on the
-parameterised or simple status of the specification element to which they
-correspond.
+$\alpha$ of $K$ are parameterised if the specification element to which they
+correspond is parameterised.
 
 We will often simply refer to the ``command or event $\alpha$ of $K$'' when
-the used/provided distinction is not relevant.  
+the used/provided distinction is not relevant.
 
 \section{Component Definition}
 \label{sec:component}
@@ -575,18 +578,18 @@ implementation:\\
 
 The component name belongs to the component name space of the global scope,
 hence must be distinct from other components and from interface
-definitions. There are two kinds of components: \emph{modules} are
-components which are implemented with C code (Section~\ref{sec:module}),
-\emph{configurations} are components which are implemented by assembling
-other components (Section~\ref{sec:configuration}). Components with
-parameters are called \emph{generic components}, they must be instantiated
-in a configuration before they can be used
-(Section~\ref{sec:configuration}). Components without parameters exist as a
-single instance which is implicitly instantiated. The component's
-definition must reflect these distinctions (the \emph{comp-kind} rule): for
-instance, a generic module \code{A} is defined with \code{generic module
-A() \{}\ldots, a non-generic configuration \code{B} is defined with
-\code{configuration B \{}\ldots
+definitions. There are two ways a component can be implemented:
+\emph{modules} are components which are implemented with C code
+(Section~\ref{sec:module}), \emph{configurations} are components which are
+implemented by assembling other components
+(Section~\ref{sec:configuration}). Components with parameters are called
+\emph{generic components}, they must be instantiated in a configuration
+before they can be used (Section~\ref{sec:configuration}). Components
+without parameters exist as a single instance which is implicitly
+instantiated. The component's definition must reflect these distinctions
+(the \emph{comp-kind} rule): for instance, a generic module \code{A} is
+defined with \code{generic module A() \{}\ldots, a non-generic
+configuration \code{B} is defined with \code{configuration B \{}\ldots
 
 \subsection{Generic Components}
 \label{sec:generic-components}
@@ -686,13 +689,13 @@ direct-declarator: \emph{also}\\
 \>	identifier \kw{.} identifier \\
 \>	direct-declarator interface-parameters \kw{(} parameter-type-list \kw{)}\\
 \end{tabbing} \end{quote}
-The implementation of simple command or event $\alpha$ has the syntax of a
-C function definition for $\alpha$ (note the extension to
+The implementation of non-parameterised command or event $\alpha$ has the
+syntax of a C function definition for $\alpha$ (note the extension to
 \emph{direct-declarator} to allow \code{.} in function names) with storage
 class \kw{command} or \kw{event}. Additionally, the \kw{async} keyword must
 be included iff it was included in $\alpha$'s declaration. For example, in
-a module that provides interface \code{Send} of type \kw{SendMsg} (shown
-at the start of Section~\ref{sec:interface}):
+a module that provides interface \code{Send} of type \kw{SendMsg} (shown at
+the start of Section~\ref{sec:interface}):
 \begin{quote} \begin{verbatim}
 command result_t Send.send(uint16_t address, uint8_t length, TOS_MsgPtr msg) {
   ...
@@ -739,10 +742,11 @@ call-kind: \emph{one of}\\
 \>	\kw{call} \kw{signal} \kw{post}
 \end{tabbing} \end{quote}
 
-A simple command $\alpha$ is called with \code{call $\alpha$(...)}, a
-simple event $\alpha$ is signaled with \code{signal $\alpha$(...)}. For
-instance, in a module that uses interface \code{Send} of type \kw{SendMsg}:
-\code{call Send.send(1, sizeof(Message), \&msg1)}.
+A non-parameterised command $\alpha$ is called with \code{call
+$\alpha$(...)}, a non-parameterised event $\alpha$ is signaled with
+\code{signal $\alpha$(...)}. For instance, in a module that uses interface
+\code{Send} of type \kw{SendMsg}: \code{call Send.send(1, sizeof(Message),
+\&msg1)}.
 
 A parameterised command $\alpha$ (respectively, an event) with $n$
 instance parameters of type $\tau_1, \ldots, \tau_n$ is called with
@@ -827,7 +831,7 @@ atomic-stmt: \\
 \>	\kw{atomic} statement\\
 \end{tabbing} \end{quote}
 guarantee that the statement is executed ``as-if'' no other computation
-occured simultaneously. It is used to implement mutual exclusion, for
+occurred simultaneously. It is used to implement mutual exclusion, for
 updates to concurrent data structures, etc. The following example
 uses \kw{atomic} to prevent concurrent execution of \code{do\_something}:
 \begin{verbatim}
@@ -846,10 +850,12 @@ uses \kw{atomic} to prevent concurrent execution of \code{do\_something}:
 \end{verbatim}
 
 Atomic sections should be short, though this is not currently enforced in
-any way. [FIX FOR CURRENT RULES] Control may only flow ``normally'' in or out of on atomic
-statement: any \kw{goto}, \kw{break} or \kw{continue} that jumps in or out
-of an atomic statement is an error. A \kw{return} statement is never
-allowed inside an atomic statement.
+any way. Except for \kw{return} statements, control may only flow
+``normally'' in or out of on atomic statement: any \kw{goto}, \kw{break} or
+\kw{continue} that jumps in or out of an atomic statement is an error. A
+\kw{return} statement is allowed inside an atomic statement; at runtime
+the atomic section ends after evaluating the returned expression (if any)
+but before actually returning from the function.
 
 Section~\ref{sec:concurrency} discusses the relation between \kw{atomic}, 
 \nesc's concurrency model, and the data-race detector.
@@ -1268,7 +1274,7 @@ is $w$.
 of the \code{call} depends on the result type $\tau$ of $\alpha$. If $\tau
 = \kw{void}$, then the result is \kw{void}. Otherwise, $\tau$ must have an
 associated \emph{combining function} $c$ (Section~\ref{sec:attributes}
-shows how combining functions are assocated with types), or a compile-time
+shows how combining functions are associated with types), or a compile-time
 error occurs. The combining function takes two values of type $\tau$ and
 returns a result of type $\tau$. The result of the \kw{call} is $c(w_1,
 c(w_2, \ldots, c(w_{m-1}, w_m)))$ (note that the order of the elements of 
@@ -1399,7 +1405,7 @@ interface parameter values at the call-site.
 \section{Concurrency in \nesc}
 \label{sec:concurrency}
 
-\nesc assumes an execution model that consists of run-to-completion
+\nesc's execution model is based on run-to-completion
 \emph{tasks} (that typically represent the ongoing computation), and
 \emph{interrupt handlers} that are signaled asynchronously by hardware.  A
 scheduler for \nesc can execute tasks in any order, but must obey the
@@ -1411,7 +1417,7 @@ interrupt handlers.
 As this is a concurrent execution model, \nesc programs are susceptible to
 race conditions, in particular data races on the program's \emph{shared
 state}, i.e., its global and module variables (\nesc does not include
-dynamic memory allocation). Races are avoided either by accessing a
+dynamic memory allocation). Races are avoided either by accessing
 shared state only in tasks, or only within atomic statements. The \nesc
 compiler reports potential data races to the programmer at compile-time.
 
@@ -1425,15 +1431,19 @@ least one interrupt handler.
 \end{quote}
 
 Although non-preemption eliminates data races among tasks, there are still
-potential races between SC and AC, as well as between AC and AC.  In
-general, any update to shared state that is {\em reachable from AC} is a
-potential data race.  The basic invariant \nesc enforces is:
+potential races between SC and AC, as well as between AC and AC. To
+prevent data races, \nesc issues warnings for violations of the following
+rules:
 \begin{quote}
-{\sl {\bf Race-Free Invariant}: Any update to shared state is either
-SC-only or occurs in an atomic statement.} The body of a function $f$
-called from an atomic statement is considered to be ``in'' the atomic
-statement as long as all calls to $f$ are ``in'' atomic statements.
+{\sl {\bf Race-Free Invariant 1}}: If a variable $x$ is written in AC, then 
+all accesses to $x$ must occur in atomic sections.
+
+{\sl {\bf Race-Free Invariant 2}}: If a variable $x$ is read in AC, then 
+all writes to $x$ must occur in atomic sections.
 \end{quote}
+The body of a function $f$ called from an atomic statement is considered to
+be ``in'' the atomic statement as long as all calls to $f$ are ``in''
+atomic statements.
 
 It is possible to introduce a race condition that the compiler cannot
 detect, but it must span multiple atomic statements or tasks and use storage
@@ -1457,7 +1467,7 @@ A \nesc application has three parts: a list of C declarations and
 definitions, a set of interface definitions and a set of components
 (non-generic components and instantiated generic components).
 
-The C declarations and defintions, interfaces and components that form
+The C declarations and definitions, interfaces and components that form
 a \nesc application are determined by an on-demand loading process. The
 input to the \nesc compiler is a single non-generic component $K$. The
 \nesc compiler first loads a user-specified set of C
@@ -1469,7 +1479,7 @@ these two files. A \nesc compiler can assume that all calls to functions,
 commands or events not marked with the \code{spontaneous}, \code{hwevent}
 or \code{atomic\_hwevent} attributes (Section~\ref{sec:attributes}) occur
 in the loaded code (i.e., there are no ``invisible'' calls to any other
-functions).\footnote{For instance, the current \nesc compiler uses this
+functions).\footnote{The current \nesc compiler uses this
 information to eliminate unreachable code.}
 
 During preprocessing of loaded files, \nesc defines the \kw{NESC} symbol to
@@ -1513,9 +1523,9 @@ includes-list:\\
 includes:\\
 \>	\kw{includes} identifier-list \kw{;}\\
 \end{tabbing} \end{quote}
-If $K$.nc does not define \code{module $K$} or \code{configuration $K$}, a
+If $K$.nc does not define module $K$ or configuration $K$, a
 compile-time error is reported. Otherwise, all C files specified by the
-\emph{includes-list} are loaded (Section~\ref{sec:load-c}possibly). Note that
+\emph{includes-list} are loaded (Section~\ref{sec:load-c}). Note that
 as file $K$.nc has already been loaded, macros defined in these files cannot
 be used in $K$.nc (though they will be visible for subsequently loaded files).
 
@@ -1537,7 +1547,7 @@ Expand($K$):
 \item If $K$ is a non-generic module, $K$ is output.
 
 \item If $K$ is a non-generic configuration: for each component
-instantiation $\kw{new} L(a_1, \ldots, a_n)$ in $K$, a new component $X$ is
+instantiation $\kw{new}\ L(a_1, \ldots, a_n)$ in $K$, a new component $X$ is
 created according to the rules of Section~\ref{sec:generic-components} and
 Expand($X$) is called recursively (instantiating further generic components
 if $L$ contained component instantiations). Then $K$ is output.
@@ -1580,14 +1590,16 @@ component's specification or implementation are processed).
 \label{sec:constant-folding}
 
 There are two extensions to C's constant folding (see A.7.19 in
-\cite{kandr}) in \nesc: \emph{constant functions} and \emph{unknown
-constants}. \emph{Constant Functions} are functions provided by the \nesc
+K\&R~\cite{kandr}) in \nesc: \emph{constant functions} and \emph{unknown
+constants}. \emph{Constant functions} are functions provided by the \nesc
 language which return a compile-time constant. The definition of \nesc's
 constant functions is given in Section~\ref{sec:constant-functions}. An
-\emph{unknown constant} is a constant whose value is not yet known, e.g.,
-non-type parameters to generic components are unknown constants. Unknown
-constants allow the definition of a generic component to be (mostly, see
-below) checked for correctness before its arguments' values are known.
+\emph{unknown constant} is a constant whose value is not known at some
+stage of semantic checking, e.g., non-type parameters to generic components
+are unknown constants when a generic component is loaded and
+checked. Unknown constants allow the definition of a generic component to
+be (mostly, see next paragraph) checked for correctness before its
+arguments' values are known.
 
 An expression involving an unknown constant is considered a constant
 expression if the resulting expression is constant irrespective of the
@@ -1608,7 +1620,7 @@ implementation {
 but the following instantiation will report a compile-time error:
 \begin{quote}
 \begin{verbatim}
- configuration B { }
+configuration B { }
 implementation {
   components new A(0) as MyA;
 }
@@ -1627,14 +1639,32 @@ value. The expansion of \code{unique} calls happens after generic component
 instantiation (Section~\ref{sec:load-component}): calls to \code{unique} in
 generic components return a different value in each instantiation. The
 range of values returned by \code{unique($s$)} is $0 .. n-1$, where $n$ is
-the number of different values returned by \code{unique($s$)}. For
-purposes of checking constant expressions, \code{unique($s$)} behaves
-as if it were an unknown constant.
+the number of different values returned by \code{unique($s$)} in the whole
+application. For purposes of checking constant expressions,
+\code{unique($s$)} behaves as if it were an unknown constant.
 
-The intended use of \code{unique} is for passing a unique integer
-to parameterised interface instances, so that a component providing
-a parameterised interface can uniquely identify the various components
-connected to that interface.
+Using \code{unique}, a component providing a service (defined by interface
+\code{X}) can uniquely identify its clients with the following idiom:
+\begin{quote}
+\begin{verbatim}
+module XService {
+  provides interface X[uint8_t id];
+} implementation { ... }
+
+module UserOfX {
+  uses interface X;
+} implementation { ... }
+
+configuration ConnectUserToService { }
+implementation {
+  components XService, UserOfX;
+
+  UserOfX.X -> XService.X[unique("X")];
+}
+\end{verbatim}
+\end{quote}
+Each client of \code{XService} will be connected to interface \code{X} with
+a different \code{id}.
 
 \item \code{unsigned int uniqueCount(char *identifier)} \\ Returns:
 \code{uniqueCount($s$)} returns one more than the largest value returned by
@@ -1672,20 +1702,15 @@ implementation {
 \label{sec:type-parameters}
 
 Generic interface and component definitions can have type
-parameters. Syntaxically, type parameters behave the same as \kw{typedef}'d
+parameters. Syntactically, type parameters behave the same as \kw{typedef}'d
 identifiers. When a generic component or interface is instantiated, the
 type parameter will be replaced with the argument type, which cannot be
 incomplete, of function or of array type. The size and alignment of a type
 parameter are an unknown constant (Section~\ref{sec:constant-folding}).
 The rules for assignment and type equivalence for a type parameter $t$ are
 simple: a value of type $t$ is assignable to an lvalue of type $t$ (extends
-A.7.17 in~\cite{kandr}) and type $t$ is only equivalent to itself (extends
-A.8.10 in~\cite{kandr}).
-
-
-\begin{itemize}
-\item To build new 
-\end{itemize}
+A.7.17 in K\&R~\cite{kandr}) and type $t$ is only equivalent to itself (extends
+A.8.10 in K\&R~\cite{kandr}).
 
 \subsection{Functions with no arguments, old-style C declarations}
 \label{sec:misc-void}
@@ -1741,7 +1766,7 @@ single-attribute:\\
 \>	identifier \kw{(} argument-expression-list \kw{)}\\
 \end{tabbing} \end{quote}
 
-\nesc supports three attributes:
+\nesc supports five attributes:
 \begin{itemize}
 \item \code{C}: This attribute is used for a C declaration or definition
 $d$ at the top-level of a module (it is ignored for all other
@@ -1749,23 +1774,24 @@ declarations). It specifies that $d$'s should appear in the global C scope
 rather than in the module's per-component-implementation scope. This allows
 $d$ to be used (e.g., called if it is a function) from C code.
 
-\item \code{spontaneous}: This attribute can be used on any function
-$f$ (in modules or C code). It indicates that there are calls $f$ that
-are not visible in the source code. Typically, functions that are
-called spontaneously are interrupt handlers, and the C \code{main}
-function. Section~\ref{sec:app} discusses how the \nesc compiler
-uses the \code{spontaneous} attribute during compilation.
+\item \code{spontaneous}: This attribute can be used on any function $f$
+(in modules or C code). It indicates that there are calls $f$ that are not
+visible in the source code. The C \code{main} function is a typical
+example. Section~\ref{sec:app} discusses how the \nesc compiler uses the
+\code{spontaneous} attribute during compilation.
 
 \item \code{hwevent}: This attribute can be used on any function $f$ (in
 modules or C code). It indicates that $f$ is an interrupt handler, i.e.,
 that there are spontaneous calls to $f$ and that $f$ is AC
-(Section~\ref{sec:concurrency}).
+(Section~\ref{sec:concurrency}). The use of \code{hwevent} implies
+\code{spontaneous}.
 
 \item \code{atomic\_hwevent}: This attribute can be used on any function
 $f$ (in modules or C code). This behaves the same as \code{hwevent}, but,
-additionally, informs \nesc that the body of $f$ behaves as if it
-were an \kw{atomic} statement (on typical hardware this means that this
-interrupt handler runs with interrupts disabled).
+additionally, informs \nesc that the body of $f$ behaves as if it were an
+\kw{atomic} statement (on typical hardware this means that this interrupt
+handler runs with interrupts disabled). The use of \code{atomic\_hwevent}
+implies \code{spontaneous}.
 
 Note that neither \code{hwevent} or \code{atomic\_hwevent} provide any
 linkage of $f$ with a particular interrupt handler. The mechanism by
@@ -1792,7 +1818,7 @@ does not have the following type: \code{$t$ $c$($t$, $t$)}.
 
 \end{itemize}
 
-Example of attribute use: in file \file{RealMain.td}:
+Example of attribute use:
 \begin{quote} \begin{verbatim}
 module RealMain { ... }
 implementation {
@@ -1816,13 +1842,16 @@ function calls to \code{main} anywhere in the program
 Please refer to  Appendix~A of Kernighan and Ritchie (K\&R)
 ~\cite[pp234--239]{kandr} while reading this grammar.
 
-The following keywords are new for \nesc: \kw{as}, \kw{call}, \kw{command},
-\kw{components}, \kw{configuration}, \kw{event}, \kw{implementation},
-\kw{interface}, \kw{module}, \kw{post}, \kw{provides}, \kw{signal},
-\kw{task}, \kw{uses}, \kw{includes}. These \nesc keywords are not reserved
-in C files. The corresponding C symbols are accessible in \nesc files by
-prefixing them with \kw{\_\_nesc\_}\emph{keyword} (e.g.,
-\kw{\_\_nesc\_keyword\_as}).
+The following additional keywords are used by \nesc: \kw{as}, \kw{atomic},
+\kw{async}, \kw{call}, \kw{command}, \kw{components}, \kw{configuration},
+\kw{event}, \kw{generic}, \kw{implementation}, \kw{includes},
+\kw{interface}, \kw{module}, \kw{new}, \kw{norace}, \kw{post},
+\kw{provides}, \kw{signal}, \kw{task}, \kw{uses}. The following keywords
+are reserved for future use: \kw{abstract}, \kw{component}, \kw{extends}.
+
+These \nesc keywords are not reserved in C files. The corresponding C
+symbols are accessible in \nesc files by prefixing them with
+\kw{\_\_nesc\_}\emph{keyword} (e.g., \kw{\_\_nesc\_keyword\_as}).
 
 \nesc reserves all identifiers starting with \kw{\_\_nesc} for internal
 use. \tinyos reserves all identifiers starting with \kw{TOS\_} and
@@ -1975,44 +2004,98 @@ call-kind: \emph{one of}\\
 \>	\kw{call} \kw{signal} \kw{post}
 \end{tabbing} \rm
 
+Imported rules (the explanation is for reference purposes only):
+\begin{itemize}
+\item \emph{translation-unit}: A list of C declarations and function
+definitions.
+
+\item \emph{declaration-list}: A list of C declarations.
+
+\item \emph{declaration}: A C declaration.
+
+\item \emph{parameter-declaration}: A function parameter declaration.
+
+\item \emph{declaration-specifiers}: A list of storage classes, type
+specifiers and type qualifiers.
+
+\item \emph{direct-declarator}: Like \emph{declarator}, but with no
+leading pointer-type specification.
+
+\item \emph{init-declarator}: The part of a C declaration that specifies
+the array, function and pointer parts of the declared entity's type, and
+its initialiser (if any).
+
+\item \emph{declarator}: The part of a C declaration that specifies
+the array, function and pointer parts of the declared entity's type.
+
+\item \emph{storage-class-specifier}: A storage class specification for
+a C declaration.
+
+\item \emph{parameter-type-list}: Specification of a function's parameters.
+
+\item \emph{type-name}: A C type specification.
+
+\item \emph{compound-stmt}: A C \{ \} block statement.
+
+\item \emph{statement}: Any C statement.
+
+\item \emph{argument-expression-list}: A list of comma-separated
+expressions.
+
+\item \emph{expression}: Any C expression.
+
+\item \emph{postfix-expression}: A restricted class of C expressions.
+
+\item \emph{primary}: An identifier, constant, string or parenthesised
+expression.
+
+\item \emph{identifier}: Any C identifier.
+\end{itemize}
+
 \section{Glossary}
 \label{sec:glossary}
 
 \begin{itemize}
 
+\item \emph{bare command, bare event}: See \emph{command}.
+
 \item \emph{combining function}: C function that combines the multiple
-results of command call (or event signal) in the presence of
+results of a command call (or event signal) in the presence of
 \emph{fan-out}.
 
 \item \emph{command}, \emph{event}: A function that is part of a
-component's \emph{specification}, either directly as a \emph{specification
-element} or within one of the component's \emph{interface instances}.
+component's \emph{specification}, either directly as a \emph{bare}
+command or event, or within one of the component's \emph{interfaces}.
 
-When used directly as specification elements, commands and events have
-roles (\emph{provider}, \emph{user}) and can have \emph{interface
-parameters}. As with interface instances, we distinguish between
-\emph{simple commands (events)} without interface parameters and
-\emph{parameterised commands (events)} with interface parameters. The
-interface parameters of a command or event are distinct from its regular
-function parameters.
+Bare commands and events have roles (\emph{provider}, \emph{user}) and can
+have \emph{instance parameters}. When these parameters are present, the
+command or event is known as a \emph{bare, parameterised} command or
+event. The instance parameters of a command or event are distinct from its
+regular function parameters.
 
 \item \emph{compile-time error}: An error that the \nesc compiler must
 report at compile-time.
 
 \item \emph{component}: The basic unit of \nesc programs. Components have a
-name and are of two kinds: \emph{modules} and \emph{configurations}. A
-component has a \emph{specification} and an implementation. 
+name and are of two kinds: \emph{generic} components, which take type and
+constant parameters and must be instantiated before they can be used, and
+non-generic components which exist implicitly in a single instance. A
+component has a \emph{specification} and an implementation. A \emph{module}
+is a component whose implementation is C code; a \emph{configuration} is a
+component whose implementation is built by selecting or instantiating other
+components, and \emph{wiring} them together.
 
-\item \emph{configuration}: A component whose implementation is provided
-by a composition of other components with a specific \emph{wiring}.
+\item \emph{configuration}: A component whose implementation is built by
+selecting or instantiating other components, and \emph{wiring} them
+together.
 
 \item \emph{endpoint}: A specification of a particular specification
-element, and optionally some interface parameter values, in a wiring
+element, and optionally some instance arguments, in a wiring
 statement of a configuration. A parameterised endpoint is an endpoint
-without parameter values that corresponds to a parameterised specification
+without instance arguments that corresponds to a parameterised specification
 element.
 
-\item \emph{event}: See command.
+\item \emph{event}: See \emph{command}.
 
 \item \emph{extent}: The lifetime of a variable. \nesc has the standard C
 extents: \emph{indefinite}, \emph{function}, and \emph{block}.
@@ -2027,34 +2110,36 @@ than one place.
 than one command or event implementation. A \emph{combining function}
 combines the results of calls to these used commands or events.
 
-\item \emph{interface}: When the context is unambiguous, we use interface
-to refer to either an \emph{interface type} or an \emph{interface instance}.
+\item \emph{interface}: An instance of a particular \emph{interface type}
+in the \emph{specification} of a component. An interface has a name, a role
+(\emph{provider} or \emph{user}), an \emph{interface type} and, optionally,
+\emph{instance parameters}. An interface with parameters is a
+\emph{parameterised interface}.
 
-\item \emph{interface instance}: An instance of a particular
-\emph{interface type} in the \emph{specification} of a component. An
-interface instance has an instance name, a role (\emph{provider} or
-\emph{user}), an \emph{interface type} and, optionally, \emph{interface
-parameters}. An interface instance without parameters is a \emph{simple
-interface instance}, with parameters it is a \emph{parameterised interface
-instance}.
-
-\item \emph{interface parameter}: An interface parameter has an interface
-parameter name and must be of integral type. 
-
-There is (conceptually) a separate \emph{simple interface instance} for
-each distinct list of parameter values of a \emph{parameterised interface
-instance} (and, similarly, separate simple commands or events in the case
-of parameterised commands or events). Parameterised interface instances
-allow runtime selection based on parameter values between a set of commands
-(or between a set of events).
-
-\item \emph{interface type}: An \emph{interface type} specifies the
-interaction between two components, \emph{the provider} and the
+\item \emph{interface definition}: An \emph{interface definition} specifies
+the interaction between two components, \emph{the provider} and the
 \emph{user}. This specification takes the form of a set of \emph{commands}
-and \emph{events}. Each interface type has a distinct name. 
+and \emph{events}. Each interface definition has a distinct name, and may
+optionally take type parameters. Interface definitions with type parameters
+are called \emph{generic interface definitions}. Argument types must be
+provided before a generic interface definition can be used as an 
+\emph{interface type}.
 
 Interfaces are bi-directional: the provider of an interface implements its
 commands, the user of an interface implements its events.
+
+\item \emph{interface type}: A reference to an interface definition,
+along with argument types if the definition is generic. \emph{Configurations}
+can only connect two interfaces if they have the same type.
+
+\item \emph{instance parameter}: An instance parameter has a name and must
+be of integral type.
+
+There is (conceptually) a separate interface for each distinct list of
+instance parameter values of a \emph{parameterised interface} (and,
+similarly, separate commands or events in the case of parameterised
+commands or events). In a module, parameterised interfaces, commands,
+events allow runtime selection or a \kw{call} or \kw{signal} target.
 
 \item \emph{intermediate function}: A pseudo-function that represents the
 behaviour of the commands and events of a component, as specified by the
@@ -2068,52 +2153,52 @@ external.
 \item \emph{module}: A component whose implementation is provided by C
 code. 
 
-\item \emph{namespace}: \nesc has the standard C \emph{variable} (also
-used for functions and \code{typedef}s), \emph{tagged type} (\code{struct},
-\code{union} and \code{enum} tag names) and \emph{label}
-namespaces. Additionally, \nesc has a \emph{component and interface type}
-namespace for component and interface type names.
+\item \emph{name space}: \nesc has the standard C \emph{object} (variables,
+functions, typedefs, enum-constants), \emph{tag} (\code{struct},
+\code{union} and \code{enum} tags) and \emph{label} (goto labels)
+name spaces. Additionally, \nesc has a \emph{component} name space for
+component and interface definitions.
 
-\emph{parameterised command, parameterised event, parameterised interface
-instance, endpoint}: See command, event, interface instance, endpoint.
+\item \emph{parameterised command, parameterised event, parameterised
+interface, parameterised endpoint}: See command, event, interface instance,
+endpoint.
 
-\emph{provided, provider}: A role for a specification element. Providers of
-\emph{interface instances} must implement the \emph{commands} in the
-interface; provided commands and events must be implemented.
+\item \emph{provided, provider}: A role for a specification
+element. A module $K$ must implement the \emph{provided commands of $K$}
+and \emph{provided events of $K$}.
 
-\emph{provided command of $K$}: A command that is either a
+\item \emph{provided command of $K$}: A command that is either a
 provided specification element of $K$, or a command of a provided interface
 of $K$.
 
-\emph{provided event of $K$}: An event that is either a
+\item \emph{provided event of $K$}: An event that is either a
 provided specification element of $K$, or an event of a used interface
 of $K$.
 
 \item \emph{scope}: \nesc has the standard C \emph{global},
-\emph{function-parameter} and \emph{block} scopes. Additionally there are
-\emph{specification} and \emph{implementation} scopes in components and a
-per-interface-type scope. Scopes are divided into namespaces.
-
-\emph{simple command, simple event, simple interface instance}: See
-command, event, interface instance.
+\emph{function-parameter} and \emph{block} scopes. Additionally there is a
+\emph{component parameter}, \emph{specification} and \emph{implementation}
+scope for each component and an \emph{interface parameter} and
+\emph{interface} scope for each interface. Scopes are divided into
+\emph{name spaces}.
 
 \item \emph{specification}: A list of \emph{specification elements} that
 specifies the interaction of a component with other components.
 
-\item \emph{specification element}: An \emph{interface instance},
-\emph{command} or \emph{event} in a specification that is either 
-\emph{provided} or \emph{used}.
+\item \emph{specification element}: An \emph{interface}, \emph{bare
+command} or \emph{bare event} in a specification. Specification elements
+are either \emph{provided} or \emph{used}.
 
-\item \emph{task}: A \tinyos task.
+\item \emph{task}: A \tinyos task representing an independent thread of
+control whose execution is requested by the application and initiated
+by the \tinyos scheduler.
 
-\emph{used, user}: A role for a specification element. Users of
-\emph{interface instances} must implement the \emph{events} in the
-interface.
+\item \emph{used, user}: A role for a specification element.
 
-\emph{used command of $K$}: A command that is either a used specification
+\item \emph{used command of $K$}: A command that is either a used specification
 element of $K$, or a command of a used interface of $K$.
 
-\emph{used event of $K$}: An event that is either a used specification
+\item \emph{used event of $K$}: An event that is either a used specification
 element of $K$, or an event of a provided interface of $K$.
 
 \item \emph{wiring}: The connections between component's specification
@@ -2126,3 +2211,12 @@ elements specified by a configuration.
 \bibliography{ref}
 
 \end{document}
+
+% LocalWords:  summarised behaviour nesC's summarises Kernighan async NESC uint
+% LocalWords:  uniqueCount inttypes TinyOS enum struct SendMsg Init MyInit doit
+% LocalWords:  MyMessage sendDone parameterised AMStandard StdControl AQueue nc
+% LocalWords:  initialisation ReceiveMsg GenericComm iff sizeof msg myTask stmt
+% LocalWords:  args NoWiring SecondQueue ccc callees call's concat bool norace
+% LocalWords:  unparameterised ncc frontend tos hwevent XYZ undef nesC BarTypes
+% LocalWords:  BarType constant's XService lvalue gcc's gcc init fnname nesc
+% LocalWords:  TOSH initialiser parenthesised
