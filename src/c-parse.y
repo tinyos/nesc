@@ -202,7 +202,7 @@ void yyerror();
 /* nesC reserved words */
 %token <u.itoken> ATOMIC USES INTERFACE COMPONENTS PROVIDES MODULE 
 %token <u.itoken> INCLUDES CONFIGURATION AS TASTNIOP IMPLEMENTATION CALL 
-%token <u.itoken> SIGNAL POST ABSTRACT
+%token <u.itoken> SIGNAL POST GENERIC NEW
 
 %type <u.itoken> callkind
 %type <u.decl> datadef_list parameter_list parameter
@@ -215,12 +215,12 @@ void yyerror();
 %type <u.decl> component_parms
 %type <u.decl> template_parms template_parmlist template_parm
 %type <u.iref> interface_ref interface_type
-%type <u.cref> component_ref component_list uses cuses
+%type <u.cref> component_ref component_ref2 component_list uses cuses
 %type <u.conn> connection connection_list
 %type <u.ep> endpoint
 %type <u.pid> parameterised_identifier
 %type <u.impl> iconfiguration imodule
-%type <abstract> abstract
+%type <abstract> generic
 %type <u.expr> generic_arglist generic_arg generic_args
 
 
@@ -451,7 +451,7 @@ interface:
 
 interface_parms:
 	  /* empty */ { $$ = NULL; }
-	| '(' interface_parm_list ')' 
+	| '<' interface_parm_list '>' 
 		{
 		  nesc_declaration intf = current.container;
 
@@ -479,7 +479,7 @@ interface_parm:
 	;
 
 type_parm:
-	  IDENTIFIER
+	  IDENTIFIER { $$ = $1; }
 	;
 
 datadef_list: 
@@ -521,7 +521,7 @@ component:
 	;
 
 module: 
-	  abstract MODULE 
+	  generic MODULE 
 	        { $<u.docstring>$ = get_docstring(); 
 		  /* force matching kind in current nesc declaration */
 	  	  current.container->kind = l_component; 
@@ -535,7 +535,7 @@ module:
 	;
 
 configuration:
-	  abstract CONFIGURATION
+	  generic CONFIGURATION
 	       { $<u.docstring>$ = get_docstring(); 
 		 /* force matching kind in current nesc declaration */
 		 current.container->kind = l_component; 
@@ -548,7 +548,7 @@ configuration:
 	        }
         ;
 
-abstract: ABSTRACT { $$ = TRUE; }
+generic: GENERIC { $$ = TRUE; }
 	| /* empty */ { $$ = FALSE; }
 	;
 
@@ -556,9 +556,9 @@ component_parms:
 	  /* empty */
 		{
 		  if (current.container->abstract)
-		    error("abstract components require a parameter list");
+		    error("generic components require a parameter list");
 		    /* We don't create the extra environment level for this
-		       abstract component as nothing actually requires its 
+		       generic component as nothing actually requires its 
 		       existence */
 		  $$ = NULL;
 		}
@@ -567,12 +567,12 @@ component_parms:
 		  nesc_declaration comp = current.container;
 
 		  if (!comp->abstract)
-		    error("only abstract components can have a parameter list");
+		    error("only generic components can have a parameter list");
 		  comp->parameters = $2;
 		  comp->parameter_env = current.env;
 		  $$ = $2;
 
-		  /* abstract components need a new level for the 
+		  /* generic components need a new level for the 
 		     specification */
 		  pushlevel(FALSE);
 		  current.env->global_level = TRUE;
@@ -592,7 +592,9 @@ template_parmlist:
 	;
 
 /* A declaration of a template parameter, i.e., a regular
-   parameter-like declaration (name required) */
+   parameter-like declaration (name required).
+   The 'typedef t' syntax for declaring a type argument is detected
+   inside declare_template_parameter */
 template_parm:
 	  declspecs_ts xreferror after_type_declarator maybe_attribute
 		{ $$ = declare_template_parameter($3, $1, $4); }
@@ -600,8 +602,6 @@ template_parm:
 		{ $$ = declare_template_parameter($3, $1, $4); }
 	| declspecs_nots xreferror notype_declarator maybe_attribute
 		{ $$ = declare_template_parameter($3, $1, $4); }
-	| type_parm 
-		{ $$ = declare_type_parameter($1.location, $1.id); }
 	;
 
 requires_or_provides_list: 
@@ -658,7 +658,7 @@ interface_ref:
 interface_type:
 	  INTERFACE idword
 		{ $$ = new_interface_ref(pr, $1.location, $2, NULL, NULL, NULL, NULL); }
-	| INTERFACE idword '(' typelist ')'
+	| INTERFACE idword '<' typelist '>'
 		{ $$ = new_interface_ref(pr, $1.location, $2, $4, NULL, NULL, NULL); }
 	;
 
@@ -690,14 +690,16 @@ component_list:
 	;
 
 component_ref: 
+	  component_ref2
+	| component_ref2 AS idword { $$ = $1; $$->word2 = $3; }
+	;
+
+component_ref2: 
 	  idword { $$ = new_component_ref(pr, $1->location, $1, NULL,
 					  FALSE, NULL); }
-	| idword AS idword
-		 { $$ = new_component_ref(pr, $1->location, $1, $3,
-					  FALSE, NULL); }
-	| idword '(' generic_args ')' AS idword
-		 { $$ = new_component_ref(pr, $1->location, $1, $6,
-					  TRUE, $3); }
+	| NEW idword '(' generic_args ')'
+		 { $$ = new_component_ref(pr, $1.location, $2, NULL,
+					  TRUE, $4); }
 	;
 
 generic_args:

@@ -45,7 +45,7 @@ The basic concepts behind \nesc are:
 \item Separation of construction and composition: programs are built out of
 \emph{components}, which are assembled (``wired'') to form whole
 programs. Components define two scopes, one for their specification
-(containing the names of their \emph{interface instances}) and one for
+(containing the names of their \emph{interfaces}) and one for
 their implementation. Components have internal concurrency in the form of
 \emph{tasks}. Threads of control may pass into a component through its
 interfaces. These threads are rooted either in a task or a hardware
@@ -74,8 +74,8 @@ events are bound to hardware interrupts (the nature of this binding is
 system-dependent, so is not described further in this reference manual).
 
 \item Components are statically linked to each other via their interfaces.
-This increases runtime efficiency, encourages rubust design, and allows for
-better static analysis of program's.
+This increases runtime efficiency, encourages robust design, and allows for
+better static analysis of programs.
 
 \item \nesc is designed under the expectation that code will be generated
 by whole-program compilers. This allows for better code generation and
@@ -159,112 +159,205 @@ is 110 for \nesc 1.1.
  
 \end{enumerate}
 
-\section{Interfaces}
+\section{Scopes and Name Spaces in \nesc}
+\label{sec:scoping}
+
+\nesc includes the standard C name spaces: \emph{object}, which includes
+variables, functions, typedefs, and enum-constants; \emph{label} for
+\kw{goto} labels; \emph{tag} for \kw{struct}, \kw{union}, \kw{enum} tags.
+It adds an additional \emph{component} name space for component and
+interface definitions. For simplicity, we assume that each scope contains
+all four name spaces, though language restrictions mean that many of these
+name spaces are empty (e.g., all component and interface definitions are
+global, so the \emph{component} name space is empty in all but the global
+scope).
+
+\nesc follows the standard C scoping rules, with the following
+additions:
+\begin{itemize}
+\item Each interface definition introduces two scopes. The \emph{interface
+parameter scope} is nested in the global scope and contains the parameters
+of generic interface definitions. The \emph{interface scope} is nested in
+the interface parameter scope and contains the interface's commands and
+events.
+
+\item Each component definition introduces three new scopes. The
+\emph{component parameter scope} is nested in the global scope and contains
+the parameters of generic component definitions. The \emph{specification
+scope} is nested in the component parameter scope and contains the
+component's specification elements. 
+
+The \emph{implementation scope} is nested in the specification scope.  For
+configurations, the implementation scope contains the names by which this
+component refers to its included components
+(Section~\ref{sec:config-components}). For modules, the implementation
+scope holds the tasks, C declarations and definitions that form the
+module's body. These declarations, etc may introduce their own nested
+scopes within the implementation scope, following the usual C scoping
+rules.
+\end{itemize}
+As usual in C, scopes must not have multiple definitions of the same
+name within the same name space.
+
+\section{Interface and Component Specification}
 \label{sec:interface}
 
-Interfaces in \nesc are bidirectional: they specify a multi-function
-interaction channel between two components, the \emph{provider} and the
-\emph{user}. The interface specifies a set of named functions, called
-\emph{commands}, to be implemented by the interface's provider and a set of
-named functions, called \emph{events}, to be implemented by the interface's
-user.
+A \nesc \emph{interface definition} specifies a bi-directional interaction
+between two components, known as the \emph{provider} and
+\emph{user}. Interactions via interfaces are specified by two sets of
+functions: \emph{commands} are function calls from the user to the provider
+component, \emph{events} are function calls from the provider to the user
+component. In many cases, the provider component is providing some service
+(e.g., sending messages over the radio) and commands represent requests,
+events responses.
 
-This section explains how interfaces are specified,
-Section~\ref{sec:component} explains how components specify the interfaces
-they provide and use, Section~\ref{sec:module} explains how commands and
-events are called from and implemented in C code and
-Section~\ref{sec:configuration} explains how component interfaces are
-linked together.
+An interface definition has a unique name, optional C type parameters, and
+contains declarations for its command and event functions. An interface
+definition with type parameters is called a \emph{generic interface
+definition}.
 
-Interfaces are specified by \emph{interface types}, as follows:
+An \emph{interface type} is a reference to an interface definition and, if
+the referenced definition is generic, corresponding type
+arguments. Components can only be connected via two interfaces with the
+same type.
+
+A component's \emph{specification} is the set of interfaces that it
+provides and uses. Component specifications can also contain \emph{bare}
+commands and events (i.e., not contained in an interface), for clarity of
+exposion we defer discussion of these to Section~\ref{sec:bare}. Each
+provided or used interface has a name and an interface type.
+
+For instance, the following source code
+\begin{quote} \begin{verbatim}
+interface SendMsg { // send a radio message
+  command result_t send(uint16_t address, uint8_t length, TOS_MsgPtr msg);
+  event result_t sendDone(TOS_MsgPtr msg, result_t success);
+}
+
+interface Init<t> { // a generic interface definition
+  command void doit(t x);
+}
+
+module Simple {
+  provides interface Init<int> as MyInit;
+  uses interface SendMsg as MyMessage;
+} ...
+\end{verbatim} \end{quote}
+shows two interface definitions, \code{SendMsg} and \code{Init}, and the
+specification of the \code{Simple} component. The specification of
+\code{Simple} has two elements: \code{MyInit}, a provided interface of type
+\code{Init<int>} and \code{MyMessage} a used interface of type
+\code{SendMsg}. \code{Simple} must implement the \code{MyInit.doit} command
+and the \code{MyMessage.sendDone} event. It can call the
+\code{MyMessage.send} command.
+
+The rest of this section covers interface definitions, interface types and
+component specifications in detail.  The sections on component
+implementations (Sections~\ref{sec:module} and~\ref{sec:configuration})
+explain how commands and events are called and implemented, and how
+components are linked together through their interfaces.
+
+\subsection{Interface Definitions}
+
+Interface definitions have the following syntax:
 \begin{quote} \grammarshift
 \em \begin{tabbing}
 \grammarindent
-nesC-file: \\
-\>	includes-list\opt interface\\
-\>	\ldots\\
+interface-definition:\\
+\>	\kw{interface} identifier type-parameters\opt\kw{\{} declaration-list \kw{\}}
+\end{tabbing}
+\end{quote}
+Interface definitions have a name (\emph{identifier}) with global
+scope. This name belongs to the component name space
+(Section~\ref{sec:scoping}), so interface definitions must have a name
+distinct from other interface definitions and from components, however they
+do not conflict with regular C declarations.
+
+The \emph{type-parameters} is a list of optional C type parameters
+for this interface definition:
+\begin{quote} \grammarshift
+\em \begin{tabbing}
+\grammarindent
+type-parameters:\\
+\>\kw{<} type-parameter-list \kw{>}\\
 \\
-interface:\\
-\>	\kw{interface} identifier \kw{\{} declaration-list \kw{\}}\\
-\\
+type-parameter-list:\\
+\>identifier\\
+\>type-parameter-list \kw{,} identifier
+\end{tabbing}
+\end{quote}
+These parameters belong to the object name space of the interface's
+parameter scope (Section~\ref{sec:scoping}) and are therefore visible in
+the \emph{declaration-list}. See Section~\ref{sec:type-parameters} for how
+type parameters interact with C's type system (in brief, these type
+parameters can be used like \kw{typedef}'d types). An interface definition
+with type parameters is called a \emph{generic interface definition}.
+
+The \emph{declaration-list} of an interface definition specifies a set of
+commands and events. It must consist of function declarations with the
+\kw{command} or \kw{event} storage class:
+\begin{quote} \grammarshift
+\em \begin{tabbing}
+\grammarindent
 storage-class-specifier: \emph{also one of}\\
 \>	\kw{command} \kw{event} \kw{async}\\
 \end{tabbing}
 \end{quote}
-This declares interface type \emph{identifier}. This identifier has global
-scope and belongs to a separate namespace, the \emph{component and
-interface type} namespace. So all interface types have names distinct from
-each other and from all components, but there can be no conflicts with
-regular C declarations.
+The optional \kw{async} keyword indicates that the command or event can be
+executed in an interrupt handler (see Section~\ref{sec:concurrency}). These
+functions belong to the object name space of the interface's scope
+(Section~\ref{sec:scoping}).
 
-Each interface type has a separate scope for the declarations in
-\emph{declaration-list}. This \emph{declaration-list} must consist of
-function declarations with the \kw{command} or \kw{event} storage class (if
-not, a compile-time error occurs). The optional\kw{async} keyword indicates
-that the command or event can be executed in an interrupt handler.
 
-An interface can optionally include C files via the \emph{includes-list}
-(see Section~\ref{sec:app}).
-
-A simple interface is:
+The example code above showed two simple interface definitions
+(\code{SendMsg} and \code{Init}). The following
 \begin{quote} \begin{verbatim}
-interface SendMsg { 
-  command result_t send(uint16_t address, uint8_t length, TOS_MsgPtr msg);
-  event result_t sendDone(TOS_MsgPtr msg, result_t success);
+interface Queue<t> { 
+  async command void push(t x);
+  async command t pop();
+  async command bool empty();
+  async command bool full();
 }
 \end{verbatim} \end{quote}
+defines a generic interface \code{Queue} with a single type parameter,
+defining four commands which can be executed in an interrupt handler.
 
-Provides of the \code{SendMsg} interface type must implement the
-\code{send} command, while users must implement the \code{sendDone} event.
+\subsection{Interface Types}
 
-\section{Component Specification}
-\label{sec:component}
-
-A \nesc component is either a \emph{module} (Section~\ref{sec:module}) or a
-\emph{configuration} (Section~\ref{sec:configuration}):
+An interface type is specified by giving the name of an interface 
+definition and, for generic interface definitions, any required type
+arguments:
 \begin{quote} \grammarshift
 \em \begin{tabbing}
 \grammarindent
-nesC-file: \\
-\>	includes-list\opt module\\
-\>	includes-list\opt configuration\\
-\>	\ldots\\
+interface-type: \\
+\>	\kw{interface} identifier type-arguments\opt\\
 \\
-module:\\
-\>	\kw{module} identifier specification module-implementation\\
+type-arguments:\\
+\>	\kw{<} type-argument-list \kw{>}\\
 \\
-configuration:\\
-\>	\kw{configuration} identifier specification configuration-implementation\\
+type-argument-list:\\
+\>	type-name\\
+\>	type-argument-list \kw{,} type-name
 \end{tabbing} \end{quote}
+There must be as many types in \emph{type-arguments} as there are
+parameters in the interface definition's type parameter list.
+Type arguments can not be incomplete or of function or array type.
 
-Component's names are specified by the \emph{identifier}. This identifier
-has global scope and belongs to the component and interface type namespace.
-A component introduces two per-component scopes: a specification scope,
-nested in the C global scope, and an implementation scope nested in the
-specification scope.
+Two interface types are the same if they refer to the same interface
+definition and their corresponding type arguments (if any) are of the same
+C type. Example interface types are \kw{interface SendMsg} and
+\kw{interface Queue<int>}.
 
-A component can optionally include C files via the \emph{includes-list}
-(see Section~\ref{sec:app}).
+\subsection{Component Specification}
+\label{sec:component-spec}
 
-The \emph{specification} lists the \emph{specification elements} (interface
-instances, commands or events) \emph{used} or \emph{provided} by this
-component. As we saw in Section~\ref{sec:interface}, a component must
-implement the commands of its provided interfaces and the events of its
-used interfaces. Additionally, it must implement its provided commands and
-events.
-
-Typically, commands ``call down'' towards the hardware components and
-events ``call up'' towards application components (this assumes a view of
-\nesc applications as a graph of components with application components on
-top). A thread of control crosses components only though its specification
-elements.
-
-Each specification element has a name (interface instance name, command
-name or event name). These names belong to the variable namespace of the
-per-component-specification scope.  
+A component's specification is a declaration of provided or used
+specification elements, where each element is an interface (or,
+Section~\ref{sec:bare}, a bare command or event):
 \begin{quote} \grammarshift \em \begin{tabbing}
 \grammarindent
-specification:\\
+component-specification:\\
 \>	\kw{\{} uses-provides-list \kw{\}}\\
 \\
 uses-provides-list:\\
@@ -297,34 +390,82 @@ module A1 {                          module A1 {
                                      } ...            
 \end{verbatim} \end{quote}
 
-An interface instance is specified as follows:
+An interface declaration has an interface type and an optional name:
 \begin{quote} \grammarshift \em \begin{tabbing}
 \grammarindent
 specification-element:\\
-\>	\kw{interface} renamed-identifier parameters\opt\\
+\>	interface-type instance-name\opt instance-parameters\opt\\
 \>	\ldots\\
 \\
-renamed-identifier:\\
-\>	identifier\\
-\>	identifier \kw{as} identifier\\
+instance-name:\\
+\>	\kw{as} identifier\\
 \\
-interface-parameters:\\
+instance-parameters:\\
 \>	\kw{[} parameter-type-list \kw{]}
 \end{tabbing} \end{quote}
+If the name is omitted, the interface's name is the same as the name of the
+interface definition specified by the interface type: \code{interface
+SendMsg} means the same thing as \code{interface SendMsg as SendMsg} and
+\code{interface Queue<int>} is the same as \code{interface Queue<int> as
+Queue}. Note that a specification can contain independent interfaces of the
+same interface type, e.g., 
+\begin{quote}
+  \begin{verbatim}
+provides interface X as X1; 
+uses interface X as X2;
+  \end{verbatim}
+\end{quote}
+The interface names belong to the object name space of the specification's
+scope (Section~\ref{sec:scoping}).
 
-The complete syntax for interface instance declaration is \code{interface X
-as Y}, explicitly specifying \code{Y} as the instance's name. The
-\code{interface X} syntax is a shorthand for \code{interface X as X}.
+An interface declaration without \emph{instance-parameters} (e.g.,
+\code{interface X as Y}) declares a \emph{simple interface} to this
+component. A declaration with \emph{instance-parameters} (e.g.,
+\code{interface SendMsg S[uint8\_t id]}) declares a \emph{parameterised
+interface}, corresponding to multiple interfaces to this component, one for
+each distinct tuple of parameter values (so \code{interface SendMsg as
+S[uint8\_t id, uint8\_t id2]} declares 256 * 256 interfaces of type
+\code{SendMsg}). The types of the \emph{parameters} must be integral types
+(\kw{enum}s are not allowed at this time).
 
-If the \emph{interface-parameters} are omitted, then \code{interface X as
-Y} declares a \emph{simple interface instance}, corresponding to a single
-interface to this component. If the \emph{interface-parameters} are present
-(e.g., \code{interface SendMsg S[uint8\_t id]}) then this is a declaration
-of a \emph{parameterised interface instance}, corresponding to multiple
-interfaces to this component, one for each distinct tuple of parameter
-values (so \code{interface SendMsg S[uint8\_t id]} declares 256 interfaces
-of type \code{SendMsg}). The types of the \emph{parameters} must be
-integral types (\kw{enum}s are not allowed at this time).
+Here is a full specification example:
+\begin{quote} \begin{verbatim}
+module AMStandard {
+  provides {
+    interface StdControl;
+    
+    // The interface are parameterised by the active message id
+    interface SendMsg[uint8_t id];
+    interface ReceiveMsg[uint8_t id];
+  }
+  uses {
+    interface StdControl as RadioControl;
+    interface SendMsg as RadioSend;
+    interface ReceiveMsg as RadioReceive;
+
+    interface StdControl as SerialControl;
+    interface SendMsg as SerialSend;
+    interface ReceiveMsg as SerialReceive;
+  }
+} ...
+\end{verbatim} \end{quote}
+\code{AMStandard} dispatches messages received from the serial port and the
+radio to the application based on the ``active message id'' stored in the
+message, and sends messages to the radio or serial port depending on the
+selected destination address. To support this, it
+\begin{itemize}
+\item provides interface \code{StdControl} of type \code{StdControl} 
+(initialisation of \code{AMStandard}).
+\item provides parameterised interfaces of type \code{SendMsg} and
+\code{ReceiveMsg}; these interfaces are named \code{SendMsg} and
+\code{ReceiveMsg} respectively (these support dispatching of received
+messages and sending of messages with a particular active message id).
+\item uses interfaces to control, send and receive messages from the radio
+and serial port (to interface with the lower-level components providing
+radio and serial port networking).
+\end{itemize}
+
+\subsection{Bare Commands and Events}
 
 Commands or events can be included directly as specification elements by
 including a standard C function declaration with
@@ -340,67 +481,143 @@ storage-class-specifier: \emph{also one of}\\
 \end{tabbing} \end{quote}
 It is a compile-time error if the \emph{declaration} is not a function
 declaration with the \kw{command} or \kw{event} storage class. As in
-interfaces, \kw{async} indicates that the command or event can be executed
-in an interrupt handler.
+interfaces, \kw{async} indicates that the command or event can be called
+from an interrupt handler. These bare command and events also belong to the
+object name space of the specification's scope (Section~\ref{sec:scoping}).
 
-As with interface instances, commands (events) are \emph{simple commands}
-(\emph{simple events}) if no interface parameters are specified, or
-\emph{parameterised commands} (\emph{parameterised events}) if interface
-parameters are specified. The \emph{interface-parameters} are placed before
+As with interface declarations, commands (events) can have instance
+parameters; these are placed before
 the function's regular parameter list, e.g., \code{command void
-send[uint8\_t id](int x)}: \begin{quote} \grammarshift \em \begin{tabbing}
+send[uint8\_t id](int x)}: 
+\begin{quote} \grammarshift \em \begin{tabbing}
 \grammarindent
 direct-declarator: \emph{also}\\
 \>	direct-declarator interface-parameters \kw{(} parameter-type-list \kw{)}\\
 \>	\ldots
 \end{tabbing} \end{quote}
-Note that interface parameters are only allowed on commands or events within
-component specifications, not within interface types.
 
-Here is a full specification example:
-\begin{quote} \begin{verbatim}
-configuration GenericComm {
-  provides {
-    interface StdControl as Control;
-    
-    // The interface are parameterised by the active message id
-    interface SendMsg[uint8_t id];
-    interface ReceiveMsg[uint8_t id];
-  }
-  uses {
-    // signaled after every send completion for components which wish to
-    // retry failed sends
-    event result_t sendDone();
-  }
-} ...
-\end{verbatim} \end{quote}
-In this example, \code{GenericComm}:
-\begin{itemize}
-\item Provides simple interface instance \code{Control} of type
-\code{StdControl}.
-\item Provides parameterised instances of interface type \code{SendMsg} and
-\code{ReceiveMsg}; the parameterised instances are named \code{SendMsg} and
-\code{ReceiveMsg} respectively.
-\item Uses event \code{sendDone}.
-\end{itemize}
+Commands are \emph{simple commands} (\emph{simple events}) if they have no
+instance parameters, or \emph{parameterised commands} (\emph{parameterised
+events}) if instance parameters are specified. Note that instance
+parameters are only allowed on commands or events within component
+specifications, not within interface definitions.
+
+\subsection{Command and Event Terminology}
 
 We say that a command (event) $F$ provided in the specification of
 component $K$ is \emph{provided command (event)} $F$ of $K$; similarly, a
 command (event) used in the specification of component $K$ is \emph{used
 command (event)} $F$ of $K$.
 
-A command $F$ in a provided interface instance $X$ of component $K$ is
-provided command $X.F$ of $K$; a command $F$ in a used interface instance
+A command $F$ in a provided interface $X$ of component $K$ is
+provided command $X.F$ of $K$; a command $F$ in a used interface
 $X$ of $K$ is used command $X.F$ of $K$; an event $F$ in a provided
-interface instance $X$ of $K$ is used event $X.F$ of $K$; and an event $F$
-in a used interface instance $X$ of $K$ is provided event $X.F$ of $K$
+interface $X$ of $K$ is used event $X.F$ of $K$; and an event $F$
+in a used interface $X$ of $K$ is provided event $X.F$ of $K$
 (note the reversal of used and provided for events due to the bidirectional
 nature of interfaces). 
+
+We use greek letters $\alpha, \beta, \ldots$ to refer to any command or
+event of a component when the distinction between bare commands (events)
+and commands (events) in interfaces is not relevant.
 
 We will often simply refer to the ``command or event $\alpha$ of $K$'' when
 the used/provided distinction is not relevant.  Commands or events $\alpha$
 of $K$ may be parameterised or simple, depending on the parameterised or
 simple status of the specification element to which they correspond.
+
+\section{Component Definition}
+
+A \nesc component definition has a name, optional arguments, a
+specification and an implementation:
+\begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
+component:\\
+\>	comp-kind identifier comp-parameters\opt component-specification implementation\\
+\\
+comp-kind:
+\>	\kw{module}\\
+\>	\kw{configuration}\\
+\>	\kw{generic module}\\
+\>	\kw{generic configuration}\\
+\\
+implementation:\\
+\>	module-implementation\\
+\>	configuration-implementation
+\end{tabbing} \end{quote}
+
+The component name belongs to the component name space of the global scope,
+hence must be distinct from other components and from interface
+definitions. There are two kinds of components: \emph{modules} are
+components which are implemented with C code (Section~\ref{sec:module}),
+\emph{configurations} are components which are implemented by assembling
+other components (Section~\ref{sec:configuration}). Components with
+parameters are called \emph{generic components}, they must be instantiated
+in a configuration before they can be used
+(Section~\ref{sec:configuration}). Components without parameters exist as a
+single instance which is implicitly instantiated. The component's
+definition must reflect these distinctions (the \emph{comp-kind} rule): for
+instance, a generic module \code{A} is defined with \code{generic module
+A() \{}\ldots, a non-generic configuration \code{B} is defined with
+\code{configuration B \{}\ldots
+
+\subsection{Generic Components}
+\label{sec:generic-components}
+
+Generic component parameter lists are similar to function parameter lists,
+but allow for type parameters by (re)using the \kw{typedef} keyword:
+\begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
+comp-parameters:\\
+\>	\kw{(} component-parameter-list \kw{)}\\
+\\
+component-parameter-list:\\
+\>	component-parameter\\
+\>	component-parameter-list \kw{,} component-parameter\\
+\\
+component-parameter:\\
+\>	parameter-declaration\\
+\>	\kw{typedef} identifier
+\end{tabbing} \end{quote}
+The parameters belong to the object name space of the component's parameter
+scope (Section~\ref{sec:scoping}), and are hence visible both in the
+component's specification and implementation. Non-type parameters must be
+of arithmetic or \code{char[]} type. These parameters can be used as
+follows:
+\begin{itemize}
+\item Type parameters can be used as if the argument was of some unknown
+\kw{typedef}'d type (for more details, see Section~\ref{sec:type-parameters}).
+\item Non-type parameters are constants of some unknown value (for more
+details, see Section~\ref{sec:constant-folding}); they can be used in any
+constant expression. They cannot be assigned to.
+\end{itemize}
+
+An instantiation with arguments $a_1, \ldots, a_n$ of generic component $X$
+with parameters $p_1, \ldots, p_n$ behaves like a new, non-generic component
+with the specification and implementation of $X$ where all uses of
+parameter $p_i$ have been replaced by the corresponding $a_i$ value or
+type.\footnote{The most straightforward implementation of these semantics
+for generic modules is to duplicate $X$'s code. In some cases (e.g., no
+arguments to $X$), a \nesc compiler might be able to share code between the
+instances of $X$ at some runtime cost.} Section~\ref{sec:load-component}
+details when generic components get instantiated.
+
+
+\subsection{Examples}
+
+Some examples (with simple specifications):
+\begin{quote}
+  \begin{verbatim}
+module A { provides interface X; } ...
+generic configuration B() { uses interface Y; } ...
+generic module AQueue(int n, typedef t) { provides interface Queue<t>; } ...
+  \end{verbatim}
+\end{quote}
+\code{A} is a simple module, \code{B} a generic configuration with no
+arguments but which can be instantiated multiple times, \code{AQueue}
+a generic module implementing an \code{n} entry queue with elements of
+type \code{t}. Note how \code{AQueue} instantiates the generic interface
+\code{Queue} with its type parameter \code{t}.
 
 \section{Modules}
 \label{sec:module}
@@ -415,10 +632,10 @@ where \emph{translation-unit} is a list of C declarations and definitions
 (see K\&R~\cite[pp234--239]{kandr}). 
 
 The top-level declarations of the module's \emph{translation-unit} belong
-to the module's component-implementation scope. These declarations have
-indefinite extent and can be: any standard C declaration or definition, a
-task declaration or definition, a commands or event
-implementation.
+to the module's implementation scope (Section~\ref{sec:scoping}). These
+declarations have indefinite extent and can be: any standard C declaration
+or definition, a task declaration or definition (placed in the object name
+space), a commands or event implementation.
 
 \subsection{Implementing the Module's Specification}
 
@@ -611,14 +828,15 @@ Section~\ref{sec:concurrency} discusses the relation between \kw{atomic} and
 \section{Configurations}
 \label{sec:configuration}
 
-Configurations implement a component specification by connecting, or wiring,
-together a collection of other components:
+Configurations implement a component specification by selecting regular
+components or instantiating generic components, and then connecting
+(``wiring'') these components together. The implementation section of
+a configuration has two parts:
 \begin{quote} \grammarshift \em \begin{tabbing}
 \grammarindent
 configuration-implementation:\\
 \>	\kw{implementation} \kw{\{} component-list\opt connection-list \kw{\}}\\
 \end{tabbing} \end{quote}
-
 The \emph{component-list} lists the components that are used to build this
 configuration, the \emph{connection-list} specifies how these components
 are wired to each other and to the configuration's specification.
@@ -632,12 +850,19 @@ and specification elements from one of the configuration's components
 \label{sec:config-components}
 
 The \emph{component-list} specifies the components used to build this
-configuration. These components can be optionally renamed within the
-configuration, either to avoid name conflicts with the configuration's
-specification elements, or to simplify changing the components a
-configuration uses (to avoid having to change the wiring). The names
-chosen for components belong to the component's implementation scope.
+configuration. These can be:
+\begin{itemize}
+\item A non-generic component $X$. Non-generic components are implicitly
+instantiated, references to $X$ in different configurations will all
+refer to the same component.
 
+\item An instantiation of a generic component $Y$. Instantiations of $Y$ in
+different configurations, or multiple instantiations in the same
+configuration will represent different components (see
+Section~\ref{sec:generic-components}).
+\end{itemize}
+
+This \emph{component-list} has the following syntax:
 \begin{quote} \grammarshift \em \begin{tabbing}
 \grammarindent
 component-list:\\
@@ -648,20 +873,49 @@ components:\\
 \>	\kw{components} component-line \kw{;}\\
 \\
 component-line:\\
-\>	renamed-identifier\\
-\>	component-line \kw{,} renamed-identifier\\
+\>	component-ref instance-name\opt\\
+\>	component-line \kw{,} component-ref instance-name\opt\\
 \\
-renamed-identifier:\\
+instance-name:\\
+\>	\kw{as} identifier\\
+\\
+component-ref:\\
 \>	identifier\\
-\>	identifier \kw{as} identifier\\
+\>	\kw{new} identifier \kw{(} component-argument-list \kw{)}\\
+\\
+component-argument-list:\\
+\>	component-argument\\
+\>	component-argument-list \kw{,} component-argument\\
+\\
+component-argument:\\
+\>	expression\\
+\>	type-name
 \end{tabbing} \end{quote}
+Each \emph{component-ref} specifies a non-generic component $X$ by simply
+giving its name (a compile-time error occurs if $X$ is generic) and
+a generic component $Y$ with $\kw{new} Y(args)$ (a compile-time error occurs
+if $Y$ is not generic). The arguments to $Y$ must match the number of
+parameters $Y$ expects, and:
+\begin{itemize}
+\item If the parameter is a type parameter, then the argument must be
+a non-function, non-array, non-incomplete type.
+\item If the parameter is of type \code{char[]}, the argument must be
+a string constant.
+\item If the parameter is of arithmetic type, the argument must be a 
+constant whose value is in the range of the parameter type.
+\end{itemize}
 
-A compile-time error occurs if two components are given the same name using \kw{as} (e.g., \code{components X, Y as X}).
-
-There is only ever a single instance of a component: if a component $K$
-is used in two different configurations (or even twice within the same
-configuration) there is still only instance of $K$ (and its variables)
-in the program.
+Within the \emph{connection-list}, a component specified in the 
+\emph{component-list} is referred to by:
+\begin{itemize}
+\item The name explicitly specified by the \code{X as Y} syntax
+(\emph{instance-name}). This is necessary, e.g., when instantiating the
+same generic component more than once in a given configuration.
+\item The name of the component definition (\code{components new X(), Y;} is
+the same as \code{components new X() as X, Y as Y;}).
+\end{itemize}
+The names specified by the \emph{connection-list} belong to the object name
+space of the component's implementation scope (Section~\ref{sec:scoping}).
 
 \subsection{Wiring}
 \label{sec:wiring}
@@ -714,10 +968,25 @@ A compile-time error occurs if the \emph{identifier-path} of an
 \item $X$, where $X$ names an external specification element.
 \item $K.X$ where $K$ is a component from the \emph{component-list} and
 $X$ is a specification element of $K$.
-\item $K$ where $K$ is a some component name from the \emph{component-list}.
-This form is used in implicit connections, discussed in
-Section~\ref{sec:implicit}. Note that this form cannot be used when
+\item $K$ where $K$ is a some component name from the
+\emph{component-list}.  This form is used in implicit connections,
+discussed in Section~\ref{sec:implicit}. This form cannot be used when
 parameter values are specified.
+
+Note that a component name can hide a specification element, preventing
+the element from being wired:
+\begin{quote}
+\begin{verbatim}
+configuration AA { provides interface X as Y; }
+implementation {
+  components Z as Y, Z2 as Y2;
+
+  Y /* refers to component Z, not interface X */ -> Y2.A;
+}
+\end{verbatim}
+\end{quote}
+Hiding specification elements will always result in a compile-time error as
+specification elements must all be wired.
 \end{itemize}
 
 There are three wiring statements in \nesc:
@@ -820,6 +1089,11 @@ interfaces. Finally, Section~\ref{sec:wiring-reqs} specifies requirements
 on the wiring statements of an application when viewed as a whole. We will
 use the simple application of Figure~\ref{fig:wiring} as our running
 example.
+
+For the purposes of this section, we will assume that all instantiations of
+generic components have been expanded into non-generic components as
+explained in Sections~\ref{sec:generic-components}
+and~\ref{sec:load-component}.
 
 \begin{figure}
 \begin{verbatim}
@@ -1124,59 +1398,34 @@ inadvertently.
 \label{sec:app}
 
 A \nesc application has three parts: a list of C declarations and
-definitions, a set of interface types and a set of components. The naming
-environment of \nesc applications is structured as follows:
-\begin{itemize}
-\item An outermost, global scope with three namespaces: a C variable and a
-C tag namespace for the C declarations and definitions, and a component and
-interface type namespace for the \nesc interface types and components.
-\item C declarations and definitions may introduce their own nested scopes
-within the global scope, as usual (for function declarations and
-definitions, code blocks within functions, etc).
+definitions, a set of interface definitions and a set of components
+(non-generic components and instantiated generic components).
 
-\item Each interface type introduces a scope that holds the interface's
-commands or events. This scope is nested in the global scope, therefore
-command and event definitions can refer to C types and tags defined in the
-global scope.
-
-\item Each component introduces two new scopes. The specification scope,
-nested in the global scope, contains a variable namespace which holds the
-component's specification elements. The implementation scope, nested in the
-specification scope, contains a variable and a tag namespace. 
-
-For configurations, the implementation's scope variable namespace contains
-the names by which this component refers to its included components
-(Section~\ref{sec:config-components}). For modules, the implementation
-scope holds the tasks, C declarations and definitions that form the
-module's body. These declarations, etc may introduce their own nested
-scopes within the implementation scope (for function bodies, code blocks,
-etc). As a result of the scope nesting structure, code in modules has
-access to the C declarations and definitions in the global scope, but not
-to any declarations or definitions in other components.
-\end{itemize}
-
-The C declarations and defintions, interface types and components that form
+The C declarations and defintions, interfaces and components that form
 a \nesc application are determined by an on-demand loading process. The
-input to the \nesc compiler is a single component $K$. The \nesc compiler
-first loads C file \file{tos} (Section~\ref{sec:load-c}), then loads
-component $K$ (Section~\ref{sec:load-component}). The code for the
-application is all the code loaded as part of the process of loading these
-two files. A \nesc compiler can assume that all calls to functions,
-commands or events not marked with the \code{spontaneous} attribute
-(Section~\ref{sec:attributes}) occur in the loaded code (i.e., there are no
-``invisible'' calls to non-\code{spontaneous} functions).\footnote{For
-instance, the current \nesc compiler uses this information to eliminate
-unreachable code.}
+input to the \nesc compiler is a single non-generic component $K$. The
+\nesc compiler first loads a user-specified set of C
+files\footnote{\kw{ncc}, the TinyOS frontend for \nesc always loads the
+TinyOS \file{tos.h} file.} (Section~\ref{sec:load-c}), then loads component
+$K$ (Section~\ref{sec:load-component}). The code for the application is all
+the C code loaded and all the components generated as a result of loading
+these two files. A \nesc compiler can assume that all calls to functions,
+commands or events not marked with the \code{spontaneous}, \code{hwevent}
+or \code{atomic\_hwevent} attributes (Section~\ref{sec:attributes}) occur
+in the loaded code (i.e., there are no ``invisible'' calls to any other
+functions).\footnote{For instance, the current \nesc compiler uses this
+information to eliminate unreachable code.}
 
 During preprocessing of loaded files, \nesc defines the \kw{NESC} symbol to
 a number XYZ which identifies the version of the \nesc language and compiler.
 For \nesc 1.1, XYZ is at least 110.\footnote{The \kw{NESC} symbol was not
 defined in earlier versions of \nesc.}
 
-Part of the process of loading a C file, \nesc component or interface type
-involves locating the corresponding source file. The mechanism used to
-locate files is outside the scope of this reference manual; for details on
-how this works in the current compiler please see the \file{ncc} man page.
+Part of the process of loading a C file, \nesc component or interface
+definition involves locating the corresponding source file. The mechanism
+used to locate files is outside the scope of this reference manual; for
+details on how this works in the current compiler please see the \file{ncc}
+man page.
 
 \subsection{Loading C file $X$}
 \label{sec:load-c}
@@ -1186,13 +1435,13 @@ is located and preprocessed. Changes made to C macros (via \code{\#define}
 and \code{\#undef}) are visible to all subsequently preprocessed files. The C
 declarations and definitions from the preprocessed $X$.h file are entered
 into the C global scope, and are therefore visible to all subsequently
-processed C files, interface types and components.
+processed C files, interfaces and components.
 
 \subsection{Loading Component $K$}
 \label{sec:load-component}
 
 If $K$ has already been loaded, nothing more is done. Otherwise, file
-$X$.nc is located and preprocessed. Changes made to C macros (via
+$K$.nc is located and preprocessed. Changes made to C macros (via
 \code{\#define} and \code{\#undef}) are discarded. The preprocessed file is
 parsed using the following grammar: \begin{quote} \grammarshift \em \begin{tabbing}
 \grammarindent
@@ -1208,30 +1457,51 @@ includes-list:\\
 includes:\\
 \>	\kw{includes} identifier-list \kw{;}\\
 \end{tabbing} \end{quote}
-If $X$.nc does not define \code{module $K$} or \code{configuration $K$}, a
+If $K$.nc does not define \code{module $K$} or \code{configuration $K$}, a
 compile-time error is reported. Otherwise, all C files specified by the
-\emph{includes-list} are loaded (Section~\ref{sec:load-c}). Then all
-interface types used in the component's specification are loaded
-(Section~\ref{sec:load-intf}). Next, the component specification is
-processed (Section~\ref{sec:component}). If $K$ is a configuration, all
-components specified (Section~\ref{sec:config-components}) by $K$ are
-loaded (Section~\ref{sec:load-component}). Finally, $K$'s implementation is
-processed (Sections~\ref{sec:module} and~\ref{sec:configuration})..
+\emph{includes-list} are loaded (Section~\ref{sec:load-c}possibly). Note that
+as file $K$.nc has already been loaded, macros defined in these files cannot
+be used in $K$.nc (though they will be visible for subsequently loaded files).
 
-\subsection{Loading Interface Type $I$}
+Next, all interface definitions used in the component's specification are
+loaded (Section~\ref{sec:load-intf}). Next, the component specification is
+processed (Section~\ref{sec:component-spec}). If $K$ is a configuration, all
+component definitions used (Section~\ref{sec:config-components}) in $K$ are
+loaded (Section~\ref{sec:load-component}). The implementation of $K$ is
+then checked according to the rules of Section~\ref{sec:module} or
+Section~\ref{sec:configuration}.
+
+Finally, $K$ is processed to produce a set of output components via the
+following algorithm:
+
+Expand($K$):
+\begin{itemize}
+\item If $K$ is a generic component, no component is output.
+
+\item If $K$ is a non-generic module, $K$ is output.
+
+\item If $K$ is a non-generic configuration: for each component
+instantiation $\kw{new} L(a_1, \ldots, a_n)$ in $K$, a new component $X$ is
+created according to the rules of Section~\ref{sec:generic-components} and
+Expand($X$) is called recursively (instantiating further generic components
+if $L$ contained component instantiations). Then $K$ is output.
+\end{itemize}
+
+\subsection{Loading Interface Definition $I$}
 \label{sec:load-intf}
 
 If $I$ has already been loaded, nothing more is done. Otherwise, file
-$X$.nc is located and preprocessed. Changes made to C macros (via
+$I$.nc is located and preprocessed. Changes made to C macros (via
 \code{\#define} and \code{\#undef}) are discarded. The preprocessed file is
-parsed following the \emph{nesC-file} production above. If $X$.nc does not
+parsed following the \emph{nesC-file} production above. If $I$.nc does not
 define \code{interface $I$} a compile-time error is reported. Otherwise,
 all C files specified by the \emph{includes-list} are loaded
-(Section~\ref{sec:load-c}). Then $I$'s definition is processed
-(Section~\ref{sec:interface}).
+(Section~\ref{sec:load-c}) (as with components, macros defined in these C
+files cannot be used in $I$.nc as it has already been preprocessed). Then
+$I$'s definition is processed (Section~\ref{sec:interface}).
 
 As an example of including C files in components or interfaces, interface
-type \code{Bar} might include C file \file{BarTypes.h} which defines types
+definition \code{Bar} might include C file \file{BarTypes.h} which defines types
 used in \code{Bar}:
 
 \begin{quote} \begin{verbatim}
@@ -1265,7 +1535,7 @@ Note that neither of these changes apply to C files (so that existing
 
 \subsection{// comments}
 
-\nesc allows // comments in C, interface type and component files.
+\nesc allows // comments in C, interface and component files.
 
 \subsection{Attributes}
 \label{sec:attributes}
@@ -1318,6 +1588,21 @@ are not visible in the source code. Typically, functions that are
 called spontaneously are interrupt handlers, and the C \code{main}
 function. Section~\ref{sec:app} discusses how the \nesc compiler
 uses the \code{spontaneous} attribute during compilation.
+
+\item \code{hwevent}: This attribute can be used on any function $f$ (in
+modules or C code). It indicates that $f$ is an interrupt handler, i.e.,
+that there are spontaneous calls to $f$ and that $f$ is AC
+(Section~\ref{sec:concurrency}).
+
+\item \code{atomic\_hwevent}: This attribute can be used on any function
+$f$ (in modules or C code). This behaves the same as \code{hwevent}, but,
+additionally, informs \nesc that the body of $f$ behaves as if it
+were an \kw{atomic} statement (on typical hardware this means that this
+interrupt handler runs with interrupts disabled).
+
+Note that neither \code{hwevent} or \code{atomic\_hwevent} provide any
+linkage of $f$ with a particular interrupt handler. The mechanism by
+which that is achieved is platform-specific.
 
 \item \code{combine($fnname$)}: This attribute specifies the combining
 function for a type in a \kw{typedef} declaration. The combining function

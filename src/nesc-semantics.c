@@ -421,6 +421,11 @@ declaration declare_template_parameter(declarator d, type_element elements,
   /* Storage class checks */
   if (class)
     {
+      /* Detect "typedef t", to declare a type parameter */
+      if (class == RID_TYPEDEF && defaulted_int && !attributes &&
+	  is_identifier_declarator(d))
+	return declare_type_parameter(d->location,
+				      CAST(identifier_declarator, d)->cstring);
       error("storage class specified for parameter `%s'", name);
       class = 0;
     }
