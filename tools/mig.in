@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!@pathperl@
 
 # This file is part of the nesC compiler.
 #    Copyright (C) 2002 Intel Corporation
@@ -66,7 +66,7 @@ push @args, $cfile;
 
 #print STDERR join(" ", @args), "\n";
 open(NESC, '-|', join(" ", @args)) or die "nesc1 not found";
-@lines = <NESC>;
+@spec = <NESC>;
 close NESC;
 
 if ($?) {
@@ -75,7 +75,7 @@ if ($?) {
 }
 
 require "gen$target.pm";
-&gen($classname, @lines);
+&gen($classname, @spec);
 
 sub usage()
 {
@@ -107,3 +107,54 @@ sub extractarg {
     }
     return ($i, $arg);
 }
+
+sub poparray()
+{
+    my ($n) = @_;
+
+    while ($n-- > 0) {
+	pop @array_max;
+	pop @array_bitsize;
+	pop @array_offset;
+    }
+}
+
+sub basetype()
+{
+    my ($type) = @_;
+    my $basetype;
+
+    $type =~ /([A-Z]*)$/ or die;
+    $basetype = $1;
+
+    return "PUSH" if $basetype eq "AS" || $basetype eq "AU";
+    return "POP" if $basetype eq "AX";
+
+    return $basetype;
+}
+
+sub arraymax()
+{
+    my ($type, $bsize) = @_;
+    my @max;
+
+    while ($type =~ /^\[([0-9]+)\](.*)/) {
+	push @max, $1;
+	$type = $2;
+    }
+    return @max;
+}
+
+sub arraybitsize()
+{
+    my ($bsize, @max) = @_;
+    my @bitsize;
+
+    for ($i = $#max; $i >= 0; $i--) {
+	$bitsize[$i] = $bsize;
+	$bsize *= $max[$i];
+    }
+
+    return @bitsize;
+}
+
