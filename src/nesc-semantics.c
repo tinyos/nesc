@@ -432,18 +432,10 @@ declaration declare_template_parameter(declarator d, type_element elements,
   if (!(type_real(parm_type) || type_chararray(parm_type, TRUE))) 
     error("only char [] and arithmetic types allowed as component arguments");
 
-#if 0
- XXX: Is this meaningful? (and if not, is it an error to have array or fn
-			   args?)
-  /* A parameter declared as an array of T is really a pointer to T.
-     One declared as a function is really a pointer to a function.  */
   if (type_array(parm_type))
     /* Transfer const-ness of array into that of type pointed to.  */
     parm_type =
       make_pointer_type(qualify_type1(type_array_of(parm_type), parm_type));
-  else if (type_function(parm_type))
-    parm_type = make_pointer_type(parm_type);
-#endif
 
   init_data_declaration(&tempdecl, CAST(declaration, vd), name, parm_type);
   tempdecl.kind = decl_constant;

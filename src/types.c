@@ -1952,6 +1952,7 @@ type instantiate_type(type t)
     }
     case tk_array:
       newt = make_array_type(instantiate_type(t->u.array.arrayof),
+			     !t->u.array.size ? NULL :
 			     CAST(expression, t->u.array.size->instantiation));
       break;
 
