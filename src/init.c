@@ -990,7 +990,7 @@ void check_init_element(expression init)
      case of string constants */
   known_cst c;
 
-  if (!check_constant_once(init))
+  if (!check_constant_once(init, cst_any))
     return;
 
   c = type_array(init->type) ? init->static_address : init->cst;

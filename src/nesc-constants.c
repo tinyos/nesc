@@ -260,6 +260,18 @@ static AST_walker_result folder_case_label(AST_walker spec, void *data,
   return aw_done;
 }
 
+static AST_walker_result folder_function_decl(AST_walker spec, void *data,
+					      function_decl *n)
+{
+  function_decl fd = *n, old = current.function_decl;
+
+  current.function_decl = fd;
+  AST_walk_children(spec, data, CAST(node, *n));
+  current.function_decl = old;
+
+  return aw_done;
+}
+
 void init_nesc_constants(void)
 {
   folder_walker = new_AST_walker(permanent);
@@ -270,4 +282,5 @@ void init_nesc_constants(void)
   AST_walker_handle(folder_walker, kind_enumerator, folder_enumerator);
   AST_walker_handle(folder_walker, kind_variable_decl, folder_variable_decl);
   AST_walker_handle(folder_walker, kind_case_label, folder_case_label);
+  AST_walker_handle(folder_walker, kind_function_decl, folder_function_decl);
 }

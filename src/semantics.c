@@ -622,7 +622,7 @@ void check_variable_scflags(scflags scf,
 
 void check_array_size(expression size, const char *printname)
 {
-  if (!check_constant_once(size))
+  if (!check_constant_once(size, cst_numerical))
     return;
 
   if (size->cst && constant_integral(size->cst))
@@ -2844,7 +2844,7 @@ cval check_bitfield_width(field_declaration fdecl)
   bool printmsg;
   const char *errormsg = NULL;
 
-  printmsg = check_constant_once(w);
+  printmsg = check_constant_once(w, cst_numerical);
 
   if (cwidth && constant_unknown(cwidth))
     bitwidth = cval_unknown_number;
@@ -3571,7 +3571,7 @@ known_cst layout_enum_value(enumerator e)
   if (value)
     {
       cst = value->cst;
-      if (check_constant_once(value))
+      if (check_constant_once(value, cst_numerical))
 	{
 	  if (!value->cst || !constant_integral(value->cst))
 	    {

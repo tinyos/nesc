@@ -576,17 +576,19 @@ void set_parameter_values(nesc_declaration cdecl, expression args)
       if (is_data_decl(parm))
 	{
 	  variable_decl vd = CAST(variable_decl, CAST(data_decl, parm)->decls);
+	  cst_kind k = type_real(vd->ddecl->type) ?
+	    cst_numerical : cst_address;
 
 	  if (!args)
 	    {
-	      vd->ddecl->value = make_unknown_cst(type_real(vd->ddecl->type) ?
+	      vd->ddecl->value = make_unknown_cst(k == cst_numerical ?
 						  cval_unknown_number :
 						  cval_unknown_address,
 						  vd->ddecl->type);
 	      continue;
 	    }
 
-	  if (!is_type_argument(args) && check_constant_once(args))
+	  if (!is_type_argument(args) && check_constant_once(args, k))
 	    {
 	      location l = args->location;
 

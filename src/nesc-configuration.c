@@ -248,7 +248,7 @@ void check_generic_arguments(expression args, typelist gparms)
 	  return;
 	}
 
-      if (!check_constant_once(arg))
+      if (!check_constant_once(arg, cst_numerical))
 	continue;
 
       if (!arg->cst || !constant_integral(arg->cst))

@@ -139,20 +139,34 @@ char *string_cst_to_c(region r, string_cst s);
      string and wcstombs failed)
 */
 
-bool check_constant_once(expression e);
+typedef enum {
+  cst_any,
+  cst_numerical,
+  cst_address
+} cst_kind;
+
+bool check_constant_once(expression e, cst_kind k);
 /* Effects: We want to check whether e is a constant, and possibly for
      valid constant values, exactly once (to avoid repeated errors and
      warnings) over our multiple constant folding passes. Additionally,
      we can't check unknown constants until their value is known. We can
      rely on the following:
      - a non-constant will not become constant
+     - we assume, for checking purposes, that a constant's kind (numerical
+       vs address) will not change (this in some sense untrue, as in:
+         <unknown> ? <numerical> : <address>
+       but we treat that as <address> for checking purposes)
      - a known constant will maintain its value
      - an unknown constant will become either non-constant or a known constant
+
+     Additionally, if the constant kind does not match k, we can check it
+     immediately (presumably to report some error).
      
      check_constant_once supports this by returning TRUE exactly once, when
      its possible to check e's value
 
-   Returns: TRUE the first time !e->cst || e->cst && !constant_unkown(e)
+   Returns: TRUE the first time !e->cst || e->cst && !constant_unkown(e) ||
+     e->cst && e->cst does not match k
 */
 
 #endif

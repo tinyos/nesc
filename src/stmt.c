@@ -262,7 +262,7 @@ static statement containing_switch(label l)
 
 void check_case_value(expression e)
 {
-  if (check_constant_once(e))
+  if (check_constant_once(e, cst_numerical))
     if (!e->cst || !(e->type == error_type || type_integer(e->type)))
       error_with_location(e->location,
 			  "case label does not reduce to an integer constant");

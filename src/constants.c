@@ -559,24 +559,40 @@ char *string_cst_to_c(region r, string_cst s)
   return str;
 }
 
-bool check_constant_once(expression e)
+bool check_constant_once(expression e, cst_kind k)
 /* Effects: We want to check whether e is a constant, and possibly for
      valid constant values, exactly once (to avoid repeated errors and
      warnings) over our multiple constant folding passes. Additionally,
      we can't check unknown constants until their value is known. We can
      rely on the following:
      - a non-constant will not become constant
+     - we assume, for checking purposes, that a constant's kind (numerical
+       vs address) will not change (this in some sense untrue, as in:
+         <unknown> ? <numerical> : <address>
+       but we treat that as <address> for checking purposes)
      - a known constant will maintain its value
      - an unknown constant will become either non-constant or a known constant
+
+     Additionally, if the constant kind does not match k, we can check it
+     immediately (presumably to report some error).
      
      check_constant_once supports this by returning TRUE exactly once, when
      its possible to check e's value
 
-   Returns: TRUE the first time !e->cst || e->cst && !constant_unkown(e)
+   Returns: TRUE the first time !e->cst || e->cst && !constant_unkown(e) ||
+     e->cst && e->cst does not match k
 */
 {
-  if (e->cst_checked || (e->cst && constant_unknown(e->cst)))
+  if (e->cst_checked)
     return FALSE;
+
+  if (e->cst && constant_unknown(e->cst))
+    /* Unknown constant. We can't check yet it if matches k */
+    if (k == cst_any ||
+	(k == cst_numerical && constant_unknown_number(e->cst)) ||
+	(k == cst_address && constant_address(e->cst)))
+      return FALSE;
+
   e->cst_checked = TRUE;
 
   return TRUE;
