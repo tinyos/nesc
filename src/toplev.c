@@ -412,10 +412,13 @@ int region_main(int argc, char **argv) deletes
       else if (argv[i][0] == '-' && argv[i][1] != 0)
 	{
 	  register char *str = argv[i] + 1;
+
 	  if (str[0] == 'Y')
 	    str++;
 
-	  if (!strcmp (str, "dumpbase"))
+	  if (str[0] == 'D' || str[0] == 'm')
+	    save_option(argv[i]);
+	  else if (!strcmp (str, "dumpbase"))
 	    i++;
 	  else if (str[0] == 'f')
 	    {

@@ -34,6 +34,7 @@ Boston, MA 02111-1307, USA. */
 #include "nesc-component.h"
 #include "nesc-interface.h"
 #include "nesc-semantics.h"
+#include "nesc-cpp.h"
 
 /* Predefined __builtin_va_list type */
 type builtin_va_list_type;
@@ -2503,7 +2504,7 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
       else
 	ddecl = declare(current.env, &tempdecl, FALSE);
 
-      ddecl->defined = interface_defines;
+      ddecl->defined = current.interface_defines;
     }
   assert(ddecl);
   vd->ddecl = ddecl;
@@ -3184,6 +3185,9 @@ int save_directive(char *directive)
       /* Handle backslash.  */
       char_escaped = (c == '\\' && ! char_escaped);
     }
+
+  handle_directive(directive, directive_buffer);
+
   return '\n';
 }
 

@@ -23,6 +23,7 @@ Boston, MA 02111-1307, USA.  */
 #include "input.h"
 #include "AST_utils.h"
 #include "nesc-paths.h"
+#include "nesc-cpp.h"
 
 #include <errno.h>
 
@@ -135,8 +136,16 @@ environment compile(location loc, source_language l, const char *name,
     error_with_location(loc, "%s %s not found", language_name(l), name);
   else
     {
-      fprintf(stderr, "DBG> loading %s\n", path);
-      f = fopen(path, "r");
+      if (l == l_c)
+	{
+	  fprintf(stderr, "DBG> preprocessing %s\n", path);
+	  f = preprocess(path);
+	}
+      else
+	{
+	  fprintf(stderr, "DBG> loading %s\n", path);
+	  f = fopen(path, "r");
+	}
       if (!f)
 	error_with_location(loc, "cannot open %s: %s",
 			    path, strerror(errno));

@@ -24,6 +24,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-c.h"
 #include "c-parse.h"
 #include "nesc-generate.h"
+#include "nesc-cpp.h"
 
 /* Adds the component graph 'component' to the whole program graph 'master' */
 static void connect_graph(cgraph master, cgraph component)
@@ -85,6 +86,7 @@ void nesc_compile(const char *component_name, const char *target_name)
   component_declaration program;
 
   parse_region = newregion();
+  preprocess_init();
   init_types();
   cval_init();
   init_lex();

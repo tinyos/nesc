@@ -30,8 +30,6 @@ Boston, MA 02111-1307, USA.  */
 #include "input.h"
 #include "edit.h"
 
-bool component_requires;
-
 void interface_scan(data_declaration iref, env_scanner *scan)
 {
   env_scan(iref->functions->id_env, scan);
@@ -130,7 +128,7 @@ void declare_interface_ref(interface_ref iref, declaration gparms,
   tempdecl.kind = decl_interface_ref;
   tempdecl.type = NULL;
   tempdecl.itype = idecl;
-  tempdecl.required = component_requires;
+  tempdecl.required = current.component_requires;
   tempdecl.gparms = gparms ? make_gparm_typelist(gparms) : NULL;
 
   old_decl = lookup_id(iname, TRUE);

@@ -25,4 +25,7 @@ void init_nesc_paths_end(void);
 
 const char *find_nesc_file(region r, source_language l, const char *name);
 
+extern char **path_argv;
+extern int path_argv_count;
+
 #endif

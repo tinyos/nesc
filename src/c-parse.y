@@ -345,10 +345,10 @@ uses_or_defines_list:
 
 uses_or_defines: uses | defines ;
 
-uses: USES { interface_defines = FALSE; } function_list 
+uses: USES { current.interface_defines = FALSE; } function_list 
 	{ $$ = new_interface_functions(pr, $1.location, FALSE, $3); } ;
 
-defines: DEFINES { interface_defines = TRUE; } function_list
+defines: DEFINES { current.interface_defines = TRUE; } function_list
 	{ $$ = new_interface_functions(pr, $1.location, TRUE, $3); } ;
 
 function_list: just_datadef | '{' datadef_list '}' { $$ = declaration_reverse($2); };
@@ -402,10 +402,10 @@ requires_or_provides_list:
 
 requires_or_provides: requires | provides ;
 
-requires: REQUIRES { component_requires = TRUE; interface_defines = FALSE; } parameterised_interface_list 
+requires: REQUIRES { current.component_requires = TRUE; current.interface_defines = FALSE; } parameterised_interface_list 
 		{ $$ = new_rp_interface(pr, $1.location, TRUE, declaration_reverse($3)); } ;
 
-provides: PROVIDES { component_requires = FALSE; interface_defines = TRUE; } parameterised_interface_list 
+provides: PROVIDES { current.component_requires = FALSE; current.interface_defines = TRUE; } parameterised_interface_list 
 		{ $$ = new_rp_interface(pr, $1.location, FALSE, declaration_reverse($3)); } ;
 
 parameterised_interface_list:

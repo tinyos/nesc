@@ -28,5 +28,6 @@ void load_c(location l, const char *name)
 {
   cdecls = NULL;
   compile(l, l_c, name, NULL, NULL);
+  preprocess_file_end();
   all_cdecls = declaration_chain(all_cdecls, cdecls);
 }

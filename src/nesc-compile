@@ -23,7 +23,7 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 
     if (/^-/) {
 	$nocompile = 1 if ($_ eq "-fsyntax-only");
-	if (/^-[Wwvpf]/ || /^-pedantic/ || /^-ansi/) {
+	if (/^-[WwvpfmD]/ || /^-pedantic/ || /^-ansi/) {
 	    push @nesc_args, $_ unless /^-fnesc-.*cfile=/;
 	}
 
@@ -39,7 +39,7 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 		$delcfile = 1;
 	    }
 	}
-	else {
+	elsif (!(/^-D/)) {
 	    push @gcc_args, $_;
 	}
     }
@@ -91,7 +91,7 @@ if ($nocompile) {
     push @nesc_args, $ctarget;
 }
 unshift @nesc_args, "nesc1";
-print join(" ", @nesc_args);
+print join(" ", @nesc_args), "\n";
 system @nesc_args;
 
 if ($? != 0) {

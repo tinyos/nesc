@@ -15,25 +15,21 @@ along with nesC; see the file COPYING.  If not, write to
 the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
-#ifndef NESC_COMPONENT_H
+#ifndef NESC_CPP_H
+#define NESC_CPP_H
 
-void declare_interface_ref(interface_ref iref, declaration gparms,
-			   environment genv);
+#include "parser.h"
+#include "nesc-cpp.h"
 
-void make_implicit_interface(data_declaration fndecl,
-			     function_declarator fdeclarator);
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
-void check_generic_parameter_type(location l, data_declaration gparm);
+void preprocess_init(void);
+FILE *preprocess(const char *filename);
+void preprocess_file_end(void);
 
-component_declaration load_component(location l, const char *name);
-environment start_implementation(void);
-
-void interface_scan(data_declaration iref, env_scanner *scan);
-data_declaration interface_lookup(data_declaration iref, const char *name);
-
-void component_functions_iterate(component_declaration c,
-				 void (*iterator)(data_declaration fndecl,
-						  void *data),
-				 void *data);
+void handle_directive(const char *directive, const char *args);
+void save_option(const char *option);
 
 #endif

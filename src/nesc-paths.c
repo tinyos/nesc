@@ -31,6 +31,41 @@ static struct path *searchpath;
 static int maxdirlen;
 static region pathregion;
 
+char **path_argv;
+int path_argv_count;
+
+static void build_include_argv(void)
+{
+  int n = 0;
+  struct path *p;
+  size_t bytes = 0;
+  char *pathdata;
+
+  for (p = searchpath; p; p = p->next)
+    if (p->dirname[0]) /* Skip "", current dir always searched anyway */
+      {
+	n++;
+	bytes += strlen(p->dirname) + 3 /* -I */;
+      }
+
+  path_argv_count = n;
+  path_argv = rarrayalloc(pathregion, n, char *);
+  pathdata = rarrayalloc(pathregion, bytes, char);
+
+  n = 0;
+  for (p = searchpath; p; p = p->next)
+    if (p->dirname[0])
+      {
+	path_argv[n++] = pathdata;
+
+	*pathdata++ = '-';
+	*pathdata++ = 'I';
+	strcpy(pathdata, p->dirname);
+	pathdata += strlen(p->dirname) + 1;
+      }
+
+}
+
 static char *canonicalise(region r, const char *path, int len)
 {
   int newlen = len + 1;
@@ -127,6 +162,8 @@ void init_nesc_paths_end(void)
 {
   build_search_path(pathregion, getenv("NESCPATH"));
   reverse_searchpath();
+
+  build_include_argv();
 }
 
 #define MAX_EXT_LEN 2
@@ -144,7 +181,7 @@ const char *find_nesc_file(region r, source_language l, const char *name)
     {
     case l_interface: strcat(filename, ".ti"); break;
     case l_component: strcat(filename, ".td"); break;
-    case l_c: strcat(filename, ".th"); break;
+    case l_c: strcat(filename, ".h"); break;
     default: assert(0); break;
     }
 

@@ -25,8 +25,6 @@ Boston, MA 02111-1307, USA.  */
 #include "c-parse.h"
 #include "edit.h"
 
-bool interface_defines;
-
 interface_declaration
 new_interface_declaration(region r, const char *name, nesc_decl ast, environment decls)
 {

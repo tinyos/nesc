@@ -89,6 +89,8 @@ libparser_a_SOURCES =				\
 	nesc-component.h			\
 	nesc-configuration.c			\
 	nesc-configuration.h			\
+	nesc-cpp.c				\
+	nesc-cpp.h				\
 	nesc-decls.h				\
 	nesc-env.c				\
 	nesc-env.h				\
