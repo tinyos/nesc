@@ -28,10 +28,10 @@
 
 \section{Introduction}
 
-\nesc is a new programming language designed to embody the structuring
+\nesc is an extension to C~\cite{kandr} designed to embody the structuring
 concepts and execution model of TinyOS~\cite{tinyos}. TinyOS is an
-event-driven operating system designed for sensor network nodes that
-have very limited resources (e.g., 8K bytes of program memory, 512 bytes of
+event-driven operating system designed for sensor network nodes that have
+very limited resources (e.g., 8K bytes of program memory, 512 bytes of
 RAM). TinyOS has been reimplemented in \nesc.
 
 The basic concepts behind \nesc are:
@@ -77,8 +77,8 @@ generation and analysis.
 \end{itemize}
 
 This document is a reference manual for \nesc rather than a tutorial. The
-TinyOS tutorial~\cite{tinyos-tutorial} presents a gentler introduction
-to \nesc.
+TinyOS tutorial\footnote{Available with the TinyOS distribution at
+http://webs.cs.berkeley.edu} presents a gentler introduction to \nesc.
 
 The rest of this document is structured as follows:
 Section~\ref{sec:notation} presents the notation used in the reference
@@ -1132,13 +1132,12 @@ Note that neither of these changes apply to C files (so that existing
 \subsection{Attributes}
 \label{sec:attributes}
 
-\nesc uses gcc's~\cite{gcc} \kw{\_\_attribute\_\_} syntax for
-declaring some properties of functions. These attributes can be placed
+\nesc uses gcc's\footnote{http://gcc.gnu.org} \kw{\_\_attribute\_\_} syntax
+for declaring some properties of functions. These attributes can be placed
 either on function definitions or function declarations (after the
-parameter list).\footnote{gcc doesn't allow attributes after the
-parameter list in function definitions.} The attributes of a function
-$f$ are the union of all attributes on all declarations and
-definitions of $f$.
+parameter list).\footnote{gcc doesn't allow attributes after the parameter
+list in function definitions.} The attributes of a function $f$ are the
+union of all attributes on all declarations and definitions of $f$.
 
 The attribute syntax in \nesc is:
 \emph{\begin{tabbing}
@@ -1519,5 +1518,8 @@ elements specified by a configuration.
 
 \end{itemize}
 
+
+\bibliographystyle{abbrv}
+\bibliography{ref}
 
 \end{document}

@@ -7,3 +7,6 @@ EXTRA_DIST =					\
 
 ref.pdf: ref.tex
 	pdflatex ref.tex
+	bibtex ref
+	pdflatex ref.tex
+	pdflatex ref.tex
