@@ -1750,7 +1750,7 @@ static void insert_entry(file_index *fi, char *docfile, char *suffix) {
 
   // separate out the name.  We special case for common source file extensions.
   while(p > e->path  &&  *p != '.') p--;
-  if( !strcmp(p,".td") || !strcmp(p,".ti") || !strcmp(p,".h") || !strcmp(p,".c") ) {
+  if( !strcmp(p,".nc") || !strcmp(p,".td") || !strcmp(p,".ti") || !strcmp(p,".h") || !strcmp(p,".c") ) {
     p--;
     while(p > e->path  &&  *p != '.') p--;
   }
@@ -2015,16 +2015,9 @@ static void generate_index_html() {
         p--;
         while(p > dent->d_name  &&  *p != '.') p--;
 
-	// XXX MDW: This is broken with respect to .nc
-
         // add to the appropriate list
-        if( !strcmp(p,".ti.html") ) {
-          insert_entry(&iface, dent->d_name, ".ti.html");
-          insert_entry(&allfiles, dent->d_name, ".html");
-          continue;
-        }
-        if( !strcmp(p,".td.html") ) {
-          insert_entry(&comp, dent->d_name, ".td.html");
+        if( !strcmp(p,".nc.html") ) {
+          insert_entry(&comp, dent->d_name, ".nc.html");
           insert_entry(&allfiles, dent->d_name, ".html");
           continue;
         }
@@ -2032,8 +2025,8 @@ static void generate_index_html() {
         // scan back one more, for app files
         p--;
         while(p > dent->d_name  &&  *p != '.') p--;
-        if( !strcmp(p,".td.app.html") ) {
-          insert_entry(&app, dent->d_name, ".td.app.html");
+        if( !strcmp(p,".nc.app.html") ) {
+          insert_entry(&app, dent->d_name, ".nc.app.html");
         }
       }
     }
