@@ -2978,6 +2978,12 @@ type_element finish_struct(type_element t, declaration fields,
 
 	      printname = name ? name : "(anonymous)";
 
+	      /* Support "flexible arrays" (y[] as field member) --
+	         simply make the size 0 which we already handle below */
+	      if (type_array(field_type) && !type_array_size(field_type))
+		field_type = make_array_type(type_array_of(field_type),
+					     build_zero(parse_region, dummy_location));
+
 	      if (type_function(field_type))
 		{
 		  error_with_location(floc, "field `%s' declared as a function", printname);
