@@ -41,6 +41,8 @@ Boston, MA 02111-1307, USA.  */
   
 */
 #include <unistd.h>
+#include <limits.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
@@ -72,6 +74,7 @@ Boston, MA 02111-1307, USA.  */
 static region doc_region = NULL;
 
 
+
 //////////////////////////////////////////////////////////////////////
 //
 //  file name munging
@@ -101,6 +104,16 @@ static bool use_graphviz = FALSE;
 
 
 /**
+ * Initialize the memory region for the doc tools
+ **/
+static void init_doc_region() 
+{
+  if(doc_region == NULL) 
+    doc_region = newregion();
+}
+
+
+/**
  * Set the graphviz flag
  **/
 void doc_use_graphviz(const bool use)
@@ -123,10 +136,24 @@ void doc_set_outdir(const char *dir)
  **/
 void doc_add_topdir(const char *dir) 
 {
+  char realdir[PATH_MAX+1];
+  char *temp;
+
+  init_doc_region();
+
   assert(dir);
   assert(num_topdirs < MAX_TOPDIRS);
 
-  topdir[num_topdirs] = dir;
+  // canonicalize the path
+  if(realpath(dir, realdir) == NULL) {
+    perror("realpath");
+    fatal("ERROR: Bad nesc-topdir option:\n      '%s'\n",dir);
+  }
+  temp = rstralloc( doc_region, strlen(realdir)+1 );
+  assert( temp );
+  strcpy(temp, realdir);
+
+  topdir[num_topdirs] = temp;
   num_topdirs++;
 }
      
@@ -139,6 +166,7 @@ void doc_set_dirsep(const char c)
   dirsep = c;
   dirsep_string[0] = c;
 }
+
 
 
 /**
@@ -192,13 +220,25 @@ static void find_currdir_prefix(const char *cwd)
  * @assume CWD == docdir
  *
  **/
-static char *doc_filename_with_ext(const char *src_filename, const char *ext) 
+static char *doc_filename_with_ext(const char *orig_src_filename, const char *ext) 
 {
+  char buf[PATH_MAX+1];
+  char *src_filename;
   char *pos;
   char *ret;
   bool need_prefix = TRUE;
   int i;
   int length;
+
+  // remove symlinks, etc.  We do this from the original working
+  // directory, so that relative paths will be resolved correctly.
+  assert(chdir(original_wd) == 0);
+  if(realpath(orig_src_filename, buf) == NULL) {
+    perror("realpath");
+    fatal("error expanding path for '%s'\n", orig_src_filename);
+  }
+  src_filename = buf;
+  assert(chdir(docdir) == 0);
 
   // allocate max required space: docdir/currdir_prefix/src_filename.html
   length = 
@@ -682,29 +722,69 @@ static void print_html_banner(const char *text) {
 //////////////////////////////////////////////////
 
 typedef struct iface_graph_entry {
-  nesc_declaration req;
-  nesc_declaration prov;
-  nesc_declaration iface;
+  endp req;
+  endp prov;
 } *iface_graph_entry;
 
+#define iface_node_name( ep ) \
+                    ( ep->component ? \
+                      ep->component->ctype->name : \
+                      ( ep->function->container ? \
+                        ep->function->container->name : \
+                        ep->function->ast->location->filename))
 
 static int iface_graph_compare(void *entry1, void *entry2) 
 {
-  iface_graph_entry c1 = (iface_graph_entry) entry1;
-  iface_graph_entry c2 = (iface_graph_entry) entry2;
-  return (c1->req == c2->req) && (c1->prov == c2->prov) && (c1->iface == c2->iface);
+  int ret;
+  iface_graph_entry e1 = (iface_graph_entry) entry1;
+  iface_graph_entry e2 = (iface_graph_entry) entry2;
+
+  ret = strcmp(iface_node_name(e1->req), iface_node_name(e2->req));
+  if(ret) return 0;
+
+  ret = strcmp(iface_node_name(e1->prov), iface_node_name(e2->prov));
+  if(ret) return 0;
+  
+  ret = strcmp(e1->req->interface->name, e2->req->interface->name);
+  return !ret;
 }
+
+static inline unsigned long string_hash(unsigned const char *name) {
+  unsigned long code = 0;
+
+  assert(name);
+  while (*name) {
+    code = ((code << 1) + *name) ^ 0x57954317;
+    name++;
+  }
+
+  return code;
+} 
 
 static unsigned long iface_graph_hash(void *entry) 
 {
-  iface_graph_entry c = (iface_graph_entry) entry;
-  return ((long)c->req ^ ((long)c->prov << 16) ^ ((long)c->prov >> 16) ^ (long)c->iface);
+  unsigned long rhash, phash, ihash;
+  iface_graph_entry e = (iface_graph_entry) entry;
+
+  rhash = string_hash( iface_node_name(e->req) );
+  phash = string_hash( iface_node_name(e->prov) );
+  ihash = string_hash( e->req->interface->name );
+
+  return rhash ^ (phash<<1) ^ ihash;
 }
+
+
 
 
 static dhash_table new_iface_graph_table() {
   return new_dhash_table(newregion(), 10, iface_graph_compare, iface_graph_hash);
 }
+
+
+
+
+
+static int fixme_graph_num = 1;
 
 static bool connection_already_printed(dhash_table table, 
                                 endp ep1, endp ep2, 
@@ -747,14 +827,14 @@ static bool connection_already_printed(dhash_table table,
     return FALSE;
   }
 
+  // special case: skip loopback edges, created by parameterized interfaces
+  if( !strcmp(iface_node_name(ep1),iface_node_name(ep2)) ) {
+    return TRUE;
+  }
+
   // special case: connection is a pass-through, via the '=' operator
   if( ep1->interface->required == ep2->interface->required ) {
     endp left, right;
-
-    //fprintf(stderr,"\nhandling interface assignment\n");
-    //fprintf(stderr,"defined: %d %d    required: %d %d\n", 
-    //        ep1->function->defined,   ep2->function->defined, 
-    //        ep1->interface->required, ep2->interface->required);
 
     // figure out which is on the left, and which is on the right
     if( ep1->component && ep2->component ) {
@@ -778,6 +858,51 @@ static bool connection_already_printed(dhash_table table,
       *req = left;
       *prov = right;
     }
+
+    // FIXME: just use the order things are already in.
+    if( ep1->function->defined ) {
+      left = ep1;
+      right = ep2;
+    } else {
+      left = ep2;
+      right = ep1;
+    }
+    if(ep1->interface->required) {
+      endp temp = left;
+      left = right;
+      right = temp;
+    }
+
+    *req = left;
+    *prov = right;
+
+
+    fprintf(stderr,"%d.  ",fixme_graph_num);
+    fprintf(stderr,"%-15s ", left->interface->name);
+    {
+      const char *a = iface_node_name(left);
+      const char *b = iface_node_name(right);
+      const char *temp;
+      if(left->component) a = left->component->name;
+      if(right->component) b = right->component->name;
+      if(b[0] < a[0]) {
+        temp = a;
+        a = b; 
+        b = temp;
+      }
+      fprintf(stderr,"%s / %s %*s ", a, b, 25-strlen(a)-strlen(b), "");
+    }
+    fprintf(stderr,"   %-10s = %10s    ", 
+            iface_node_name(left),
+            iface_node_name(right));
+    //        left->component ? left->component->name : "null",
+    //        right->component ? right->component->name : "null");
+
+    fprintf(stderr,"%-15s ", left->function->name);
+    fprintf(stderr," r/d  %d %d    ",left->interface->required, left->function->defined);
+    fprintf(stderr,"\n");
+    assert(left->function->defined == right->function->defined); 
+    assert(left->interface->required == right->interface->required);
   }
 
 
@@ -786,9 +911,8 @@ static bool connection_already_printed(dhash_table table,
   {
     // create a table entry
     iface_graph_entry e = ralloc(regionof(table), struct iface_graph_entry);
-    e->req = (*req)->component ? (*req)->component->ctype : NULL;
-    e->prov = (*prov)->component ? (*prov)->component->ctype : NULL;
-    e->iface = (*prov)->interface ? (*prov)->interface->itype : NULL;
+    e->req = *req;
+    e->prov = *prov;
 
     // do the lookup
     if( dhlookup(table,e) )
@@ -796,25 +920,10 @@ static bool connection_already_printed(dhash_table table,
 
     // add the new item to the table
     dhadd(table, e);
-    //fprintf(stderr, "\n%s  %s  %s\n",
-    //        e->iface ? e->iface->name : "null",
-    //        e->req ? e->req->name : "null",
-    //        e->prov ? e->prov->name : "null"
-    //        );
     return FALSE;
   }
 
 }
-
-
-#define iface_node_name( ep ) \
-                    ( ep->component ? \
-                      ep->component->ctype->name : \
-                      ( ep->function->container ? \
-                        ep->function->container->name : \
-                        ep->function->ast->location->filename))
-
-
 
 
 
@@ -831,11 +940,19 @@ static void print_cg_html(const char *component_name, const char *component_file
 
   char *text_only_name;
   FILE *text_file;
+
+  int num_if_edges = 0;
+  int num_func_edges = 0;
+
   static bool graphviz_supports_cmap = FALSE;
   static bool checked_graphviz_version = FALSE;
+  bool do_func_graph = FALSE;  // FIXME: disable the function graph for now
 
-  // FIXME: disable the function graph for now
-  bool do_func_graph = FALSE;
+
+  // FIXME: increment graph num for debugging
+  fixme_graph_num++;
+  fprintf(stderr, "%d.\n", fixme_graph_num);
+
 
   // check the version of graphviz, to see if we can use the cmap stuff
   if( use_graphviz  &&  !checked_graphviz_version ) {
@@ -853,14 +970,26 @@ DOC WARNING: your version of `dot' does not support client-side
   }
   
   // create filenames
-  iface_dot = doc_filename_with_ext(component_file_name,".if.dot");
-  iface_gif = doc_filename_with_ext(component_file_name,".if.gif");
-  iface_cmap = doc_filename_with_ext(component_file_name,".if.cmap");
+  if( app_graph ) {
+    iface_dot = doc_filename_with_ext(component_file_name,".app.if.dot");
+    iface_gif = doc_filename_with_ext(component_file_name,".app.if.gif");
+    iface_cmap = doc_filename_with_ext(component_file_name,".app.if.cmap");
+  } else {
+    iface_dot = doc_filename_with_ext(component_file_name,".if.dot");
+    iface_gif = doc_filename_with_ext(component_file_name,".if.gif");
+    iface_cmap = doc_filename_with_ext(component_file_name,".if.cmap");
+  }
 
   if( do_func_graph ) {
-    func_dot = doc_filename_with_ext(component_file_name,".func.dot");
-    func_gif = doc_filename_with_ext(component_file_name,".func.gif");
-    func_cmap = doc_filename_with_ext(component_file_name,".func.cmap");
+    if( app_graph ) {
+      func_dot = doc_filename_with_ext(component_file_name,".app.func.dot");
+      func_gif = doc_filename_with_ext(component_file_name,".app.func.gif");
+      func_cmap = doc_filename_with_ext(component_file_name,".app.func.cmap");
+    } else {
+      func_dot = doc_filename_with_ext(component_file_name,".func.dot");
+      func_gif = doc_filename_with_ext(component_file_name,".func.gif");
+      func_cmap = doc_filename_with_ext(component_file_name,".func.cmap");
+    }
   }
 
   text_only_name = doc_filename_with_ext(component_file_name,".text.html");
@@ -885,41 +1014,41 @@ DOC WARNING: your version of `dot' does not support client-side
 
   // start the dot output
   if( use_graphviz ) {
-    char *graphviz_opts;
-
-    if( graphviz_supports_cmap ) {
-      graphviz_opts = "
+    char *graphviz_opts = "
     rankdir=LR;
     ratio=compress;
     margin=\"0,0\";
     ranksep=0.0005; 
     nodesep=0.1; 
     node [shape=ellipse style=filled fillcolor=\"#e0e0e0\"];
-    node [fontcolor=blue fontname=Times fontsize=16];
-    edge [fontcolor=blue fontname=Times fontsize=14];
+    node [fontname=Times fontsize=16];
+    edge [fontname=Times fontsize=14];
 ";
-    } else {
-      graphviz_opts = "
-    rankdir=LR;
-    ratio=compress;
-    margin=\"0,0\";
-    ranksep=0.0005; 
-    nodesep=0.1; 
-    node [shape=ellipse style=filled fillcolor=\"#e0e0e0\"];
-    node [fontcolor=black fontname=Times fontsize=16];
-    edge [fontcolor=black fontname=Times fontsize=14];
-";
-    }
 
     iface_file = fopen(iface_dot, "w");  assert(iface_file);
-    fprintf(iface_file, "digraph \"%s_if\" {%s\n    %s\n", component_name, graphviz_opts,
-            app_graph ? "size=\"8,8\"" : "size=\"4,4\"");
+    fprintf(iface_file, "digraph \"%s_if\" {%s", component_name, graphviz_opts);
+    if( graphviz_supports_cmap ) {
+      fprintf(iface_file, "    node [fontcolor=blue];\n");
+      fprintf(iface_file, "    edge [fontcolor=blue];\n");
+    } else {
+      fprintf(iface_file, "    node [fontcolor=black];\n");
+      fprintf(iface_file, "    edge [fontcolor=black];\n");
+    }
+    fprintf(iface_file, "\n");
 
     if( do_func_graph ) {
       func_file  = fopen(func_dot,  "w");  assert(func_file);
-      fprintf(iface_file, "digraph \"%s_func\" {%s\n    %s\n", component_name, graphviz_opts,
-              app_graph ? "size=\"8,8\"" : "size=\"4,4\"");
+      fprintf(func_file, "digraph \"%s_func\" {%s\n\n", component_name, graphviz_opts);
+      if( graphviz_supports_cmap ) {
+        fprintf(func_file, "    node [fontcolor=blue];\n");
+        fprintf(func_file, "    edge [fontcolor=blue];\n");
+      } else {
+        fprintf(func_file, "    node [fontcolor=black];\n");
+        fprintf(func_file, "    edge [fontcolor=black];\n");
+      }
+      fprintf(func_file, "\n");
     }
+
   }
   
 
@@ -930,9 +1059,10 @@ DOC WARNING: your version of `dot' does not support client-side
       endp ep1, ep2;
       ep1 = NODE_GET(endp, n);
 
-
       // out edges
       graph_scan_out(e,n) {
+        num_func_edges++;
+
         ep2 = NODE_GET(endp, graph_edge_to(e));
         // assertions already done above
 
@@ -969,6 +1099,9 @@ DOC WARNING: your version of `dot' does not support client-side
  
           if( !connection_already_printed(table, ep1, ep2, &req, &prov) ) 
           {
+            // count the edges
+            num_if_edges++;
+
             // graphviz stuff
             if( use_graphviz )
             {
@@ -1053,10 +1186,31 @@ DOC WARNING: your version of `dot' does not support client-side
 
   // finish up the graphviz output
   if( use_graphviz ) {
-    fprintf(iface_file, "}\n");  fclose(iface_file);
+    int if_width, func_width;
+
+    // compute widths
+    if_width = num_if_edges / 6 + 1;
+    if(if_width < 4) if_width = 4;
+    if(app_graph  &&  if_width < 8) if_width = 8;
+
+    func_width = num_func_edges / 6 + 1;
+    if(func_width < 4) func_width = 4;
+    if(app_graph  &&  func_width < 8) func_width = 8;
+    
+
+    // finish if file
+    fprintf(iface_file, "\n    size=\"%d,100\"\n", if_width);
+    fprintf(iface_file, "}\n");  
+    fclose(iface_file);
+
+
+    // finish func file
     if( do_func_graph ) {
-      fprintf(func_file, "}\n");   fclose(func_file);
+      fprintf(func_file, "\n    size=\"%d,100\"\n", func_width);
+      fprintf(func_file, "}\n");  
+      fclose(func_file);
     }
+
   }
 
   // finish up the text output
@@ -1193,9 +1347,9 @@ static void generate_component_html(nesc_declaration cdecl)
 <font size=\"-1\">
 <table BORDER=\"0\" CELLPADDING=\"3\" CELLSPACING=\"0\" width=\"100%%\">
 <tr ><td>
-<b><a href=\"apps.html\">Apps</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"components.html\">Components</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"interfaces.html\">Interfaces</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"apps_l.html\">Apps</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"components_l.html\">Components</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"interfaces_l.html\">Interfaces</a></b>&nbsp;&nbsp;&nbsp;
 </td>
 <td align=\"right\">
 source: <a href=\"%s\">%s</a>
@@ -1425,9 +1579,9 @@ static void generate_interface_html(nesc_declaration idecl)
 <font size=\"-1\">
 <table BORDER=\"0\" CELLPADDING=\"3\" CELLSPACING=\"0\" width=\"100%%\">
 <tr ><td>
-<b><a href=\"apps.html\">Apps</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"components.html\">Components</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"interfaces.html\">Interfaces</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"apps_l.html\">Apps</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"components_l.html\">Components</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"interfaces_l.html\">Interfaces</a></b>&nbsp;&nbsp;&nbsp;
 </td>
 <td align=\"right\">
 source: <a href=\"%s\">%s</a>
@@ -1482,7 +1636,7 @@ typedef struct {
 /**
  * compare two entries - used by qsort
  **/
-static int index_entry_comparator(const void *va, const void *vb) {
+static int index_entry_comparator_short(const void *va, const void *vb) {
   int ret;
   index_entry *a = (index_entry*) va;
   index_entry *b = (index_entry*) vb;
@@ -1492,6 +1646,17 @@ static int index_entry_comparator(const void *va, const void *vb) {
 
   return strcmp(a->path, b->path);
 }
+static int index_entry_comparator_full(const void *va, const void *vb) {
+  int ret;
+  index_entry *a = (index_entry*) va;
+  index_entry *b = (index_entry*) vb;
+  
+  ret = strcmp(a->path, b->path);
+  if(ret) return ret;
+
+  return strcmp(a->name, b->name);
+}
+
 
 /**
  * add an entry to the list
@@ -1527,53 +1692,115 @@ static void insert_entry(file_index *fi, char *docfile, char *suffix) {
 /**
  * generate the index file
  **/
-static void print_index_file(const char *filename, file_index *ind)
+typedef enum {
+  SORT_SHORT = 1,
+  SORT_FULL = 2
+} index_sort_type;
+
+static void print_index_file(const char *indexname, index_sort_type sort, file_index *ind)
 {
   int i;
   FILE *f;
+  char *filename;
+  char *title;
 
+  // create the file name, & open the file
+  filename = rstralloc(doc_region, strlen(indexname) + strlen("_s.html") + 1);
+  assert(filename);
+  strcpy(filename, indexname);
+  if( sort == SORT_SHORT ) 
+    strcat(filename, "_s.html");
+  else
+    strcat(filename, "_l.html");
+  
   // open the file
   f = fopen(filename, "w"); assert(f);
+
   
   // start the HTML
-  { 
-    char *title;
-    if( !strcmp(filename, "interfaces.html") )        title = "Interface Index";
-    else if( !strcmp(filename, "components.html") )   title = "Component Index";
-    else if( !strcmp(filename, "apps.html") )         title = "Application Index";
-    else assert(0);
+  if( !strcmp(indexname, "interfaces") )        title = "Interface Index";
+  else if( !strcmp(indexname, "components") )   title = "Component Index";
+  else if( !strcmp(indexname, "apps") )         title = "Application Index";
+  else assert(0);
+  
+  fprintf(f, "<html>\n");
+  fprintf(f, "<head><title>%s</title></head>\n", title);
+  fprintf(f, "<body>\n");
 
-    fprintf(f, "<html>\n");
-    fprintf(f, "<head><title>%s</title></head>\n", title);
-    fprintf(f, "<body>\n");
-    fprintf(f, "<h1 align=\"center\">%s</h1>\n", title);
-  }
 
   // add a navigation banner
-  fprintf(f, "<center>\n");
-  if( !strcmp(filename,"apps.html") )          fprintf(f, "    Apps\n");
-  else                                         fprintf(f, "    <a href=\"apps.html\">Apps</a>\n");
+  if( !strcmp(indexname,"apps") )          fprintf(f, "    Apps\n");
+  else                                     fprintf(f, "    <a href=\"apps_l.html\">Apps</a>\n");
   fprintf(f, "    &nbsp;&nbsp;&nbsp;\n");
-  if( !strcmp(filename,"components.html") )    fprintf(f, "    Components\n");
-  else                                         fprintf(f, "    <a href=\"components.html\">Components</a>\n");
+  if( !strcmp(indexname,"components") )    fprintf(f, "    Components\n");
+  else                                     fprintf(f, "    <a href=\"components_l.html\">Components</a>\n");
   fprintf(f, "    &nbsp;&nbsp;&nbsp;\n");
-  if( !strcmp(filename,"interfaces.html") )    fprintf(f, "    Interfaces\n");
-  else                                         fprintf(f, "    <a href=\"interfaces.html\">Interfaces</a>\n");
-  fprintf(f, "</center>\n");
+  if( !strcmp(indexname,"interfaces") )    fprintf(f, "    Interfaces\n");
+  else                                     fprintf(f, "    <a href=\"interfaces_l.html\">Interfaces</a>\n");
+  fprintf(f, "<hr><p>\n");
 
-  // index 
-  fprintf(f, "<table border=0>\n");
-  for(i=0; i<ind->num; i++) {
+
+  // title, and table tags
+  fprintf(f, "<h1 align=\"center\">%s</h1>\n", title);
+  fprintf(f, "<center>\n");
+  fprintf(f, "<table border=0 cellpadding=0>\n");
+
+
+  // add the sorting links
+  {
+    char *heading = rstrdup(doc_region, indexname);
+    char *end = heading + strlen(heading)-1;
+    if(*end == 's') *end = '\0'; // trim off the last 's'
+
     fprintf(f, "<tr>\n");
-    fprintf(f, "    <td>%s</td>\n",
-            (i>0 && !strcmp(ind->ent[i].name, ind->ent[i-1].name)) ? "&nbsp;" : ind->ent[i].name);
-    fprintf(f, "    <td><a href=\"%s\">%s.%s</a></td>\n", 
-            ind->ent[i].fname, ind->ent[i].path, ind->ent[i].name);
+    if(sort == SORT_SHORT) {
+      fprintf(f, "<td><a href=\"%s_l.html\"><em>path</em></a></td>\n", indexname);
+      fprintf(f, "<td>&nbsp;&nbsp;&nbsp;</td>\n");
+      fprintf(f, "<td><em>%s</em></td>\n", heading);
+    } else {
+      fprintf(f, "<td><em>path</em></td>\n");
+      fprintf(f, "<td>&nbsp;&nbsp;&nbsp;</td>\n");
+      fprintf(f, "<td><a href=\"%s_s.html\"><em>%s</em></a></td>\n", indexname, heading);
+    }
     fprintf(f, "</tr>\n");
   }
-  fprintf(f, "</table>\n");
+
+  // blank line
+  fprintf(f, "<tr>\n");
+  fprintf(f, "    <td>&nbsp;</td>\n");
+  fprintf(f, "    <td>&nbsp;</td>\n");
+  fprintf(f, "    <td>&nbsp;</td>\n");
+  fprintf(f, "</tr>\n");
+
+  // index 
+  for(i=0; i<ind->num; i++) {
+    if(sort == SORT_SHORT) {
+      fprintf(f, "<tr>\n");
+      fprintf(f, "    <td><a href=\"%s\">%s</a></td>\n", ind->ent[i].fname, ind->ent[i].path);
+      fprintf(f, "    <td>&nbsp;</td>\n");
+      fprintf(f, "    <td>%s</td>\n", ind->ent[i].name);
+      fprintf(f, "</tr>\n");
+    } else {
+      // new path - print a blank line for all but the 'apps' page
+      if(i>0 && strcmp(ind->ent[i].path, ind->ent[i-1].path) && strcmp("apps",indexname)) {
+        fprintf(f, "<tr>\n");
+        fprintf(f, "    <td>&nbsp;</td>\n");
+        fprintf(f, "    <td>&nbsp;</td>\n");
+        fprintf(f, "    <td>&nbsp;</td>\n");
+        fprintf(f, "</tr>\n");
+      }
+      fprintf(f, "<tr>\n");
+      fprintf(f, "    <td>%s</td>\n", (i>0 && !strcmp(ind->ent[i].path, ind->ent[i-1].path)) ? "&nbsp;" : ind->ent[i].path);
+      fprintf(f, "    <td>&nbsp;</td>\n");
+      fprintf(f, "    <td><a href=\"%s\">%s</a></td>\n", ind->ent[i].fname, ind->ent[i].name);
+      fprintf(f, "</tr>\n");
+    }
+  }
+
 
   // cleanup
+  fprintf(f, "</center>\n");
+  fprintf(f, "</table>\n");
   fprintf(f, "</body>\n");
   fprintf(f, "</html>\n");
   fclose(f);
@@ -1645,24 +1872,34 @@ static void generate_index_html() {
       }
     }
 
-    // sort
-    qsort(iface.ent, iface.num, sizeof(index_entry), index_entry_comparator);
-    qsort(comp.ent,  comp.num,  sizeof(index_entry), index_entry_comparator);
-    qsort(app.ent,   app.num,   sizeof(index_entry), index_entry_comparator);
   }
 
+  // Generate index files, sorted by short name
+  {
+    // sort
+    qsort(iface.ent, iface.num, sizeof(index_entry), index_entry_comparator_short);
+    qsort(comp.ent,  comp.num,  sizeof(index_entry), index_entry_comparator_short);
+    qsort(app.ent,   app.num,   sizeof(index_entry), index_entry_comparator_short);
+    
+    // index files    
+    print_index_file("interfaces", SORT_SHORT, &iface);
+    print_index_file("components", SORT_SHORT, &comp);
+    print_index_file("apps", SORT_SHORT, &app);
+  }
 
-  // Interface index.
-  print_index_file("interfaces.html", &iface);
+  // generate index files, sorted by long name
+  {
+    // sort
+    qsort(iface.ent, iface.num, sizeof(index_entry), index_entry_comparator_full);
+    qsort(comp.ent,  comp.num,  sizeof(index_entry), index_entry_comparator_full);
+    qsort(app.ent,   app.num,   sizeof(index_entry), index_entry_comparator_full);
+    
+    // index files    
+    print_index_file("interfaces", SORT_FULL, &iface);
+    print_index_file("components", SORT_FULL, &comp);
+    print_index_file("apps", SORT_FULL, &app);
+  }
   
-
-  // Componenet index.  Same format as interface index
-  print_index_file("components.html", &comp);
-
-
-  // App index.  Sort by app name, 
-  print_index_file("apps.html", &app);
-
 
   // top-level index file (?)
 
@@ -1676,7 +1913,7 @@ static void generate_index_html() {
 static void generate_app_page(const char *filename, cgraph cg) 
 {
   char *appname, *p;
-  char *fname, *basename;
+  char *fname;
   FILE *f;
 
 
@@ -1700,12 +1937,6 @@ static void generate_app_page(const char *filename, cgraph cg)
   appname = p;
   
 
-  // create names for the output files
-  //basename = doc_filename_with_ext(filename, ".app");
-  basename = rstralloc(doc_region, strlen(filename) + strlen(".app") + 1);
-  strcpy(basename, filename);
-  strcat(basename, ".app");
-
   // generate the file
   fname    = doc_filename_with_ext(filename, ".app.html");
   f = open_outfile(fname); assert(f);
@@ -1716,9 +1947,9 @@ static void generate_app_page(const char *filename, cgraph cg)
 <font size=\"-1\">
 <table BORDER=\"0\" CELLPADDING=\"3\" CELLSPACING=\"0\" width=\"100%%\">
 <tr ><td>
-<b><a href=\"apps.html\">Apps</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"components.html\">Components</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"interfaces.html\">Interfaces</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"apps_l.html\">Apps</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"components_l.html\">Components</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"interfaces_l.html\">Interfaces</a></b>&nbsp;&nbsp;&nbsp;
 </td>
 <td align=\"right\">
 &nbsp;
@@ -1733,7 +1964,7 @@ static void generate_app_page(const char *filename, cgraph cg)
 
 
 
-  print_cg_html(appname, basename, cg, TRUE);
+  print_cg_html(appname, filename, cg, TRUE);
 
   fprintf(f, "</body>\n");
   fprintf(f, "</html>\n");
@@ -1756,8 +1987,7 @@ void generate_docs(const char *filename, cgraph cg)
   // Initialization
   {
     // create the region
-    // NOTE: using the region this way makes this module non-reentrant
-    doc_region = newregion();
+    init_doc_region();
 
     // get the current working directory
     assert(getcwd(original_wd, sizeof(original_wd)));
@@ -1816,6 +2046,7 @@ void generate_docs(const char *filename, cgraph cg)
     // kill the region
     // NOTE: using the region this way makes this module non-reentrant
     deleteregion(doc_region);
+    doc_region = NULL;
 
     assert(chdir(original_wd) == 0);
   }
