@@ -146,13 +146,13 @@ typedef struct data_declaration {
   size_t chars_length;
 
   /* For interface_ref */
-  interface_declaration itype;
+  nesc_declaration itype;
   environment functions;
   bool required;
   typelist gparms;
 
   /* For component_ref */
-  component_declaration ctype;
+  nesc_declaration ctype;
 
   /* For documentation comments */
   char *short_docstring;

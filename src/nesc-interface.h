@@ -18,10 +18,6 @@ Boston, MA 02111-1307, USA.  */
 #ifndef NESC_INTERFACE_H
 #define NESC_INTERFACE_H
 
-interface_declaration
-new_interface_declaration(region r, const char *name, nesc_decl ast, environment decls);
-
-interface_declaration load_interface(location l, const char *name,
-				     bool name_is_path);
+void build_interface(region r, nesc_declaration idecl);
 
 #endif

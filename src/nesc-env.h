@@ -21,14 +21,14 @@ Boston, MA 02111-1307, USA.  */
 /* Top-level nesc environment. Keeps track of loaded interfaces and
    components, loads them on demand */
 
-void init_nesc_env(region r);
-void interface_declare(interface_declaration d);
-void component_declare(component_declaration d);
-component_declaration require_component(location l, const char *name);
-interface_declaration require_interface(location l, const char *name);
-void require_c(location l, const char *name);
-env get_interface_env();
-env get_component_env();
+nesc_declaration new_nesc_declaration(region r, source_language kind,
+				      const char *name);
 
+void init_nesc_env(region r);
+env get_nesc_env(void);
+void nesc_declare(nesc_declaration d);
+nesc_declaration nesc_lookup(const char *name);
+nesc_declaration require(source_language sl, location l, const char *name);
+void require_c(location l, const char *name);
 
 #endif

@@ -239,10 +239,10 @@ struct location doc_empty_location = {"nofile",-1,0};
 
 static char *interface_docfile_name(const char *interface_name) 
 {
-  interface_declaration idecl;
+  nesc_declaration idecl;
   interface iface;
 
-  idecl = require_interface(&doc_empty_location, interface_name);
+  idecl = require(l_interface, &doc_empty_location, interface_name);
   iface = CAST(interface, idecl->ast);
 
   assert(iface->location != dummy_location);
@@ -252,10 +252,10 @@ static char *interface_docfile_name(const char *interface_name)
 
 
 static char *component_docfile_name(const char *component_name) {
-  component_declaration cdecl;
+  nesc_declaration cdecl;
   component comp;
 
-  cdecl = require_component(NULL /* location */, component_name);
+  cdecl = require(l_component, NULL /* location */, component_name);
   comp = CAST(component, cdecl->ast);
 
   assert(comp->location != dummy_location);
@@ -625,9 +625,9 @@ static void print_html_banner(const char *text) {
 //////////////////////////////////////////////////
 
 typedef struct iface_graph_entry {
-  component_declaration req;
-  component_declaration prov;
-  interface_declaration iface;
+  nesc_declaration req;
+  nesc_declaration prov;
+  nesc_declaration iface;
 } *iface_graph_entry;
 
 
@@ -1045,7 +1045,7 @@ static void print_cg_html(const char *component_name, const char *component_file
 //
 //////////////////////////////////////////////////////////////////////
 
-static void generate_component_html(component_declaration cdecl) 
+static void generate_component_html(nesc_declaration cdecl) 
 {
   FILE *outfile;
   component comp = CAST(component, cdecl->ast);
@@ -1227,7 +1227,7 @@ static void generate_component_html(component_declaration cdecl)
 //////////////////////////////////////////////////
 // generate HTML for an interface file
 //////////////////////////////////////////////////
-static void generate_interface_html(interface_declaration idecl) 
+static void generate_interface_html(nesc_declaration idecl) 
 {
   FILE *outfile;
 
@@ -1638,28 +1638,30 @@ void generate_docs(const char *filename, cgraph cg)
   {
     env_scanner scanner;
     const char *name;
-    component_declaration cdecl;
+    nesc_declaration cdecl;
 
     if (flag_verbose) printf("\n    Generating component docs\n");
-    env_scan(get_component_env(), &scanner);
-    while( env_next(&scanner, &name, (void **)&cdecl) ) {
-      if (flag_verbose) printf("        %s\n", cdecl->name);
-      generate_component_html(cdecl);
-    }
+    env_scan(get_nesc_env(), &scanner);
+    while( env_next(&scanner, &name, (void **)&cdecl) ) 
+      if (cdecl->kind == l_component) {
+	if (flag_verbose) printf("        %s\n", cdecl->name);
+	generate_component_html(cdecl);
+      }
   }
 
   // generate docs for all interfaces 
   {
     env_scanner scanner;
     const char *name;
-    interface_declaration idecl;
+    nesc_declaration idecl;
 
     if (flag_verbose) printf("\n    Generating interface docs\n");
-    env_scan(get_interface_env(), &scanner);
-    while( env_next(&scanner, &name, (void **)&idecl) ) {
-      if (flag_verbose) printf("        %s\n", idecl->name);
-      generate_interface_html(idecl);
-    }
+    env_scan(get_nesc_env(), &scanner);
+    while( env_next(&scanner, &name, (void **)&idecl) )
+      if (idecl->kind == l_interface) {
+	if (flag_verbose) printf("        %s\n", idecl->name);
+	generate_interface_html(idecl);
+      }
   }
 
   // generate whole-app wiring page

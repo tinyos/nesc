@@ -172,7 +172,7 @@ void yyerror();
 %type <u.fields> fieldlist
 
 /* the dispatching (fake) tokens */
-%token <u.itoken> DISPATCH_C DISPATCH_INTERFACE DISPATCH_COMPONENT
+%token <u.itoken> DISPATCH_C DISPATCH_NESC
 
 /* tinyos reserved words */
 %token <u.itoken> USES DEFINES INTERFACE REQUIRES PROVIDES MODULE INCLUDES
@@ -311,8 +311,8 @@ void yyprint();
 %%
 
 dispatch:
-	DISPATCH_INTERFACE interface { }
-	| DISPATCH_COMPONENT component { }
+	DISPATCH_NESC interface { }
+	| DISPATCH_NESC component { }
 	| DISPATCH_C extdefs { cdecls = declaration_reverse($2); }
 	| DISPATCH_C { cdecls = NULL; }
 	;
@@ -334,10 +334,10 @@ interface:
         includes_list
 	INTERFACE { $<u.docstring>$ = get_docstring(); } idword '{' uses_or_defines_list '}' 
 		{
-		  the_interface = new_interface(pr, $2.location, $4, interface_functions_reverse($6));
+		  parsed_nesc_decl = CAST(nesc_decl, new_interface(pr, $2.location, $4, interface_functions_reverse($6)));
                   if( $<u.docstring>3 ) 
                   {
-                    interface_declaration idecl = require_interface($2.location, $4->cstring.data);
+                    nesc_declaration idecl = require(l_interface, $2.location, $4->cstring.data);
                     assert( idecl );
                     separate_short_docstring($<u.docstring>3, &(idecl->short_docstring), &(idecl->long_docstring));
                   }
@@ -395,10 +395,11 @@ component: includes_list module
 
 module: MODULE { $<u.docstring>$ = get_docstring(); } idword '{' requires_or_provides_list '}' imodule
 	{ 
-          the_component = new_component(pr, $1.location, $3, rp_interface_reverse($5), $7); 
+	  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $1.location, $3, rp_interface_reverse($5), $7));
+
           if( $<u.docstring>2 ) 
           {
-            component_declaration cdecl = require_component($1.location, $3->cstring.data );
+            nesc_declaration cdecl = require(l_component, $1.location, $3->cstring.data );
             assert( cdecl );
             separate_short_docstring($<u.docstring>2, &(cdecl->short_docstring), &(cdecl->long_docstring));
           }
@@ -407,17 +408,15 @@ module: MODULE { $<u.docstring>$ = get_docstring(); } idword '{' requires_or_pro
 
 configuration: CONFIGURATION { $<u.docstring>$ = get_docstring(); } idword '{' requires_or_provides_list '}' iconfiguration
         { 
-          the_component = new_component(pr, $1.location, $3, rp_interface_reverse($5), $7); 
+	  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $1.location, $3, rp_interface_reverse($5), $7));
           if( $<u.docstring>2 ) 
           {
-            component_declaration cdecl = require_component($1.location, $3->cstring.data );
+            nesc_declaration cdecl = require(l_component, $1.location, $3->cstring.data );
             assert( cdecl );
             separate_short_docstring($<u.docstring>2, &(cdecl->short_docstring), &(cdecl->long_docstring));
           }
         }
         ;
-
-
 
 requires_or_provides_list: 
 	requires_or_provides_list requires_or_provides

@@ -18,39 +18,17 @@ Boston, MA 02111-1307, USA.  */
 #ifndef NESC_DECLS_H
 #define NESC_DECLS_H
 
-enum { nesc_interface, nesc_component };
-
-typedef struct {
-  int kind; /* nesc_interface or component */
+typedef struct nesc_declaration {
+  source_language kind; /* l_interface or l_component */
   const char *name;
   nesc_decl ast;
   struct environment *env;
   char *short_docstring;  /* For documentation comments */
   char *long_docstring;
-} *nesc_declaration;
 
-/* A particular interface declaration (.ti file) */
-typedef struct interface_declaration {
-  int kind; /* nesc_interface */
-  const char *name;
-  nesc_decl ast;
-  struct environment *env;
-  char *short_docstring;  /* For documentation comments */
-  char *long_docstring;
-} *interface_declaration;
-
-#define NDCAST(to, x) ((to)x)
-
-/* A unified representation of components (modules and configurations) */
-typedef struct component_declaration {
-  int kind; /* nesc_component */
-  const char *name;
-  nesc_decl ast;
-  struct environment *env; /* The external interfaces of this component */
-  char *short_docstring;  /* For documentation comments */
-  char *long_docstring;
+  /* for components */
   implementation impl;
   struct cgraph *connections;
-} *component_declaration;
+} *nesc_declaration;
 
 #endif

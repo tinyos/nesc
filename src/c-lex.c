@@ -189,8 +189,7 @@ start_lex (source_language l)
 
   switch (l)
     {
-    case l_interface: language_token = DISPATCH_INTERFACE; break;
-    case l_component: language_token = DISPATCH_COMPONENT; break;
+    case l_interface: case l_component: language_token = DISPATCH_NESC; break;
     case l_c: language_token = DISPATCH_C; break;
     default: assert(0); break;
     }

@@ -31,6 +31,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-cpp.h"
 #include "nesc-msg.h"
 #include "nesc-magic.h"
+#include "edit.h"
 
 /* Adds the component graph 'component' to the whole program graph 'master' */
 static void connect_graph(cgraph master, cgraph component)
@@ -55,7 +56,7 @@ static void connect_graph(cgraph master, cgraph component)
     }
 }
 
-static void connect(component_declaration cdecl,
+static void connect(nesc_declaration cdecl,
 		    cgraph cg, dd_list modules, dd_list components)
 {
   if (!dd_find(components, cdecl))
@@ -76,7 +77,7 @@ static void connect(component_declaration cdecl,
     }
 }
 
-static void connect_graphs(region r, component_declaration program,
+static void connect_graphs(region r, nesc_declaration program,
 			   cgraph *cg, dd_list *modules, dd_list *components)
 {
   *cg = new_cgraph(r);
@@ -89,7 +90,6 @@ static void connect_graphs(region r, component_declaration program,
 void nesc_compile(const char *filename, const char *target_name)
 {
   struct location toplevel;
-  source_language l;
 
   if (filename == NULL) {
     fprintf(stderr, ("usage: nesc1 <filename>\n"));
@@ -112,39 +112,31 @@ void nesc_compile(const char *filename, const char *target_name)
   
   require_c(&toplevel, "tos");
 
-  l = pick_language_from_filename(filename);
-  switch (l)
+  if (nesc_filename(filename))
     {
-    case l_component:
-      {
-	component_declaration program =
-	  load_component(&toplevel, filename, TRUE);
-	if (errorcount == 0)
-	  {
-	    cgraph cg;
-	    dd_list modules, components;
+      /* We need to assume some language - it will get fixed once we
+	 see the actual file */
+      nesc_declaration program = load(l_component, &toplevel, filename, TRUE);
 
-	    if (!dump_msg_layout())
-	      {
-		connect_graphs(parse_region, program, &cg, &modules, &components);
-		generate_c_code(program, target_name, cg, modules);
-                generate_docs(filename, cg);
-	      }
-	  }
-	break;
-      }
-    case l_interface:
-      /* just does syntax/semantic checking */
-      load_interface(&toplevel, filename, TRUE);
-      generate_docs(filename, NULL);
-      dump_msg_layout();
-      break;
-    case l_c:
+      if (errorcount == 0)
+	{
+	  cgraph cg = NULL;
+
+	  if (!dump_msg_layout() && program->kind == l_component)
+	    {
+	      dd_list modules, components;
+
+	      connect_graphs(parse_region, program, &cg, &modules, &components);
+	      generate_c_code(program, target_name, cg, modules);
+	    }
+	  generate_docs(filename, cg);
+	}
+    }
+  else
+    {
       /* load C file and extract any requested message formats */
       load_c(&toplevel, filename, TRUE);
-      dump_msg_layout();
-      break;
-    default:
-      assert(0);
+      if (errorcount == 0)
+	dump_msg_layout();
     }
 }

@@ -17,6 +17,8 @@ Boston, MA 02111-1307, USA.  */
 
 #ifndef NESC_COMPONENT_H
 
+void build_component(region r, nesc_declaration cdecl);
+
 void declare_interface_ref(interface_ref iref, declaration gparms,
 			   environment genv);
 
@@ -25,14 +27,12 @@ void make_implicit_interface(data_declaration fndecl,
 
 void check_generic_parameter_type(location l, data_declaration gparm);
 
-component_declaration load_component(location l, const char *name,
-				     bool name_is_path);
 environment start_implementation(void);
 
 void interface_scan(data_declaration iref, env_scanner *scan);
 data_declaration interface_lookup(data_declaration iref, const char *name);
 
-void component_functions_iterate(component_declaration c,
+void component_functions_iterate(nesc_declaration c,
 				 void (*iterator)(data_declaration fndecl,
 						  void *data),
 				 void *data);

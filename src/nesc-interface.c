@@ -25,49 +25,7 @@ Boston, MA 02111-1307, USA.  */
 #include "c-parse.h"
 #include "edit.h"
 
-interface_declaration
-new_interface_declaration(region r, const char *name, nesc_decl ast, environment decls)
-{
-  interface_declaration new = ralloc(r, struct interface_declaration);
-
-  new->kind = nesc_interface;
-  new->name = name;
-  new->ast = ast;
-  new->env = decls;
-
-  return new;
-}
-
-void build_interface(interface_declaration idecl)
+void build_interface(region r, nesc_declaration idecl)
 {
   AST_set_parents(CAST(node, idecl->ast));
-}
-
-interface_declaration load_interface(location l, const char *name,
-				     bool name_is_path)
-{
-  const char *element = name_is_path ? element_name(parse_region, name) : name;
-  interface_declaration idecl =
-    new_interface_declaration(parse_region, element, NULL, NULL);
-  environment interface_env;
-
-  /* We don't get duplicates as we only load on demand */
-  interface_declare(idecl);
-
-  the_interface = NULL;
-  interface_env = compile(l, l_interface, name, name_is_path,
-			  (nesc_declaration)idecl, global_env);
-
-  if (!the_interface)
-    {
-      word ifname = build_word(parse_region, element);
-      the_interface = new_interface(parse_region, dummy_location, ifname, NULL);
-    }
-
-  check_nesc_declaration(l_interface, (nesc_declaration)idecl, interface_env,
-			 CAST(nesc_decl, the_interface));
-
-  build_interface(idecl);
-
-  return idecl;
 }

@@ -40,7 +40,7 @@ data_declaration interface_lookup(data_declaration iref, const char *name)
   return env_lookup(iref->functions->id_env, name, FALSE);
 }
 
-void component_functions_iterate(component_declaration c,
+void component_functions_iterate(nesc_declaration c,
 				 void (*iterator)(data_declaration fndecl,
 						  void *data),
 				 void *data)
@@ -119,8 +119,8 @@ void declare_interface_ref(interface_ref iref, declaration gparms,
 			   environment genv)
 {
   const char *iname = (iref->word2 ? iref->word2 : iref->word1)->cstring.data;
-  interface_declaration idecl = 
-    require_interface(iref->location, iref->word1->cstring.data);
+  nesc_declaration idecl = 
+    require(l_interface, iref->location, iref->word1->cstring.data);
   struct data_declaration tempdecl;
   data_declaration old_decl, ddecl;
 
@@ -153,22 +153,6 @@ void check_generic_parameter_type(location l, data_declaration gparm)
     }
 }
 
-static component_declaration
-new_component_declaration(region r, const char *name, nesc_decl ast,
-			  implementation impl,
-			  environment env)
-{
-  component_declaration new = ralloc(r, struct component_declaration);
-
-  new->kind = nesc_component;
-  new->name = name;
-  new->ast = ast;
-  new->impl = impl;
-  new->env = env;
-
-  return new;
-}
-
 struct beg_data
 {
   cgraph cg;
@@ -186,7 +170,7 @@ void beg_iterator(data_declaration fndecl, void *data)
   endpoint_lookup(d->cg, &node);
 }
 
-static cgraph build_external_graph(region r, component_declaration cdecl)
+static cgraph build_external_graph(region r, nesc_declaration cdecl)
 {
   cgraph cg = new_cgraph(r);
   struct beg_data d;
@@ -199,8 +183,13 @@ static cgraph build_external_graph(region r, component_declaration cdecl)
   return cg;
 }
 
-static void build_component(region r, component_declaration cdecl)
+void build_component(region r, nesc_declaration cdecl)
 {
+  component the_component = CAST(component, cdecl->ast);
+
+  the_component->implementation->cdecl = cdecl;
+  cdecl->impl = the_component->implementation;
+
   AST_set_parents(CAST(node, cdecl->ast));
 
   /* Build the default connection graph (just nodes for the external
@@ -219,36 +208,3 @@ environment start_implementation(void)
 
   return current.env;
 }
-
-component_declaration load_component(location l, const char *name,
-				     bool name_is_path)
-{
-  const char *element = name_is_path ? element_name(parse_region, name) : name;
-  component_declaration cdecl =
-    new_component_declaration(parse_region, element, NULL, NULL, NULL);
-  environment component_env;
-
-  /* We don't get duplicates as we only load on demand */
-  component_declare(cdecl);
-
-  the_component = NULL;
-  component_env = compile(l, l_component, name, name_is_path,
-			  (nesc_declaration)cdecl, global_env);
-
-  if (!the_component)
-    {
-      word cname = build_word(parse_region, element);
-      implementation impl = CAST(implementation, new_module(parse_region, dummy_location, NULL, NULL));
-      the_component = new_component(parse_region, dummy_location, cname, NULL, impl);
-    }
-
-  check_nesc_declaration(l_component, (nesc_declaration)cdecl, component_env,
-			 CAST(nesc_decl, the_component));
-  the_component->implementation->cdecl = cdecl;
-  cdecl->impl = the_component->implementation;
-
-  build_component(parse_region, cdecl);
-
-  return cdecl;
-}
-

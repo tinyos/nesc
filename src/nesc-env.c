@@ -21,60 +21,74 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-interface.h"
 #include "nesc-component.h"
 #include "nesc-c.h"
+#include "nesc-decls.h"
+#include "nesc-semantics.h"
+#include "c-parse.h"
+#include "semantics.h"
 
 /* Top-level nesc environment. Keeps track of loaded interfaces and
    components, loads them on demand */
 
 /* The environments for components and interfaces */
-static env nesc_component_env, nesc_interface_env, nesc_c_env;
+static env nesc_env, nesc_c_env;
 
 
 /* hack, to give the doc generation an easy way to list interfaces & components */
-env get_interface_env() {
-  return nesc_interface_env;
-}
-env get_component_env() {
-  return nesc_component_env;
+env get_nesc_env(void)
+{
+  return nesc_env;
 }
 
 void init_nesc_env(region r)
 {
-  nesc_interface_env = new_env(r, NULL);
-  nesc_component_env = new_env(r, NULL);
+  nesc_env = new_env(r, NULL);
   nesc_c_env = new_env(r, NULL);
 }
 
-void interface_declare(interface_declaration d)
+nesc_declaration new_nesc_declaration(region r, source_language kind,
+				      const char *name)
 {
-  env_add(nesc_interface_env, d->name, d);
+  nesc_declaration new = ralloc(r, struct nesc_declaration);
+
+  new->kind = kind;
+  new->name = name;
+
+  return new;
 }
 
-void component_declare(component_declaration d)
+void nesc_declare(nesc_declaration d)
 {
-  env_add(nesc_component_env, d->name, d);
+  env_add(nesc_env, d->name, d);
 }
 
-component_declaration require_component(location l, const char *name)
+nesc_declaration nesc_lookup(const char *name)
 {
-  component_declaration d = 
-    env_lookup(nesc_component_env, name, FALSE);
-
-  if (d)
-    return d;
-
-  return load_component(l, name, FALSE);
+  return env_lookup(nesc_env, name, FALSE);
 }
 
-interface_declaration require_interface(location l, const char *name)
+nesc_declaration require(source_language sl, location l, const char *name)
 {
-  interface_declaration d =
-    env_lookup(nesc_interface_env, name, FALSE);
+  nesc_declaration d = nesc_lookup(name);
 
-  if (d)
-    return d;
+  if (!d)
+    d = load(sl, l, name, FALSE);
 
-  return load_interface(l, name, FALSE);
+  if (sl != d->kind)
+    {
+      error_with_location(l, "expected %s `%s', but got %s %s",
+			  language_name(sl), name,
+			  d->kind == l_interface ? "an" : "a",
+			  language_name(d->kind));
+
+      /* Make a dummy declaration to make everyone happy */
+      d = new_nesc_declaration(parse_region, sl, name);
+      build(d, new_environment(parse_region, global_env, TRUE, FALSE),
+	    dummy_nesc_decl(sl, name));
+    }
+
+  return d;
 }
+				    
 
 void require_c(location l, const char *name)
 {

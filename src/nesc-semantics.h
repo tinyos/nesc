@@ -22,11 +22,10 @@ struct environment;
 
 #include "nesc-decls.h"
 
-extern interface the_interface;
-extern component the_component;
+extern nesc_decl parsed_nesc_decl;
 extern declaration cdecls;
 
-source_language pick_language_from_filename(const char *name);
+bool nesc_filename(const char *name);
 
 const char *element_name(region r, const char *path);
 /* Returns: Return the "identifier part"
@@ -38,8 +37,8 @@ environment compile(location loc, source_language l,
 		    const char *name, bool name_is_path,
 		    nesc_declaration container, struct environment *parent_env);
 
-void check_nesc_declaration(source_language l, nesc_declaration nd,
-			    struct environment *env, nesc_decl ast);
+nesc_declaration load(source_language sl, location l,
+		      const char *name, bool name_is_path);
 
 type get_actual_function_type(type t);
 /* Returns: The actual function type for a (possibly generic) type t
@@ -61,5 +60,10 @@ bool ddecl_is_command_or_event(data_declaration decl);
 bool nesc_attribute(attribute a);
 /* Returns: TRUE if a is a nesc-specific attribute
  */
+
+const char *language_name(source_language l);
+
+nesc_decl dummy_nesc_decl(source_language sl, const char *name);
+void build(nesc_declaration decl, environment env, nesc_decl ast);
 
 #endif

@@ -55,7 +55,7 @@ void prt_nesc_function_declaration(data_declaration fndecl, void *data)
     }
 }
 
-void prt_nesc_function_declarations(component_declaration mod)
+void prt_nesc_function_declarations(nesc_declaration mod)
 {
   component_functions_iterate(mod, prt_nesc_function_declaration, NULL);
 }
@@ -407,12 +407,12 @@ void prt_nesc_called_function_hdr(data_declaration fndecl, void *data)
     }
 }
 
-void prt_nesc_called_function_headers(cgraph cg, component_declaration mod)
+void prt_nesc_called_function_headers(cgraph cg, nesc_declaration mod)
 {
   component_functions_iterate(mod, prt_nesc_called_function_hdr, NULL);
 }
 
-void prt_nesc_module(cgraph cg, component_declaration mod)
+void prt_nesc_module(cgraph cg, nesc_declaration mod)
 {
   prt_nesc_called_function_headers(cg, mod);
   prt_toplevel_declarations(CAST(module, mod->impl)->decls);
@@ -437,7 +437,7 @@ static bool find_reachable_functions(struct connections *c, gnode n,
   if (graph_node_markedp(n))
     return TRUE;
   else if (!ep->args && ep->function->defined &&
-	   is_module(((component_declaration)ep->function->container)->impl))
+	   is_module(((nesc_declaration)ep->function->container)->impl))
     {
       full_connection target = new_full_connection(c->r, ep, gcond, gargs);
 
@@ -457,6 +457,7 @@ static bool find_reachable_functions(struct connections *c, gnode n,
       graph_scan_out (out, n)
 	if (find_reachable_functions(c, graph_edge_to(out), gcond, gargs))
 	  return TRUE;
+      graph_unmark_node(n);
     }
   return FALSE;
 }
@@ -470,7 +471,11 @@ static void find_connected_functions(struct connections *c)
   assert(!graph_first_edge_in(called_fn_node));
   if (find_reachable_functions(c, called_fn_node, NULL, NULL))
     error_with_location(c->called->ast->location,
-			"cycle in configuration (for %s)", c->called->name);
+			"cycle in configuration (for %s%s%s.%s)",
+			c->called->container->name,
+			c->called->interface ? "." : "",
+			c->called->interface ? c->called->interface->name : "",
+			c->called->name);
 }
 
 void find_function_connections(data_declaration fndecl, void *data)
@@ -507,7 +512,7 @@ void find_function_connections(data_declaration fndecl, void *data)
     }
 }
 
-void find_connections(cgraph cg, component_declaration mod)
+void find_connections(cgraph cg, nesc_declaration mod)
 {
   component_functions_iterate(mod, find_function_connections, cg);
 }
@@ -634,7 +639,7 @@ static void suppress_function(const char *name)
     d->suppress_definition = TRUE;
 }
 
-void generate_c_code(component_declaration program, const char *target_name,
+void generate_c_code(nesc_declaration program, const char *target_name,
 		     cgraph cg, dd_list modules)
 {
   dd_list_pos mod;
@@ -667,7 +672,7 @@ void generate_c_code(component_declaration program, const char *target_name,
   /* We start by finding each module's connections and marking uncallable
      functions */
   dd_scan (mod, modules)
-    find_connections(cg, DD_GET(component_declaration, mod));
+    find_connections(cg, DD_GET(nesc_declaration, mod));
 
   /* Then we set the 'isused' bit on all functions that are reachable
      from spontaneous_calls or global_uses */
@@ -680,12 +685,12 @@ void generate_c_code(component_declaration program, const char *target_name,
   disable_line_directives();
 
   dd_scan (mod, modules)
-    prt_nesc_function_declarations(DD_GET(component_declaration, mod));
+    prt_nesc_function_declarations(DD_GET(nesc_declaration, mod));
 
   enable_line_directives();
 
   dd_scan (mod, modules)
-    prt_nesc_module(cg, DD_GET(component_declaration, mod));
+    prt_nesc_module(cg, DD_GET(nesc_declaration, mod));
 
   prt_functions_topologically(callgraph);
 

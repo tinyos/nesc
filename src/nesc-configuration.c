@@ -537,7 +537,7 @@ static void process_connections(configuration c)
 static void require_components(region r, configuration c)
 {
   component_ref comp;
-  component_declaration cdecl = c->cdecl;
+  nesc_declaration cdecl = c->cdecl;
 
   cdecl->connections = new_cgraph(r);
   
@@ -549,7 +549,7 @@ static void require_components(region r, configuration c)
       const char *asname =
 	(comp->word2 ? comp->word2 : comp->word1)->cstring.data;
 
-      comp->cdecl = require_component(comp->location, cname);
+      comp->cdecl = require(l_component, comp->location, cname);
 
       init_data_declaration(&tempdecl, CAST(declaration, comp), asname,
 			    void_type);

@@ -133,7 +133,7 @@
 (deffield external bool (init))
 (deffield ienv environment (init))
 
-(deffield cdecl component_declaration ())
+(deffield cdecl nesc_declaration ())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Base types

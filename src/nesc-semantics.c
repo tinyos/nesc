@@ -24,6 +24,10 @@ Boston, MA 02111-1307, USA.  */
 #include "AST_utils.h"
 #include "nesc-paths.h"
 #include "nesc-cpp.h"
+#include "nesc-env.h"
+#include "nesc-component.h"
+#include "nesc-interface.h"
+#include "edit.h"
 
 #include <errno.h>
 
@@ -109,18 +113,18 @@ bool ddecl_is_command_or_event(data_declaration decl)
     (decl->ftype == function_event || decl->ftype == function_command);
 }
 
-source_language pick_language_from_filename(const char *name)
+bool nesc_filename(const char *name)
 {
   char *dot = strrchr(basename((char *)name), '.');
 
   if (dot)
     {
       if (!strcmp(dot, ".ti"))
-	return l_interface;
+	return TRUE;
       if (!strcmp(dot, ".td"))
-	return l_component;
+	return TRUE;
     }
-  return l_c; /* default */
+  return FALSE; /* C by default */
 }
 
 const char *element_name(region r, const char *path)
@@ -157,22 +161,6 @@ const char *language_name(source_language l)
     case l_c: return "C file";
     default: assert(0); return "BUG";
     }
-}
-
-void check_nesc_declaration(source_language l, nesc_declaration nd,
-			    environment env, nesc_decl ast)
-{
-  const char *actual_name = ast->word1->cstring.data;
-
-  if (strcmp(nd->name, actual_name))
-    error_with_location(ast->location,
-			"expected %s `%s', got '%s'",
-			language_name(l),
-			nd->name, actual_name);
-
-  /* Fill in the declaration */
-  nd->ast = ast;
-  nd->env = env;
 }
 
 environment compile(location loc, source_language l,
@@ -218,5 +206,88 @@ environment compile(location loc, source_language l,
   current = old_semantic_state;
 
   return env;
+}
+
+nesc_decl dummy_nesc_decl(source_language sl, const char *name)
+{
+  word wname = build_word(parse_region, name);
+  nesc_decl nd;
+
+  switch (sl)
+    {
+    case l_component: {
+      implementation impl = CAST(implementation,
+	new_module(parse_region, dummy_location, NULL, NULL));
+      nd = CAST(nesc_decl,
+	new_component(parse_region, dummy_location, wname, NULL, impl));
+      break;
+    }
+    case l_interface:
+      nd = CAST(nesc_decl,
+		new_interface(parse_region, dummy_location, wname, NULL));
+      break;
+    default:
+      assert(0);
+      nd = NULL;
+      break;
+    }
+  return nd;
+}
+
+void build(nesc_declaration decl, environment env, nesc_decl ast)
+{
+  decl->env = env;
+  decl->ast = parsed_nesc_decl;
+
+  switch (decl->kind)
+    {
+    case l_interface:
+      build_interface(parse_region, decl);
+      break;
+    case l_component:
+      build_component(parse_region, decl);
+      break;
+    default:
+      assert(0);
+    }
+}
+
+nesc_declaration load(source_language sl, location l,
+		      const char *name, bool name_is_path)
+{
+  const char *element = name_is_path ? element_name(parse_region, name) : name;
+  const char *actual_name;
+  nesc_declaration decl;
+  environment env;
+
+  decl = new_nesc_declaration(parse_region, sl, element);
+    
+  /* We don't get duplicates as we only load on demand */
+  nesc_declare(decl);
+
+  parsed_nesc_decl = NULL;
+  env = compile(l, sl, name, name_is_path, decl, global_env);
+  if (!parsed_nesc_decl)
+    parsed_nesc_decl = dummy_nesc_decl(sl, element);
+
+  /* Patch decl->kind to match loaded kind. Our caller will report the
+     appropriate error. */
+  if (is_interface(parsed_nesc_decl))
+    decl->kind = l_interface;
+  else
+    decl->kind = l_component;
+
+  actual_name = parsed_nesc_decl->word1->cstring.data;
+  if (strcmp(element, actual_name))
+    error_with_location(parsed_nesc_decl->location,
+			"expected %s `%s', but got %s '%s'",
+			language_name(decl->kind),
+			element,
+			language_name(decl->kind),
+			actual_name);
+
+  build(decl, env, parsed_nesc_decl);
+
+  return decl;
 }
 
