@@ -1,4 +1,8 @@
+#ifdef __MSP430
+#include <sys/inttypes.h>
+#else
 #include <inttypes.h>
+#endif
 
 /* Network to host and host to network conversions.
    Network representation is 2's complement big-endian.

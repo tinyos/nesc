@@ -461,7 +461,7 @@ static void instantiate_endp(endp ep)
   /* The component does not get instantiated and is ignored anyway */
   if (ep->interface && ep->interface->instantiation)
     ep->interface = ep->interface->instantiation;
-  if (ep->function->instantiation)
+  if (ep->function && ep->function->instantiation)
     ep->function = ep->function->instantiation;
   if (ep->args_node)
     ep->args_node = CAST(parameterised_identifier,
@@ -931,6 +931,7 @@ nesc_declaration_copy(region r, nesc_declaration old, expression args,
   nesc_declaration copy;
 
   copy = new_nesc_declaration(r, old->kind, old->name);
+  copy->configuration = old->configuration;
   copy->short_docstring = old->short_docstring;
   copy->long_docstring = old->long_docstring;
   copy->abstract = copy_is_abstract;

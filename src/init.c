@@ -1091,8 +1091,11 @@ void check_init_element(expression init)
   else
     {
       constant_overflow_warning(c);
-      assert(init->ivalue->kind == iv_base);
-      init->ivalue->u.base.value = cval_cast(c->cval, init->ivalue->type);
+      if (init->ivalue)
+	{
+	  assert(init->ivalue->kind == iv_base);
+	  init->ivalue->u.base.value = cval_cast(c->cval, init->ivalue->type);
+	}
     }
 }
 

@@ -49,7 +49,7 @@ struct ilist
   char *name;
 };
 
-static struct ilist *includelist;
+static struct ilist *includelist, **includelist_end = &includelist;
 static region includeregion;
 
 void add_nesc_include(const char *name)
@@ -60,9 +60,11 @@ void add_nesc_include(const char *name)
     includeregion = newregion();
 
   np = ralloc(includeregion, struct ilist);
-  np->next = includelist;
-  includelist = np;
+  np->next = NULL;
   np->name = rstrdup(includeregion, name);
+
+  *includelist_end = np;
+  includelist_end = &np->next;
 }
 
 /* Adds the component graph 'component' to the whole program graph 'master' */
