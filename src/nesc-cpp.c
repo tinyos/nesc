@@ -102,7 +102,8 @@ void create_nesc_keyword_macros(const char *macro_filename)
      during compilation by the flag "-fnesc-tossim-tosnodes = 1000"
      which in this case is 1000. */     
   if (use_tossim)
-    fprintf(mf, "#define MYMAGICNAME %s\n", tossim_num_nodes);
+    fprintf(mf, "#define TOSH_NUM_NODES %s\n",
+	    tossim_num_nodes ? tossim_num_nodes : "1000");
 
   fclose(mf);
 }

@@ -1,126 +1,166 @@
-NAME
+<html>
+<head>
+<title>ncc - nesC compiler</title>
+</head>
+<h3>NAME</h3>
 
+<blockquote>
 ncc - nesC compiler
+</blockquote>
 
-SYNOPSIS
+<h3>SYNOPSIS</h3>
 
-ncc [-target=pc|mica|rene2]
-[-tosdir=dir]
-[-print-tosdir]
-[-nostdinc]
-[-board=micasb|basicsb|micawb]
-[-fnesc-tossim-tosnodes=n]
-[-fnesc-cfile=file]
-[-docdir=dir]
-[-topdir=dir]
-[-graphviz=y|n]
+<blockquote>
+ncc [<b>-target=pc|mica|rene2</b>]
+[<b>-tosdir=</b><u>dir</u>]
+[<b>-print-tosdir</b>]
+[<b>-nostdinc</b>]
+[<b>-board=micasb|basicsb|micawb</b>]
+[<b>-fnesc-tossim-tosnodes=</b><u>n</u>]
+[<b>-fnesc-cfile=</b><u>file</u>]
+[<b>-docdir=</b><u>dir</u>]
+[<b>-topdir=</b><u>dir</u>]
+[<b>-graphviz=y|n</b>]
 [any gcc option]
-files...
+<u>files</u>...
+</blockquote>
 
-DESCRIPTION
+<h3>DESCRIPTION</h3>
 
+<blockquote>
 ncc is an extension to gcc that knows how to compile nesC applications. If
 invoked on regular C files, it behaves exactly like gcc. When invoked on a
 nesC component (.td extension) or interface (.ti extension) file it
-compiles and links (except if the usual -c, -S, -E or -fsyntax-only options
-are used) that component with the other files specified on the command
-line.
+compiles and links (except if the usual <b>-c</b>, <b>-S</b>, <b>-E</b> or
+<b>-fsyntax-only</b> options are used) that component with the other files
+specified on the command line.
 
+<p>
 The additional options recognized by ncc over gcc are:
 
--target=pc|mica|rene2: specify the target mote architecture for this
-compilation. If pc is specified, the compilation uses the tossim
-environment and produces a locally executable file. The default target
-is mica.
+<p>
+<b>-target=pc|mica|rene2</b> <blockquote> specify the target mote architecture
+for this compilation. If pc is specified, the compilation uses the tossim
+environment and produces a locally executable file. The default target is
+mica.</blockquote>
 
--tosdir=dir: specify the location of TinyOS. This location can also be
-specified with the TOSDIR environment variable. If the variable and the
-option are both given, ncc uses the value specified with the option. If
-neither the environment variable or option are specified, ncc uses its
-compiled-in TinyOS directory.
+<b>-tosdir=</b><u>dir</u><blockquote> specify the location of TinyOS. This
+location can also be specified with the `TOSDIR' environment variable. If the
+variable and the option are both given, ncc uses the value specified with
+the option. If neither the environment variable or option are specified,
+ncc uses its compiled-in TinyOS directory.</blockquote>
 
--print-tosdir: print the TinyOS directory to be used and exit, taking into
-account the -tosdir option and TOSDIR environment variable. No compilation
-occurs when -print-tosdir is used.
+<b>-print-tosdir</b><blockquote> print the TinyOS directory to be used and
+exit, taking into account the -tosdir option and `TOSDIR' environment
+variable. No compilation occurs when -print-tosdir is used.</blockquote>
 
--nostdinc: do not automatically include	the TinyOS directories in the
-search path. See the discussion of search paths below for more details.
+<b>-nostdinc</b><blockquote> do not automatically include the TinyOS
+directories in the search path. See the discussion of search paths below
+for more details.</blockquote>
 
--board=micasb|basicsb|micawb: specify one (or more) sensor boards. This
-effects the search path and preprocessor symbols.
+<b>-board=micasb|basicsb|micawb</b><blockquote> specify one (or more)
+sensor boards. This effects the search path and preprocessor
+symbols.</blockquote>
 
--fnesc-tossim-tosnodes=n: specify the maximum number of nodes that can be
-simulated in the tossim environment.
+<b>-fnesc-tossim-tosnodes=</b><u>n</u><blockquote> specify the maximum
+number of nodes that can be simulated in the tossim
+environment.</blockquote>
 
--fnesc-cfile=file: specify a file in which to save the C code generated
-when compiling a component. Note: if you specify two components on the
-command line, then the C code from the second one will overwrite the C 
-code from the first.
+<b>-fnesc-cfile=file</b><blockquote> specify a file in which to save the C
+code generated when compiling a component. Note: if you specify two
+components on the command line, then the C code from the second one will
+overwrite the C code from the first.</blockquote>
 
--docdir=dir: generate documentation for the compiled component in
-directory dir.
+<b>-docdir=</b><u>dir</u><blockquote> generate documentation for the
+compiled component in directory <u>dir</u>.</blockquote>
 
--topdir=dir: [Rob, can you fell this in?]
+<b>-topdir=dir</b><blockquote> [Rob, can you fell this in?]</blockquote>
 
--graphviz=y|n: explicitly enable or disable the use of the graphviz
-tool in the generated documentation. Without this option, graphviz is
-enabled iff the `dot' program is found in the current path. Use of
-graphviz requires `dot'.
+<b>-graphviz=y|n</b><blockquote> explicitly enable or disable the use of the
+graphviz tool in the generated documentation. Without this option, graphviz
+is enabled iff the `dot' program is found in the current path. Use of
+graphviz requires `dot'.</blockquote>
 
 
+<p>
 When compiling a nesC component, the nesC compiler recognizes the gcc C
-language (-f...) and warning (-W...) options. The -S, -c and -o options
-work as usual, the -x option accepts nesc. Directories can be added to
-nesC's search path with -I (see the search path discussion below).
+language (<b>-f...</b>) and warning (<b>-W...</b>) options. The <b>-S</b>,
+<b>-c</b> and <b>-o</b> options work as usual, the <b>-x</b> option accepts
+<b>nesc</b>. Directories can be added to nesC's search path with <b>-I</b>
+(see the search path discussion below).
 
+<p>
 If you wish to compile a component Bar.td to a C file, you can do:
 
+<p>
+<blockquote>
 ncc -c -o /dev/null -fnesc-cfile=Bar.c Bar.td
+</blockquote>
+
+</blockquote>
 
 
-SEARCH PATH
+<h3>SEARCH PATH</h3>
 
+<blockquote>
 Except when -nostdinc is specified, the search path for nesC components is
-as follows, where TOSDIR is the TinyOS directory requested and TARGET
-is the selected target:
+as follows, where <u>tosdir</u> is the TinyOS directory requested and
+<u>target</u> is the selected target:
 
-.
--I directives (in option order)
-TOSDIR/sensorboards/boardname, for each -board= specified (in option order)
-TOSDIR/platform/TARGET
-TOSDIR/platform/avrmote for the mica, rene2 targets
-TOSDIR/interfaces
-TOSDIR/system
-TOSDIR/lib
-NESCPATH environment variable directories
+<ol>
+<li>./
+<li><b>-I</b> directives (in option order)
+<li><u>tosdir</u>/sensorboards/<u>boardname</u>, for each
+<b>-board=</b><u>boardname</u> option specified (in option order)
+<li><u>tosdir</u>/platform/<u>target</u>
+<li><u>tosdir</u>/platform/avrmote for the mica, rene2 targets
+<li><u>tosdir</u>/interfaces
+<li><u>tosdir</u>/system
+<li><u>tosdir</u>/lib
+<li>`NESCPATH' environment variable directories
+</ol>
 
-When -nostdinc is specified, the search path is simply:
+When <b>-nostdinc</b> is specified, the search path is simply:
 
-.
--I directives
-NESCPATH environment variable directories
+<ol>
+<li>./
+<li><b>-I</b> directives
+<li>`NESCPATH' environment variable directories
+</ol>
+</blockquote>
 
-PREPROCESSOR SYMBOLS
+<h3>PREPROCESSOR SYMBOLS</h3>
 
+<blockquote>
 ncc defines the following preprocessor symbols:
 
-PLATFORM_TARGET (where target is the selected target name, converted to
-upper case)
-
-BOARD_BOARDNAME for each -board=BOARDNAME option (the boardname is
+<ul>
+<li>
+PLATFORM_<u>target</u> (where <u>target</u> is the selected target name,
 converted to upper case)
 
-ENVIRONMENT VARIABLES
+<li>
+BOARD_<u>boardname</u> for each <b>-board=</b><u>boardname</u> option (the
+boardname is converted to upper case)
+</ul>
+</blockquote>
 
-TOSDIR If the -tosdir=dir option is not used, this environment variable
+<h3>ENVIRONMENT VARIABLES</h3>
+
+<blockquote>
+If the -tosdir=dir option is not used, the `TOSDIR' environment variable
 specifies the location of TinyOS.
 
-NESCPATH A colon separated list of additional search directories for nesC
-components.
+<p>
+`NESCPATH' is a colon separated list of additional search directories for
+nesC components.
+</blockquote>
 
-SEE ALSO
+<h3>SEE ALSO</h3>
 
+<blockquote>
 gcc(1), avr-gcc(1)
+</blockquote>
 
 
 

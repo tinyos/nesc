@@ -1,58 +1,86 @@
-NAME
+<html>
+<head>
+<title>mig - message interface generator for nesC</title>
+</head>
+<h3>NAME</h3>
 
+<blockquote>
 mig - message interface generator for nesC
+</blockquote>
 
-SYNOPSIS
+<h3>SYNOPSIS</h3>
 
-mig [-I dir] [-target=pc|mica|rene2]
-[-o output-file]
-[-java-classname=full-class-name]
-[-java-extends=class-name]
-tool msg-format-file message-type
+<blockquote>
+mig [<b>-I</b> <u>dir</u>] [<b>-target=pc|mica|rene2</b>]
+[<b>-o</b> <u>output-file</u>]
+[<b>-java-classname=</b><u>full-class-name</u>]
+[<b>-java-extends=</b><u>class-name</u>]
+<u>tool</u> <u>msg-format-file</u> <u>message-type</u>
+</blockquote>
 
-DESCRIPTION    
+<h3>DESCRIPTION</h3>
 
-mig is a tool to generate code that processes TinyOS messages.  The tool
-argument specifies what tool should be generated, the msg-format-file
-specifies your application's top-level nesC file, and the message-type
-specifies the C type of the message you wish to process. The C type must be
-defined with `struct message-type' or `union message-type' in a .h file
-which your nesC application `includes'. If your .h file defining the
-message type does not depend on any other files, then you can specify the
-.h file directly as the msg-format-file.
+<blockquote>
 
-If an enum constant named AM_message_type (with message_type capitalized)
-is found, then the value of that constant is assumed to be the active
-message type for message-type.
+mig is a tool to generate code that processes TinyOS messages.  The
+<u>tool</u> argument specifies what tool should be generated, the
+<u>msg-format-file</u> specifies your application's top-level nesC file,
+and the <u>message-type</u> specifies the C type of the message you wish to
+process. The C type must be defined with `struct <u>message-type'</u> or
+`union <u>message-type'</u> in a .h file which your nesC application
+`includes'. If your .h file defining the message type does not depend on
+any other files, then you can specify the .h file directly as the
+<u>msg-format-file</u>.
 
-Currently there is only one tool, `java', which generates a java class that
-encodes and decodes messages. The -java-* options are specific to this
-tool. It is described below.
+<p>
+If an enum constant named AM_<u>message_type</u> (with <u>message_type</u>
+capitalized) is found, then the value of that constant is assumed to be the
+active message type for <u>message-type</u>.
 
--o output-file: specify the file in which to output the generated code.
+<p>
+Currently there is only one tool, <b>java</b>, which generates a java class
+that encodes and decodes messages. The <b>-java-*</b> options are specific
+to this tool. It is described below.
 
--I dir: specify an additional search directory for nesC components.
+<p>
+<b>-o</b> <u>output-file</u> <blockquote> specify the file in which to
+output the generated code.</blockquote>
 
--target=pc|mica|rene2: specify the target architecture of your TinyOS
-application which is generating or receiving messages. So, if compiling
-your application for tossim, generate mig tools with -target=pc. The
-default target is ncc's default target.
 
-JAVA TOOL
+<p>
+<b>-I</b> <u>dir</u> <blockquote> specify an additional search directory
+for nesC components.</blockquote>
 
-This tool generates a java class to encode or decode a TinyOS packet, basing
-itself on the net.tinyos.message infrastructure. For each field fname of
-structure message-type, there are the following methods (fname is capitalised
-in the method names):
 
-getFname: get field's value
-setFname: set field's value
-offsetFname: return bit offset of field in message-type
-sizeFname: return size in bits of field
+<p>
+<b>-target=pc|mica|rene2</b> <blockquote> specify the target architecture
+of your TinyOS application which is generating or receiving messages. So,
+if compiling your application for tossim, generate mig tools with
+-target=pc. The default target is ncc's default target.</blockquote>
 
-Embedded structures on message-type are expanded, using _ to separate the
-structure name and its fields.
+</blockquote>
 
+
+<h3>JAVA TOOL</h3>
+
+<blockquote>
+<p>
+This tool generates a java class to encode or decode a TinyOS packet,
+basing itself on the net.tinyos.message infrastructure. For each field
+fname of structure <u>message-type</u>, there are the following methods
+(fname is capitalised in the method names):
+
+<ul>
+<li>getFname: get field's value
+<li>setFname: set field's value
+<li>offsetFname: return bit offset of field in <u>message-type</u>
+<li>sizeFname: return size in bits of field
+</ul>
+
+Embedded structures in <u>message-type</u> are expanded, using _ to
+separate the structure name and its fields.
+
+<p>
 If a field is an array then the get, set and offset methods take one
 argument per array dimension. These methods report errors if the array
 index is out of bounds. If an array has a maximum size of 0, mig assumes
@@ -60,43 +88,57 @@ it represents a variable-size array and does not check the corresponding
 array index.
 
 The generated class has constructors that:
-
-- create an unitialised message, with optional explicit packet size
+<ul>
+<li> create an unitialised message, with optional explicit packet size
 argument
 
-- create a message initialised from an argument byte array, with optional
+<li> create a message initialised from an argument byte array, with optional
 explicit packet size argument
 
-- create a message initialised from an argument
+<li> create a message initialised from an argument
 net.tinyos.message.ByteArray interface, with optional explicit
 packet size argument
+</ul>
 
 The optional packet size argument overrides the default size of
 sizeof(message-type); this is useful for variable-size messages.
 
+<p>
 The generated class also has an amType() method which returns the message's
-active message type, or -1 if no AM_message_type constant was found.
+active message type, or -1 if no AM_<u>message_type</u> constant was found.
 
+<p>
 The java tool accepts the following options:
 
--java-classname=full-class-name: this option is required and specifies
-the package and name of the generated class.
+<p>
+<b>-java-classname=</b><u>full-class-name</u> <blockquote> this option is
+ required and specifies the package and name of the generated
+ class.</blockquote>
 
--java-extends=class-name: specify the class the generated class will extend.
-The default is net.tinyos.message.Message.
+<b>-java-extends=</b><u>class-name</u>: <blockquote> specify the class the
+generated class will extend.  The default is
+net.tinyos.message.Message.</blockquote>
 
-EXAMPLE
+</blockquote>
 
-        APPDIR=`ncc -print-tosdir`/../apps/Ident
+<h3>EXAMPLE</h3>
+
+<blockquote>
+        APPDIR=`ncc -print-tosdir`/../apps/Ident<br>
 	mig java -I $APPDIR  -java-classname=net.tinyos.ident.IdentMsg $APPDIR/App.td IdentMsg -o IdentMsg.java
 
+</blockquote>
 
-ERRORS
+<h3>ERRORS</h3>
 
-mig reports an error if ncc cannot compile msg-format-file, if
-message-type isn't found or if it contains pointers.
+<blockquote>
+mig reports an error if ncc cannot compile <u>msg-format-file</u>, if
+<u>message-type</u> isn't found or if it contains pointers.
+</blockquote>
 
-SEE ALSO
+<h3>SEE ALSO</h3>
 
-ncc(1)
+<blockquote>
+<a href="ncc.html">ncc</a>
+</blockquote>
 

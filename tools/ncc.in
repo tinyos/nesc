@@ -86,8 +86,8 @@ if ($print_tosdir)
     exit 0;
 }
 
-$target = "pc" if !defined($target);
-@boards = ("basicsb") if !defined(@boards);
+$target = "mica" if !defined($target);
+#@boards = ("basicsb") if !defined(@boards);
 
 
 #
@@ -99,20 +99,17 @@ if ($target eq "pc") {
 }
 elsif ($target eq "mica") {
     $gcc = "avr-gcc";
-    push @new_args, "-mmcu=atmega103";
-    push @new_args, "-fnesc-target=avr";
+    push @new_args, ("-mmcu=atmega103", "-fnesc-target=avr");
     @commonplatforms = ("avrmote");
 }
 elsif ($target eq "mica128") {
     $gcc = "avr-gcc";
-    push @new_args, "-mmcu=atmega128";
-    push @new_args, "-fnesc-target=avr";
+    push @new_args, ("-mmcu=atmega128", "-fnesc-target=avr");
     @commonplatforms = ("mica", "avrmote");
 }
 elsif ($target eq "rene2") {
     $gcc = "avr-gcc";
-    push @new_args, "-mmcu=atmega163";
-    push @new_args, "-fnesc-target=avr";
+    push @new_args, ("-mmcu=atmega163", "-fnesc-target=avr");
     @commonplatforms = ("avrmote");
 }
 else {

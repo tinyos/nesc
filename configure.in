@@ -64,6 +64,7 @@ AC_SUBST(TOSDIR)
 
 AC_OUTPUT(
 	Makefile
+	doc/Makefile
 	tools/Makefile
 	tools/mig
 	tools/ncc
