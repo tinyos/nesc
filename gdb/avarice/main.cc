@@ -94,6 +94,10 @@ static void usage(const char *progname)
     fprintf(stderr,
 	    "  --detach                    Detach once synced with JTAG ICE\n\n");
     fprintf(stderr,
+	    "  --capture                   Capture running program."
+	    "     Note: debugging must have been enabled prior to starting the program.\n"
+	    "           (e.g., by running avarice earlier)\n\n");
+    fprintf(stderr,
 	    "  -f, --file <filename>       Download specified file"
 	    " prior to debugging.\n\n");
     fprintf(stderr,
@@ -130,6 +134,7 @@ int main(int argc, char **argv)
     bool programAndQuitOnly = false;
     bool readFusesAndQuitOnly = false;
     bool detach = false;
+    bool capture = false;
 
     statusOut("AVaRICE version %s, %s %s\n\n",
 	      PACKAGE_VERSION, __DATE__, __TIME__);
@@ -156,6 +161,10 @@ int main(int argc, char **argv)
 	    else if (0 == strcmp("--detach", argv[j]))
 	    {
 	        detach = true;
+	    }
+	    else if (0 == strcmp("--capture", argv[j]))
+	    {
+	        capture = true;
 	    }
 	    else if ((0 == strcmp("--debug", argv[j])) ||
 		     (0 == strcmp("-d", argv[j])))
@@ -206,7 +215,7 @@ int main(int argc, char **argv)
     // And say hello to the JTAG box
     initJtagPort(jtagDeviceName);
 
-    initJtagBox();
+    initJtagBox(capture);
 
     if (eraseAndQuitOnly)
     {

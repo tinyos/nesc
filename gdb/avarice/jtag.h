@@ -199,8 +199,12 @@ uchar *doJtagCommand(uchar *command, int  commandSize, int responseSize);
 **/
 bool doSimpleJtagCommand(uchar cmd, int responseSize);
 
-/** Send initial configuration to setup the JTAG box itself. */
-void initJtagBox();
+/** Send initial configuration to setup the JTAG box itself. 
+    If attach is true, the currently running program is attached
+    (Note: when attaching, fuse bits cannot be set so debugging must
+    have been enabled earlier)
+ **/
+void initJtagBox(bool attach);
 
 
 // Breakpoints

@@ -12,6 +12,13 @@ for ($i = 0; $i <= $#ARGV; $i++) {
     if (grep $_ eq $arg, @argcmds) {
 	$i++;
     }
+    elsif ($arg eq "--capture") {
+	$ENV{AVARICE_ARGS} = "$ENV{AVARICE_ARGS} --capture";
+	splice @ARGV, $i, 1;
+	# Don't load an executable
+	$exe = "";
+	break;
+    }
     elsif (!($arg =~ /^-/)) {
 	$exe = $arg;
 	break;

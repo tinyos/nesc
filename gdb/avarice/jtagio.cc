@@ -485,7 +485,7 @@ static void startJtagLink(void)
     check(false, "Failed to synchronise with the JTAG ICE (is it connected and powered?)");
 }
 
-void initJtagBox()
+void initJtagBox(bool attach)
 {
     statusOut("JTAG config starting.\n");
 
@@ -498,52 +498,55 @@ void initJtagBox()
 
     setDeviceDescriptor(DEV_ATMEGA_128);
 
-    enableProgramming();
-
-    // Ensure that all lock bits are "unlocked" ie all 1's
-    uchar *lockBits = 0;
-    lockBits = jtagRead(LOCK_SPACE_ADDR_OFFSET + 0, 1);
-    statusOut("LockBits -> 0x%02x\n", *lockBits);
-
-    uchar *fuseBits = 0;
-    statusOut("\nReading Fuse Bytes:\n");
-    fuseBits = jtagRead(FUSE_SPACE_ADDR_OFFSET + 0, 3);
-    statusOut("  Extended Fuse byte -> 0x%02x\n", fuseBits[2]);
-    statusOut("      High Fuse byte -> 0x%02x\n", fuseBits[1]);
-    statusOut("       Low Fuse byte -> 0x%02x\n", fuseBits[0]);
-
-    // Set JTAG bitrate to 200kHz.
-    setJtagParameter(JTAG_P_CLOCK, 0xfd);
-
-    if (*lockBits != LOCK_BITS_ALL_UNLOCKED)
+    if (!attach)
     {
-	uchar newValue = LOCK_BITS_ALL_UNLOCKED;
-	jtagWrite(LOCK_SPACE_ADDR_OFFSET + 0, 1, &newValue);
+	// When attaching we can't change fuse bits, etc, as 
+	// enabling+disabling programming resets the processor
+	enableProgramming();
+
+	// Ensure that all lock bits are "unlocked" ie all 1's
+	uchar *lockBits = 0;
+	lockBits = jtagRead(LOCK_SPACE_ADDR_OFFSET + 0, 1);
+	statusOut("LockBits -> 0x%02x\n", *lockBits);
+
+	uchar *fuseBits = 0;
+	statusOut("\nReading Fuse Bytes:\n");
+	fuseBits = jtagRead(FUSE_SPACE_ADDR_OFFSET + 0, 3);
+	statusOut("  Extended Fuse byte -> 0x%02x\n", fuseBits[2]);
+	statusOut("      High Fuse byte -> 0x%02x\n", fuseBits[1]);
+	statusOut("       Low Fuse byte -> 0x%02x\n", fuseBits[0]);
+
+	// Set JTAG bitrate to 200kHz.
+	setJtagParameter(JTAG_P_CLOCK, 0xfd);
+
+	if (*lockBits != LOCK_BITS_ALL_UNLOCKED)
+	{
+	    uchar newValue = LOCK_BITS_ALL_UNLOCKED;
+	    jtagWrite(LOCK_SPACE_ADDR_OFFSET + 0, 1, &newValue);
+	}
+	if (lockBits)
+	{
+	    delete [] lockBits;
+	    lockBits = 0;
+	}
+
+	if ((fuseBits[1] & FUSE_OCDEN) == FUSE_OCDEN)
+	{
+	    uchar newValue = fuseBits[1] & ~FUSE_OCDEN; // clear bit
+	    jtagWrite(FUSE_SPACE_ADDR_OFFSET + 1, 1, &newValue);
+	}
+	if (fuseBits)
+	{
+	    delete [] fuseBits;
+	    fuseBits = 0;
+	}
+
+	disableProgramming();
+
+	resetProgram();
+	setJtagParameter(JTAG_P_TIMERS_RUNNING, 0x00);
+	resetProgram();
     }
-    if (lockBits)
-    {
-	delete [] lockBits;
-	lockBits = 0;
-    }
-
-    if ((fuseBits[1] & FUSE_OCDEN) == FUSE_OCDEN)
-    {
-	uchar newValue = fuseBits[1] & ~FUSE_OCDEN; // clear bit
-	jtagWrite(FUSE_SPACE_ADDR_OFFSET + 1, 1, &newValue);
-    }
-    if (fuseBits)
-    {
-	delete [] fuseBits;
-	fuseBits = 0;
-    }
-
-    disableProgramming();
-
-    resetProgram();
-
-    setJtagParameter(JTAG_P_TIMERS_RUNNING, 0x00);
-
-    resetProgram();
 
     // Clear out the breakpoints.
     deleteAllBreakpoints();
