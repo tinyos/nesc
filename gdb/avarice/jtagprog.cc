@@ -58,6 +58,20 @@ void eraseProgramMemory(void)
 	  "JTAG ICE: Failed to erase program memory");
 }
 
+void eraseProgramPage(unsigned long address)
+{
+    uchar *response = NULL;
+    uchar command[] = { 0xa1, 0, 0, 0, JTAG_EOM };
+
+    command[1] = address >> 8;
+    command[2] = address;
+
+    response = doJtagCommand(command, sizeof(command), 1);
+    check(response[0] == JTAG_R_OK, "Page erase failed\n");
+
+    delete [] response;
+}
+
 void downloadToTarget(const char* filename)
 {
     // Basically, we just open the file and copy blocks over to the JTAG

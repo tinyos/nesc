@@ -124,7 +124,7 @@ int getDebugChar(void)
 	waitForGdbInput();
 	result = read(gdbFileDescriptor, &c, 1);
     }
-    while (result == EAGAIN);
+    while (result < 0 && errno == EAGAIN);
 
     gdbCheck(result);
 
@@ -137,6 +137,28 @@ int getDebugChar(void)
 
     return (int)c;
 }
+
+int checkForDebugChar(void)
+{
+    int c = (int)0;
+    int result;
+
+    result = read(gdbFileDescriptor, &c, 1);
+
+    if (result < 0 && errno == EAGAIN)
+	return -1;
+
+    gdbCheck(result);
+
+    if (result == 0) // gdb exited
+    {
+	statusOut("gdb exited.\n");
+	resumeProgram();
+	exit(0);
+    }
+
+    return (int)c;
+}    
 
 static const unsigned char hexchars[] = "0123456789abcdef";
 
@@ -307,15 +329,41 @@ static void reportStatus(int sigval)
     *ptr++ = 0;
 }
 
-static void stepThrough(int start, int end)
+static bool stepThrough(int start, int end)
 {
-    for (;;)
+    // Try and use a breakpoint at end and "break on change of flow"
+    // This doesn't seem to provide much benefit...
+    if (!codeBreakpointBetween(start, end))
     {
-	jtagSingleStep();
-	int newPC = getProgramCounter();
-	if (!(newPC >= start && newPC < end) || codeBreakpointAt(newPC))
-	    break;
+      setJtagParameter(JTAG_P_BP_FLOW, 1);
+      stopAt(end);
+
+      for (;;) 
+      {
+	  if (!jtagContinue(false))
+	      return false;
+	  int newPC = getProgramCounter();
+	  if (!(newPC >= start && newPC < end) || codeBreakpointAt(newPC))
+	      break;
+      }
     }
+    else
+	for (;;)
+	{
+	    jtagSingleStep();
+	    int newPC = getProgramCounter();
+	    if (!(newPC >= start && newPC < end) || codeBreakpointAt(newPC))
+		break;
+	    int gdbIn = checkForDebugChar();
+
+	    if (gdbIn >= 0)
+		if (gdbIn == 3)
+		    return false;
+		else
+		    debugOut("Unexpected GDB input `%02x'\n", gdbIn);
+	}
+
+    return true;
 }
 
 /** Read packet from gdb into remcomInBuffer, check checksum and confirm
@@ -634,8 +682,10 @@ void talkToGdb(void)
       {
 	  debugOut("single step from %x to %x\n", start, end);
 	  putpacket("OK");
-	  stepThrough(start, end);
-	  reportStatus(SIGTRAP);
+	  if (stepThrough(start, end))
+	      reportStatus(SIGTRAP);
+	  else
+	      reportStatus(SIGINT);
       }
       break;
 
@@ -646,7 +696,7 @@ void talkToGdb(void)
 	    if (!setProgramCounter(addr))
 		gdbOut("Failed to set PC");
 	}
-	if (jtagContinue())
+	if (jtagContinue(true))
 	{
 	    reportStatus(SIGTRAP);
 	}

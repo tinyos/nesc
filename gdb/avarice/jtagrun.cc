@@ -99,9 +99,9 @@ bool jtagSingleStep(void)
     return doSimpleJtagCommand('1', 1);
 }
 
-bool jtagContinue(void)
+bool jtagContinue(bool setCodeBreakpoints)
 {
-    updateBreakpoints(); // download new bp configuration
+    updateBreakpoints(setCodeBreakpoints); // download new bp configuration
 
     if (!doSimpleJtagCommand('G', 0))
     {

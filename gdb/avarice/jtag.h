@@ -110,6 +110,7 @@ enum
     JTAG_P_HW_VERSION		      = 0x7a,
     JTAG_P_CLOCK		      = 0x86,
     JTAG_P_TIMERS_RUNNING	      = 0xa0,
+    JTAG_P_BP_FLOW		      = 0xa1,
     JTAG_P_BP_X_HIGH		      = 0xa2,
     JTAG_P_BP_X_LOW		      = 0xa3,
     JTAG_P_BP_Y_HIGH		      = 0xa4,
@@ -229,10 +230,16 @@ bool deleteBreakpoint(unsigned int address, bpType type, unsigned int length);
 bool addBreakpoint(unsigned int address, bpType type, unsigned int length);
 
 /** Send the breakpoint details down to the JTAG box. */
-void updateBreakpoints(void);
+void updateBreakpoints(bool setCodeBreakpoints);
 
 /** True if there is a breakpoint at address */
 bool codeBreakpointAt(unsigned int address);
+
+/** True if there is a breakpoint between start (inclusive) and 
+    end (exclusive) */
+bool codeBreakpointBetween(unsigned int start, unsigned int end);
+
+bool stopAt(unsigned int address);
 
 // Miscellaneous
 // -------------
@@ -286,7 +293,7 @@ bool jtagSingleStep(void);
 /** Send the program on it's merry way, and wait for a breakpoint or
     input from gdb.
     Return true for a breakpoint, false for gdb input. **/
-bool jtagContinue(void);
+bool jtagContinue(bool setCodeBreakpoints);
 
 // R/W memory
 // ----------

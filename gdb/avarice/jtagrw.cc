@@ -178,10 +178,11 @@ bool jtagWrite(unsigned long addr, unsigned int numBytes, uchar buffer[])
 	{
 	    whichSpace = ADDR_PROG_SPACE_PROG_DISABLED;
 	    swapBytes(buffer, numBytes);
-
+#if 0
 	    // Doesn't work out of programming mode, as far as I can tell
 	    // (there's probably some magic that would make it work, but...)
 	    return false;
+#endif
 	}
     }
 

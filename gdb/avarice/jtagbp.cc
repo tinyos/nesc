@@ -57,9 +57,9 @@
 enum {
   // We distinguish the total possible breakpoints and those for each type
   // (code or data) - see above
-  MAX_BREAKPOINTS_CODE = 3,
+  MAX_BREAKPOINTS_CODE = 4,
   MAX_BREAKPOINTS_DATA = 2,
-  MAX_BREAKPOINTS = 3
+  MAX_BREAKPOINTS = 4
 };
 
 struct breakpoint
@@ -73,10 +73,18 @@ static int numBreakpointsCode, numBreakpointsData;
 
 bool codeBreakpointAt(unsigned int address) 
 {
-  //debugOut("checking for bp @ %x\n", address);
   address /= 2;
   for (int i = 0; i < numBreakpointsCode; i++)
     if (bpCode[i].address == address)
+      return true;
+  return false;
+}
+
+bool codeBreakpointBetween(unsigned int start, unsigned int end) 
+{
+  start /= 2; end /= 2;
+  for (int i = 0; i < numBreakpointsCode; i++)
+    if (bpCode[i].address >= start && bpCode[i].address < end)
       return true;
   return false;
 }
@@ -86,6 +94,11 @@ void deleteAllBreakpoints(void)
     numBreakpointsData = numBreakpointsCode = 0;
 }
 
+bool stopAt(unsigned int address)
+{
+    uchar zero = 0;
+    jtagWrite(BREAKPOINT_SPACE_ADDR_OFFSET + address / 2, 1, &zero);
+}
 
 bool addBreakpoint(unsigned int address, bpType type, unsigned int length)
 {
@@ -169,7 +182,7 @@ bool deleteBreakpoint(unsigned int address, bpType type, unsigned int length)
 }
 
 
-void updateBreakpoints(void)
+void updateBreakpoints(bool setCodeBreakpoints)
 {
     unsigned char bpMode = 0x00;
     int bpC = 0, bpD = 0;
@@ -177,7 +190,20 @@ void updateBreakpoints(void)
 
     debugOut("updateBreakpoints\n");
     
-    // BP 1 (aka breakpoint Z).
+    if (!setCodeBreakpoints)
+	bpC = numBreakpointsCode;
+
+    // BP 0 (aka breakpoint Z0).
+    // Send breakpoint array down to the target.
+    // BP 1 is activated by writing a 1 to BP address space.
+    // note: BP1 only supports code space breakpoints.
+    if (bpC < numBreakpointsCode)
+    {
+	uchar zero = 0;
+	jtagWrite(BREAKPOINT_SPACE_ADDR_OFFSET + bpCode[bpC++].address, 1, &zero);
+    }
+
+    // BP 1 (aka breakpoint Z1).
     // Send breakpoint array down to the target.
     // BP 1 is activated by writing a 1 to BP address space.
     // note: BP1 only supports code space breakpoints.
