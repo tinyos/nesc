@@ -42,12 +42,15 @@ void xml_attr(const char *name, const char *val);
 void xml_attr_int(const char *name, largest_int val);
 void xml_attr_ptr(const char *name, void *val);
 void xml_attr_noval(const char *name);
+void xml_attr_bool(const char *name, bool val);
+void xml_attr_cval(const char *name, cval val);
 void xml_start(FILE *f);
 void xml_end(void);
 
 /* Standard nesC xml elements */
 void nxml_ddecl_ref(data_declaration ddecl);
-void nxml_ndecl_ref(nesc_declaration ndecl);
 void nxml_tdecl_ref(tag_declaration tdecl);
+void nxml_ndefinition_ref(nesc_declaration ndecl, dhash_table tags);
+void nxml_ninstance_ref(nesc_declaration ndecl);
 
 #endif

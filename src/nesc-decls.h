@@ -30,6 +30,7 @@ typedef struct nesc_declaration {
      instance_name is used for error messages */
   const char *name;
   const char *instance_name;
+  int instance_number;
   nesc_decl ast;
   struct environment *env;
   char *short_docstring;	/* For documentation comments */
@@ -37,8 +38,10 @@ typedef struct nesc_declaration {
 
   bool abstract;		/* true for abstract components and
 				   generic interfaces */
-  declaration parameters;	/* Parameters for abstract components and
-				   generic interfaces */
+  declaration parameters;	/* Parameters for generic components and
+				   interfaces */
+  expression arguments;		/* Arguments for instantiations of generic 
+				   components and interfaces */
   struct environment *parameter_env;
   struct nesc_declaration *original; /* For instances: the "original" component
 					or interface */

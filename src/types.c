@@ -2190,7 +2190,7 @@ static void xtype_attr(const char *name, cval c)
     xml_attr_int(name, cval_sint_value(c));
 }
 
-void nxml_type(type t, dd_list tags)
+void nxml_type(type t, dhash_table tags)
 {
   type_quals quals = type_qualifiers(t) & (const_qualifier | volatile_qualifier | restrict_qualifier);
 
@@ -2240,7 +2240,7 @@ void nxml_type(type t, dd_list tags)
       break;
     case tk_tagged:
       if (tags)
-	dd_add_last(regionof(tags), tags, t->u.tag);
+	dhaddif(tags, t->u.tag);
       xml_tag_start("type-tag");
       break;
     case tk_iref:

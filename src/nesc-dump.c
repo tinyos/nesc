@@ -22,6 +22,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-xml.h"
 #include "nesc-cg.h"
 #include "semantics.h"
+#include "nesc-semantics.h"
 
 dd_list/*nd_option*/ opts;
 region dump_region;
@@ -31,7 +32,7 @@ bool wiring;
 dhash_table components;
 dhash_table componentdefs;
 dhash_table interfaces;
-dhash_table interfacetypes;
+dhash_table interfacedefs;
 dhash_table tags;
 
 /* What to implicitly output */
@@ -50,10 +51,10 @@ static void create_componentdefs(void)
     componentdefs = new_dhash_ptr_table(dump_region, 256);
 }
 
-static void create_interfacetypes(void)
+static void create_interfacedefs(void)
 {
-  if (!interfacetypes)
-    interfacetypes = new_dhash_ptr_table(dump_region, 256);
+  if (!interfacedefs)
+    interfacedefs = new_dhash_ptr_table(dump_region, 256);
 }
 #endif
 
@@ -69,6 +70,37 @@ static void create_tags(void)
     tags = new_dhash_ptr_table(dump_region, 256);
 }
 
+static dhash_table get_tags(void)
+{
+  if (reachable_tags)
+    return tags;
+  else
+    return NULL;
+}
+
+static void simpletag_start(const char *name)
+{
+  xstartline();
+  xml_tag_start(name);
+  xindent();
+}
+
+static void simpletag(const char *name)
+{
+  xstartline();
+  xml_tag(name);
+  xindent();
+  xnewline();
+}
+
+static void simpletag_pop(void)
+{
+  xstartline();
+  xunindent();
+  xml_pop();
+  xnewline();
+}
+
 static void dump_wiring(cgraph cg)
 {
   xml_tag("wiring");
@@ -81,12 +113,17 @@ static void dump_component(void *entry)
   nesc_declaration comp = entry;
 
   if (comp->configuration)
-    xml_tag_start("configuration");
+    simpletag_start("configuration");
   else
-    xml_tag_start("module");
+    simpletag_start("module");
   xml_attr("name", comp->instance_name);
-  xml_tag_end_pop();
-  xnewline();
+  if (comp->original && !comp->abstract)
+    xml_attr_int("instance", comp->instance_number);
+  xml_tag_end();
+
+  nxml_ndefinition_ref(comp, get_tags());
+
+  simpletag_pop();
 }
 
 static void dump_attributes(dd_list/*nesc_attribute*/ attributes)
@@ -110,42 +147,76 @@ static void dump_attributes(dd_list/*nesc_attribute*/ attributes)
     }
 }
 
+static void dump_typelist(const char *name, typelist types)
+{
+  typelist_scanner scantypes;
+  type t;
+
+  simpletag(name);
+  typelist_scan(types, &scantypes);
+  while ((t = typelist_next(&scantypes)))
+    nxml_type(t, get_tags());
+  simpletag_pop();
+}
+
 static void dump_interface(void *entry)
 {
   data_declaration iref = entry;
 
   assert(iref->kind == decl_interface_ref);
 
-  xml_tag_start("interface");
+  simpletag_start("interface");
   xml_attr("name", iref->name);
   xml_attr_int("provided", !iref->required);
   xml_tag_end();
-  xnewline(); 
 
-  xindent();
-  nxml_ndecl_ref(iref->container);
+  xstartline(); nxml_ninstance_ref(iref->container);
+  nxml_ndefinition_ref(iref->itype, get_tags());
   dump_attributes(iref->attributes);
-  xunindent();
+  if (iref->gparms)
+    dump_typelist("parameters", iref->gparms);
 
-  xstartline(); xml_pop();
-  xnewline();
+  simpletag_pop();
 }
 
 static void dump_tag(void *entry)
 {
   tag_declaration tdecl = entry;
 
-  xml_tag_start("tag");
+  simpletag_start(tagkind_name(tdecl->kind));
   xml_attr("name", tdecl->name);
+  xml_attr_bool("defined", tdecl->defined);
+  xml_attr_bool("packed", tdecl->packed);
+  xml_attr_cval("size", tdecl->size);
+  xml_attr_cval("alignment", tdecl->alignment);
   xml_tag_end();
   xnewline();
 
-  xindent();
+  if (tdecl->container)
+    {
+      nxml_ninstance_ref(tdecl->container);
+      xnewline();
+    }
+#if 0
+  if (tdecl->containing_function)
+    {
+      nxml_ddecl_ref(tdecl->containing_function);
+      xnewline();
+    }
+#endif
   dump_attributes(tdecl->attributes);
-  xunindent();
 
-  xstartline(); xml_pop();
-  xnewline();
+  if (tdecl->kind == kind_enum_ref)
+    {
+      simpletag("reptype");
+      nxml_type(tdecl->reptype, get_tags());
+      simpletag_pop();
+    }
+  else
+    {
+    }
+
+  simpletag_pop();
 }
 
 static void dump_list(const char *name, dhash_table list,
@@ -154,13 +225,10 @@ static void dump_list(const char *name, dhash_table list,
   dhash_scan scanner = dhscan(list);
   void *entry;
 
-  xml_tag(name);
-  xnewline(); xindent();
-
+  simpletag(name);
   while ((entry = dhnext(&scanner)))
     dump(entry);
-
-  xunindent(); xml_pop(); xnewline();
+  simpletag_pop();
 }
 
 /* The toplevel requests supported -fnesc-dump */
@@ -337,8 +405,7 @@ void dump_info(nesc_declaration program, cgraph cg,
     }
 
   xml_start(stdout);
-  xml_tag("nesc");
-  xindent(); xnewline();
+  simpletag("nesc");
 
   if (wiring)
     dump_wiring(cg);
@@ -349,7 +416,6 @@ void dump_info(nesc_declaration program, cgraph cg,
   if (tags)
     dump_list("tags", tags, dump_tag);
 
-  xunindent(); xml_pop();
-  xnewline();
+  simpletag_pop();
   xml_end();
 }

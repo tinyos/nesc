@@ -18,6 +18,7 @@ Boston, MA 02111-1307, USA.  */
 #include "parser.h"
 #include "nesc-xml.h"
 #include "semantics.h"
+#include "nesc-semantics.h"
 
 /* Pick an indentation amount */
 #define INDENT 2
@@ -182,6 +183,22 @@ void xml_attr_noval(const char *name)
   xprintf(" %s=\"\"", name);
 }
 
+void xml_attr_bool(const char *name, bool val)
+{
+  if (val)
+    xml_attr_noval(name);
+}
+
+void xml_attr_cval(const char *name, cval val)
+{
+  if (cval_isinteger(val))
+    /* XXX: deal with signed vs unsigned cvals */
+    xml_attr_int(name, cval_sint_value(val));
+  else
+    xml_attr(name, "unknown");
+}
+
+
 void xml_start(FILE *f)
 {
   xml_region = newregion();
@@ -217,15 +234,51 @@ void nxml_ddecl_ref(data_declaration ddecl)
   xml_tag_end_pop();
 }
 
-void nxml_ndecl_ref(nesc_declaration ndecl)
+void nxml_ninstance_ref(nesc_declaration ndecl)
 {
-  if (ndecl->kind == l_interface)
-    xml_tag_start("interfacedef-ref");
-  else
-    xml_tag_start("component-ref");
+  assert (ndecl->kind == l_component);
+  xml_tag_start("component-ref");
   xml_attr("name", ndecl->instance_name);
   //xml_attr_ptr("ref", ndecl);
   xml_tag_end_pop();
+}
+
+static void dump_arguments(expression arguments, dhash_table tags)
+{
+  expression arg;
+
+  scan_expression (arg, arguments)
+    {
+      if (is_type_argument(arg))
+	nxml_type(CAST(type_argument, arg)->asttype->type, tags);
+      else
+	{
+	  xml_qtag("oops");
+	  xnewline();
+	}
+    }
+}
+
+void nxml_ndefinition_ref(nesc_declaration ndecl, dhash_table tags)
+{
+  ndecl = original_component(ndecl);
+
+  xstartline();
+  if (ndecl->kind == l_interface)
+    xml_tag_start("interfacedef-ref");
+  else
+    xml_tag_start("componentdef-ref");
+  xml_attr("name", ndecl->name);
+  if (!ndecl->arguments)
+    xml_tag_end_pop();
+  else
+    {
+      xml_tag_end();
+      xindent();
+      dump_arguments(ndecl->arguments, tags);
+      xunindent(); xstartline(); xml_pop();
+    }
+  xnewline();
 }
 
 void nxml_tdecl_ref(tag_declaration tdecl)

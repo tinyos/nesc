@@ -943,6 +943,7 @@ nesc_declaration_copy(region r, nesc_declaration old, expression args,
   hack_interface = ddecl;
   current.container = ddecl ? ddecl->container : copy;
   copy->parameters = instantiate_parameters(r, old->parameters);
+  copy->arguments = args;
   set_parameter_values(copy, args);
 
   current.env = copy->env;
@@ -995,7 +996,8 @@ nesc_declaration specification_copy(region r, component_ref cref,
       nesc_declaration abs_comp = comp->original ? comp->original : comp;
       char *newname = rstralloc(r, strlen(copy->name) + 20);
 
-      sprintf(newname, "%s$%d", copy->name, abs_comp->instance_count++);
+      copy->instance_number = abs_comp->instance_count++;
+      sprintf(newname, "%s$%d", copy->name, copy->instance_number);
       copy->name = newname;
     }
 
