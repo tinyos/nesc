@@ -299,11 +299,11 @@ for this interface definition:
 \em \begin{tabbing}
 \grammarindent
 type-parameters:\\
-\>\kw{<} type-parameter-list \kw{>}\\
+\>	\kw{<} type-parameter-list \kw{>}\\
 \\
 type-parameter-list:\\
-\>identifier\\
-\>type-parameter-list \kw{,} identifier
+\>	identifier\\
+\>	type-parameter-list \kw{,} identifier
 \end{tabbing}
 \end{quote}
 These parameters belong to the object name space of the interface's
@@ -565,7 +565,7 @@ specification and an implementation:
 component:\\
 \>	comp-kind identifier comp-parameters\opt component-specification implementation\\
 \\
-comp-kind:
+comp-kind:\\
 \>	\kw{module}\\
 \>	\kw{configuration}\\
 \>	\kw{generic module}\\
@@ -1839,8 +1839,10 @@ function calls to \code{main} anywhere in the program
 \section{Grammar}
 \label{sec:grammar}
 
-Please refer to  Appendix~A of Kernighan and Ritchie (K\&R)
-~\cite[pp234--239]{kandr} while reading this grammar.
+Please refer to Appendix~A of Kernighan and Ritchie (K\&R)
+~\cite[pp234--239]{kandr} while reading this grammar (see the ``Imported
+rules'', Section~\ref{sec:imported}, for a quick summary of references to
+the K\&R grammar).
 
 The following additional keywords are used by \nesc: \kw{as}, \kw{atomic},
 \kw{async}, \kw{call}, \kw{command}, \kw{components}, \kw{configuration},
@@ -1862,12 +1864,11 @@ via the \kw{includes} directive follow the \emph{translation-unit}
 directive from K\&R. 
 
 New rules:
-\em \begin{tabbing}
+\begin{tabbing}
 \grammarindent
 nesC-file: \\
-\>	includes-list\opt interface\\
-\>	includes-list\opt module\\
-\>	includes-list\opt configuration\\
+\>	includes-list\opt interface-definition\\
+\>	includes-list\opt component\\
 \\
 includes-list:\\
 \>	includes\\
@@ -1876,20 +1877,45 @@ includes-list:\\
 includes:\\
 \>	\kw{includes} identifier-list \kw{;}\\
 \\
-interface:\\
-\>	\kw{interface} identifier \kw{\{} declaration-list \kw{\}}\\
+interface-definition:\\
+\>	\kw{interface} identifier type-parameters\opt\kw{\{} declaration-list \kw{\}}\\
 \\
-module:\\
-\>	\kw{module} identifier specification module-implementation\\
+type-parameters:\\
+\>	\kw{<} type-parameter-list \kw{>}\\
+\\
+type-parameter-list:\\
+\>	identifier\\
+\>	type-parameter-list \kw{,} identifier\\
+\\
+component:\\
+\>	comp-kind identifier comp-parameters\opt component-specification implementation\\
+\\
+comp-kind:\\
+\>	\kw{module}\\
+\>	\kw{configuration}\\
+\>	\kw{generic module}\\
+\>	\kw{generic configuration}\\
+\\
+implementation:\\
+\>	module-implementation\\
+\>	configuration-implementation\\
+\\
+comp-parameters:\\
+\>	\kw{(} component-parameter-list \kw{)}\\
+\\
+component-parameter-list:\\
+\>	component-parameter\\
+\>	component-parameter-list \kw{,} component-parameter\\
+\\
+component-parameter:\\
+\>	parameter-declaration\\
+\>	\kw{typedef} identifier\\
 \\
 module-implementation:\\
 \>	\kw{implementation} \kw{\{} translation-unit \kw{\}}\\
 \\
-configuration:\\
-\>	\kw{configuration} identifier specification configuration-implementation\\
-\\
 configuration-implementation:\\
-\>	\kw{implementation} \kw{\{} component-list\opt connection-list \kw{\}}\\
+\>	\kw{implementation} \kw{\{} component-list\opt connection-list\opt \kw{\}}\\
 \\
 component-list:\\
 \>	components\\
@@ -1899,12 +1925,23 @@ components:\\
 \>	\kw{components} component-line \kw{;}\\
 \\
 component-line:\\
-\>	renamed-identifier\\
-\>	component-line \kw{,} renamed-identifier\\
+\>	component-ref instance-name\opt\\
+\>	component-line \kw{,} component-ref instance-name\opt\\
 \\
-renamed-identifier:\\
+instance-name:\\
+\>	\kw{as} identifier\\
+\\
+component-ref:\\
 \>	identifier\\
-\>	identifier \kw{as} identifier\\
+\>	\kw{new} identifier \kw{(} component-argument-list \kw{)}\\
+\\
+component-argument-list:\\
+\>	component-argument\\
+\>	component-argument-list \kw{,} component-argument\\
+\\
+component-argument:\\
+\>	expression\\
+\>	type-name\\
 \\
 connection-list:\\
 \>	connection\\
@@ -1923,7 +1960,7 @@ identifier-path:\\
 \>	identifier\\
 \>	identifier-path \kw{.} identifier\\
 \\
-specification:\\
+component-specification:\\
 \>	\kw{\{} uses-provides-list \kw{\}}\\
 \\
 uses-provides-list:\\
@@ -1944,9 +1981,19 @@ specification-elements:\\
 \\
 specification-element:\\
 \>	declaration\\
-\>	\kw{interface} renamed-identifier parameters\opt\\
+\>	interface-type instance-name\opt instance-parameters\opt\\
 \\
-parameters:\\
+interface-type:\\
+\>	\kw{interface} identifier type-arguments\opt\\
+\\
+type-arguments:\\
+\>	\kw{<} type-argument-list \kw{>}\\
+\\
+type-argument-list:\\
+\>	type-name\\
+\>	type-argument-list \kw{,} type-name\\
+\\
+instance-parameters:\\
 \>	\kw{[} parameter-type-list \kw{]}
 \end{tabbing} \rm
 
@@ -1961,7 +2008,7 @@ declaration-specifiers: \emph{also}\\
 \\
 direct-declarator: \emph{also}\\
 \>	identifier \kw{.} identifier \\
-\>	direct-declarator parameters \kw{(} parameter-type-list \kw{)}\\
+\>	direct-declarator instance-parameters \kw{(} parameter-type-list \kw{)}\\
 \\
 init-declarator-list: \emph{also}\\
 \>	init-declarator attributes\\
@@ -2004,7 +2051,10 @@ call-kind: \emph{one of}\\
 \>	\kw{call} \kw{signal} \kw{post}
 \end{tabbing} \rm
 
-Imported rules (the explanation is for reference purposes only):
+\subsection{Imported Rules}
+\label{sec:imported}
+
+This list is for reference purposes only:
 \begin{itemize}
 \item \emph{translation-unit}: A list of C declarations and function
 definitions.
