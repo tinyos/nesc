@@ -332,16 +332,19 @@ static char *component_docfile_name(const char *component_name) {
 static void copy_file(const char *srcfile, const char *destfile)
 {
   char buf[1024 * 4];
-  FILE *in;
-  FILE *out;
+  FILE *in = fopen(srcfile, "r"); 
+  FILE *out = fopen(destfile, "w");
   size_t nread;
   size_t nwritten;
 
-  assert(chdir(original_wd) == 0);
-  *in = fopen(srcfile, "r"); assert(in);
-  assert(chdir(docdir) == 0);
-
-  *out = fopen(destfile, "w"); assert(out);
+  if( !in ) {
+    warning("Can't read from source file '%s'", srcfile);
+    return;
+  }
+  if( !out ) {
+    warning("Can't write to file '%s'", destfile);
+    return;
+  }
 
   
   while( !feof(in) ) {
@@ -358,21 +361,21 @@ static void copy_file(const char *srcfile, const char *destfile)
   fclose(out);
 }
 
-static void add_source_symlink(const char *srcfile, const char *linkname) 
+static void add_source_symlink(const char *orig_src_filename, const char *linkname) 
 {
-  char *src;
   bool cygwin = FALSE;
+  char buf[PATH_MAX+1];
+  char *srcfile;
 
-  // prepend current directory info for relative filenames
-  if( *srcfile != dirsep ) {
-    src = rstralloc( doc_region, strlen(original_wd) + 1 + strlen(srcfile) + 1 );
-    assert( src != NULL );
-    src[0] = '\0';
-    strcat(src,original_wd);
-    strcat(src,dirsep_string);
-    strcat(src,srcfile);
-    srcfile = src;
+  // remove symlinks, etc.  We do this from the original working
+  // directory, so that relative paths will be resolved correctly.
+  assert(chdir(original_wd) == 0);
+  if(realpath(orig_src_filename, buf) == NULL) {
+    perror("realpath");
+    fatal("error expanding path for '%s'\n", orig_src_filename);
   }
+  srcfile = buf;
+  assert(chdir(docdir) == 0);
 
 
   // determine whether or not we are running under cygwin
@@ -425,16 +428,38 @@ static void close_outfile(FILE *doc_outfile) {
 //
 //////////////////////////////////////////////////////////////////////
 
+/**
+ * Try to figure out if a given '@' sign is actually part of an email
+ * address.  If so, beg is assigned the position of the first
+ * character of the address, and end is assigned the position of the
+ * first whitespace character after the address.
+ *
+ * The heuristic that is used is as follows:
+ *
+ * 1.  The string has non-whitespace characters, ended by
+ *     ".[a-zA-Z][a-zA-Z][a-zA-Z]? "
+ *
+ * 2.  The string has no other 
+ * 
+ **/
+static bool check_email_address(char *pos, int *beg, int *end)
+{
+  // FIXME: finish this
+  return FALSE;
+}
+
+
 typedef enum {
   in_main,
   in_return,
-  in_param
+  in_param,
+  in_author
 } docstring_context;
 
 static void output_docstring(char *docstring, location loc)
 {
   char *pos = docstring;
-  char *at;
+  char *at, *space;
   int len;
   docstring_context context = in_main;
   static char *whitespace = " \t\r\n";
@@ -450,51 +475,86 @@ static void output_docstring(char *docstring, location loc)
         output("</dl>\n");
       return;
     }
-    // output up to the @
-    *at='\0'; output(pos); *at='@';
-    pos = at+1;
 
-    // do some formatting, based on the command
-    len = strcspn(pos, whitespace);
-    
-    if( len==strlen("return") && !strncasecmp("return",pos,len) ) {
-      pos += len;
-      if(context == in_main)
-        output("<p><dl>\n");
-      if(context != in_return)
-        output("<dt><b>Returns:</b>\n");
-      context = in_return;
-      output("<dd>");
-    }
-
-    else if( len==strlen("param") && !strncasecmp("param",pos,len) ) {
-      pos += len;
+    // directives must be preceeded by whitespace or an open paren
+    space = at-1;
+    if(space >= docstring && (*space==' ' || *space=='\t' || *space=='\n' || *space=='\r' || *space=='(') )
+    {
+      // output up to the @
+      *at='\0'; output(pos); *at='@';
+      pos = at+1;
       
-      if(context == in_main)
-        output("<p><dl>\n");
-      if(context != in_param)
-        output("<dt><b>Parameters:</b>\n");
-      context = in_param;
-
-      // print out the parameter name, plus a separator
-      output("<dd>");
-      pos += strspn(pos, whitespace);
+      // do some formatting, based on the command
       len = strcspn(pos, whitespace);
-      // Null terminate the name
-      *(pos + len) = '\0';
-      output("%*s",len,pos);
-      output(" - ");
-      // Restore to spaced text.
-      *(pos + len) = ' ';
-      pos += len;
+      
+      if( len==strlen("return") && !strncasecmp("return",pos,len) ) {
+        pos += len;
+        if(context == in_main)
+          output("<p><dl>\n");
+        if(context != in_return)
+          output("<dt><b>Returns:</b>\n");
+        context = in_return;
+        output("<dd>");
+      }
+      
+      else if( len==strlen("param") && !strncasecmp("param",pos,len) ) {
+        pos += len;
+      
+        if(context == in_main)
+          output("<p><dl>\n");
+        if(context != in_param)
+          output("<dt><b>Parameters:</b>\n");
+        context = in_param;
+
+        // print out the parameter name, plus a separator
+        output("<dd>");
+        pos += strspn(pos, whitespace);
+        len = strcspn(pos, whitespace);
+        // Null terminate the name
+        *(pos + len) = '\0';
+        output("%*s",len,pos);
+        output(" - ");
+        // Restore to spaced text.
+        *(pos + len) = ' ';
+        pos += len;
+      }
+
+      else if( len==strlen("author") && !strncasecmp("author",pos,len) ) {
+        pos += len;
+        if(context == in_main)
+          output("<p><dl>\n");
+        if(context != in_author)
+          output("<dt><b>Author:</b>\n");
+        context = in_author;
+        output("<dd>");
+      }
+
+      // output a warning, and print the bogus directive as-is
+      else {
+        warning("%s:%ld:  Unknown documentation directive '@%.*s'\n",
+                loc->filename, loc->lineno, len, pos);
+        output("@");
+      }
     }
 
-    // output a warning, and print the bogus directive as-is
+    // found an @ that isn't preceded by whitespace or '('.  Don't print a warning.
     else {
-      warning("%s:%ld:  Unknown documentation directive '@%.*s'\n",
-              loc->filename, loc->lineno, len, pos);
-      output("@");
+      int start, end;
+
+      // do a quick check to see if it might be an email address, and format it nicely if so.
+      if( check_email_address(at, &start, &end) ) {
+              
+      }
+
+      // not an email address, just output normally
+      else {
+        *at='\0'; output(pos); *at='@';
+        pos = at+1;
+        output("@");
+      }
+
     }
+    
 
   }
 
