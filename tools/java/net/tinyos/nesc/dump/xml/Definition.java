@@ -31,12 +31,17 @@ abstract public class Definition extends NDElement
 
     /* Returns an attribute called name, or null for none */
     public Xattribute_value attributeLookup(String name) {
+	if (attributes == null)
+	    return null;
+
 	ListIterator elems = attributes.listIterator();
 
 	while (elems.hasNext()) {
 	    Xattribute_value attr = (Xattribute_value)elems.next();
+	    Xattribute a = attr.attribute;
+	    String n = a.name;
 
-	    if (attr.attribute.name.equals(name))
+	    if (n.equals(name))
 		return attr;
 	}
 	return null;

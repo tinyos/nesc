@@ -17,8 +17,10 @@ import java.io.*;
 import java.util.*;
 import org.xml.sax.*;
 
-/* Expects an xml dump produced by
-   -fnesc-dump=wiring Blink.nc -fnesc-dump=interfaces(attribute(atmostonce))
+/* Expects an xml dump of:
+     wiring 
+     interfaces
+     referenced(interfacedefs, components)
 */
 public class WiringCheck
 {
@@ -47,6 +49,8 @@ public class WiringCheck
 	int count = 0;
 	WiringPosition temp = new WiringPosition();
 
+	//System.err.println("fcount " + count + " @ " + position);
+
 	while (out.hasNext()) {
 	    WiringEdge e = (WiringEdge)out.next();
 
@@ -61,12 +65,14 @@ public class WiringCheck
     }
 
     int countBackwards(WiringPosition position) {
-	ListIterator out = position.node.incomingEdges();
+	ListIterator in = position.node.incomingEdges();
 	int count = 0;
 	WiringPosition temp = new WiringPosition();
 
-	while (out.hasNext()) {
-	    WiringEdge e = (WiringEdge)out.next();
+	//System.err.println("bcount " + count + " @ " + position);
+
+	while (in.hasNext()) {
+	    WiringEdge e = (WiringEdge)in.next();
 
 	    temp.copy(position);
 	    if (e.followBackward(temp)) {
@@ -97,6 +103,9 @@ public class WiringCheck
 	    if (check1.attributeLookup("atleastonce") != null ||
 		exactlyOnce != null)
 		min = 1;
+
+	    if (min == -1 && max == -1)
+		continue;
 
 	    boolean providing = contains(check1, check1.provided);
 	    boolean using = contains(check1, !check1.provided);

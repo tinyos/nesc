@@ -17,7 +17,7 @@ import java.util.*;
 
 public class DataDefinition extends CDefinition
 {
-    static protected DefinitionTable defs;
+    static protected DefinitionTable defs = new DefinitionTable();
 
     public String name; /* not globally unique */
     public String ref; /* globally unique */
@@ -43,5 +43,14 @@ public class DataDefinition extends CDefinition
 	super.child(subElement);
 	if (subElement instanceof Type)
 	    type = (Type)subElement;
+    }
+
+    public String toString() {
+	String base = "";
+	//base += "[" + super.toString() + "]";
+	if (name != null)
+	    return base + "C(" + name + ", " + ref + ")";
+	else
+	    return  base + "C(" + ref + ")";
     }
 }

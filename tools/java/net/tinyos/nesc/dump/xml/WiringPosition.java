@@ -35,4 +35,8 @@ public class WiringPosition
 	node = from.node;
 	args = from.args;
     }
+
+    public String toString() {
+	return node.toString();
+    }
 }

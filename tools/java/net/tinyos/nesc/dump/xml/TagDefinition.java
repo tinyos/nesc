@@ -17,7 +17,7 @@ import java.util.*;
 
 public class TagDefinition extends CDefinition
 {
-    static protected DefinitionTable defs;
+    static protected DefinitionTable defs = new DefinitionTable();
 
     public String name; /* not globally unique, may be null */
     public String ref; /* globally unique */

@@ -15,6 +15,8 @@ import java.util.*;
 
 public class WiringNode
 {
+    static LinkedList empty = new LinkedList();
+
     LinkedList outgoing, incoming;
     public DataDefinition ep;
 
@@ -23,22 +25,35 @@ public class WiringNode
     }
 
     void addToEdge(WiringEdge e) {
+	//System.err.println("" + this + " TO " + e.to);
 	if (outgoing == null)
 	    outgoing = new LinkedList();
 	outgoing.add(e);
     }
 
     void addFromEdge(WiringEdge e) {
+	//System.err.println("" + this + " FROM " + e.from);
 	if (incoming == null)
 	    incoming = new LinkedList();
 	incoming.add(e);
     }
 
     public ListIterator outgoingEdges() {
-	return outgoing.listIterator();
+	if (outgoing == null)
+	    return empty.listIterator();
+	else
+	    return outgoing.listIterator();
     }
 
     public ListIterator incomingEdges() {
-	return incoming.listIterator();
+	if (incoming == null)
+	    return empty.listIterator();
+	else
+	    return incoming.listIterator();
+    }
+
+    public String toString() {
+	//return "(@" + super.toString() + ")node:" + ep;
+	return "node:" + ep;
     }
 }

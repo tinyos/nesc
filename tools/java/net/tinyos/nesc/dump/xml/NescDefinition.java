@@ -17,7 +17,7 @@ import java.util.*;
 
 public class NescDefinition extends Definition
 {
-    static protected DefinitionTable defs;
+    static protected DefinitionTable defs = new DefinitionTable();
 
     public String qname; /* globally unique */
 

@@ -17,7 +17,7 @@ import java.util.*;
 
 public class Xfield extends Definition
 {
-    static protected DefinitionTable defs;
+    static protected DefinitionTable defs = new DefinitionTable();
 
     public String name; /* not unique, even within the containing struct/... */
     public String ref; /* globally unique */

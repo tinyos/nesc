@@ -17,7 +17,7 @@ import java.util.*;
 
 class DefinitionTable
 {
-    protected Hashtable allDefinitions;
+    protected Hashtable allDefinitions = new Hashtable();
 
     synchronized Definition lookup(NDReader reader, Object key,
 				   Attributes attrs, String elementName) {
@@ -36,7 +36,7 @@ class DefinitionTable
     }
 
     synchronized Definition define(Object key, Attributes attrs, Definition def) {
-	Definition me = (Definition)allDefinitions.get(this);
+	Definition me = (Definition)allDefinitions.get(key);
 	if (me == null) {
 	    me = def;
 	    me.init(attrs);
