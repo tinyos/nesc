@@ -571,14 +571,18 @@ void check_component_arguments(data_declaration ddecl,
 
       if (type_incomplete(parmtype))
 	error("type of formal parameter %d is incomplete", parmnum);
-      else
-	check_assignment(parmtype, default_conversion_for_assignment(arglist),
-			 arglist, NULL, ddecl, parmnum);
+      else 
+	{
+	  set_error_location(arglist->location);
+	  check_assignment(parmtype, default_conversion_for_assignment(arglist),
+			   arglist, NULL, ddecl, parmnum);
+	}
 
       parmnum++;
       arglist = CAST(expression, arglist->next);
       parm = CAST(data_decl, parm->next);
     }
+  clear_error_location();
 
   if (parm)
     error_with_location(loc, "too few arguments to component `%s'",

@@ -490,19 +490,34 @@ static void set_parameter_values(nesc_declaration cdecl, expression args)
       variable_decl vd = CAST(variable_decl, parm->decls);
 
       vd->ddecl->value = args->cst;
+      /* We can assume the type is arithmetic (for now at least)
+	 (see declare_template_parameter) */
       if (!args->cst)
-	error("arguments to component not constant");
+	error_with_location(args->location,
+			    "arguments to component not constant");
+      else if (type_integer(vd->ddecl->type))
+	{
+	  if (!constant_integral(args->cst))
+	    error_with_location(args->location, "integer constant expected");
+	  else if (!cval_inrange(args->cst->cval, vd->ddecl->type))
+	    error_with_location(args->location, "constant out of range for argument type");
+	}
+      else if (type_floating(vd->ddecl->type))
+	{
+	  if (!constant_float(args->cst))
+	    error_with_location(args->location, "floating-point constant expected");
+	}
+      else
+	assert(0);
     }
 }
 
-void fold_components(region r, nesc_declaration cdecl, expression args)
+void fold_components(region r, nesc_declaration cdecl)
 {
   if (cdecl->folded)
     return;
 
   cdecl->folded = TRUE;
-
-  set_parameter_values(cdecl, args);
 
   current.container = cdecl;
   fold_constants_list(CAST(node, cdecl->impl));
@@ -516,7 +531,9 @@ void fold_components(region r, nesc_declaration cdecl, expression args)
 
       scan_component_ref (comp, c->components)
 	{
-	  fold_components(r, comp->cdecl, comp->args);
+	  current.container = cdecl;
+	  set_parameter_values(comp->cdecl, comp->args);
+	  fold_components(r, comp->cdecl);
 	}
     }
 }

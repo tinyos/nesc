@@ -427,6 +427,11 @@ declaration declare_template_parameter(declarator d, type_element elements,
 
   check_variable_scflags(scf, vd->location, "parameter", name);
 
+  /* For now at least, we only allow integer and floating point
+     arguments to templates */
+  if (!type_real(parm_type)) /* not allowing complex for now (part 2) */
+    error("only arithmetic types allowed as abstract component arguments");
+
 #if 0
  XXX: Is this meaningful? (and if not, is it an error to have array or fn
 			   args?)
@@ -442,6 +447,7 @@ declaration declare_template_parameter(declarator d, type_element elements,
 
   init_data_declaration(&tempdecl, CAST(declaration, vd), name, parm_type);
   tempdecl.kind = decl_constant;
+  tempdecl.substitute = TRUE;
   tempdecl.definition = tempdecl.ast;
 
   old_decl = lookup_id(tempdecl.name, TRUE);

@@ -29,6 +29,11 @@ extern const char *progname;
 extern int errorcount;
 extern int warningcount;
 
+/* Set and clear the error/warning location to use when there is
+   no input file stack */
+void set_error_location(location l);
+void clear_error_location(void);
+
 /* Report error msg at filename, lineno */
 void verror_with_file_and_line(const char *filename, int lineno,
 			       const char *format, va_list args);

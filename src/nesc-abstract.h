@@ -26,7 +26,7 @@ void instantiate(nesc_declaration component);
        copies) 
 */
 
-void fold_components(region r, nesc_declaration cdecl, expression args);
+void fold_components(region r, nesc_declaration cdecl);
 
 void push_instance(nesc_declaration component);
 /* Effects: push (concrete) component on the stack and set its full instance

@@ -543,7 +543,8 @@ void constant_print(FILE *f, known_cst c)
 
   if (type_floating(t))
     {
-      assert(0);
+      /* XXX: hacky version */
+      fprintf(f, "%.20e", constant_float_value(c));
     }
   else
     {

@@ -90,6 +90,9 @@ cval make_cval_address(data_declaration ddecl, label_declaration ldecl,
 bool cval_isinteger(cval c);
 /* Return: TRUE if c is an integer constant */
 
+bool cval_isfloating(cval c);
+/* Return: TRUE if c is a floating-point constant */
+
 bool cval_iscomplex(cval c);
 /* Return: TRUE if c is a complex constant */
 

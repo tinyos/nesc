@@ -606,7 +606,12 @@ void prt_plain_ddecl(data_declaration ddecl, psd_options options)
   if (!ddecl->Cname)
     {
       if (ddecl->container && !(options & psd_skip_container))
-	output_stripped_string_dollar(ddecl->container->name);
+	{
+	  if (ddecl->container->original)
+	    /* Put actual container name in a comment for human readers */
+	    output("/*%s*/", ddecl->container->instance_name);
+	  output_stripped_string_dollar(ddecl->container->name);
+	}
       if (ddecl->kind == decl_function && ddecl->interface)
 	output_stripped_string_dollar(ddecl->interface->name);
       if ((options & psd_print_default) &&
@@ -1181,14 +1186,12 @@ void prt_identifier(identifier e, int context_priority)
     error_with_location(e->location, "%s not connected", e->cstring.data);
 
   set_location(e->location);
-#if 1
-  if (decl->kind == decl_constant)
+  if (decl->kind == decl_constant && decl->substitute)
     {
       output_indent_if_needed();
       constant_print(of, decl->value);
     }
   else
-#endif
     prt_plain_ddecl(decl, 0);
       
   if (use_nido && is_module_variable(decl))

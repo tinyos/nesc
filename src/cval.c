@@ -120,6 +120,11 @@ bool cval_isinteger(cval c)
   return c.kind == cval_sint || c.kind == cval_uint;
 }
 
+bool cval_isfloating(cval c)
+{
+  return c.kind == cval_float;
+}
+
 bool cval_iscomplex(cval c)
 {
   return c.kind == cval_sint_complex || c.kind == cval_uint_complex ||

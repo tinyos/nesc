@@ -35,6 +35,20 @@ const char *progname;
 int errorcount;
 int warningcount;
 
+static location error_location;
+
+/* Set and clear the error/warning location to use when there is
+   no input file stack */
+void set_error_location(location l)
+{
+  error_location = l;
+}
+
+void clear_error_location(void)
+{
+  error_location = NULL;
+}
+
 /* Count an error or warning.  Return 1 if the message should be printed.  */
 int count_error(int warningp)
 {
@@ -173,6 +187,8 @@ void verror(const char *format, va_list args)
 {
   if (input_file_stack)
     verror_with_location(&input_file_stack->l, format, args);
+  else if (error_location)
+    verror_with_location(error_location, format, args);
   else
     {
       count_error(FALSE);
@@ -259,6 +275,8 @@ void vwarning(const char *format, va_list args)
 {
   if (input_file_stack)
     vwarning_with_location(&input_file_stack->l, format, args);
+  else if (error_location)
+    vwarning_with_location(error_location, format, args);
   else if (count_error(TRUE))
     {
       fprintf(stderr, "%s: warning: ", progname);

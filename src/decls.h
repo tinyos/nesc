@@ -172,6 +172,7 @@ struct data_declaration {
 
   /* For constants */
   known_cst value;
+  bool substitute;		/* Substitute value when unparsing */
 
   /* For magic_strings */
   const wchar_t *chars;
