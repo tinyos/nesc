@@ -61,6 +61,7 @@ static char *lang_options[] =
   "-fnesc-target=",
   "-fnesc-docdir=",
   "-fnesc-topdir=",
+  "-fnesc-docs-use-graphviz",
 
   "-ansi",
   "-fallow-single-precision",
@@ -213,6 +214,10 @@ static void c_decode_option(char *p)
   else if (!strncmp (p, "-fnesc-topdir=", strlen("-fnesc-topdir=")))
     {
       doc_add_topdir(p + strlen("-fnesc-topdir="));
+    }
+  else if (!strncmp (p, "-fnesc-docs-use-graphviz", strlen("-fnesc-docs-use-graphviz")))
+    {
+      doc_use_graphviz(TRUE);
     }
   else if (!strcmp (p, "-ftraditional") || !strcmp (p, "-traditional"))
     {

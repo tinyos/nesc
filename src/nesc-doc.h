@@ -30,7 +30,13 @@ void doc_add_topdir(const char *dir);
 /* Set the directory separator - used for cygwin? */
 void doc_set_dirsep(const char c);
 
+/* set the use_graphviz flag */
+void doc_use_graphviz(const bool use);
+
+
 /* actually generate docs */
 void generate_docs(cgraph cg);
+
+
 
 #endif

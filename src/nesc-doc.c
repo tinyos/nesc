@@ -30,6 +30,7 @@ Boston, MA 02111-1307, USA.  */
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <dirent.h>
 
 #include "dhash.h"
 #include "parser.h"
@@ -77,6 +78,18 @@ static int num_topdirs = 0;
 // output directory for generated docs
 static const char *docdir = NULL;
 
+// flag, to determine whether or not to use graphviz
+static bool use_graphviz = FALSE;
+
+
+/**
+ * Set the graphviz flag
+ **/
+void doc_use_graphviz(const bool use)
+{
+  use_graphviz = use;
+}
+
 
 /**
  * Set the doc dir
@@ -108,6 +121,7 @@ void doc_set_dirsep(const char c)
   dirsep = c;
   dirsep_string[0] = c;
 }
+
 
 /**
  * Initialize directory info.
@@ -367,7 +381,7 @@ static void output_docstring(char *docstring)
 
 static void print_short_variable_html(data_decl ddecl, variable_decl vd) {
   output("<li>   ");
-  //prt_declarator(d->declarator, d->qualifiers, d->attributes, d->ddecl, psd_print_default|psd_skip_container);
+  //prt_declarator(d->declarator, d->qualifiers, d->attributes, d->ddecl, psd_skip_container);
 
 
   // FIXME: did this fix the variable declaration printing?
@@ -398,28 +412,80 @@ static void print_short_variable_html(data_decl ddecl, variable_decl vd) {
 }
 
 
-
-
-/**
- * print a function header, from either a function_decl, or a
- * data_decl,variable_decl pair.  Only one or the other should be defined.
- **/
-static void print_function_header(function_decl fd, data_decl dd, variable_decl vd) 
-{
+static inline void check_print_func_args(function_decl fd, data_decl dd, variable_decl vd,
+                                         function_declarator *fdr, data_declaration *ddecl) {
   if( fd ) {
     assert(dd==NULL);
     assert(vd==NULL);
-    prt_declarator(fd->declarator, fd->qualifiers, fd->attributes, fd->ddecl, psd_print_default|psd_skip_container);
+    if(fdr) *fdr = CAST(function_declarator, fd->declarator);
+    if(ddecl) *ddecl = fd->ddecl;
+
   }
   else {
     assert(fd==NULL);
     assert(dd);    
     assert(vd);
-    prt_type_elements(dd->modifiers, FALSE); 
-    prt_type_elements(CAST(type_element, dd->attributes), FALSE);
-    prt_declarator(vd->declarator, NULL, vd->attributes, vd->ddecl, psd_skip_container);
+    if(fdr) *fdr = CAST(function_declarator, vd->declarator);
+    if(ddecl) *ddecl = vd->ddecl;
   }
 }
+
+/**
+ * print function return type & modifiers
+ **/
+static void print_func_return(function_decl fd, data_decl dd, variable_decl vd) 
+{
+  check_print_func_args(fd, dd, vd, NULL, NULL);
+  if(fd) {
+    prt_declarator(NULL, fd->qualifiers, fd->attributes, fd->ddecl, psd_skip_container);
+  } else {
+    prt_type_elements(dd->modifiers, FALSE); 
+    prt_type_elements(CAST(type_element, dd->attributes), FALSE);
+  }
+}
+
+/**
+ * print function name
+ **/
+static void print_func_name(function_decl fd, data_decl dd, variable_decl vd) 
+{
+  function_declarator fdr;
+  data_declaration ddecl; 
+
+  check_print_func_args(fd, dd, vd, &fdr, &ddecl);
+  prt_simple_declarator(fdr->declarator, ddecl, psd_skip_container | psd_not_star);
+  
+}
+
+/**
+ * print function arguments
+ **/
+// FIXME: this should allow an option to print only arg types, and not
+// names - necessary to canonicalize anchors and hrefs.
+static void print_func_args(function_decl fd, data_decl dd, variable_decl vd) 
+{
+  function_declarator fdr;
+  data_declaration ddecl; 
+
+  check_print_func_args(fd, dd, vd, &fdr, &ddecl);
+  prt_parameters(fdr->gparms ? fdr->gparms :
+                 ddecl ? ddecl_get_gparms(ddecl) : NULL,
+                 fdr->parms,
+                 psd_skip_container | psd_rename_parameters);
+  
+}
+
+
+/**
+ * print the entire header for a function - return name(args)
+ **/
+static void print_function_header(function_decl fd, data_decl dd, variable_decl vd) 
+{
+  print_func_return(fd, dd, vd);
+  print_func_name(fd, dd, vd);
+  print_func_args(fd, dd, vd);
+}
+
 
 /**
  * Check to see if a function has a long description
@@ -486,12 +552,15 @@ static void print_function_html(function_decl fd, data_decl dd, variable_decl vd
   if( flags & short_desc ) {
     output("<li>\n");
 
+
+    output("        ");  print_func_return(fd,dd,vd); 
+
     if(ldoc)  {output("    <a href=\"#"); print_function_header(fd,dd,vd); output("\">\n");}
     else if(ifile) {output("    <a href=\"%s#",ifile); print_function_header(fd,dd,vd); output("\">\n");}
-
-    output("        ");  print_function_header(fd,dd,vd);  output("\n");
-
+    output("<b>"); print_func_name(fd,dd,vd); output("</b>");
     if(ldoc || ifile)  output("    </a>\n");
+
+    print_func_args(fd,dd,vd); output("\n"); 
 
     if(sdoc) {
       output("<menu>");
@@ -505,9 +574,13 @@ static void print_function_html(function_decl fd, data_decl dd, variable_decl vd
   else {
     output("    <a name=\""); print_function_header(fd,dd,vd); output("\"></a>\n");
 
+    output("        <h4>"); print_func_name(fd,dd,vd);  output("</h4>\n");
+
+    output("        "); print_func_return(fd,dd,vd);  
     if(ifile) {output("    <a href=\"%s#",ifile); print_function_header(fd,dd,vd); output("\">");}
-    output("        <h4>"); print_function_header(fd,dd,vd);  output("</h4>\n");
+    output("<b>"); print_func_name(fd,dd,vd); output("</b>");
     if(ifile) output("    </a>\n");
+    print_func_args(fd,dd,vd);
 
     assert(ldoc);  // should have checked in the caller
     output("<P><menu>");
@@ -523,11 +596,18 @@ static void print_function_html(function_decl fd, data_decl dd, variable_decl vd
 /**
  * Print a nicer looking HTML banner
  **/
-static void print_html_banner(const char *text) {
+static inline void start_html_banner() {
   output("<table BORDER=\"1\" CELLPADDING=\"3\" CELLSPACING=\"0\" WIDTH=\"100%%\">\n");
   output("<tr BGCOLOR=\"#CCCCFF\"><td>\n");
-  output("%s",text);
+}
+
+static inline void end_html_banner() {
   output("</td></tr></table>\n");
+}
+static void print_html_banner(const char *text) {
+  start_html_banner();
+  output("%s",text);
+  end_html_banner();
 }
 
 
@@ -573,6 +653,13 @@ static bool connection_already_printed(dhash_table table,
                                 endp ep1, endp ep2, 
                                 endp *req, endp *prov)
 {
+  // FIXME: kludge, to try to get things working with parameterized interfaces
+  if(!ep1->component && !ep1->interface && ep1->function->interface)
+    ep1->interface = ep1->function->interface;
+  if(!ep2->component && !ep2->interface && ep2->function->interface)
+    ep2->interface = ep2->function->interface;
+
+
 
   // sort out which is the "requires" side, and which is the "provides" side
   {
@@ -599,8 +686,44 @@ static bool connection_already_printed(dhash_table table,
   }
 
   // special case: if the interface is empty, we always show the connection
-  if((*prov)->interface == NULL) 
+  if((*prov)->interface == NULL) {
+    assert( (*req)->interface == NULL );
     return FALSE;
+  }
+
+  // special case: connection is a pass-through, via the '=' operator
+  if( ep1->interface->required == ep2->interface->required ) {
+    endp left, right;
+
+    //fprintf(stderr,"\nhandling interface assignment\n");
+    //fprintf(stderr,"defined: %d %d    required: %d %d\n", 
+    //        ep1->function->defined,   ep2->function->defined, 
+    //        ep1->interface->required, ep2->interface->required);
+
+    // figure out which is on the left, and which is on the righ
+    if( ep1->component && ep2->component ) {
+      left=ep1; right=ep2;
+    } else{
+      // the side that isn't in a component (ie, it has no def) is on
+      // the left hand side of the equals sign.
+      if( ep1->component == NULL ) 
+        left=ep1, right=ep2;
+      else
+        left=ep2, right=ep1;
+    }
+
+    // set the arrow direction.  If the right-hand component requires
+    // the interface, have the arrow go from right to left.  If it
+    // provides it, have the arrow go from left to right.
+    if( right->interface->required ) {
+      *req = right;
+      *prov = left;
+    } else {
+      *req = left;
+      *prov = right;
+    }
+  }
+
 
 
   // see if this one has already been printed.  This is done by checking a hashtable for the tripple of req,prov,iface
@@ -617,6 +740,11 @@ static bool connection_already_printed(dhash_table table,
 
     // add the new item to the table
     dhadd(table, e);
+    //fprintf(stderr, "\n%s  %s  %s\n",
+    //        e->iface ? e->iface->name : "null",
+    //        e->req ? e->req->name : "null",
+    //        e->prov ? e->prov->name : "null"
+    //        );
     return FALSE;
   }
 
@@ -625,17 +753,19 @@ static bool connection_already_printed(dhash_table table,
 
 #define iface_node_name( ep ) \
                     ( ep->component ? \
-                      ep->component->name : \
+                      ep->component->ctype->name : \
                       ( ep->function->container ? \
                         ep->function->container->name : \
                         ep->function->ast->location->filename))
 
 
 
+
+
 /**
  * Display the nodes in the graph, along w/ info on edges
  **/
-static void print_cg_html(const char *component_name, cgraph cg) {
+static void print_cg_html(const char *component_name, const char *component_file_name, cgraph cg) {
   gnode n;
   dhash_table table = NULL;
   char *iface_dot, *func_dot;
@@ -643,28 +773,50 @@ static void print_cg_html(const char *component_name, cgraph cg) {
   char *iface_cmap, *func_cmap;
   FILE *iface_file, *func_file;
 
+  char *text_only_name;
+  FILE *text_file;
+
   // FIXME: disable the function graph for now
   bool do_func_graph = FALSE;
 
 
   // create filenames
-  iface_dot = doc_filename_with_ext(component_name,".if.dot");
-  iface_gif = doc_filename_with_ext(component_name,".if.gif");
-  iface_cmap = doc_filename_with_ext(component_name,".if.cmap");
+  iface_dot = doc_filename_with_ext(component_file_name,".if.dot");
+  iface_gif = doc_filename_with_ext(component_file_name,".if.gif");
+  iface_cmap = doc_filename_with_ext(component_file_name,".if.cmap");
 
-  func_dot = doc_filename_with_ext(component_name,".func.dot");
-  func_gif = doc_filename_with_ext(component_name,".func.gif");
-  func_cmap = doc_filename_with_ext(component_name,".func.cmap");
+  func_dot = doc_filename_with_ext(component_file_name,".func.dot");
+  func_gif = doc_filename_with_ext(component_file_name,".func.gif");
+  func_cmap = doc_filename_with_ext(component_file_name,".func.cmap");
+
+  text_only_name = doc_filename_with_ext(component_file_name,".text.html");
 
 
-  // open outfiles
-  iface_file = fopen(iface_dot, "w");  assert(iface_file);
-  func_file  = fopen(func_dot,  "w");  assert(func_file);
+  // start the text output
+  {
+    text_file  = fopen(text_only_name, "w");  assert(text_file);
 
+    // print some additional HTML stuff, if we are linking in to this file externally
+    if( use_graphviz ) {
+      fprintf(text_file, "<html>\n");
+      fprintf(text_file, "<head><title>Text Connection Graph: %s</title></head>\n", component_name);
+      fprintf(text_file, "<body>\n");
+      fprintf(text_file, "<h1 align=\"center\">Text Connection Graph: %s</h1>\n", component_name);
+      fprintf(text_file, "\n");
+    }
+
+    // start the output table
+    fprintf(text_file, "<center>\n<table border=0 cellpadding=2>\n");
+  }
 
   // start the dot output
-  fprintf(iface_file, "digraph \"%s_if\" {\n    fontsize=8;\n", component_name);
-  fprintf(func_file, "digraph \"%s_func\" {\n    fontsize=8;\n", component_name);
+  if( use_graphviz ) {
+    iface_file = fopen(iface_dot, "w");  assert(iface_file);
+    func_file  = fopen(func_dot,  "w");  assert(func_file);
+
+    fprintf(iface_file, "digraph \"%s_if\" {\n    fontsize=8; \n", component_name);
+    fprintf(func_file, "digraph \"%s_func\" {\n    fontsize=8; \n", component_name);
+  }
   
 
   // examine connections
@@ -681,15 +833,25 @@ static void print_cg_html(const char *component_name, cgraph cg) {
         // assertions already done above
 
         // connection graph - all functions  (input for /usr/bin/dot)
+        if( do_func_graph ) 
         {
-          // FIXME: print the node info (ie URLs)
+          // graphviz stuff
+          if( use_graphviz ) 
+          {
+            // FIXME: print the node info (ie URLs)
 
-          // print the edge info
-          fprintf(func_file, "    %s -> %s [label = \"%s.%s\"];\n", 
-                  ep1->component ? ep1->component->name : "C_code", 
-                  ep2->component ? ep2->component->name : "C_code", 
-                  ep2->interface ? ep2->interface->name : "C_code", 
-                  ep2->function->name);
+            // print the edge info
+            fprintf(func_file, "    %s -> %s [label = \"%s.%s\"];\n", 
+                    ep1->component ? ep1->component->name : "C_code", 
+                    ep2->component ? ep2->component->name : "C_code", 
+                    ep2->interface ? ep2->interface->name : "C_code", 
+                    ep2->function->name);
+          }
+
+          // text stuff
+          {
+            // FIXME: should we bother with text function graph?
+          }
         }
 
         // connection graph - interfaces  (input for /usr/bin/dot)
@@ -701,49 +863,83 @@ static void print_cg_html(const char *component_name, cgraph cg) {
             table = new_iface_graph_table();
           }
  
-          if( !connection_already_printed(table, ep1, ep2, &req, &prov) ) {
-            /*
-            fprintf(stderr, "\n");
-            fprintf(stderr, "     req: %s  %s\n",
-                   req->function->ast->location->filename,
-                   req->function->definition ? req->function->definition->location->filename : "null");
-            fprintf(stderr, "     req: %s  %s  %s\n",
-                   req->component ? req->component->ctype->ast->location->filename : "null",
-                   req->interface ? req->interface->itype->ast->location->filename : "null",
-                   req->function->container ? req->function->container->name : "null");
-
-            fprintf(stderr, "     prov: %s  %s\n",
-                   prov->function->ast->location->filename,
-                   prov->function->definition ? prov->function->definition->location->filename : "null");
-            fprintf(stderr, "     prov: %s  %s  %s\n",
-                   prov->component ? prov->component->ctype->ast->location->filename : "null",
-                   prov->interface ? prov->interface->itype->ast->location->filename : "null",
-                   prov->function->container ? prov->function->container->name : "null");
-            */
-
-            // print the node info (ie URLs)
-            fprintf(iface_file, "    %s [URL = \"%s\"];\n", 
-                    iface_node_name(req),
-                    component_docfile_name( iface_node_name(req) ));
-            fprintf(iface_file, "    %s [URL = \"%s\"];\n", 
-                    iface_node_name(prov),
-                    component_docfile_name( iface_node_name(prov) ));
-
-            // print the edge info
-            fprintf(iface_file, "    %s -> %s ",
-                    iface_node_name( req ),
-                    iface_node_name( prov ));
-
-            if(req->interface) {
-              fprintf(iface_file, "[label = \"%s\" URL = \"%s\"];\n", 
-                      prov->interface->itype->name,
-                      interface_docfile_name(prov->interface->itype->name));
-            } else {
-              //fprintf(_file, "[label = \"%s:%s\"];\n", prov->function->ast->location->filename, prov->function->name);
-              fprintf(iface_file, "[label = \"func:%s\"];\n", prov->function->name);
+          if( !connection_already_printed(table, ep1, ep2, &req, &prov) ) 
+          {
+            // graphviz stuff
+            if( use_graphviz )
+            {
+              // print the node info (ie URLs)
+              fprintf(iface_file, "    %s [URL=\"%s\" fontsize=\"12\"];\n", 
+                      iface_node_name(req),
+                      component_docfile_name( iface_node_name(req) ));
+              fprintf(iface_file, "    %s [URL=\"%s\" fontsize=\"12\"];\n", 
+                      iface_node_name(prov),
+                      component_docfile_name( iface_node_name(prov) ));
+              
+              // edge info
+              fprintf(iface_file, "    %s -> %s ",
+                        iface_node_name( req ),
+                        iface_node_name( prov ));
+              fprintf(iface_file, "[fontsize=\"11\" labeldistance=\"20\" ");
+              if(req->interface) {
+                if(!req->component || !prov->component) 
+                  fprintf(iface_file, " style=\"dashed\""); 
+                fprintf(iface_file, " label=\"%s\" URL=\"%s\"", 
+                        prov->interface->itype->name,
+                        interface_docfile_name(prov->interface->itype->name));
+              } else {
+                fprintf(iface_file, " label=\"func:%s\"", prov->function->name);
+              }
+              fprintf(iface_file, "];\n");
             }
+            
+            // text stuff
+            //
+            // FIXME: probably better to sort these in some nice way.
+            // Perhaps a topological ordering startig from the main
+            // component, with a breadth-first display?
+            {
+              // row start
+              fprintf(text_file, "<tr>\n");
+
+              // requires side
+              fprintf(text_file, "    <td align=\"right\"><a href=\"%s\">%s</a>.",
+                      component_docfile_name( iface_node_name(req) ),
+                      iface_node_name(req));
+              if(req->interface)
+                fprintf(text_file, "<a href=\"%s\">%s</a>",
+                        interface_docfile_name(req->interface->itype->name),
+                        req->interface->itype->name);
+              else 
+                fprintf(text_file, "%s",req->function->name);
+              fprintf(text_file, "</td>\n");
+
+              // arrow
+              if( req->component && prov->component )
+                fprintf(text_file, "    <td align=\"center\">&nbsp;->&nbsp;</td>\n");
+              else 
+                fprintf(text_file, "    <td align=\"center\">&nbsp;=&nbsp;</td>\n");
+
+              // provides side
+              fprintf(text_file, "    <td align=\"left\"><a href=\"%s\">%s</a>.",
+                      component_docfile_name( iface_node_name(prov) ),
+                      iface_node_name(prov));
+              if(req->interface)
+                fprintf(text_file, "<a href=\"%s\">%s</a>",
+                        interface_docfile_name(prov->interface->itype->name),
+                        prov->interface->itype->name);
+              else 
+                fprintf(text_file, "%s",prov->function->name);
+              fprintf(text_file, "</td>\n");
+
+              // row end
+              fprintf(text_file, "</tr>\n");
+            }
+
           }
         }
+
+
       }
     }
 
@@ -752,13 +948,25 @@ static void print_cg_html(const char *component_name, cgraph cg) {
     deleteregion( regionof(table) );
 
 
-  // finish up the output files
-  fprintf(iface_file, "}\n");  fclose(iface_file);
-  fprintf(func_file, "}\n");   fclose(func_file);
+  // finish up the graphviz output
+  if( use_graphviz ) {
+    fprintf(iface_file, "}\n");  fclose(iface_file);
+    fprintf(func_file, "}\n");   fclose(func_file);
+  }
 
+  // finish up the text output
+  {
+    fprintf(text_file, "</table>\n</center>\n\n");
+    if( use_graphviz ) {
+      fprintf(text_file, "</body>\n");
+      fprintf(text_file, "</html>\n");
+    }
+    fclose(text_file);
+  }
 
 
   // use dot to generate output
+  if( use_graphviz ) 
   {
     char cmd[1024];
     int ret;
@@ -766,31 +974,56 @@ static void print_cg_html(const char *component_name, cgraph cg) {
 
     // FIXME: error handling could be better here
     ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tgif -o%s %s", iface_gif, iface_dot); assert(ret > 0);
-    ret = system(cmd); assert(ret != -1);
+    ret = system(cmd); 
+    if(ret == -1)
+      fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
     ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tcmap -o%s %s", iface_cmap, iface_dot); assert(ret > 0);
     ret = system(cmd); assert(ret != -1);
+    if(ret == -1)
+      fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
 
     if( do_func_graph ) {
       ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tgif -o%s %s", func_gif, func_dot); assert(ret > 0);
       ret = system(cmd); assert(ret != -1);
+      if(ret == -1)
+        fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
       ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tcmap -o%s %s", func_cmap, func_dot); assert(ret > 0);
       ret = system(cmd); assert(ret != -1);
+      if(ret == -1)
+        fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
     }
   }
 
   // add the HTML
-  print_html_banner("<h3>Component Graph</h3>");
-  output("<map name=\"comp\">\n");
-  copy_file_to_output(iface_cmap);
-  output("</map>\n");
-  output("<image src=\"%s\" usemap=\"#comp\" border=0>\n", iface_gif);
+  if( use_graphviz ) {
+    start_html_banner();
+    output("<h3>Component Graph &nbsp;&nbsp;<font size=-1>(<a href=\"%s\">text version</a>)</font> </h3>\n", text_only_name);
+    end_html_banner();
+
+    // FIXME: add a link to the function graph page here.
+    output("<br>\n");
+
+    output("<map name=\"comp\">\n");
+    copy_file_to_output(iface_cmap);
+    output("</map>\n");
+    output("<center><image src=\"%s\" usemap=\"#comp\" border=0></center>\n", iface_gif);
+  }
+  else {
+    // just copy in the text output, if we aren't generating graphs
+    print_html_banner("<h3>Component Graph</h3>");
+    output("<center>\n");
+    copy_file_to_output(text_only_name);
+    unlink(text_only_name);
+    output("</center>\n");
+  }
 
   if( do_func_graph ) {
+    // FIXME: this stuff should all go to a seperate function graph HTML page
     print_html_banner("<h3>Component Function Graph</h3>");
     output("<map name=\"func\">\n");
     copy_file_to_output(func_cmap);
     output("</map>\n");
-    output("<image src=\"%s\" usemap=\"#func\" border=0>\n", func_gif);
+    output("<center><image src=\"%s\" usemap=\"#func\" border=0></center>\n", func_gif);
   }
 
   // remove temp files
@@ -920,7 +1153,9 @@ static void generate_component_html(component_declaration cdecl)
   // configuration (aka wiring)
   if( is_configuration(cdecl->impl) )
   {
-    print_cg_html(CAST(component, cdecl->ast)->location->filename, cdecl->connections);
+    print_cg_html(cdecl->name,
+                  CAST(component, cdecl->ast)->location->filename, 
+                  cdecl->connections);
   }
 
   // otherwise, we have a module (aka function defs) 
@@ -1097,7 +1332,243 @@ static void generate_interface_html(interface_declaration idecl)
 }
 
 
+//////////////////////////////////////////////////
+// Create index files
+//////////////////////////////////////////////////
 
+typedef struct _index_entry {
+  char *name;
+  char *path;
+  char *fname; // for interfaces:  path.name.ti.html
+               // for components:  path.name.td.html
+               // for apps:        name.app.html
+} index_entry;
+
+
+typedef struct {
+  int num;
+  index_entry *ent;
+} file_index;
+
+
+/**
+ * compare two entries - used by qsort
+ **/
+static int index_entry_comparator(const void *va, const void *vb) {
+  int ret;
+  index_entry *a = (index_entry*) va;
+  index_entry *b = (index_entry*) vb;
+  
+  ret = strcmp(a->name, b->name);
+  if(ret) return ret;
+
+  return strcmp(a->path, b->path);
+}
+
+/**
+ * add an entry to the list
+ **/
+static void insert_entry(file_index *fi, char *docfile) {
+  char *p;
+  index_entry *e = &( fi->ent[fi->num++] );
+
+  // path
+  e->path = rstralloc(doc_region, strlen(docfile)+1);
+  strcpy(e->path, docfile);
+
+  // chop off the suffix
+  p = e->path + strlen(e->path) - 1;
+  while(*p != '.') p--;
+  p--;
+  while(*p != '.') p--;
+  *p = '\0'; p--;
+
+  // separate out the name
+  while(p > e->path  &&  *p != '.') p--;
+  if(p == e->path) 
+    e->name = e->path;
+  else {
+    *p = '\0';
+    e->name = p+1;
+  }
+  
+  // file name
+  e->fname = rstralloc(doc_region, strlen(docfile)+1);
+  strcpy(e->fname, docfile);
+}
+
+
+/**
+ * generate the index file
+ **/
+static void print_index_file(const char *filename, file_index *ind)
+{
+  int i;
+  FILE *f;
+
+  // open the file
+  f = fopen(filename, "w"); assert(f);
+  
+  // start the HTML
+  { 
+    char *title;
+    if( !strcmp(filename, "interfaces.html") )        title = "Interface Index";
+    else if( !strcmp(filename, "components.html") )   title = "Component Index";
+    else if( !strcmp(filename, "apps.html") )         title = "Application Index";
+    else assert(0);
+
+    fprintf(f, "<html>\n");
+    fprintf(f, "<head><title>%s</title></head>\n", title);
+    fprintf(f, "<body>\n");
+    fprintf(f, "<h1 align=\"center\">%s</h1>\n", title);
+  }
+
+  // add a navigation banner
+  fprintf(f, "<center>\n");
+  if( !strcmp(filename,"apps.html") )          fprintf(f, "    Apps\n");
+  else                                         fprintf(f, "    <a href=\"apps.html\">Apps</a>\n");
+  fprintf(f, "    &nbsp;&nbsp;&nbsp;\n");
+  if( !strcmp(filename,"components.html") )    fprintf(f, "    Components\n");
+  else                                         fprintf(f, "    <a href=\"components.html\">Components</a>\n");
+  fprintf(f, "    &nbsp;&nbsp;&nbsp;\n");
+  if( !strcmp(filename,"interfaces.html") )    fprintf(f, "    Interfaces\n");
+  else                                         fprintf(f, "    <a href=\"interfaces.html\">Interfaces</a>\n");
+  fprintf(f, "</center>\n");
+
+  // index 
+  fprintf(f, "<table border=0>\n");
+  for(i=0; i<ind->num; i++) {
+    fprintf(f, "<tr>\n");
+    fprintf(f, "    <td>%s</td>\n",
+            (i>0 && !strcmp(ind->ent[i].name, ind->ent[i-1].name)) ? "&nbsp;" : ind->ent[i].name);
+    fprintf(f, "    <td><a href=\"%s\">%s.%s</a></td>\n", 
+            ind->ent[i].fname, ind->ent[i].path, ind->ent[i].name);
+    fprintf(f, "</tr>\n");
+  }
+  fprintf(f, "</table>\n");
+
+  // cleanup
+  fprintf(f, "</body>\n");
+  fprintf(f, "</html>\n");
+  fclose(f);
+}
+
+
+
+/**
+ * Read through the doc directory, and generate appropriate index
+ * files.  The indices are sorted by the base interface or component
+ * name.  In cases in which there are multiple versions of a file (ie,
+ * for different hardware), seperate links are given for each path.
+ **/
+
+
+static void generate_index_html() {
+  file_index comp, iface, app;
+
+  // read the directory, and sort the entries
+  {
+    DIR *dir;
+
+    // open the dir
+    dir = opendir(".");  assert(dir);
+
+    // allocate space
+    {
+      int nument = 0;
+      while( readdir(dir) ) nument++;
+      rewinddir(dir);
+
+      iface.ent = rarrayalloc(doc_region, nument, index_entry);
+      comp.ent  = rarrayalloc(doc_region, nument, index_entry);
+      app.ent   = rarrayalloc(doc_region, nument, index_entry);
+
+      iface.num = 0;
+      comp.num  = 0;
+      app.num   = 0;
+    }
+
+    // scan dir
+    {
+      struct dirent *dent;
+
+      while( (dent=readdir(dir)) != NULL ) {
+        char *p;
+
+        // find the second from the last "."
+        p = dent->d_name + strlen(dent->d_name) - 1;
+        while(p > dent->d_name  &&  *p != '.') p--;
+        p--;
+        while(p > dent->d_name  &&  *p != '.') p--;
+
+        // add to the appropriate list
+        if( !strcmp(p,".ti.html") )
+          insert_entry(&iface, dent->d_name);
+        else if( !strcmp(p,".td.html") )
+          insert_entry(&comp, dent->d_name);
+        else if( !strcmp(p,".app.html") )
+          insert_entry(&app, dent->d_name);
+      }
+    }
+
+    // sort
+    qsort(iface.ent, iface.num, sizeof(index_entry), index_entry_comparator);
+    qsort(comp.ent,  comp.num,  sizeof(index_entry), index_entry_comparator);
+    qsort(app.ent,   app.num,   sizeof(index_entry), index_entry_comparator);
+  }
+
+
+  // Interface index.
+  print_index_file("interfaces.html", &iface);
+  
+
+  // Componenet index.  Same format as interface index
+  print_index_file("components.html", &comp);
+
+
+  // App index.  Sort by app name, 
+  print_index_file("apps.html", &app);
+
+
+  // top-level index file (?)
+
+}
+
+
+
+//////////////////////////////////////////////////
+// Create whole-app description page
+//////////////////////////////////////////////////
+static void generate_app_page(cgraph cg) 
+{
+  char *appname;
+  char *fname, *basename;
+  FILE *f;
+
+
+  // FIXME: how do we determine whether or not the main component is
+  // intended to be a complete app?  For now, we only attempt a
+  // whole-app file if there were no compilation errors.
+  if( errorcount ) 
+    return;
+
+  // figure out the app name
+  appname = "apps.Blink";
+
+  fname = rstralloc( doc_region, strlen(appname)+strlen(".app.html")+1 );  assert(fname);
+  *fname = '\0';
+  strcat(fname, appname);
+  strcat(fname, ".app.html");
+
+  basename = rstralloc( doc_region, strlen(appname)+strlen(".app")+1 );  assert(basename);
+  *basename = '\0';
+  strcat(basename, appname);
+  strcat(basename, ".app");
+  
+  f = open_outfile(fname); assert(f);
+  print_cg_html(appname, basename, cg);
+  close_outfile(f);
+}
 
 
 //////////////////////////////////////////////////
@@ -1161,12 +1632,16 @@ void generate_docs(cgraph cg)
     }
   }
 
+  // generate whole-app wiring page
+  generate_app_page(cg);
+
+
+  // generate index files
   {
-    // generate whole-app wiring page
-    FILE *f = open_outfile("apps.Blink.whole_app.html");
-    print_cg_html("whole_app", cg);
-    close_outfile(f);
+    generate_index_html();
   }
+
+  
 
   // cleanup
   {
