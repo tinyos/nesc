@@ -270,6 +270,25 @@ void xml_attr_cval(const char *name, cval val)
   xputc('"');
 }
 
+void xml_attr_loc(location loc)
+{
+  if (loc == dummy_location)
+    {
+      xprintf("  loc=\"NONE\"");
+      return;
+    }
+  xprintf(" loc=\"%d", loc->lineno);
+  if (loc->container)
+    {
+      xputc('(');
+      xqputs(loc->container->instance_name);
+      xputc(')');
+    }
+  xputc(':');
+  xqputs(loc->filename);
+  xputc('"');
+}
+
 
 void xml_start_dummy(void)
 {

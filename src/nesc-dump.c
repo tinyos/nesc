@@ -140,6 +140,7 @@ void dump_ddecl(data_declaration ddecl)
     }
   xml_attr("name", ddecl->name);
   xml_attr_ptr("ref", ddecl);
+  xml_attr_loc((ddecl->definition ? ddecl->definition : ddecl->ast)->location);
   xml_tag_end();
 
   /* Symbols have either a nesC container, a containing function, containing
@@ -218,19 +219,22 @@ static void dump_parameters(const char *name, declaration parms)
 
 static void dump_endp(const char *tag, endp ep)
 {
+  xstartline();
   xml_tag(tag);
   nxml_ddecl_ref(ep->function ? ep->function : ep->interface);
   if (ep->args_node)
     nxml_arguments(ep->args_node->args);
   xml_pop();
-  xnewline();
 }
 
-static void dump_wire(gnode from, gnode to)
+static void dump_wire(location l, gnode from, gnode to)
 {
   endp fdata = NODE_GET(endp, from), tdata = NODE_GET(endp, to);
 
-  indentedtag("wire");
+  indentedtag_start("wire");
+  if (l)
+    xml_attr_loc(l);
+  xml_tag_end();
   dump_endp("from", fdata);
   dump_endp("to", tdata);
   indentedtag_pop();
@@ -246,7 +250,7 @@ static void dump_wiring(cgraph cg)
   graph_scan_nodes (from, cgraph_graph(cg))
     {
       graph_scan_out (wire, from)
-	dump_wire(from, graph_edge_to(wire));
+	dump_wire(EDGE_GET(location, wire), from, graph_edge_to(wire));
     }
   indentedtag_pop();
 }
@@ -261,6 +265,7 @@ static void dump_component(void *entry)
 
   indentedtag_start("component");
   xml_attr("qname", comp->instance_name);
+  xml_attr_loc(comp->ast->location);
   xml_tag_end();
   xnewline();
 
@@ -279,25 +284,22 @@ static void dump_interface(void *entry)
 
 static void dump_interfacedef(void *entry)
 {
-  nesc_declaration comp = entry;
+  nesc_declaration idef = entry;
   env_scanner fns;
   const char *fnname;
   void *fnentry;
 
   indentedtag_start("interfacedef");
-  xml_attr("qname", comp->name);
+  xml_attr("qname", idef->name);
+  xml_attr_loc(idef->ast->location);
   xml_tag_end();
 
-  if (comp->abstract)
-    dump_parameters("parameters", comp->parameters);
+  if (idef->abstract)
+    dump_parameters("parameters", idef->parameters);
 
-  env_scan(comp->env->id_env, &fns);
+  env_scan(idef->env->id_env, &fns);
   while (env_next(&fns, &fnname, &fnentry))
-    {
-      data_declaration fndecl = fnentry;
-
-      dump_ddecl(fndecl);
-    }
+    dump_ddecl(fnentry);
 
   indentedtag_pop();
 }
@@ -328,6 +330,8 @@ static void dump_tag(void *entry)
   indentedtag_start(tagkind_name(tdecl->kind));
   if (tdecl->name)
     xml_attr("name", tdecl->name);
+  if (tdecl->definition)
+    xml_attr_loc(tdecl->definition->location);
   xml_attr_ptr("ref", tdecl);
   xml_attr_bool("defined", tdecl->defined);
   xml_attr_bool("packed", tdecl->packed);

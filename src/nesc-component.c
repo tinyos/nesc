@@ -264,7 +264,7 @@ void build_component(region r, nesc_declaration cdecl)
 
   if (is_configuration(cdecl->impl))
     process_configuration(CAST(configuration, cdecl->impl));
-  else
+  else if (is_module(cdecl->impl))
     process_module(CAST(module, cdecl->impl));
 }
 

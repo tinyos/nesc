@@ -20,6 +20,10 @@ Boston, MA 02111-1307, USA.  */
 #include "constants.h"
 #include "flags.h"
 
+enum {
+  max_inlineable_size = 15
+};
+
 struct inline_node
 {
   data_declaration fn;
@@ -376,7 +380,7 @@ void inline_functions(cgraph callgraph)
 	  graph_scan_in (e, n)
 	    edgecount++;
       
-	  if (in->size <= 15 || edgecount == 1)
+	  if (in->size <= max_inlineable_size || edgecount == 1)
 	    inline_function(n, in);
 	}
     }

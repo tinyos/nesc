@@ -42,7 +42,8 @@ static void prt_nesc_function_hdr(data_declaration fn_decl,
   data_decl fn_dd = CAST(data_decl, ifn_vd->parent);
 
   prt_diff_info(fn_decl);
-  output("static ");
+  if (!is_binary_component(fn_decl->container->impl))
+    output("static ");
   prt_type_elements(fn_dd->modifiers, FALSE);
 
   prt_declarator(ifn_vd->declarator, NULL, ifn_vd->attributes, fn_decl, 
@@ -450,6 +451,10 @@ void prt_nesc_called_function_headers(cgraph cg, nesc_declaration mod)
 void prt_nesc_module(cgraph cg, nesc_declaration mod)
 {
   prt_nesc_called_function_headers(cg, mod);
+
+  if (is_binary_component(mod->impl))
+    return;
+
   prt_toplevel_declarations(CAST(module, mod->impl)->decls);
 
   /* Make local static variables gloabal when nido is used.
@@ -519,7 +524,7 @@ static bool find_reachable_functions(struct connections *c, gnode n,
   if (graph_node_markedp(n))
     return TRUE;
   else if (!ep->args_node && ep->function->defined &&
-	   is_module(((nesc_declaration)ep->function->container)->impl))
+	   !ep->function->container->configuration)
     {
       full_connection target = new_full_connection(c->r, ep, gcond, gargs);
 
@@ -725,7 +730,7 @@ static void mark_reachable_function(cgraph cg,
   if (ddecl->kind != decl_function ||
       (ddecl->container && 
        !(ddecl->container->kind == l_component &&
-	 is_module(CAST(component, ddecl->container->ast)->implementation))))
+	 !ddecl->container->configuration)))
     return;
 
   if ((ddecl->ftype == function_command || ddecl->ftype == function_event) &&
@@ -759,9 +764,30 @@ static void mark_reachable_function(cgraph cg,
       }
 }
 
-static cgraph mark_reachable_code(void)
+static declaration dummy_function(void)
 {
-  dd_list_pos used;
+  empty_stmt body = new_empty_stmt(parse_region, dummy_location);
+  function_decl fd = 
+    new_function_decl(parse_region, dummy_location, NULL, NULL, NULL, NULL,
+		      CAST(statement, body), NULL, NULL);
+
+  return CAST(declaration, fd);
+}
+
+static void mark_binary_reachable(data_declaration fndecl, void *data)
+{
+  if (fndecl->defined)
+    {
+      fndecl->definition = dummy_function();
+      fndecl->noinlinep = TRUE;
+    }
+  else
+    mark_reachable_function(data, NULL, fndecl, NULL);
+}
+
+static cgraph mark_reachable_code(dd_list modules)
+{
+  dd_list_pos used, mod;
   cgraph cg = new_cgraph(parse_region);
 
   /* We use the connection graph type to represent our call graph */
@@ -771,6 +797,15 @@ static cgraph mark_reachable_code(void)
   dd_scan (used, nglobal_uses)
     mark_reachable_function(cg, NULL, DD_GET(iduse, used)->id, NULL);
 
+  /* All used functions from binary components are entry points */
+  dd_scan (mod, modules)
+    {
+      nesc_declaration m = DD_GET(nesc_declaration, mod);
+
+      if (is_binary_component(m->impl))
+	component_functions_iterate(m, mark_binary_reachable, cg);
+    }
+
   return cg;
 }
 
@@ -778,7 +813,8 @@ static void prt_nesc_function(data_declaration fn)
 {
   assert(fn->kind == decl_function);
 
-  if (fn->definition && !fn->suppress_definition)
+  if (fn->definition && !fn->suppress_definition &&
+      !(fn->container && is_binary_component(fn->container->impl)))
     prt_function_body(CAST(function_decl, fn->definition));
 
   /* if this is a connection function, print it now */
@@ -927,10 +963,15 @@ static void prt_nido_initializer(variable_decl vd)
 
 static void prt_nido_initializations(nesc_declaration mod) 
 {
-  declaration dlist = CAST(module, mod->impl)->decls;
+  declaration dlist;
   declaration d;
   dd_list_pos lscan;
 
+  /* binary component? */
+  if (!is_module(mod->impl))
+    return;
+
+  dlist = CAST(module, mod->impl)->decls;
   outputln("/* Module %s */", mod->name);
 
   /* Static variables */
@@ -1016,7 +1057,7 @@ void prt_nesc_typedefs(nesc_declaration comp)
   prt_toplevel_declarations(CAST(component, comp->ast)->decls);
 
   /* Only module interface type arguments are used in output */
-  if (is_module(comp->impl))
+  if (!comp->configuration)
     prt_nesc_interface_typedefs(comp);
   else
     /* Print declarations found in configurations */
@@ -1051,9 +1092,14 @@ static void prt_nido_resolver(variable_decl vd)
 
 static void prt_nido_resolvers(nesc_declaration mod) 
 {
-  declaration dlist = CAST(module, mod->impl)->decls;
+  declaration dlist;
   declaration d;
 
+  /* binary component? */
+  if (!is_module(mod->impl))
+    return;
+
+  dlist = CAST(module, mod->impl)->decls;
   outputln("/* Module %s */", mod->name);
 
   /* Static variables */
@@ -1152,13 +1198,14 @@ void generate_c_code(nesc_declaration program, const char *target_name,
     {
       nesc_declaration m = DD_GET(nesc_declaration, mod);
 
-      collect_uses(CAST(module, m->impl)->decls);
+      if (is_module(m->impl))
+	collect_uses(CAST(module, m->impl)->decls);
       find_connections(cg, m);
     }
 
   /* Then we set the 'isused' bit on all functions that are reachable
      from spontaneous_calls or global_uses */
-  callgraph = mark_reachable_code();
+  callgraph = mark_reachable_code(program, modules);
 
   check_async(callgraph);
   check_races(callgraph);

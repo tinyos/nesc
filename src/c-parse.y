@@ -555,6 +555,7 @@ parameter_type:
 component: 
 	  includes_list module
 	| includes_list configuration
+	| includes_list binary_component
 	;
 
 module: 
@@ -583,6 +584,19 @@ configuration:
 		  set_nesc_parse_tree(new_component(pr, $2.location, $3, $1, $5, declaration_reverse($7), $9));
 	        }
         ;
+
+binary_component: 
+	  COMPONENT idword 
+	        { 
+		  start_nesc_entity(l_component, $2);
+		} 
+	  '{' requires_or_provides_list '}'
+		{ 
+		  binary_component dummy = new_binary_component(pr, $1.location, start_implementation());
+		  component c = new_component(pr, $1.location, $2, FALSE, NULL, declaration_reverse($5), CAST(implementation, dummy));
+		  set_nesc_parse_tree(c);
+	        }
+	;
 
 generic: GENERIC { $$ = TRUE; }
 	| /* empty */ { $$ = FALSE; }

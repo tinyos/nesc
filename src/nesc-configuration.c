@@ -39,11 +39,11 @@ void component_scan(data_declaration cref, env_scanner *scan)
   env_scan(cref->ctype->env->id_env, scan);
 }
 
-static void connect_userg(cgraph userg, struct endp from, struct endp to)
+static void connect_userg(location l, cgraph userg, struct endp from, struct endp to)
 {
   gnode gfrom = endpoint_lookup(userg, &from), gto = endpoint_lookup(userg, &to);
 
-  graph_add_edge(gfrom, gto, NULL);
+  graph_add_edge(gfrom, gto, l);
 }
  
 static void connect_cg(cgraph cg, struct endp from, struct endp to)
@@ -57,12 +57,12 @@ static void connect_cg(cgraph cg, struct endp from, struct endp to)
   if (to.args_node)
     graph_add_edge(gto, fn_lookup(cg, to.function), NULL);
 }
- 
-static void connect_function(cgraph cg, cgraph userg,
+
+static void connect_function(location l, cgraph cg, cgraph userg,
 			     struct endp from, struct endp to)
 {
   connect_cg(cg, from, to);
-  connect_userg(userg, from, to);
+  connect_userg(l, userg, from, to);
 }
 
 static type endpoint_type(endp p)
@@ -108,7 +108,7 @@ typelist endpoint_args(endp p)
   return NULL;
 }
 
-static void connect_interface(cgraph cg, cgraph userg,
+static void connect_interface(location l, cgraph cg, cgraph userg,
 			      struct endp from, struct endp to,
 			      bool reverse)
 {
@@ -117,9 +117,9 @@ static void connect_interface(cgraph cg, cgraph userg,
   void *fnentry;
 
   if (reverse)
-    connect_userg(userg, to, from);
+    connect_userg(l, userg, to, from);
   else
-    connect_userg(userg, from, to);
+    connect_userg(l, userg, from, to);
 
   assert(!from.function && !to.function
 	 /*&& from.interface->itype == to.interface->itype*/);
@@ -383,16 +383,16 @@ static void process_interface_connection(cgraph cg, cgraph userg, connection con
 	  if (p1.interface->required == p2.interface->required)
 	    error_with_location(l, "external to external connections must be between provided and used interfaces");
 	  else
-	    connect_interface(cg, userg, p1, p2, TRUE);
+	    connect_interface(l, cg, userg, p1, p2, TRUE);
 	}
       else
 	{
 	  if (p1.interface->required != p2.interface->required)
 	    error_with_location(l, "external to internal connections must be both provided or both used");
 	  else if (!p1.component)
-	    connect_interface(cg, userg, p1, p2, FALSE);
+	    connect_interface(l, cg, userg, p1, p2, FALSE);
 	  else
-	    connect_interface(cg, userg, p2, p1, FALSE);
+	    connect_interface(l, cg, userg, p2, p1, FALSE);
 	  /* Note: connect_interface takes care of choosing the right edge
 	     direction. There are two cases:
 	     - the interface is provided: then we want edges from outside in,
@@ -409,7 +409,7 @@ static void process_interface_connection(cgraph cg, cgraph userg, connection con
 	error_with_location(l, "target of '<-' interface must be provided");
       else if (!p2.interface->required)
 	error_with_location(l, "source of '<-' interface must be required");
-      else connect_interface(cg, userg, p2, p1, FALSE);
+      else connect_interface(l, cg, userg, p2, p1, FALSE);
     }
 }
 
@@ -427,18 +427,18 @@ static void process_function_connection(cgraph cg, cgraph userg, connection conn
 	  if (p1def == p2def)
 	    error_with_location(l, "external to external connections must be between provided and used functions");
 	  else if (p1def)
-	    connect_function(cg, userg, p1, p2); /* from provided to used */
+	    connect_function(l, cg, userg, p1, p2); /* from provided to used */
 	  else
-	    connect_function(cg, userg, p2, p1);
+	    connect_function(l, cg, userg, p2, p1);
 	}
       else 
 	{
 	  if (p1def != p2def)
 	    error_with_location(l, "external to internal connections must be both provided or both used");
 	  else if ((!p1.component && !p1def) || (p1.component && p1def))
-	    connect_function(cg, userg, p2, p1);
+	    connect_function(l, cg, userg, p2, p1);
 	  else
-	    connect_function(cg, userg, p1, p2);
+	    connect_function(l, cg, userg, p1, p2);
 	}
     }
   else /* p1 <- p2 */
@@ -447,7 +447,7 @@ static void process_function_connection(cgraph cg, cgraph userg, connection conn
 	error_with_location(l, "target of '<-' function must be defined");
       else if (p2def)
 	error_with_location(l, "source of '<-' function must be used");
-      else connect_function(cg, userg, p2, p1);
+      else connect_function(l, cg, userg, p2, p1);
     }
 }
 

@@ -2015,7 +2015,7 @@ static void generate_component_html(nesc_declaration cdecl)
   }
 
   // otherwise, we have a module (aka function defs) 
-  else 
+  else if (is_module(cdecl->impl))
   {
     module mod = CAST(module, cdecl->impl);
     declaration decl;

@@ -47,6 +47,7 @@ void xml_attr_ptr(const char *name, void *val);
 void xml_attr_noval(const char *name);
 void xml_attr_bool(const char *name, bool val);
 void xml_attr_cval(const char *name, cval val);
+void xml_attr_loc(location loc);
 
 void xml_start_dummy(void);
 void xml_start(FILE *f);

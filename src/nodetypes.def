@@ -588,6 +588,9 @@ where DECLS include regular declarations, component_refs and connections")
 (deftype module implementation (decls)
   "module implementation { DECLS }'")
 
+(deftype binary_component implementation ()
+  "binary component implementation placeholder")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; component definition types
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

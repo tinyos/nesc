@@ -1256,6 +1256,8 @@ void process_init_element(expression value)
 	    }
 	  value->ivalue = valueholder;
 	}
+      else
+	value->ivalue = new_ivalue(iv_base, error_type);
 
       output_init_element (value, elttype);
     }

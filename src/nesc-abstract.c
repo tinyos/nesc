@@ -835,9 +835,7 @@ static bool fold_components(nesc_declaration cdecl, int pass)
   done = fold_constants_list(CAST(node, spec), pass);
   done = fold_constants_list(CAST(node, cdecl->impl), pass) && done;
 
-  if (is_module(cdecl->impl))
-    ;
-  else
+  if (cdecl->configuration)
     {
       declaration d;
       configuration c = CAST(configuration, cdecl->impl);

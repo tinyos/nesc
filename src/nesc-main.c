@@ -82,7 +82,7 @@ static void connect_graph(cgraph master, cgraph component)
 	  endp to = NODE_GET(endp, graph_edge_to(connection));
 	  gnode mto = endpoint_lookup(master, to);
 
-	  graph_add_edge(mfrom, mto, NULL);	  
+	  graph_add_edge(mfrom, mto, EDGE_GET(location, connection));
 	}
     }
 }
@@ -109,7 +109,7 @@ static void connect(location loc, nesc_declaration cdecl, cgraph cg,
       connect_graph(cg, cdecl->connections);
       connect_graph(userg, cdecl->user_connections);
 
-      if (is_module(cdecl->impl))
+      if (!cdecl->configuration)
 	dd_add_last(regionof(modules), modules, cdecl);
       else
 	{
