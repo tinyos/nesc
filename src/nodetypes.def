@@ -161,6 +161,7 @@ PARENT_LOOP:
   - for for/while/do-while: the containing for/while/do-while/switch
     statement
 CONTAINING_ATOMIC
+  - for return statement: their containing atomic statement
   - for labels and looping statements, their containing atomic statement
 (or NULL for none). Used to check that break, continue and goto do not
 break in or out of an atomic statement.

@@ -34,8 +34,11 @@ nesc_decl parsed_nesc_decl;
    XXX: See discussion in types.c:tag2ast about the (lack of) correctness of
    this approach.
    Return it's declaration */
-data_decl build_declaration(region r, type t, const char *name)
+data_decl build_declaration(region r, struct environment *e,
+			    type t, const char *name, expression init,
+			    data_declaration *oddecl)
 {
+  struct data_declaration tempdecl;
   identifier_declarator id;
   variable_decl vd;
   data_decl dd;
@@ -54,9 +57,18 @@ data_decl build_declaration(region r, type t, const char *name)
   /* Build AST for the declaration */
   id = new_identifier_declarator(r, dummy_location, str2cstring(r, name));
   type2ast(r, dummy_location, t, CAST(declarator, id), &tdeclarator, &tmodifiers);
-  vd = new_variable_decl(r, dummy_location, tdeclarator, NULL, NULL, NULL, NULL);
+  vd = new_variable_decl(r, dummy_location, tdeclarator, NULL, init, NULL, NULL);
   vd->declared_type = t;
   dd = new_data_decl(r, dummy_location, tmodifiers, CAST(declaration, vd));
+
+  if (e) /* Declare the variable */
+    {
+      init_data_declaration(&tempdecl, CAST(declaration, vd), id->cstring.data, t);
+      tempdecl.kind = decl_variable;
+      tempdecl.vtype = variable_normal;
+      tempdecl.islocal = TRUE;
+      *oddecl = vd->ddecl = declare(e, &tempdecl, FALSE);
+    }
 
   return dd;
 }

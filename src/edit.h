@@ -27,7 +27,9 @@ Boston, MA 02111-1307, USA. */
    XXX: See discussion in types.c:tag2ast about the (lack of) correctness of
    this approach.
    Return it's declaration */
-data_decl build_declaration(region r, type t, const char *name);
+data_decl build_declaration(region r, struct environment *e,
+			    type t, const char *name, expression init,
+			    data_declaration *oddecl);
 
 word build_word(region r, const char *cword);
 

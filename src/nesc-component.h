@@ -32,6 +32,12 @@ environment start_implementation(void);
 void interface_scan(data_declaration iref, env_scanner *scan);
 data_declaration interface_lookup(data_declaration iref, const char *name);
 
+void component_spec_iterate(nesc_declaration c,
+			    void (*iterator)(data_declaration fndecl,
+					     void *data),
+			    void *data,
+			    bool interfaces);
+
 void component_functions_iterate(nesc_declaration c,
 				 void (*iterator)(data_declaration fndecl,
 						  void *data),

@@ -405,7 +405,7 @@ static void set_specification_instantiations(nesc_declaration component)
      abstract configurations)...
 */
 {
-  component_functions_iterate(component, set_ddecl_instantiation1, NULL);
+  component_spec_iterate(component, set_ddecl_instantiation1, NULL, TRUE);
 }
 
 static void set_ddecl_instantiation2(data_declaration fndecl, void *data)
@@ -426,7 +426,7 @@ static void set_specification_instantiations_shallow(nesc_declaration component)
      abstract configurations)...
 */
 {
-  component_functions_iterate(component, set_ddecl_instantiation2, NULL);
+  component_spec_iterate(component, set_ddecl_instantiation2, NULL, TRUE);
 }
 
 static declaration instantiate_parameters(region r, declaration orig_parms)
@@ -444,7 +444,7 @@ static void instantiate_endp(endp ep)
  */
 {
   /* The component does not get instantiated and is ignored anyway */
-  if (ep->interface->instantiation)
+  if (ep->interface && ep->interface->instantiation)
     ep->interface = ep->interface->instantiation;
   if (ep->function->instantiation)
     ep->function = ep->function->instantiation;
@@ -855,6 +855,9 @@ void check_abstract_arguments(const char *kind, data_declaration ddecl,
 
   while (parms && arglist)
     {
+      if (arglist->type == error_type)
+	continue;
+
       if (is_data_decl(parms))
 	{
 	  variable_decl vparm = CAST(variable_decl, CAST(data_decl, parms)->decls);

@@ -1900,6 +1900,16 @@ void prt_continue_stmt(continue_stmt s)
 
 void prt_return_stmt(return_stmt s)
 {
+  if (s->containing_atomic)
+    {
+      /* We rewrote return statemnts within atomic to return a local
+	 variable in stmt.c. So we can just end the atomic section now. */
+      outputln("{");
+      indent();
+      set_location(s->location);
+      outputln("__nesc_atomic_end(__nesc_atomic); ");
+    }
+
   set_location(s->location);
   if (s->arg1)
     {
@@ -1909,6 +1919,12 @@ void prt_return_stmt(return_stmt s)
     }
   else
     outputln("return;");
+
+  if (s->containing_atomic)
+    {
+      unindent();
+      outputln("}");
+    }
 }
 
 void prt_goto_stmt(goto_stmt s)

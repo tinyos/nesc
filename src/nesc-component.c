@@ -41,10 +41,11 @@ data_declaration interface_lookup(data_declaration iref, const char *name)
   return env_lookup(iref->functions->id_env, name, FALSE);
 }
 
-void component_functions_iterate(nesc_declaration c,
-				 void (*iterator)(data_declaration fndecl,
-						  void *data),
-				 void *data)
+void component_spec_iterate(nesc_declaration c,
+			    void (*iterator)(data_declaration fndecl,
+					     void *data),
+			    void *data,
+			    bool interfaces)
 {
   const char *ifname;
   void *ifentry;
@@ -54,6 +55,9 @@ void component_functions_iterate(nesc_declaration c,
   while (env_next(&scanifs, &ifname, &ifentry))
     {
       data_declaration idecl = ifentry;
+
+      if (idecl->kind != decl_interface_ref || interfaces)
+	iterator(idecl, data);
 
       if (idecl->kind == decl_interface_ref)
 	{
@@ -65,9 +69,15 @@ void component_functions_iterate(nesc_declaration c,
 	  while (env_next(&scanfns, &fnname, &fnentry))
 	    iterator(fnentry, data);
 	}
-      else
-	iterator(idecl, data);
     }
+}
+
+void component_functions_iterate(nesc_declaration c,
+				 void (*iterator)(data_declaration fndecl,
+						  void *data),
+				 void *data)
+{
+  component_spec_iterate(c, iterator, data, FALSE);
 }
 
 static typelist make_gparm_typelist(declaration gparms)

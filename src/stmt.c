@@ -26,6 +26,8 @@ Boston, MA 02111-1307, USA. */
 #include "expr.h"
 #include "c-parse.h"
 #include "constants.h"
+#include "edit.h"
+#include "AST_utils.h"
 
 void fail_in_atomic(const char *context)
 {
@@ -72,8 +74,16 @@ void check_void_return(void)
 
   if (warn_return_type && ret != error_type && !type_void(ret))
     warning("`return' with no value, in function returning non-void");
+}
 
-  fail_in_atomic("return");
+statement make_void_return(location loc)
+{
+  statement ret = CAST(statement, new_return_stmt(parse_region, loc, NULL));
+
+  ret->containing_atomic = current.in_atomic;
+  check_void_return();
+
+  return ret;
 }
 
 void check_return(expression e)
@@ -90,7 +100,33 @@ void check_return(expression e)
       check_assignment(ret, default_conversion_for_assignment(e), e, "return", NULL, 0);
       /* XXX: Missing warning about returning address of local var */
     }
-  fail_in_atomic("return");
+}
+
+statement make_return(location loc, expression arg)
+{
+  declaration temp = NULL;
+  statement ret;
+
+  if (arg->type != error_type && current.in_atomic)
+    {
+      data_declaration ddecl;
+
+      pushlevel(FALSE);
+      temp = CAST(declaration,
+		  build_declaration(parse_region, current.env, arg->type,
+				    "__nesc_temp", arg, &ddecl));
+      arg = build_identifier(parse_region, loc, ddecl);
+    }
+
+  ret = CAST(statement, new_return_stmt(parse_region, loc, arg));
+  ret->containing_atomic = current.in_atomic;
+  check_return(arg);
+
+  if (temp)
+    ret = CAST(statement,
+	       new_compound_stmt(parse_region, loc, NULL, temp, ret, poplevel()));
+
+  return ret;
 }
 
 void check_computed_goto(expression e)

@@ -121,7 +121,7 @@ void prt_ncf_header(struct connections *c, type return_type)
   indent();
   if (!type_void(return_type))
     {
-      prt_data_decl(build_declaration(parse_region, return_type, "result"));
+      prt_data_decl(build_declaration(parse_region, NULL, return_type, "result", NULL, NULL));
       newline();
     }
 }

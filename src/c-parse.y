@@ -2333,12 +2333,10 @@ stmt:
 		}
 	| RETURN ';'
 		{ stmt_count++;
-		  $$ = CAST(statement, new_return_stmt(pr, $1.location, NULL)); 
-		  check_void_return(); }
+		  $$ = make_void_return($1.location); }
 	| RETURN expr ';'
 		{ stmt_count++;
-		  $$ = CAST(statement, new_return_stmt(pr, $1.location, $2)); 
-		  check_return($2); }
+		  $$ = make_return($1.location, $2); }
 	| ASM_KEYWORD maybe_type_qual '(' expr ')' ';'
 		{ stmt_count++;
 		  $$ = CAST(statement, new_asm_stmt(pr, $1.location, $4, NULL,

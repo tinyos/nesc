@@ -28,6 +28,8 @@ void check_switch(expression e);
 void check_void_return(void);
 void check_return(expression e);
 void check_computed_goto(expression e);
+statement make_return(location loc, expression arg);
+statement make_void_return(location loc);
 
 void lookup_label(id_label label);
 void use_label(id_label label);
