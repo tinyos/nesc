@@ -1,0 +1,59 @@
+#!/usr/bin/perl
+
+$NESCDIR = "$ENV{HOME}/work/new-nest/nesc/src";
+$ENV{PATH}= "$NESCDIR:$ENV{PATH}";
+
+for (@ARGV) {
+    if (/^-/) {
+	if (/^-fnesc-path=/) {
+	    $nesc_path = $_;
+	}
+	elsif (/^-msgtype=(.*)$/) {
+	    $message_type = $1;
+	}
+	else {
+	    &usage("unknown option $_");
+	}
+    }
+    else {
+	&usage(0) if defined($cfile);
+	$cfile = $_ if defined($classname);
+	$classname = $_ if !defined($classname);
+    }
+}
+&usage("no classname name specified") if !defined($classname);
+&usage("no message format file specified") if !defined($cfile);
+
+if (!defined($message_type)) {
+    @names = split /\./, $classname;
+    $message_type = $names[$#names];
+}
+
+@args = ("nesc1", "-fnesc-msg=$message_type", "-mmcu=atmega103", $cfile);
+push @args, $nesc_path if defined($nesc_path);
+print join(" ", @args), "\n";
+open(NESC, '-|', join(" ", @args)) or die "nesc1 not found";
+@lines = <NESC>;
+close NESC;
+
+if ($?) {
+    print STDERR "failed to parse message file $cfile\n";
+    exit 1;
+}
+
+require genjava;
+&genjava($classname, @lines);
+
+sub usage()
+{
+    my ($error) = @_;
+
+    print STDERR "$error\n\n" if $error;
+
+    print STDERR "Usage: $0 [options] full-class-name msg-format-file\n";
+    print STDERR "  options are\n";
+    print STDERR "    -fnesc-path=COLON-DELIMITED-PATH Select nesC path\n";
+    print STDERR "    -msgtype=NAME                    Message type to process\n";
+    print STDERR "                                     (default is last component of full-class-name)\n";
+    exit 2;
+}

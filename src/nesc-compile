@@ -124,7 +124,7 @@ else {
 }
 
 sub extractarg {
-    local ($i) = @_;
+    my ($i) = @_;
 
     if (length($ARGV[$i]) == 2) {
 	return &nextarg($i);
@@ -136,7 +136,7 @@ sub extractarg {
 }
 
 sub nextarg {
-    local ($i) = @_;
+    my ($i) = @_;
 
     if ($i < $#ARGV) {
 	$arg = $ARGV[++$i];

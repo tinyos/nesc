@@ -87,6 +87,7 @@ static void dump_fields(region r, const char *prefix, field_declaration fields)
 
 	      sprintf(newprefix, "%s%s.", prefix, fields->name);
 	      dump_fields(r, newprefix, tdecl->fieldlist);
+	      printf("  %s%s AX\n", prefix, fields->name);
 	    }
 	}
       fields = fields->next;
