@@ -34,6 +34,8 @@
 #ifndef DHASH_H
 #define DHASH_H
 
+#include "regions.h"
+
 typedef struct dhash_table *dhash_table;
 
 dhash_table new_dhash_table(region r, unsigned long initial_size,
