@@ -1,0 +1,20 @@
+Schema for nesC XML dump information, written using the DSD schema language.
+
+See http://www.brics.dk/DSD/ for documentation on this schema language
+(which is simpler and cleaner than many alternatives...).
+
+The top-level element is nesc, documenation on the XML elements is found 
+in the dsd files themselves.
+
+Files:
+nesc.dsd: main schema file. Defines nesc element and imports all other files.
+regexps.dsd: regular expressions for attributes (includes constants, which
+  are encoded as attribute values).
+attributes.dsd: many of the attributes have a fixed format irrespective of
+  the element in which they are found. These rules are defined here.
+common.dsd: some common elements.
+basic.dsd: elements for references, types, attributes and initialisers
+  (aka structured values)
+cobject.dsd: elements for C-related objects (variables, typedefs, etc)
+component.dsd, interfacedef.dsd, tag.dsd, wiring.dsd: elements for 
+  corresponding XML elements.

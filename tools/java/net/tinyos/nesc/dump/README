@@ -1,0 +1,6 @@
+Support classes for reading nesC XML dump information. The schema for
+the XML elements is in doc/dump.
+
+The main class for reading the XML dumps is NDReader. Each XML element is 
+parsed as a Java class; these classes are found in the net.tinyos.nesc.dump.xml
+package. See the documentation in these classes for detailed information.
