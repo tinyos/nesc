@@ -25,6 +25,7 @@ Boston, MA 02111-1307, USA. */
 #include "constants.h"
 #include "c-parse.h"
 #include "machine.h"
+#include "nesc-semantics.h"
 #include <stddef.h>
 
 struct type
@@ -1021,6 +1022,29 @@ int function_compatible(type t1, type t2)
   return type_lists_compatible(args1, args2);
 }
 
+static bool interface_equal(nesc_declaration i1, nesc_declaration i2)
+/* Returns: TRUE if the interface types are equal, i.e., they have the
+     same type arguments to the same base interface 
+*/
+{
+  type_parm_decl p1 = CAST(type_parm_decl, i1->parameters), 
+    p2 = CAST(type_parm_decl, i2->parameters);
+
+  if (original_component(i1) != original_component(i2))
+    return FALSE;
+
+  while (p1 && p2)
+    {
+      if (!type_equal(p1->ddecl->type, p2->ddecl->type))
+	return FALSE;
+      
+      p1 = CAST(type_parm_decl, p1->next);
+      p2 = CAST(type_parm_decl, p2->next);
+    }
+
+  return p1 == NULL && p2 == NULL; /* or p1 == p2 ;-) */
+}
+
 bool type_compatible_unqualified(type t1, type t2)
 {
   if (t1 == error_type || t2 == error_type)
@@ -1067,7 +1091,7 @@ bool type_compatible_unqualified(type t1, type t2)
 	array_sizes_match(t1, t2);
 
     case tk_iref:
-      return 1 || t1->u.iref->itype == t2->u.iref->itype;
+      return interface_equal(t1->u.iref->itype, t2->u.iref->itype);
 
     case tk_variable:
       return t1->u.tdecl == t2->u.tdecl;
