@@ -2,6 +2,7 @@ To install, you need:
 automake
 autoconf
 emacs
+gperf
 
 Directions:
 ./Bootstrap (once only after checkout)
