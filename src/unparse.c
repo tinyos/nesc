@@ -646,6 +646,8 @@ void prt_qualifier(qualifier q)
 
 void prt_tag_ref(tag_ref tr, bool duplicate)
 {
+  name_tag(tr->tdecl);
+
   set_location(tr->location);
   switch (tr->kind)
     {
