@@ -1411,8 +1411,8 @@ component_decl:
 		  pop_declspec_stack(); }
 	| typed_typespecs setspecs
 		{ if (pedantic)
-		    pedwarn("ANSI C forbids member declarations with no members");
-		  shadow_tag($1);
+		    pedwarn("ISO C doesn't support unnamed structs/unions");
+
 		  $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.prefix_attributes, NULL));
 		  pop_declspec_stack(); }
 	| nonempty_type_quals setspecs components
