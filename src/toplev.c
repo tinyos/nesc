@@ -62,6 +62,7 @@ static char *lang_options[] =
   "-fnesc-target=",
   "-fnesc-docdir=",
   "-fnesc-topdir=",
+  "-fnesc-is-app",
   "-fnesc-docs-use-graphviz",
   "-fnesc-verbose",
 
@@ -226,6 +227,10 @@ static void c_decode_option(char *p)
   else if (!strncmp (p, "-fnesc-topdir=", strlen("-fnesc-topdir=")))
     {
       doc_add_topdir(p + strlen("-fnesc-topdir="));
+    }
+  else if (!strncmp (p, "-fnesc-is-app", strlen("-fnesc-is-app")))
+    {
+      doc_is_app(TRUE);
     }
   else if (!strncmp (p, "-fnesc-docs-use-graphviz", strlen("-fnesc-docs-use-graphviz")))
     {

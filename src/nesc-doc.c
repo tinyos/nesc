@@ -102,6 +102,8 @@ static const char *docdir = NULL;
 // flag, to determine whether or not to use graphviz
 static bool use_graphviz = FALSE;
 
+// flag, to determine whether or not to generate the app pages
+static bool is_app = FALSE;
 
 /**
  * Initialize the memory region for the doc tools
@@ -119,6 +121,15 @@ static void init_doc_region()
 void doc_use_graphviz(const bool use)
 {
   use_graphviz = use;
+}
+
+
+/**
+ * Set the graphviz flag
+ **/
+void doc_is_app(const bool val)
+{
+  is_app = val;
 }
 
 
@@ -329,7 +340,7 @@ static char *component_docfile_name(const char *component_name) {
 }
 
 
-static void copy_file(const char *srcfile, const char *destfile)
+static bool copy_file(const char *srcfile, const char *destfile)
 {
   char buf[1024 * 4];
   FILE *in = fopen(srcfile, "r"); 
@@ -339,26 +350,33 @@ static void copy_file(const char *srcfile, const char *destfile)
 
   if( !in ) {
     warning("Can't read from source file '%s'", srcfile);
-    return;
+    return FALSE;
   }
   if( !out ) {
     warning("Can't write to file '%s'", destfile);
-    return;
+    return FALSE;
   }
 
   
   while( !feof(in) ) {
     nread = fread(buf, 1, sizeof(buf), in);
+    if( ferror(in) ) {
+      warning("error copying '%s' to '%s'.  can't read source", srcfile, destfile);
+      fclose(in); fclose(out); return FALSE;
+    }
     assert( !ferror(in) );
     if(nread > 0) {
       nwritten = fwrite(buf, 1, nread, out);
-      assert( !ferror(out) );
-      assert(nwritten == nread);
+      if( ferror(out) || nwritten != nread ) {
+        warning("error copying '%s' to '%s'.  can't write dest", srcfile, destfile);
+        fclose(in); fclose(out); return FALSE;
+      }
     }
   }
 
   fclose(in);
   fclose(out);
+  return TRUE;
 }
 
 static void add_source_symlink(const char *orig_src_filename, const char *linkname) 
@@ -386,10 +404,16 @@ static void add_source_symlink(const char *orig_src_filename, const char *linkna
   }
 
   unlink(linkname);
-  if( !cygwin ) 
-    assert(symlink(srcfile, linkname) == 0);
-  else 
-    copy_file(srcfile, linkname);
+  if( !cygwin ) {
+    if(symlink(srcfile, linkname) != 0) {
+      perror("symlink");
+      warning("can't create symlink to source file %s",srcfile);
+    }
+  } else {
+    if( !copy_file(srcfile, linkname) ) {
+      warning("can't copy source file '%s'", srcfile);
+    }
+  }
 }
 
 
@@ -405,7 +429,8 @@ static FILE *open_outfile(const char *outfile) {
   unlink(outfile);
   
   current_doc_outfile = fopen(outfile,"w");
-  assert(current_doc_outfile);
+  if( !current_doc_outfile ) 
+    fatal("can't write to output file '%s'",outfile);
 
   // set up unparse routines
   unparse_start(current_doc_outfile);
@@ -419,6 +444,350 @@ static FILE *open_outfile(const char *outfile) {
 static void close_outfile(FILE *doc_outfile) {
   fclose(doc_outfile);
   unparse_end();
+}
+
+//////////////////////////////////////////////////////////////////////
+//
+//  External information cache
+//
+//////////////////////////////////////////////////////////////////////
+
+typedef struct {
+  char **comp;
+  int num;
+  int slots;
+} implementor_list;
+
+typedef struct {
+  char *desc;
+  bool is_iface;
+  implementor_list r_list;
+  implementor_list p_list;
+} ic_entry;
+
+
+static env ic_env;
+static implementor_list ic_empty_implementor_list;
+
+static void ic_print()
+{
+  env_scanner scanner;
+  const char *name;
+  ic_entry *entry;
+  char *desc, *pos;
+  
+  // scan throug
+  env_scan(ic_env, &scanner);
+  while( env_next(&scanner, &name, (void **)&entry) ) {
+    assert(entry);
+    desc = entry->desc;
+    if(desc == NULL) desc = "";
+
+    // kill weird whitespace in the description
+    pos = desc;
+    while( 1 ) {
+      pos += strcspn(pos,"\r\n\t");
+      if(*pos == '\0') break;
+      *pos = ' ';
+    }
+    
+    printf("%s %d %s\n",name, entry->is_iface, desc);
+  }
+  printf("\n\n");
+}
+
+static void ilist_add(implementor_list *list, char *name)
+{
+  int i;
+  char *temp;
+  
+  // skip duplicates
+  for(i=0; i<list->num; i++) {
+    if(strcmp(name, list->comp[i]) == 0) return;
+    if(strcmp(name, list->comp[i]) > 0) break;
+  }
+
+  // first allocation
+  if(list->comp == NULL) {
+    list->comp = rarrayalloc(doc_region, 10, char*);
+    list->slots = 10;
+    list->num = 0;
+  }
+
+  // expand, if necessary
+  if(list->num == list->slots) {
+    list->comp = rarrayextend(doc_region, list->comp, list->slots+10, char*);
+  }
+
+  // add the item, and shift the rest up
+  while( i <= list->num ) {
+    temp = list->comp[i];
+    list->comp[i] = name;
+    name = temp;
+    i++;
+  }
+
+  list->num++;
+}
+
+static ic_entry* ic_get_entry(char *key) 
+{
+  char *end;
+  char save;
+  ic_entry *entry;
+
+  // remove extra suffix stuff from the key
+  end = strstr(key,".nc");
+  if(end == NULL) 
+    return NULL;  // should never happen
+  end += strlen(".nc");
+  save = *end;
+  *end = '\0';
+
+  // check the index
+  entry = env_lookup(ic_env, key, TRUE);
+  *end = save;
+
+  return entry;
+}
+
+
+static void ic_read() 
+{
+  FILE *f;
+  char key[1024];
+  int is_iface, nreq, nprov, i, ret;
+  char desc[4096];
+  ic_entry *entry;
+  
+
+  ic_env = new_env(doc_region, NULL);
+  ic_empty_implementor_list.num = 0;
+
+  // FIXME: we should really lock the file, so we don't get garbage if
+  // there are multiple concurrent compiles
+
+  // open the existing file, if any
+  f = fopen("info.idx","r");
+  if(f == NULL) return;
+
+  // parse the file
+  while( !feof(f) ) {
+    key[0] = desc[0] = '\0';
+    is_iface = nreq = nprov = 0;
+    ret = fscanf(f, "%s%d%d%d%*[ ]%[^\n]\n", key, &is_iface, &nreq, &nprov, desc);
+    if(ret == -1 && feof(f)) 
+      break;
+    if(ret != 4  &&  ret != 5) {
+      warning("invalid data in info.idx - ignoring remainder of file\n");
+      fclose(f);
+      return;
+    }
+    printf("read: %s %d %d %d %s\n",key, is_iface, nreq, nprov, desc);
+
+    entry = ic_get_entry(key);
+    if(entry == NULL) {
+      entry = ralloc(doc_region, ic_entry);
+      bzero(entry, sizeof(ic_entry));
+      env_add(ic_env, rstrdup(doc_region,key), entry);
+    }
+
+    if(strlen(desc) > 0)
+      entry->desc = rstrdup(doc_region, desc);
+    if(is_iface == 1)
+      entry->is_iface = TRUE;
+
+    // read interfaces
+    for(i=0; i<nreq; i++) {
+      desc[0] = '\0';
+      ret = fscanf(f,"%s",desc);
+      printf(" %s",desc);
+      if(ret != 1  ||  desc[0] == '\0') {
+        warning("invalid data in info.idx - ignoring remainder of file\n");
+        fclose(f);
+        return;
+      }
+      ilist_add(&(entry->r_list), rstrdup(doc_region,desc));
+    }
+    for(i=0; i<nprov; i++) {
+      desc[0] = '\0';
+      ret = fscanf(f,"%s",desc);
+      printf(" %s",desc);
+      if(ret != 1  ||  desc[0] == '\0') {
+        warning("invalid data in info.idx - ignoring remainder of file\n");
+        fclose(f);
+        return;
+      }
+      ilist_add(&(entry->p_list), rstrdup(doc_region,desc));
+    }
+    if(nprov>0 || nreq>0) printf("\n");
+  }
+
+  // close the file
+  fclose(f);
+
+  //
+  printf("\n\nDONE READING INITIAL IDX FILE\n");
+  ic_print();
+}
+
+
+static void ic_write()
+{
+  FILE *f;
+  env_scanner scanner;
+  const char *name;
+  ic_entry *entry;
+  char *desc, *pos;
+  int i;
+
+  printf("\n\nABOUT TO WRITE FINAL FILE\n");
+  ic_print();
+  
+  // open the output file
+  f = fopen("info.idx", "w");
+  if(f == NULL) {
+    warning("can't write to cache file 'info.idx'.\n");
+    return;
+  }
+
+  // scan throug
+  env_scan(ic_env, &scanner);
+  while( env_next(&scanner, &name, (void **)&entry) ) {
+    assert(entry);
+    desc = entry->desc;
+    if(desc == NULL) desc = "";
+
+    // kill weird whitespace in the description
+    pos = desc;
+    while( 1 ) {
+      pos += strcspn(pos,"\r\n\t");
+      if(*pos == '\0') break;
+      *pos = ' ';
+    }
+    
+    // write the file
+    fprintf(f,"%s %d %d %d %s\n", name, entry->is_iface?1:0, entry->r_list.num, entry->p_list.num, desc);
+
+    // write interfaces
+    for(i=0; i<entry->r_list.num; i++)
+      fprintf(f, " %s", entry->r_list.comp[i]);
+    for(i=0; i<entry->p_list.num; i++)
+      fprintf(f, " %s", entry->p_list.comp[i]);
+    if(entry->r_list.num > 0 || entry->p_list.num > 0)
+      fprintf(f,"\n");
+  }
+
+  // close the file
+  fclose(f);
+
+  
+  // FIXME: should unlock the file now
+}
+
+
+static char *ic_make_iface_key(const char *interface_name)
+{
+  nesc_declaration idecl;
+  interface iface;
+
+  idecl = require(l_interface, &doc_empty_location, interface_name);
+  iface = CAST(interface, idecl->ast);
+
+  return doc_filename_with_ext(iface->location->filename,"");
+}
+
+static void ic_scan_rplist(nesc_declaration cdecl, char *name) 
+{
+  component comp = CAST(component, cdecl->ast);
+  rp_interface rp;
+  declaration decl;
+
+  interface_ref iref;
+  ic_entry *entry;
+  implementor_list *list;
+  char *ifname;
+  
+  if( !comp->rplist )
+    return;
+
+  scan_rp_interface(rp, comp->rplist) {
+    scan_declaration(decl,rp->decls) {
+      if( is_interface_ref(decl) ) {
+        iref = CAST(interface_ref,decl);
+        ifname = ic_make_iface_key(iref->word1->cstring.data);
+      } else {
+        continue;
+      }
+
+      entry = ic_get_entry( ifname );
+      if(entry == NULL) {
+        entry = ralloc(doc_region, ic_entry);
+        bzero(entry, sizeof(ic_entry));
+        env_add(ic_env, ifname, entry);
+      }
+        
+      // pick the list
+      if( rp->required )
+        list = &(entry->r_list);
+      else 
+        list = &(entry->p_list);
+      
+      // add to the list
+      ilist_add(list, name);
+    }
+  }
+}
+
+
+
+
+static void ic_add_entry(nesc_declaration cdecl) 
+{
+  ic_entry *entry;
+  char *key;
+
+  // create the local key
+  {
+    nesc_decl d = CAST(nesc_decl, cdecl->ast);
+    key = doc_filename_with_ext(d->location->filename,"");
+  }
+  
+  // get an existing entry
+  entry = ic_get_entry(key);
+  if(entry == NULL) {
+    entry = ralloc(doc_region, ic_entry);
+    bzero(entry, sizeof(ic_entry));
+    env_add(ic_env, key, entry);
+  }
+
+  // fill in the entry
+  if( cdecl->kind == l_interface )
+    entry->is_iface = TRUE;
+  else 
+    entry->is_iface = FALSE;
+
+  // docstring
+  entry->desc = cdecl->short_docstring;
+
+  // implementor list
+  if( cdecl->kind == l_component ) {
+    ic_scan_rplist(cdecl, key);
+  }
+}
+
+static char *ic_get_desc(char *key) 
+{
+  ic_entry *entry = ic_get_entry(key);
+  if(entry == NULL) return NULL;
+  return entry->desc;
+}
+
+static bool ic_is_iface(char *key)
+{
+  ic_entry *entry = ic_get_entry(key);
+  if(entry == NULL) return FALSE;
+  return entry->is_iface;
 }
 
 
@@ -442,10 +811,51 @@ static void close_outfile(FILE *doc_outfile) {
  * 2.  The string has no other 
  * 
  **/
-static bool check_email_address(char *pos, int *beg, int *end)
+static bool check_email_address(const char *docstring, char *pos, char **beg, char **end)
 {
-  // FIXME: finish this
-  return FALSE;
+  char *b, *e;
+  char c;
+
+  // find the beginning of the address
+  b = pos-1;
+  while( 1 ) {
+    // beyond the start of the string
+    if(b < docstring) break;
+
+    // not a valid character, so quit
+    c = *b;
+    if( !((c >= 'a' && c <= 'z')  ||  (c >= 'A' && c <= 'Z')  ||  (c >= '0' && c <= '9')  
+          ||  c == '_'  ||  c == '-'  ||  c == '.'))
+      break;
+
+    b--;
+  }      
+  b++;
+
+  // find the end of the address
+  e = pos+1;
+  while( 1 ) {
+    c = *e;
+    
+    // at the end of the string
+    if( c == '\0' ) break;
+
+    // not a valid character
+    if( !((c >= 'a' && c <= 'z')  ||  (c >= 'A' && c <= 'Z')  ||  (c >= '0' && c <= '9')  
+          ||  c == '_'  ||  c == '-'  ||  c == '.'))
+      break;
+
+    e++;
+  }
+  e--;
+  
+  if(b < pos  &&  e > pos) {
+    *beg = b;
+    *end = e;
+    return TRUE;
+  } else {
+    return FALSE;
+  }
 }
 
 
@@ -548,11 +958,22 @@ static void output_docstring(char *docstring, location loc)
 
     // found an @ that isn't preceded by whitespace or '('.  Don't print a warning.
     else {
-      int start, end;
+      char *begin, *end;
+      char save;
 
       // do a quick check to see if it might be an email address, and format it nicely if so.
-      if( check_email_address(at, &start, &end) ) {
-              
+      if( check_email_address(docstring, at, &begin, &end) ) {
+        // output to the beginning of the address
+        save=*begin; *begin='\0'; output(pos); *begin=save;
+
+        // print the mailto: URL and the address
+        end++;
+        save=*end; *end='\0'; 
+        output("<a href=\"mailto:%s\">%s</a>",begin,begin);
+        *end = save;
+
+        // set the position
+        pos=end;
       }
 
       // not an email address, just output normally
@@ -1165,7 +1586,8 @@ DOC WARNING: your version of `dot' does not support client-side
 
   // start the text output
   {
-    text_file  = fopen(text_only_name, "w");  assert(text_file);
+    text_file  = fopen(text_only_name, "w");  
+    if( !text_file ) fatal("can't write text connection graph file '%s'", text_file);
 
     // print some additional HTML stuff, if we are linking in to this file externally
     if( use_graphviz ) {
@@ -1193,7 +1615,8 @@ DOC WARNING: your version of `dot' does not support client-side
     edge [fontsize=9 arrowsize=.8];
 ";
 
-    iface_file = fopen(iface_dot, "w");  assert(iface_file);
+    iface_file = fopen(iface_dot, "w");  
+    if( !iface_file ) fatal("can't write to dot file '%s'", iface_dot);
     fprintf(iface_file, "digraph \"%s_if\" {%s", component_name, graphviz_opts);
     if( graphviz_supports_cmap ) {
       fprintf(iface_file, "    node [fontcolor=blue];\n");
@@ -1206,6 +1629,7 @@ DOC WARNING: your version of `dot' does not support client-side
 
     if( do_func_graph ) {
       func_file  = fopen(func_dot,  "w");  assert(func_file);
+      if( !func_file ) fatal("can't write to dot file '%s'", func_dot);
       fprintf(func_file, "digraph \"%s_func\" {%s\n\n", component_name, graphviz_opts);
       if( graphviz_supports_cmap ) {
         fprintf(func_file, "    node [fontcolor=blue];\n");
@@ -1387,9 +1811,8 @@ DOC WARNING: your version of `dot' does not support client-side
       fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
     if( graphviz_supports_cmap ) {
       ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tcmap -o%s %s", iface_cmap, iface_dot); assert(ret > 0);
-      ret = system(cmd); assert(ret != -1);
-      if(ret == -1)
-        fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
+      ret = system(cmd); 
+      if(ret == -1) fatal("error running graphviz command:\n   %s\n",cmd);
     }
 
     if( do_func_graph ) {
@@ -1399,9 +1822,8 @@ DOC WARNING: your version of `dot' does not support client-side
         fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
       if( graphviz_supports_cmap ) {
         ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tcmap -o%s %s", func_cmap, func_dot); assert(ret > 0);
-        ret = system(cmd); assert(ret != -1);
-        if(ret == -1)
-          fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
+        ret = system(cmd); 
+        if(ret == -1) fatal("error running graphviz command:\n   %s\n",cmd);
       }
     }
   }
@@ -1471,7 +1893,6 @@ static void generate_component_html(nesc_declaration cdecl)
 {
   FILE *outfile;
   component comp = CAST(component, cdecl->ast);
-
 
   // open the appropriate output file
   outfile = open_outfile( component_docfile_name(cdecl->name) );
@@ -1699,6 +2120,7 @@ static void generate_interface_html(nesc_declaration idecl)
 {
   FILE *outfile;
 
+  // open the output file
   outfile = open_outfile( interface_docfile_name(idecl->name) );
                           
 
@@ -1728,6 +2150,38 @@ static void generate_interface_html(nesc_declaration idecl)
     if(idecl->long_docstring)   output_docstring(idecl->long_docstring, idecl->ast->location);
     else                        output_docstring(idecl->short_docstring, idecl->ast->location);
     output("\n<p>\n\n");
+  }
+
+  // print cross refs
+  {
+    int i;
+    char *name, *end;
+    ic_entry *entry = ic_get_entry( ic_make_iface_key(idecl->name) );
+    assert(entry);
+    if(entry->p_list.num > 0) {
+      output("<dl>\n<dt>Components providing this interface:\n<dd>\n");
+      for(i=0; i<entry->p_list.num; i++) {
+        name = entry->p_list.comp[i];
+        output("    <a href=\"%s.html\">",name);
+        end = strstr(name,".nc"); assert(end);
+        *end = '\0';
+        output("%s</a><br>\n",name);
+        *end = '.';
+      }
+      output("</dl><p>\n\n");
+    }
+    if(entry->r_list.num > 0) {
+      output("<dl>\n<dt>Components requiring this interface:\n<dd>\n");
+      for(i=0; i<entry->r_list.num; i++) {
+        name = entry->r_list.comp[i];
+        output("    <a href=\"%s.html\">",name);
+        end = strstr(name,".nc"); assert(end);
+        *end = '\0';
+        output("%s</a><br>\n",name);
+        *end = '.';
+      }
+      output("</dl><p>\n\n");
+    }
   }
   
   // summary
@@ -1873,8 +2327,8 @@ static void print_index_file(navbar_mode nmode, index_sort_type sort, file_index
     strcat(filename, "_p.html");
   
   // open the file
-  f = fopen(filename, "w"); assert(f);
-
+  f = fopen(filename, "w"); 
+  if( !f ) fatal("can't write to index file '%s'",f);
   
   // start the HTML
   fprintf(f, "<html>\n");
@@ -1889,25 +2343,31 @@ static void print_index_file(navbar_mode nmode, index_sort_type sort, file_index
   // title, and table tags
   fprintf(f, "<h1 align=\"center\">%s</h1>\n", title);
   fprintf(f, "<center>\n");
-  fprintf(f, "<table border=0 cellpadding=0>\n");
+  fprintf(f, "<table border=0 cellpadding=0 width=\"80%%\">\n");
 
 
   // add the sorting links
-  fprintf(f, "<tr>\n");
+  fprintf(f, "<tr valign=\"top\">\n");
   if(sort == SORT_FILE) {
     fprintf(f, "<td><a href=\"%s_p.html\"><em>path</em></a></td>\n", indexname);
     fprintf(f, "<td>&nbsp;&nbsp;&nbsp;</td>\n");
     fprintf(f, "<td><em>%s</em></td>\n", sort_heading);
+    fprintf(f, "<td>&nbsp;&nbsp;&nbsp;</td>\n");
+    fprintf(f, "<td><em>description</em></td>\n");
   } else {
     fprintf(f, "<td><em>path</em></td>\n");
     fprintf(f, "<td>&nbsp;&nbsp;&nbsp;</td>\n");
     fprintf(f, "<td><a href=\"%s_f.html\"><em>%s</em></a></td>\n", indexname, sort_heading);
+    fprintf(f, "<td>&nbsp;&nbsp;&nbsp;</td>\n");
+    fprintf(f, "<td><em>description</em></td>\n");
   }
   fprintf(f, "</tr>\n");
 
 
   // blank line
-  fprintf(f, "<tr>\n");
+  fprintf(f, "<tr valign=\"top\">\n");
+  fprintf(f, "    <td>&nbsp;</td>\n");
+  fprintf(f, "    <td>&nbsp;</td>\n");
   fprintf(f, "    <td>&nbsp;</td>\n");
   fprintf(f, "    <td>&nbsp;</td>\n");
   fprintf(f, "    <td>&nbsp;</td>\n");
@@ -1915,11 +2375,15 @@ static void print_index_file(navbar_mode nmode, index_sort_type sort, file_index
 
   // index 
   for(i=0; i<ind->num; i++) {
+    char *desc = ic_get_desc(ind->ent[i].fname);
+    if(desc==NULL) desc = "&nbsp;";
     if(sort == SORT_FILE) {
-      fprintf(f, "<tr>\n");
+      fprintf(f, "<tr valign=\"top\">\n");
       fprintf(f, "    <td><a href=\"%s\">%s</a></td>\n", ind->ent[i].fname, ind->ent[i].path);
       fprintf(f, "    <td>&nbsp;</td>\n");
       fprintf(f, "    <td>%s</td>\n", ind->ent[i].name);
+      fprintf(f, "    <td>&nbsp;</td>\n");
+      fprintf(f, "    <td>%s</td>\n",desc);
       fprintf(f, "</tr>\n");
     } else {
       // new path - print a blank line for all but the 'apps' page
@@ -1928,12 +2392,16 @@ static void print_index_file(navbar_mode nmode, index_sort_type sort, file_index
         fprintf(f, "    <td>&nbsp;</td>\n");
         fprintf(f, "    <td>&nbsp;</td>\n");
         fprintf(f, "    <td>&nbsp;</td>\n");
+        fprintf(f, "    <td>&nbsp;</td>\n");
+        fprintf(f, "    <td>&nbsp;</td>\n");
         fprintf(f, "</tr>\n");
       }
-      fprintf(f, "<tr>\n");
+      fprintf(f, "<tr valign=\"top\">\n");
       fprintf(f, "    <td>%s</td>\n", (i>0 && !strcmp(ind->ent[i].path, ind->ent[i-1].path)) ? "&nbsp;" : ind->ent[i].path);
       fprintf(f, "    <td>&nbsp;</td>\n");
       fprintf(f, "    <td><a href=\"%s\">%s</a></td>\n", ind->ent[i].fname, ind->ent[i].name);
+      fprintf(f, "    <td>&nbsp;</td>\n");
+      fprintf(f, "    <td>%s</td>\n",desc);
       fprintf(f, "</tr>\n");
     }
   }
@@ -1955,7 +2423,7 @@ static void print_hierarchical_index_file(const char *filename, file_index *ind)
   char *prevdir;
   int i,j,level;
 
-  assert(f);
+  if( !f ) fatal("can't write to hierarchical index file '%s'",filename);
 
   fprintf(f, "<html>\n");
   fprintf(f, "<head><title>%s</title></head>\n", title);
@@ -2041,7 +2509,8 @@ static void generate_index_html() {
     DIR *dir;
 
     // open the dir
-    dir = opendir(".");  assert(dir);
+    dir = opendir(".");  
+    if( !dir ) fatal("can't open directory '.'");
 
     // allocate space
     {
@@ -2075,7 +2544,10 @@ static void generate_index_html() {
 
         // add to the appropriate list
         if( !strcmp(p,".nc.html") ) {
-          insert_entry(&comp, dent->d_name, ".nc.html");
+          if( ic_is_iface(dent->d_name) )
+            insert_entry(&iface, dent->d_name, ".nc.html");
+          else
+            insert_entry(&comp, dent->d_name, ".nc.html");
           insert_entry(&allfiles, dent->d_name, ".html");
           continue;
         }
@@ -2088,7 +2560,6 @@ static void generate_index_html() {
         }
       }
     }
-
   }
 
   // Generate index files, sorted by short name
@@ -2139,11 +2610,8 @@ static void generate_app_page(const char *filename, cgraph cg)
   char *fname;
   FILE *f;
 
-
-  // FIXME: how do we determine whether or not the main component is
-  // intended to be a complete app?  For now, we only attempt a
-  // whole-app file if there were no compilation errors.
-  if( errorcount ) 
+  // return if app file generation wasn't explicity requested
+  if( !is_app ) 
     return;
 
   // return, if the component is NULL
@@ -2162,7 +2630,7 @@ static void generate_app_page(const char *filename, cgraph cg)
 
   // generate the file
   fname    = doc_filename_with_ext(filename, ".app.html");
-  f = open_outfile(fname); assert(f);
+  f = open_outfile(fname); 
 
   fprintf(f, "<html>\n");
   fprintf(f, "<head><title>App: %s</title></head>\n", appname);
@@ -2228,10 +2696,26 @@ void generate_docs(const char *filename, cgraph cg)
       perror("chdir");
       fatal("error changing directory to docdir '%s'\n", docdir);
     }
+
+    // read the information cache
+    ic_read();
   }
 
 
-  // examine program
+  // update information cache with all loaded components
+  {
+    env_scanner scanner;
+    const char *name;
+    nesc_declaration decl;
+
+    env_scan(get_nesc_env(), &scanner);
+    while( env_next(&scanner, &name, (void **)&decl) )
+      ic_add_entry(decl);
+
+    // write the information cache
+    ic_write();
+  }
+
 
   // walk through the list of all components, and generate docs
   {
