@@ -368,6 +368,11 @@ static void prt_ncf_conditional_calls(struct connections *c, type return_type)
 	  unindent();
 	}
     }
+  else if (one_arg)
+    {
+      unindent();
+      outputln("}");
+    }
 }
 
 static void prt_nesc_connection_function(struct connections *c)

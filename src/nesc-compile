@@ -92,7 +92,7 @@ if ($nocompile) {
 }
 unshift @nesc_args, "nesc1";
 
-print join(" ", @nesc_args), "\n";
+print join(" ", @nesc_args), "\n" if $verbose;
 &vsystem(@nesc_args);
 if ($? != 0) {
     unlink $ctarget;

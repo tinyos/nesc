@@ -217,6 +217,9 @@ char *cmdline_nesc_path;
    varargs functions */
 int flag_no_debug;
 
+/* Nonzero means to output macro defs in the generated C file */
+int flag_save_macros;
+
 /* Nonzero means modify identifier and declaration output during code
    generation to accomodate tossim */
 bool use_tossim;

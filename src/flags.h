@@ -213,6 +213,9 @@ extern int flag_parse_only;
    varargs functions */
 extern int flag_no_debug;
 
+/* Nonzero means to output macro defs in the generated C file (a la -dD) */
+extern int flag_save_macros;
+
 /* Nonzero means modify identifier and declaration output during code
    generation to accomodate tossim */
 extern bool use_tossim;

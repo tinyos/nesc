@@ -57,6 +57,7 @@ static char *lang_options[] =
   "-fnesc-tossim-tosnodes=",
   "-fnesc-path=",
   "-fnesc-no-debug",
+  "-fnesc-save-macros",
   "-fnesc-msg=",
   "-fnesc-target=",
   "-fnesc-docdir=",
@@ -206,6 +207,10 @@ static void c_decode_option(char *p)
   else if (!strcmp (p, "-fnesc-no-debug"))
     {
       flag_no_debug = 1;
+    }
+  else if (!strcmp (p, "-fnesc-save-macros"))
+    {
+      flag_save_macros = 1;
     }
   else if (!strncmp (p, "-fnesc-docdir=", strlen("-fnesc-docdir=")))
     {

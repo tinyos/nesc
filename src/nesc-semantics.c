@@ -191,7 +191,8 @@ environment compile(location loc, source_language l,
     error_with_location(loc, "%s %s not found", language_name(l), name);
   else
     {
-      fprintf(stderr, "DBG> preprocessing %s\n", path);
+      if (flag_verbose)
+	fprintf(stderr, "preprocessing %s\n", path);
       f = preprocess(path, l);
 
       if (!f)
