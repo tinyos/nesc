@@ -1321,7 +1321,7 @@ static type_element primitive2ast(region r, location loc, int primitive,
   return rest;
 }
 
-#define UNNAMED_STRUCT_PREFIX "__unnamed"
+#define UNNAMED_STRUCT_PREFIX "__nesc_unnamed"
 
 void name_tag(tag_declaration tag)
 {

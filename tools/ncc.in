@@ -112,6 +112,11 @@ elsif ($target eq "rene2") {
     push @new_args, ("-mmcu=atmega163", "-fnesc-target=avr");
     @commonplatforms = ("avrmote");
 }
+elsif ($target eq "motor") {
+    $gcc = "avr-gcc";
+    push @new_args, ("-mmcu=atmega161", "-fnesc-target=avr");
+    @commonplatforms = ("avrmote");
+}
 else {
     &fail("unknown target $target\n(known targets are pc, mica, mica128, rene2)");
 }
