@@ -19,6 +19,35 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-inline.h"
 #include "constants.h"
 
+struct inline_node
+{
+  data_declaration fn;
+  size_t size;
+  bool uninlinable;
+};
+
+static void ig_add_fn(region r, ggraph ig, data_declaration fn, size_t size)
+{
+  struct inline_node *n = ralloc(r, struct inline_node);
+
+  n->fn = fn;
+  n->size = size;
+  fn->ig_node = graph_add_node(ig, n);
+}
+
+static void ig_add_edge(data_declaration from, data_declaration to)
+{
+  graph_add_edge(from->ig_node, to->ig_node, NULL);
+
+  /* Recursion - mark as uninlinable */
+  if (from == to)
+    {
+      struct inline_node *n = NODE_GET(struct inline_node *, from->ig_node);
+
+      n->uninlinable = TRUE;
+    }
+}
+
 static size_t statement_size(statement stmt);
 static size_t expression_size(expression expr);
 
@@ -252,30 +281,101 @@ static size_t function_size(function_decl fd)
   return statement_size(fd->stmt);
 }
 
-void inline_functions(cgraph callgraph)
+static ggraph make_ig(region r, cgraph callgraph)
 {
-  ggraph g = cgraph_graph(callgraph);
+  ggraph cg = cgraph_graph(callgraph);
+  ggraph ig = new_graph(r);
   gnode n;
 
-  graph_scan_nodes (n, g)
+  graph_scan_nodes (n, cg)
     {
-      endp fn = NODE_GET(endp, n);
-      data_declaration fndecl = fn->function;
+      data_declaration fn = NODE_GET(endp, n)->function;
 
-      if (!fndecl->definition)
-	fndecl->makeinline = TRUE;
-      else if (!fndecl->isinline)
+      ig_add_fn(r, ig, fn,
+		fn->definition ?
+		  function_size(CAST(function_decl, fn->definition)) : 1);
+    }
+  graph_scan_nodes (n, cg)
+    {
+      data_declaration fn = NODE_GET(endp, n)->function;
+      gedge e;
+
+      graph_scan_out (e, n)
+	ig_add_edge(fn, NODE_GET(endp, graph_edge_to(e))->function);
+    }
+  return ig;
+}
+
+static void inline_function(gnode n, struct inline_node *in)
+{
+  gedge call_edge, called_edge, next_edge;
+
+  if (in->uninlinable)
+    return;
+
+  in->fn->makeinline = TRUE;
+  /* Add callgraph edges implied by this inlining and update caller
+     sizes */
+  graph_scan_in (call_edge, n)
+    {
+      gnode caller = graph_edge_from(call_edge);
+      struct inline_node *caller_in = NODE_GET(struct inline_node *, caller);
+      
+      caller_in->size += in->size - 1;
+
+      graph_scan_out (called_edge, n)
+	{
+	  gnode called = graph_edge_to(called_edge);
+
+	  ig_add_edge(caller_in->fn,
+		      NODE_GET(struct inline_node *, called)->fn);
+	}
+    }
+
+  /* Remove edges leaving inlined function 
+     (we don't bother removing incoming edges as we won't look at them
+     again) */
+  called_edge = graph_first_edge_out(n);
+  while (called_edge)
+    {
+      next_edge = graph_next_edge_out(called_edge);
+      graph_remove_edge(called_edge);
+      called_edge = next_edge;
+    }
+}
+
+void inline_functions(cgraph callgraph)
+{
+  region igr = newregion();
+  ggraph ig = make_ig(igr, callgraph);
+  gnode n;
+
+  /* Inline all stub functions */
+  graph_scan_nodes (n, ig)
+    {
+      struct inline_node *in = NODE_GET(struct inline_node *, n);
+      
+      if (!in->fn->definition)
+	inline_function(n, in);
+    }
+
+  /* Inline small fns, medium-size single-call fns */
+  graph_scan_nodes (n, ig)
+    {
+      struct inline_node *in = NODE_GET(struct inline_node *, n);
+      
+      if (in->fn->definition && !in->fn->isinline)
 	{
 	  gedge e;
-	  size_t edgecount = 0,
-	    fnsize = function_size(CAST(function_decl, fndecl->definition));
+	  size_t edgecount = 0;
 
 	  graph_scan_in (e, n)
 	    edgecount++;
       
-	  if (fnsize <= 15 || edgecount == 1 && fnsize <= 100)
-	    fndecl->makeinline = TRUE;
+	  if (in->size <= 15 || edgecount == 1)
+	    inline_function(n, in);
 	}
     }
+  deleteregion(igr);
 }
 

@@ -1099,8 +1099,6 @@ void prt_identifier(identifier e, int context_priority)
   if (decl->kind == decl_function && decl->uncallable)
     error_with_location(e->location, "%s not connected", e->cstring.data);
 
-  decl->makeinline = FALSE;
-
   set_location(e->location);
   if (decl->container && !decl->Cname)
     output_stripped_string_dollar(decl->container->name);
@@ -1206,8 +1204,6 @@ void prt_interface_deref(interface_deref e, int context_priority)
     error_with_location(e->location, "%s.%s not connected",
 			CAST(identifier, e->arg1)->cstring.data,
 			e->cstring.data);
-
-  decl->makeinline = FALSE;
 
   prt_expression(e->arg1, P_CALL);
   //output("$");

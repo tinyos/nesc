@@ -597,41 +597,85 @@ static void prt_nesc_function(data_declaration fn)
     prt_nesc_connection_function(fn->connections);
 }
 
-static void topological_prt(gnode gep)
+static bool isinlined(data_declaration fn)
+{
+  return fn->isinline || fn->makeinline;
+}
+
+static void topological_prt(gnode gep, bool force)
 {
   gedge out;
   data_declaration fn;
 
-  if (graph_node_markedp(gep))
-    return;
-
-  graph_mark_node(gep);
-
-  graph_scan_out (out, gep)
-    topological_prt(graph_edge_to(out));
-
   fn = NODE_GET(endp, gep)->function;
-  prt_nesc_function(fn);
+  if (isinlined(fn) || force)
+    {
+      if (graph_node_markedp(gep))
+	return;
+
+      graph_mark_node(gep);
+
+      graph_scan_out (out, gep)
+	topological_prt(graph_edge_to(out), FALSE);
+
+      prt_nesc_function(fn);
+    }
 }
 
-static void topological_prt_ddecl(cgraph callgraph, dd_list_pos dpos)
+static void prt_inline_functions(cgraph callgraph)
 {
-  data_declaration ddecl = DD_GET(data_declaration, dpos);
-
-  if (ddecl->kind == decl_function)
-    topological_prt(fn_lookup(callgraph, ddecl));
-}
-
-static void prt_functions_topologically(cgraph callgraph)
-{
-  dd_list_pos used;
+  gnode fns;
 
   graph_clear_all_marks(cgraph_graph(callgraph));
 
-  dd_scan (used, spontaneous_calls)
-    topological_prt_ddecl(callgraph, used);
-  dd_scan (used, global_uses)
-    topological_prt_ddecl(callgraph, used);
+  graph_scan_nodes (fns, cgraph_graph(callgraph))
+    {
+      data_declaration fn = NODE_GET(endp, fns)->function;
+
+      if (isinlined(fn))
+	{
+	  gedge callers;
+	  bool inlinecallers = FALSE;
+
+	  graph_scan_in (callers, fns)
+	    {
+	      data_declaration caller =
+		NODE_GET(endp, graph_edge_from(callers))->function;
+
+	      if (isinlined(caller))
+		{
+		  inlinecallers = TRUE;
+		  break;
+		}
+	    }
+
+	  if (!inlinecallers)
+	    topological_prt(fns, FALSE);
+	}
+    }
+}
+
+static void prt_noninline_functions(cgraph callgraph)
+{
+  gnode fns;
+
+  graph_scan_nodes (fns, cgraph_graph(callgraph))
+    {
+      data_declaration fn = NODE_GET(endp, fns)->function;
+
+      if (!isinlined(fn))
+	{
+	  /* There may be some inlined functions which were not printed
+	     earlier, because they were:
+	     a) recursive (possibly indirectly), with explicit inline
+	        keywords
+	     b) not called from another inline function
+	     So we use topological_prt here to ensure they are printed
+	     before any calls to them from non-inlined functions
+	  */
+	  topological_prt(fns, TRUE);
+	}
+    }
 }
 
 static void suppress_function(const char *name)
@@ -646,7 +690,6 @@ void generate_c_code(nesc_declaration program, const char *target_name,
 		     cgraph cg, dd_list modules)
 {
   dd_list_pos mod;
-  gnode fns;
   cgraph callgraph;
   FILE *output = NULL;
 
@@ -697,7 +740,8 @@ void generate_c_code(nesc_declaration program, const char *target_name,
   dd_scan (mod, modules)
     prt_nesc_module(cg, DD_GET(nesc_declaration, mod));
 
-  prt_functions_topologically(callgraph);
+  prt_inline_functions(callgraph);
+  prt_noninline_functions(callgraph);
 
   unparse_end();
 
