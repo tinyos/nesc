@@ -225,7 +225,8 @@ data_declaration declare(environment b, data_declaration from,
   /* C names go all the way to the top... */
   if (dd->Cname)
     env_add(global_env->id_env, dd->name, dd);
-  if (dd->spontaneous)
+  if (dd->spontaneous ||
+      (getenv("ALLCODE") && dd->kind == decl_function))
     dd_add_last(parse_region, spontaneous_calls, dd);
 
   /* init doc stuff to NULL */
@@ -1608,10 +1609,10 @@ void handle_attribute(attribute attr, data_declaration ddecl,
     {
       if (ddecl)
 	{
-	  if (ddecl->kind == decl_function)
+	  if (ddecl->kind == decl_function && ddecl->ftype == function_normal)
 	    ddecl->spontaneous = TRUE;
 	  else
-	    error_with_location(attr->location, "`spontaneous' attribute is for functions only");
+	    error_with_location(attr->location, "`spontaneous' attribute is for external functions only");
 	}
       else
 	ignored_attribute(attr);
@@ -3544,6 +3545,9 @@ void note_identifier_use(data_declaration ddecl)
 
 void init_semantics(void)
 {
+  global_uses = dd_new_list(parse_region);
+  spontaneous_calls = dd_new_list(parse_region);
+
   global_env = current.env = new_environment(parse_region, NULL, TRUE, FALSE);
 
   bad_decl = ralloc(parse_region, struct data_declaration);
@@ -3568,9 +3572,6 @@ void init_semantics(void)
   onecst = make_signed_cst(1, int_type);
   zerocst = make_signed_cst(0, int_type);
   oneexpr = build_uint_constant(parse_region, dummy_location, size_t_type, 1);
-
-  global_uses = dd_new_list(parse_region);
-  spontaneous_calls = dd_new_list(parse_region);
 }
 
 void start_semantics(source_language l, nesc_declaration container,

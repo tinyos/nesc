@@ -549,7 +549,10 @@ static void mark_reachable_function(cgraph cg,
     return;
   ddecl->isused = TRUE;
 
-  if (ddecl->kind != decl_function)
+  if (ddecl->kind != decl_function ||
+      (ddecl->container && 
+       !(ddecl->container->kind == l_component &&
+	 is_module(CAST(component, ddecl->container->ast)->implementation))))
     return;
 
   if ((ddecl->ftype == function_command || ddecl->ftype == function_event) &&

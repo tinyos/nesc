@@ -359,6 +359,7 @@ void inline_functions(cgraph callgraph)
 	inline_function(n, in);
     }
 
+  if (!getenv("NOINLINE"))
   /* Inline small fns and single-call fns */
   graph_scan_nodes (n, ig)
     {
