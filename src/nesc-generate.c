@@ -154,9 +154,31 @@ static bool prt_arguments(declaration parms, bool first)
   return first;
 }
 
+static bool combiner_warning_printed;
+
+static void combine_warning(struct connections *c)
+{
+  if (!combiner_warning_printed)
+    {
+      combiner_warning_printed = TRUE;
+
+#if 0
+      /* Warnings to be enabled when result_t gets defined correctly */
+      if (c->called->interface)
+	warning("uncombined call to %s.%s.%s",
+		c->called->container->name,
+		c->called->interface->name,
+		c->called->name);
+      else
+	warning("uncombined call to %s.%s",
+		c->called->container->name, c->called->name);
+    }
+#endif
+}
+
 void prt_ncf_direct_call(struct connections *c,
 			 full_connection ccall,
-			 bool last_call,
+			 bool first_call,
 			 psd_options options,
 			 type return_type,
 			 function_declarator called_fd)
@@ -164,11 +186,26 @@ void prt_ncf_direct_call(struct connections *c,
      Assigns result if last_call is TRUE.
 */
 {
-  bool first = TRUE;
+  bool first_arg = TRUE;
+  data_declaration combiner = type_combiner(return_type);
+  bool calling_combiner = FALSE;
 
-  /* set result for last call */
-  if (last_call && !type_void(return_type))
-    output("result = ");
+  if (!type_void(return_type))
+    {
+      output("result = ");
+
+      /* Combine w/ the combiner on subsequent calls */
+      if (!first_call)
+	{
+	  if (combiner)
+	    {
+	      output("%s(result, ", combiner->name);
+	      calling_combiner = TRUE;
+	    }
+	  else
+	    combine_warning(c);
+	}
+    }
 
   prt_ddecl_full_name(ccall->ep->function, options);
   output("(");
@@ -177,19 +214,23 @@ void prt_ncf_direct_call(struct connections *c,
       if (ccall->args)
 	{
 	  /* Non-generic calling generic, add arguments */
-	  prt_expressions(ccall->args, first);
-	  first = FALSE;
+	  prt_expressions(ccall->args, first_arg);
+	  first_arg = FALSE;
 	}
       else
 	{
 	  /* Generic calling generic, pass arguments through */
-	  first = prt_arguments(ddecl_get_gparms(c->called), first);
+	  first_arg = prt_arguments(ddecl_get_gparms(c->called), first_arg);
 	}
     }
   else
     assert(!ccall->args);
 
-  prt_arguments(called_fd->parms, first);
+  prt_arguments(called_fd->parms, first_arg);
+
+  if (calling_combiner)
+    output(")");
+
   outputln(");");
 }
 
@@ -208,13 +249,14 @@ void prt_ncf_default_call(struct connections *c,
 		      return_type, called_fd);
 }
 
-void prt_ncf_direct_calls(struct connections *c,
+bool prt_ncf_direct_calls(struct connections *c,
 			  dd_list/*<full_connection>*/ calls,
 			  type return_type)
 /* Effects: prints calls to 'calls' in a connection function.
 */
 {
   dd_list_pos call;
+  bool first_call = TRUE;
   function_declarator called_fd = ddecl_get_fdeclarator(c->called);
 
   dd_scan (call, calls)
@@ -223,9 +265,11 @@ void prt_ncf_direct_calls(struct connections *c,
 
       assert(!ccall->cond);
 
-      prt_ncf_direct_call(c, ccall, dd_is_end(dd_next(call)), 0,
-			  return_type, called_fd);
+      prt_ncf_direct_call(c, ccall, first_call, 0, return_type, called_fd);
+      first_call = FALSE;
     }
+
+  return first_call;
 }
 
 static int constant_expression_list_compare(expression arg1, expression arg2)
@@ -282,7 +326,7 @@ static void prt_ncf_condition(struct connections *c, expression cond)
   output(") ");
 }
 
-static void prt_ncf_conditional_calls(struct connections *c, type return_type)
+static void prt_ncf_conditional_calls(struct connections *c, bool first_call, type return_type)
 {
   dd_list_pos call;
   int i, j, ncalls = dd_length(c->normal_calls);
@@ -316,6 +360,7 @@ static void prt_ncf_conditional_calls(struct connections *c, type return_type)
   while (i < ncalls)
     {
       expression cond = cond_eps[i]->cond;
+      bool first_cond_call = first_call;
 
       /* output latest condition */
       if (one_arg)
@@ -341,8 +386,9 @@ static void prt_ncf_conditional_calls(struct connections *c, type return_type)
       /* print them, setting result for the last one */
       while (i < j)
 	{
-	  prt_ncf_direct_call(c, cond_eps[i], i == j - 1, 0,
+	  prt_ncf_direct_call(c, cond_eps[i], first_cond_call, 0,
 			      return_type, called_fd);
+	  first_cond_call = FALSE;
 	  i++;
 	}
 	
@@ -352,8 +398,8 @@ static void prt_ncf_conditional_calls(struct connections *c, type return_type)
       if (!one_arg)
 	outputln("}");
     }
-  /* output call to default if there are no generic calls */
-  if (dd_is_empty(c->generic_calls))
+  /* output call to default if there are no non-conditional calls */
+  if (first_call)
     {
       if (ncalls > 0)
 	{
@@ -386,10 +432,14 @@ static void prt_nesc_connection_function(struct connections *c)
 
   prt_ncf_header(c, return_type);
 
+  combiner_warning_printed = FALSE;
+
   if (c->called->gparms)
     {
-      prt_ncf_direct_calls(c, c->generic_calls, return_type);
-      prt_ncf_conditional_calls(c, return_type);
+      bool first_call;
+
+      first_call = prt_ncf_direct_calls(c, c->generic_calls, return_type);
+      prt_ncf_conditional_calls(c, first_call, return_type);
     }
   else
     {

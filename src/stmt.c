@@ -26,6 +26,12 @@ Boston, MA 02111-1307, USA. */
 #include "expr.h"
 #include "c-parse.h"
 
+void fail_in_atomic(const char *context)
+{
+  if (current.in_atomic)
+    error("%s not allowed in atomic statements", context);
+}
+
 void check_condition(const char *context, expression e)
 {
   type etype = default_conversion(e);
@@ -59,6 +65,8 @@ void check_void_return(void)
 
   if (warn_return_type && ret != error_type && !type_void(ret))
     warning("`return' with no value, in function returning non-void");
+
+  fail_in_atomic("return");
 }
 
 void check_return(expression e)
@@ -75,6 +83,7 @@ void check_return(expression e)
       check_assignment(ret, default_conversion_for_assignment(e), e, "return", NULL, 0);
       /* XXX: Missing warning about returning address of local var */
     }
+  fail_in_atomic("return");
 }
 
 void check_computed_goto(expression e)
@@ -148,6 +157,8 @@ void define_label(id_label label)
     duplicate_label_error(label);
   else
     label->ldecl->definition = label;
+
+  fail_in_atomic("labels");
 }
 
 void declare_label(id_label label)
@@ -254,6 +265,7 @@ void check_case(label label0)
     check_case_value(label->arg2);
   /* XXX: no range check (compared to switched type), no empty range check */
   /* XXX: no check for unreachable code */
+  fail_in_atomic("case labels");
 }
 
 void check_default(label default_label)
@@ -263,6 +275,7 @@ void check_default(label default_label)
   if (!sw)
     error("default label not within a switch statement");
   /* XXX: no check for unreachable code */
+  fail_in_atomic("default");
 }
 
 void check_break(statement break_statement)
@@ -271,6 +284,7 @@ void check_break(statement break_statement)
     error("break statement not within loop or switch");
 
   break_statement->parent_loop = current.function_decl->current_loop;
+  fail_in_atomic("break");
 }
 
 void check_continue(statement continue_statement)
@@ -285,4 +299,5 @@ void check_continue(statement continue_statement)
     error("continue statement not within a loop");
 
   continue_statement->parent_loop = loop;
+  fail_in_atomic("continue");
 }

@@ -51,8 +51,6 @@ static char *function_separator;
 /* modify behavior of low-level functions when printing docs */
 static bool documentation_mode;
 
-static region tempregion;
-
 typedef struct prt_closure {
   void (*fn)(struct prt_closure *closure);
 
@@ -343,6 +341,7 @@ void prt_return_stmt(return_stmt s);
 void prt_goto_stmt(goto_stmt s);
 void prt_computed_goto_stmt(computed_goto_stmt s);
 void prt_empty_stmt(empty_stmt s);
+void prt_atomic_stmt(atomic_stmt s);
 
 void prt_label(label l);
 void prt_id_label(id_label l);
@@ -351,9 +350,10 @@ void prt_default_label(default_label l);
 
 void prt_regionof(expression e);
 
+static region unparse_region;
+
 void unparse_start(FILE *to)
 {
-  tempregion = newregion();
   of = to;
   output_loc = *dummy_location;
   at_line_start = TRUE;
@@ -361,11 +361,12 @@ void unparse_start(FILE *to)
   documentation_mode = FALSE;
   indent_level = 0;
   function_separator = "$";
+  unparse_region = newregion();
 }
 
 void unparse_end(void) deletes
 {
-  deleteregion_ptr(&tempregion);
+  deleteregion_ptr(&unparse_region);
 }
 
 void unparse(FILE *to, declaration program) deletes
@@ -390,8 +391,17 @@ void disable_line_directives(void)
   no_line_directives = TRUE;
 }
 
-void set_function_separator(char *sep) {
+void set_function_separator(char *sep) 
+{
   function_separator = sep;
+}
+
+FILE *set_unparse_outfile(FILE *newout) 
+{
+  FILE *temp = of;
+
+  of = newout;
+  return temp;
 }
 
 void enable_documentation_mode(void) 
@@ -1473,6 +1483,7 @@ void prt_statement(statement s)
       PRTCASE(goto_stmt, s);
       PRTCASE(computed_goto_stmt, s);
       PRTCASE(empty_stmt, s);
+      PRTCASE(atomic_stmt, s);
     default: assert(0); return;
     }
 }
@@ -1756,6 +1767,24 @@ void prt_empty_stmt(empty_stmt s)
 {
   set_location(s->location);
   outputln(";");
+}
+
+void prt_atomic_stmt(atomic_stmt s)
+{
+  struct location hack;
+
+  set_location(s->location);
+  outputln("{ __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();");
+  indent();
+  prt_statement(s->stmt);
+
+  /* The hack is to make debugging nicer: we make this new line appear 
+     to be part of the previous line */
+  hack = output_loc;
+  hack.lineno--;
+  set_location(&hack);
+  outputln("__nesc_atomic_end(__nesc_atomic); }");
+  unindent();
 }
 
 void prt_label(label l)

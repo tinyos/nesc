@@ -1,4 +1,5 @@
 K(as, AS, NORID)
+K(atomic, ATOMIC, NORID)
 K(call, CALL, NORID)
 K(command, SCSPEC, RID_COMMAND)
 K(components, COMPONENTS, NORID)

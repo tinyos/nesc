@@ -40,6 +40,7 @@ void check_case(label case_label);
 void check_default(label default_label);
 void check_break(statement break_statement);
 void check_continue(statement continue_statement);
+void fail_in_atomic(const char *context);
 
 void push_loop(statement loop_statement);
 void pop_loop(void);

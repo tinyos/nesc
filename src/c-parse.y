@@ -156,7 +156,7 @@ void yyerror();
 %type <u.itoken> sizeof alignof
 %type <u.label> label
 %type <u.stmt> stmts xstmts compstmt_or_error compstmt
-%type <u.stmt> labeled_stmt stmt
+%type <u.stmt> labeled_stmt stmt stmt_or_error atomic_stmt
 %type <u.cstmt> do_stmt_start
 %type <u.string> asm_clobbers string
 %type <u.telement> declspecs_nosc_nots_nosa_noea
@@ -197,7 +197,7 @@ void yyerror();
 %token <u.itoken> DISPATCH_C DISPATCH_NESC
 
 /* tinyos reserved words */
-%token <u.itoken> USES INTERFACE COMPONENTS PROVIDES MODULE INCLUDES
+%token <u.itoken> ATOMIC USES INTERFACE COMPONENTS PROVIDES MODULE INCLUDES
 %token <u.itoken> CONFIGURATION AS TASTNIOP IMPLEMENTATION CALL SIGNAL POST
 
 %type <u.itoken> callkind
@@ -2074,6 +2074,23 @@ stmt_or_label:
 		{ $$.i = 1; $$.stmt = CAST(statement, new_labeled_stmt(pr, $1->location, $1, NULL)); }
 	;
 
+atomic_stmt:
+	  ATOMIC { current.in_atomic++; }
+	  stmt_or_error
+	  	{
+	  	  current.in_atomic--;
+		  if (current.in_atomic) /* Ignore nested atomics */
+		    $$ = $3;
+		  else
+		    $$ = CAST(statement, new_atomic_stmt(pr, $1.location, $3));
+		}
+	;
+
+stmt_or_error:
+	  stmt
+	| error { $$ = make_error_stmt(); }
+	;
+
 /* Parse a single real statement, not including any labels.  */
 stmt:
 	  compstmt
@@ -2180,13 +2197,16 @@ stmt:
 		{ stmt_count++;
 		  $$ = CAST(statement, new_goto_stmt(pr, $1.location, $2));
 		  use_label($2);
+		  fail_in_atomic("goto");
 		}
 	| GOTO '*' expr ';'
 		{ if (pedantic)
 		    pedwarn("ANSI C forbids `goto *expr;'");
+		  fail_in_atomic("goto");
 		  stmt_count++;
 		  $$ = CAST(statement, new_computed_goto_stmt(pr, $1.location, $3)); 
 		  check_computed_goto($3); }
+	| atomic_stmt
 	| ';' { $$ = CAST(statement, new_empty_stmt(pr, $1.location)); }
 	;
 

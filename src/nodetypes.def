@@ -588,3 +588,6 @@ For now at least, DECLARATOR is always an identifier_declarator")
   "ARG1.CSTRING where ARG1 is an interface_ref.
 DDECL is the command or event's declaration")
 
+(deftype atomic_stmt statement (stmt)
+  "ATOMIC stmt
+An atomic_stmt is not made for lexically nested atomic statements")
