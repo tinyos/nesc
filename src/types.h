@@ -155,6 +155,7 @@ bool type_unsigned_long_long(type t);
 bool type_unknown_int(type t);
 bool type_long_double(type t);
 bool type_unknown_number(type t);
+bool type_unknown(type t); /* unknown_int or unknown_number */
 
 bool type_tagged(type t);
 bool type_integral(type t);	/* Does not include enum's */

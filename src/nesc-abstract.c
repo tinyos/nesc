@@ -103,6 +103,7 @@ static void forward(data_declaration *dd)
 
 static void instantiate_ddecl_types(data_declaration ddecl)
 {
+  /* type's in declarations come from the source code, so cannot be unknown */
   ddecl->type = instantiate_type(ddecl->type);
   if (ddecl->kind == decl_interface_ref && ddecl->gparms)
     ddecl->gparms = instantiate_typelist(ddecl->gparms);
@@ -158,6 +159,7 @@ static void copy_fields(region r, tag_declaration copy, tag_declaration orig)
       field_declaration cfield = ralloc(r, struct field_declaration);
 
       *cfield = *ofield;
+      /* type's in fields come from the source code, so cannot be unknown */
       cfield->type = instantiate_type(cfield->type);
       cfield->ast = CAST(field_decl, ofield->ast->instantiation);
       ofield->instantiation = cfield;
@@ -247,6 +249,7 @@ static ivalue instantiate_ivalue(region r, ivalue value)
   if (value->instantiation)
     return value->instantiation;
 
+  /* type's in ivalues come from the source code, so cannot be unknown */
   copy = new_ivalue(r, value->kind, instantiate_type(value->type));
   value->instantiation = copy;
   switch (value->kind)
@@ -295,15 +298,134 @@ static void clear_ivalue_instantiations(ivalue value)
     }
 }
 
+static type unary_type(unary e)
+{
+  switch (e->kind)
+    {
+    case kind_unary_plus:
+    case kind_unary_minus:
+    case kind_bitnot:
+      return type_default_conversion(e->type);
+    case kind_realpart: case kind_imagpart: {
+      type etype = type_default_conversion(e->type);
+
+      return type_complex(etype) ? make_base_type(etype) : etype;
+    }
+    default: /* ++, --, cast, address of, dereference, field ref, 
+		component deref, not, sizeof expr, alignof expr */
+      return instantiate_type(e->type);
+    }
+}
+
+static type binary_type(binary e)
+{
+  switch(e->kind)
+    {
+    case kind_plus: case kind_minus: case kind_times: case kind_divide:
+    case kind_modulo: case kind_bitand: case kind_bitor: case kind_bitxor:
+    case kind_lshift: case kind_rshift:
+    case kind_plus_assign: case kind_minus_assign: case kind_times_assign:
+    case kind_divide_assign: case kind_modulo_assign: case kind_bitand_assign:
+    case kind_bitor_assign: case kind_bitxor_assign: case kind_lshift_assign:
+    case kind_rshift_assign: {
+      type t1 = type_default_conversion(e->arg1->type);
+      type t2 = type_default_conversion(e->arg2->type);
+
+      /* Detect the various pointer arithmetic cases. These cannot lead to
+	 an unknown type, and don't want to be passed to common type */
+      if (type_pointer(t1) || type_pointer(t2))
+	return instantiate_type(e->type);
+      else
+	return common_type(t1, t2);
+    }
+    case kind_leq: case kind_geq: case kind_lt: case kind_gt:
+    case kind_eq: case kind_ne:
+    case kind_andand: case kind_oror:
+    case kind_array_ref: case kind_assign:
+      return instantiate_type(e->type);
+
+    default: assert(0); break;
+    }
+}
+
+static type conditional_type(conditional e)
+{
+  type rtype = NULL;
+  type ttype = type_default_conversion(e->arg1->type);
+  type ftype = type_default_conversion(e->arg2->type);
+
+  if (type_equal(ttype, ftype))
+    rtype = ttype;
+  else if (type_equal_unqualified(ttype, ftype))
+    rtype = make_qualified_type(ttype, no_qualifiers);
+  else if (type_real(ttype) && type_real(ftype))
+    /* This should probably be type_arithmetic. See complex3.c/C9X */
+    rtype = common_type(ttype, ftype);
+  else if (type_void(ttype) || type_void(ftype))
+    rtype = void_type;
+  else if (type_pointer(ttype) && type_pointer(ftype))
+    {
+      type tpointsto = type_points_to(ttype), fpointsto = type_points_to(ftype);
+
+      if (type_compatible_unqualified(tpointsto, fpointsto))
+	rtype = common_type(tpointsto, fpointsto);
+      else if (definite_null(e->arg1) && type_void(tpointsto))
+	rtype = fpointsto;
+      else if (definite_null(e->arg2) && type_void(fpointsto))
+	rtype = tpointsto;
+      else if (type_void(tpointsto))
+	rtype = tpointsto; /* void * result */
+      else if (type_void(fpointsto))
+	rtype = fpointsto; /* void * result */
+      else
+	/* Slight difference from GCC: I qualify the result type with
+	   the appropriate qualifiers */
+	rtype = void_type;
+
+      /* Qualifiers depend on both types */
+      rtype = make_pointer_type(qualify_type2(rtype, tpointsto, fpointsto));
+    }
+  else if (type_pointer(ttype) && type_integer(ftype))
+    rtype = ttype;
+  else if (type_pointer(ftype) && type_integer(ttype))
+    rtype = ftype;
+  else if (flag_cond_mismatch)
+    rtype = void_type;
+  else
+    assert(0);
+  
+  /* Qualifiers depend on both types */
+  return qualify_type2(rtype, ttype, ftype);
+}
+
+static type expression_type(expression e)
+{
+  switch (e->kind)
+    {
+    default:
+      if (is_binary(e))
+	return binary_type(CAST(binary, e));
+      if (is_unary(e))
+	return unary_type(CAST(unary, e));
+      /* constants, label address, sizeof type, alignof type, identifier,
+	 function call: these cannot be unknown type */
+      return instantiate_type(e->type); 
+
+    case kind_comma:
+      return last_comma(CAST(comma, e))->type;
+
+    case kind_conditional:
+      return conditional_type(CAST(conditional, e));
+      /* ick */
+      break;
+    }
+}
+
 static AST_walker_result clone_expression(AST_walker spec, void *data,
 					  expression *n)
 {
   expression new = clone(data, n);
   ivalue old_ivalue = NULL;
-
-  /* A few nodes (related to initialisation) don't have types */
-  if (new->type)
-    new->type = instantiate_type(new->type);
 
   if (new->ivalue)
     {
@@ -322,6 +444,10 @@ static AST_walker_result clone_expression(AST_walker spec, void *data,
   if (old_ivalue)
     clear_ivalue_instantiations(old_ivalue);
 
+  /* A few nodes (related to initialisation) don't have types */
+  if (new->type)
+    new->type = expression_type(new);
+
   return aw_done;
 }
 
@@ -329,6 +455,7 @@ static AST_walker_result clone_asttype(AST_walker spec, void *data, asttype *n)
 {
   asttype new = clone(data, n);
 
+  /* type's in asttype come from the source code, so cannot be unknown */
   new->type = instantiate_type(new->type);
 
   return aw_walk;

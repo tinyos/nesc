@@ -749,6 +749,12 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 				  "expression does not have a valid type");
 	      newtype = error_type;
 	    }
+	  else if (type_unknown(newtype))
+	    {
+	      error_with_location(spec->location,
+				  "typeof an expression based on an @integer() or @number() type not supported");
+	      newtype = error_type;
+	    }
 	  break;
 	case kind_struct_ref: case kind_union_ref: case kind_enum_ref:
 	case kind_nw_struct_ref: case kind_nw_union_ref:

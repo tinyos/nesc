@@ -674,6 +674,11 @@ bool type_unknown_number(type t)
   return t->kind == tk_primitive && t->u.primitive == tp_unknown_number;
 }
 
+bool type_unknown(type t) /* unknown_int or unknown_number */
+{
+  return type_unknown_int(t) || type_unknown_number(t);
+}
+
 bool type_char(type t)
 {
   return t->kind == tk_primitive &&
@@ -2110,6 +2115,10 @@ type instantiate_type(type t)
 */
 {
   type newt = NULL;
+
+  /* Instantiating an unknown type is not possible (we don't know what
+     type to produce) */
+  assert(!type_unknown(t));
 
   switch (t->kind)
     {
