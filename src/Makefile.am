@@ -61,6 +61,7 @@ libparser_a_SOURCES =				\
 	c-lex.c					\
 	c-lex.h					\
 	c-lex-int.h				\
+	c-lex-state.h				\
 	c-parse.h				\
 	c-parse.tab.h				\
 	c-parse.tab.c				\
@@ -115,6 +116,7 @@ libparser_a_SOURCES =				\
 	nesc-decls.h				\
 	nesc-dfilter.c				\
 	nesc-dfilter.h				\
+	nesc-dspec.h				\
 	nesc-dspec-int.h			\
 	nesc-dspec.tab.c			\
 	nesc-dspec.tab.h			\
@@ -190,6 +192,7 @@ BUILT_SOURCES =					\
 
 EXTRA_DIST = 					\
 	build-basics.el				\
+	build-list.el				\
 	build-parent.el				\
 	build-print.el				\
 	build-types.el				\
@@ -199,13 +202,15 @@ EXTRA_DIST = 					\
 	cg_help.c				\
 	cg_help.fig				\
 	nodetypes.def				\
-	AST_defs.c				\
+	AST_defs.h				\
+	AST_list_node.c				\
 	AST_parent.c				\
 	AST_print.c				\
+	AST_types.c				\
 	AST_walk_children.c			\
-	ND_defs.c				\
 	ND_defs.h				\
-	ND_types.h				\
+	ND_list_nd_arg.c			\
+	ND_types.c				\
 	machine/self.c				\
 	machine/avr.c				\
 	machine/env_machine.c			\

@@ -42,7 +42,7 @@ sub decode() {
     @spec = @_;
 
     $_ = shift @spec;
-    /^((nw_)?struct|union) .* ([0-9]+) ([-0-9]+)/ or die;
+    /^((nx_)?struct|union) .* ([0-9]+) ([-0-9]+)/ or die;
     $size = $3;
     $amtype = $4;
 

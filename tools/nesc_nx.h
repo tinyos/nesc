@@ -9,23 +9,23 @@ static inline uint8_t __nesc_ntoh_uint8(void *source) {
 }
 static inline uint16_t __nesc_ntoh_uint16(void *source) {
   uint8_t *base = source;
-  return (uint16_t)base[0] << 8 | base[1];
+  return (uint16_t)base[1] << 8 | base[0];
 }
 static inline uint32_t __nesc_ntoh_uint32(void *source) {
   uint8_t *base = source;
-  return (uint32_t)base[0] << 24 |
-         (uint32_t)base[1] << 16 |
-         (uint32_t)base[2] << 8 | base[3];
+  return (uint32_t)base[3] << 24 |
+         (uint32_t)base[2] << 16 |
+         (uint32_t)base[1] << 8 | base[0];
 }
 static inline uint64_t __nesc_ntoh_uint64(void *source) {
   uint8_t *base = source;
-  return (uint64_t)base[0] << 56 |
-         (uint64_t)base[1] << 48 |
-         (uint64_t)base[2] << 40 |
-         (uint64_t)base[3] << 32 |
-         (uint64_t)base[4] << 24 |
-         (uint64_t)base[5] << 16 |
-         (uint64_t)base[6] << 8  | base[7];
+  return (uint64_t)base[7] << 56 |
+         (uint64_t)base[6] << 48 |
+         (uint64_t)base[5] << 40 |
+         (uint64_t)base[4] << 32 |
+         (uint64_t)base[3] << 24 |
+         (uint64_t)base[2] << 16 |
+         (uint64_t)base[1] << 8  | base[0];
 }
 static inline int8_t __nesc_ntoh_int8(void *source) {
   return __nesc_ntoh_uint8(source);
@@ -48,28 +48,28 @@ static inline uint8_t __nesc_hton_uint8(void *target, uint8_t value) {
 }
 static inline uint16_t __nesc_hton_uint16(void *target, uint16_t value) {
   uint8_t *base = target;
-  base[1] = value;
-  base[0] = value >> 8;
+  base[0] = value;
+  base[1] = value >> 8;
   return value;
 }
 static inline uint32_t __nesc_hton_uint32(void *target, uint32_t value) {
   uint8_t *base = target;
-  base[3] = value;
-  base[2] = value >> 8;
-  base[1] = value >> 16;
-  base[0] = value >> 24;
+  base[0] = value;
+  base[1] = value >> 8;
+  base[2] = value >> 16;
+  base[3] = value >> 24;
   return value;
 }
 static inline uint64_t __nesc_hton_uint64(void *target, uint64_t value) {
   uint8_t *base = target;
-  base[7] = value;
-  base[6] = value >> 8;
-  base[5] = value >> 16;
-  base[4] = value >> 24;
-  base[3] = value >> 32;
-  base[2] = value >> 40;
-  base[1] = value >> 48;
-  base[0] = value >> 56;
+  base[0] = value;
+  base[1] = value >> 8;
+  base[2] = value >> 16;
+  base[3] = value >> 24;
+  base[4] = value >> 32;
+  base[5] = value >> 40;
+  base[6] = value >> 48;
+  base[7] = value >> 56;
   return value;
 }
 

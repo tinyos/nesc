@@ -179,9 +179,9 @@ void dump_msg_layout(void)
 	  exit(1);
 	}
 
-      if (!(tdecl->kind == kind_struct_ref || tdecl->kind == kind_union_ref))
+      if (tdecl->kind == kind_enum_ref)
 	{
-	  fprintf(stderr, "error: %s is not a struct or union\n", selected_type);
+	  fprintf(stderr, "error: %s is an enum\n", selected_type);
 	  exit(1);
 	}
 

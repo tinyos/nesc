@@ -1,2 +1,1 @@
 /usr/local/lib/ncc/nesc1 -I/usr/local/lib/ncc -fnesc-target=avr -fnesc-include=nesc_nx -fnesc-include=nx $1 && nescc -fnesc-include=nx -Wall -c -o /dev/null $1
-
