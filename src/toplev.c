@@ -175,9 +175,14 @@ static void pipe_closed (int signo)
 /* Decode the string P as a language-specific option for C. */
 static void c_decode_option(char *p)
 {
+  /* Yes, using here strlen is evil. But who *really* cares? */
   if (!strncmp (p, "-fnesc-path=", strlen("-fnesc-path=")))
     {
       add_nesc_path(p + strlen("-fnesc-path="));
+    }
+  else if (!strncmp (p, "-fnesc-msg=", strlen("-fnesc-msg=")))
+    {
+      select_nesc_msg(p + strlen("-fnesc-msg="));
     }
   else if (!strcmp (p, "-fnesc-no-debug"))
     {

@@ -111,7 +111,7 @@ bool ddecl_is_command_or_event(data_declaration decl)
 
 source_language pick_language_from_filename(const char *name)
 {
-  char *dot = strrchr(basename(name), '.');
+  char *dot = strrchr(basename((char *)name), '.');
 
   if (dot)
     {
@@ -131,7 +131,7 @@ const char *element_name(region r, const char *path)
 {
   const char *base, *dot;
 
-  base = basename(path);
+  base = basename((char *)path);
   dot = strrchr(base, '.');
 
   if (dot)

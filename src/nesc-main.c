@@ -28,6 +28,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-generate.h"
 #include "nesc-semantics.h"
 #include "nesc-cpp.h"
+#include "nesc-msg.h"
 
 /* Adds the component graph 'component' to the whole program graph 'master' */
 static void connect_graph(cgraph master, cgraph component)
@@ -86,7 +87,6 @@ static void connect_graphs(region r, component_declaration program,
 void nesc_compile(const char *filename, const char *target_name)
 {
   struct location toplevel;
-  component_declaration program = NULL;
   source_language l;
 
   if (filename == NULL) {
@@ -131,8 +131,9 @@ void nesc_compile(const char *filename, const char *target_name)
       load_interface(&toplevel, filename, TRUE);
       break;
     case l_c:
-      /* idem */
+      /* load C file and extract any requested message formats */
       load_c(&toplevel, filename, TRUE);
+      dump_msg_layout();
       break;
     default:
       assert(0);

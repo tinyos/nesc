@@ -15,20 +15,11 @@ along with nesC; see the file COPYING.  If not, write to
 the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
-#include "parser.h"
-#include "nesc-c.h"
-#include "nesc-paths.h"
-#include "nesc-semantics.h"
-#include "c-parse.h"
-#include "input.h"
-#include "nesc-cpp.h"
+#ifndef NESC_MSG_H
+#define NESC_MSG_H
 
-declaration all_cdecls;
+void select_nesc_msg(const char *name);
 
-void load_c(location l, const char *name, bool name_is_path)
-{
-  cdecls = NULL;
-  compile(l, l_c, name, name_is_path, NULL, NULL);
-  preprocess_file_end();
-  all_cdecls = declaration_chain(all_cdecls, cdecls);
-}
+void dump_msg_layout(void);
+
+#endif

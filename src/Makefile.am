@@ -102,6 +102,8 @@ libparser_a_SOURCES =				\
 	nesc-main.h				\
 	nesc-module.c				\
 	nesc-module.h				\
+	nesc-msg.c				\
+	nesc-msg.h				\
 	nesc-paths.c				\
 	nesc-paths.h				\
 	nesc-semantics.c			\
