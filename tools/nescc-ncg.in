@@ -19,6 +19,7 @@
 
 $prefix = "@prefix@";
 $exec_prefix = "@exec_prefix@";
+$nescc = "$exec_prefix/bin/nescc";
 $NCDIR = "@libdir@/ncc";
 
 push @INC, "$NCDIR";
@@ -35,6 +36,9 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	}
 	elsif (/^-o/) {
 	    ($i, $ofile) = &extractarg($i);
+	}
+	elsif (/^-nescc=(.*)$/) {
+	    $nescc = $1;
 	}
 	# pass ncc options on through
 	# (yes, -o was captured above. This is "generic" code)
@@ -81,13 +85,13 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 
 unshift @args, "-fsyntax-only";
 unshift @args, "-fnesc-csts";
-unshift @args, "$exec_prefix/bin/ncc";
+unshift @args, "$nescc";
 push @args, "-x";
 push @args, "nesc";
 push @args, $cfile;
 
 print STDERR join(" ", @args), "\n" if $verbose;
-open(NESC, '-|', join(" ", @args)) or die "ncc not found";
+open(NESC, '-|', join(" ", @args)) or die "$args[0] not found";
 @allcsts = <NESC>;
 close NESC;
 

@@ -237,7 +237,7 @@ static void collect_uses_expr(expression expr, data_declaration fn, context c)
       generic_call fce = CAST(generic_call, expr);
       expression e;
 
-      collect_uses_expr(fce->arg1, fn, exe_c | c_read);
+      collect_uses_expr(fce->arg1, fn, exe_c | c_fncall);
       scan_expression (e, fce->args)
 	collect_uses_expr(e, fn, exe_c | c_read);
       break;

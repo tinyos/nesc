@@ -12,7 +12,7 @@ EXTRA_DIST =					\
 	ncg.html                                \
 	nesdoc.html                             \
 	user/generics-1.2.txt			\
-	network-types.txt			\
+	user/network-types.txt			\
 	ref.pdf
 
 ref.pdf: ref.tex

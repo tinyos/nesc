@@ -19,6 +19,7 @@
 
 $prefix = "@prefix@";
 $exec_prefix = "@exec_prefix@";
+$nescc = "$exec_prefix/bin/nescc";
 $NCDIR = "@libdir@/ncc";
 
 push @INC, "$NCDIR";
@@ -41,6 +42,9 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	}
 	elsif (/^-o/) {
 	    ($i, $ofile) = &extractarg($i);
+	}
+	elsif (/^-nescc=(.*)$/) {
+	    $nescc = $1;
 	}
 	# pass ncc options on through
 	# (yes, -o was captured above. This is "generic" code)
@@ -75,7 +79,7 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 &usage("no message specified") if !defined($message_type);
 
 unshift @args, "-fsyntax-only";
-unshift @args, "$exec_prefix/bin/ncc";
+unshift @args, "$nescc";
 push @args, "-fnesc-msg=$message_type";
 push @args, "-x";
 push @args, "nesc";

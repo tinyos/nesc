@@ -115,4 +115,13 @@ data_declaration original_declaration(data_declaration d);
 #define nesc_warning (nesc_error ? error : warning)
 #define nesc_warning_with_location (nesc_error ? error_with_location : warning_with_location)
 
+data_declaration declare_function(location loc, const char *name, type signature);
+/* Effects: If 'name' is already declared, check that it is a function with
+     the specified signature.
+     If it isn't declared, declare it as a function with the specified
+     signature.
+   Returns: data_declaration for the function, or NULL if an error was
+     reported to the user.
+*/
+
 #endif

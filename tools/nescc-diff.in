@@ -21,6 +21,7 @@
 # Configuration
 $prefix = "@prefix@";
 $exec_prefix = "@exec_prefix@";
+$nescc = "$exec_prefix/bin/nescc";
 $NCDIR = "@libdir@/ncc";
 
 # Have fun with the arguments
@@ -35,6 +36,10 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	}
 	elsif (/^-fnesc-diff=(.*)$/) {
 	    $diff_to = $1;
+	}
+	elsif (/^-nescc=(.*)$/) {
+	    $nescc = $1;
+	    $strip = 1;
 	}
 	elsif (/^-fnesc-cfile/ || /^-o/ || /^-c/ || /^-Wl,/) {
 	    print STDERR "$_ option not allowed\n";
@@ -59,7 +64,7 @@ if (system("mkdir -p $diff_to")) {
 }
 
 unshift @new_args, 
-  "ncc", "-c", "-o$diff_to/app.o", "-fnesc-cfile=$diff_to/app.c";
+  $nescc, "-c", "-o$diff_to/app.o", "-fnesc-cfile=$diff_to/app.c";
 
 print STDERR join(' ', @new_args), "\n" if $verbose;
 
@@ -84,7 +89,7 @@ close SCRIPT || die;
 
 @exe1_args = @ncc_args;
 push @exe1_args, "$diff_to/app.o";
-unshift @exe1_args, "ncc", "-Wl,--script=$diff_to/scr.x", "-Wl,-Map=$diff_to/map1", 
+unshift @exe1_args, $nescc, "-Wl,--script=$diff_to/scr.x", "-Wl,-Map=$diff_to/map1", 
     "-o", "$diff_to/exe1";
 
 print STDERR join(' ', @exe1_args), "\n" if $verbose;
@@ -137,7 +142,7 @@ close SCRIPT || die;
 
 @exe2_args = @ncc_args;
 push @exe2_args, "$diff_to/app.o";
-unshift @exe2_args, "ncc", "-Wl,--script=$diff_to/fscr.x", "-Wl,-Map=$diff_to/map2", 
+unshift @exe2_args, $nescc, "-Wl,--script=$diff_to/fscr.x", "-Wl,-Map=$diff_to/map2", 
     "-o", "$diff_to/exe2";
 
 print STDERR join(' ', @exe2_args), "\n" if $verbose;

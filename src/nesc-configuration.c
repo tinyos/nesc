@@ -617,8 +617,11 @@ component_ref require_component(component_ref comp, word as)
      processing an abstract configuration */
   if (comp->cdecl->abstract)
     {
-      comp->cdecl = specification_copy(parse_region, comp,
-				       current.container->abstract);
+      if (!comp->cdecl->ast)
+	error_with_location(comp->location, "Attempt to instantiate a generic component within itself");
+      else
+	comp->cdecl = specification_copy(parse_region, comp,
+					 current.container->abstract);
       if (!comp->abstract)
 	error_with_location(comp->location, "generic component `%s' requires instantiation arguments", cname);
       else
