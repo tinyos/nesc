@@ -62,4 +62,8 @@ wchar_t asm_rwmode(string s);
 declaration ignore_extensions(declaration d);
 /* Ignore extension_decls at d, returning the "real" declaration */
 
+tag_declaration get_unnamed_tag_decl(data_decl decl);
+/* Returns:. Check to see if it is a struct or
+     union, and if so return that struct or union's declaration */
+
 #endif

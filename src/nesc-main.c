@@ -260,6 +260,7 @@ void nesc_compile(const char *filename, const char *target_name)
 	      dd_list modules, components;
 
 	      connect_graphs(parse_region, program, &cg, &modules, &components);
+	      fold_constants_list(CAST(node, all_cdecls));
 	      fold_components(parse_region, program, NULL);
 
 	      generate_c_code(program, target_name, cg, modules);

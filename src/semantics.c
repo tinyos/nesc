@@ -2784,19 +2784,6 @@ type_element start_struct(location l, AST_kind skind, word tag)
   return CAST(type_element, tref);
 }
 
-tag_declaration get_unnamed_tag_decl(data_decl decl)
-{
-  /* decl has no actual declarations. Check to see if it is a struct or
-     union, and if so return that struct or union's declaration */
-  type_element elem;
-
-  scan_type_element (elem, decl->modifiers)
-    if (is_struct_ref(elem) || is_union_ref(elem))
-      return CAST(tag_ref, elem)->tdecl;
-
-  return NULL;
-}
-
 static field_declaration *declare_field(tag_declaration tdecl,
 					field_declaration fdecl,
 					location floc,

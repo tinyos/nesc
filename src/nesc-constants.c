@@ -133,11 +133,11 @@ static AST_walker_result folder_expression(AST_walker spec, void *data,
   return aw_done;
 }
 
-void fold_constants(node n)
+void fold_constants_list(node n)
 /* Effects: Folds constants and lays out types in AST n
  */
 {
-  AST_walk(folder_walker, NULL, CASTPTR(node, &n));
+  AST_walk_list(folder_walker, NULL, CASTPTR(node, &n));
 }
 
 void init_nesc_constants(void)

@@ -397,7 +397,7 @@ void fold_components(region r, nesc_declaration cdecl, expression args)
 
   set_parameter_values(cdecl, args);
 
-  fold_constants(CAST(node, cdecl->impl));
+  fold_constants_list(CAST(node, cdecl->impl));
 
   if (is_module(cdecl->impl))
     ;
