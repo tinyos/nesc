@@ -155,7 +155,7 @@ bool type_smallerthanint(type t);
 bool type_real(type t);
 bool type_arithmetic(type t);
 bool type_scalar(type t);
-bool type_aggregate(type t);
+bool type_aggregate(type t);	/* struct or union */
 
 type make_unsigned_type(type t);
 
@@ -172,6 +172,8 @@ type type_points_to(type t);
 type type_array_of(type t);
 type type_array_of_base(type t);
 expression type_array_size(type t);
+largest_int type_array_size_int(type t);
+/* Returns: number of elements in array type t if known, -1 otherwise */
 tag_declaration type_tag(type t);
 type type_base(type t);
 
@@ -186,6 +188,7 @@ bool type_contains_qualified_pointers(type t); /* True if any sameregion/traditi
 bool type_contains_union_with_pointers(type t);
 
 type type_default_conversion(type from);
+type type_default_conversion_for_assignment(type from);
 type function_call_type(function_call fcall);
 
 void name_tag(tag_declaration tag);

@@ -147,6 +147,7 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->container_function = NULL;
   dd->use_summary = 0;
   dd->async_access = FALSE;
+  dd->norace = FALSE;
 }
 
 data_declaration lookup_id(const char *s, bool this_level_only)
@@ -596,10 +597,8 @@ scflags parse_scflags(int specbits)
     scf |= scf_default;
   if (specbits & 1 << RID_ASYNC)
     scf |= scf_async;
-#if 0
   if (specbits & 1 << RID_NORACE)
     scf |= scf_norace;
-#endif
 
   return scf;
 }
@@ -1627,6 +1626,9 @@ void check_function(data_declaration dd, declaration fd, int class,
   if (defaulted_int && (warn_implicit_int || warn_return_type))
     warning("return-type defaults to `int'");
 
+  if (scf & scf_norace)
+    error("norace is for variables only");
+
   actual_function_type = type_generic(function_type) ?
     type_function_return_type(function_type) : function_type;
   return_type = type_function_return_type(actual_function_type);
@@ -2291,6 +2293,7 @@ dd_list check_parameter(data_declaration dd,
   dd->isused = TRUE;
   dd->vtype = class == RID_REGISTER ? variable_register : variable_normal;
   dd->islocal = dd->isparameter = TRUE;
+  dd->norace = (scf & scf_norace) != 0;
 
   return extra_attr;
 }
@@ -2550,6 +2553,7 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
 	      tempdecl.needsmemory = class == RID_STATIC;
 	      tempdecl.islocal = !(extern_ref || class == RID_STATIC);
 	    }
+	  tempdecl.norace = (scf & scf_norace) != 0;
 	}
 
       if (warn_nested_externs && tempdecl.isfilescoperef &&
@@ -2634,9 +2638,6 @@ declaration finish_decl(declaration decl, expression init)
       else
 	check_assignment(dd->type, default_conversion_for_assignment(init),
 			 init, "initialization", NULL, 0);
-
-      if (is_module_variable(dd) && init)
-	error("initialisers not allowed on module variables");
     }
 
   return decl;
@@ -3453,6 +3454,7 @@ static char *rid_name_int(int id)
     case RID_ASYNC: return "async";
     case RID_TASK: return "task";
     case RID_DEFAULT: return "default";
+    case RID_NORACE: return "norace";
     default: assert(0); return NULL;
     }
 }

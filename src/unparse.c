@@ -176,7 +176,7 @@ void copy_file_to_output(char *filename)
 #define STRIP_PREFIX "__nesc_keyword_"
 #define STRIP_PREFIX_LEN (sizeof(STRIP_PREFIX) - 1)
 
-static void output_stripped_cstring(cstring s)
+void output_stripped_cstring(cstring s)
 {
   output_indent_if_needed();
   if (strncmp(s.data, STRIP_PREFIX, STRIP_PREFIX_LEN) == 0)
@@ -185,13 +185,13 @@ static void output_stripped_cstring(cstring s)
     fwrite(s.data, s.length, 1, of);
 }
 
-static void output_cstring(cstring s)
+void output_cstring(cstring s)
 {
   output_indent_if_needed();
   fwrite(s.data, s.length, 1, of);
 }
 
-static void output_stripped_string(const char *s)
+void output_stripped_string(const char *s)
 {
   output_indent_if_needed();
   if (strncmp(s, STRIP_PREFIX, STRIP_PREFIX_LEN) == 0)
@@ -200,7 +200,7 @@ static void output_stripped_string(const char *s)
     fputs(s, of);
 }
 
-static void output_stripped_string_dollar(const char *s)
+void output_stripped_string_dollar(const char *s)
 {
   output_stripped_string(s);
   output(function_separator);
@@ -580,7 +580,7 @@ void prt_variable_decl(variable_decl d)
   if (d->asm_stmt)
     prt_asm_stmt_plain(d->asm_stmt);
 
-  if (d->arg1)
+  if (d->arg1 && !(use_nido && is_module_variable(d->ddecl)))
     {
       output(" = ");
       prt_expression(d->arg1, P_ASSIGN);
@@ -597,7 +597,7 @@ void prt_declarator(declarator d, type_element elements, attribute attributes,
 			& ~psd_need_paren_for_star);
 }
 
-void prt_ddecl_full_name(data_declaration ddecl, psd_options options)
+void prt_plain_ddecl(data_declaration ddecl, psd_options options)
 {
   if (!ddecl->Cname)
     {
@@ -616,7 +616,11 @@ void prt_ddecl_full_name(data_declaration ddecl, psd_options options)
 
     }
   output_stripped_string(ddecl->name);
+}
 
+void prt_ddecl_full_name(data_declaration ddecl, psd_options options)
+{
+  prt_plain_ddecl(ddecl, options);
   if (use_nido && is_module_variable(ddecl))
     output("[%s]", nido_num_nodes);
 }
@@ -788,6 +792,7 @@ void prt_rid(rid r, pte_options options)
   switch (r->id)
     {
     case RID_COMMAND: case RID_EVENT: case RID_TASK: case RID_ASYNC:
+    case RID_NORACE:
       // show these in documenation mode, but not otherwise
       if (documentation_mode && !(options & pte_skip_command_event)) 
 	output("%s", rid_name(r));
@@ -1143,11 +1148,7 @@ void prt_identifier(identifier e, int context_priority)
     error_with_location(e->location, "%s not connected", e->cstring.data);
 
   set_location(e->location);
-  if (decl->container && !decl->Cname)
-    output_stripped_string_dollar(decl->container->name);
-
-  output_stripped_cstring(e->cstring);
-
+  prt_plain_ddecl(decl, 0);
   if (use_nido && is_module_variable(decl))
     output("[tos_state.current_node]");
 }

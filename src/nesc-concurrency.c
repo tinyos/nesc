@@ -164,30 +164,31 @@ static void check_async_vars(dd_list avars)
       dd_list_pos ause;
       bool first = TRUE;
 
-      dd_scan (ause, v->nuses)
-	{
-	  use u = DD_GET(use, ause);
+      if (!v->norace)
+	dd_scan (ause, v->nuses)
+	  {
+	    use u = DD_GET(use, ause);
 
-	  if (!(u->c & c_atomic) && u->c & (c_read | c_write))
-	    {
-	      const char *cname;
+	    if (!(u->c & c_atomic) && u->c & (c_read | c_write))
+	      {
+		const char *cname;
 
-	      if (first)
-		{
-		  first = FALSE;
-		  warning("non-atomic accesses to shared variable `%s':",
-			  v->name);
-		}
+		if (first)
+		  {
+		    first = FALSE;
+		    warning("non-atomic accesses to shared variable `%s':",
+			    v->name);
+		  }
 
-	      if ((u->c & (c_read | c_write)) == (c_read | c_write))
-		cname = "r/w";
-	      else if (u->c & c_read)
-		cname = "read";
-	      else
-		cname = "write";
-	      warning_with_location(u->l, "  non-atomic %s", cname);
-	    }
-	}
+		if ((u->c & (c_read | c_write)) == (c_read | c_write))
+		  cname = "r/w";
+		else if (u->c & c_read)
+		  cname = "read";
+		else
+		  cname = "write";
+		warning_with_location(u->l, "  non-atomic %s", cname);
+	      }
+	  }
     }
 }
 

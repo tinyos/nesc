@@ -65,6 +65,9 @@ bool check_arguments(type fntype, expression arglist,
 		     data_declaration fundecl, bool generic_call);
 
 type default_conversion(expression e);
+type default_function_array_conversion(expression e);
+
+/* called default_function_array_conversion in gcc 3.x */
 type default_conversion_for_assignment(expression e);
 
 #endif

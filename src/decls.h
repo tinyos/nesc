@@ -159,10 +159,11 @@ struct data_declaration {
   /* For variables */
   enum { variable_register, variable_static, variable_normal } vtype;
   bool islocal;			/* True for non-static local vars */
-  bool isparameter; /* implies islocal */
-  bool isgeneric; /* nesc: implies isparameter, for the generic parameters of
-		     commands and events */
+  bool isparameter; 		/* implies islocal */
+  bool isgeneric; 		/* generic parameters of commands and events,
+				   implies isparameter */
   bool async_access;		/* Some kind of access in an async context */
+  bool norace;
 
   /* For constants */
   known_cst value;

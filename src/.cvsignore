@@ -3,6 +3,7 @@ AST_print.c
 AST_parent.c
 AST_defs.h
 AST_types.h
+AST_walk_children.c
 Makefile
 Makefile.in
 aclocal.m4

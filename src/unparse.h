@@ -38,6 +38,10 @@ void clear_fixed_location(void);
 struct location output_location(void);
 void output(char *format, ...) __attribute__((format (printf, 1, 2)));
 void outputln(char *format, ...) __attribute__((format (printf, 1, 2)));
+void output_stripped_cstring(cstring s);
+void output_cstring(cstring s);
+void output_stripped_string(const char *s);
+void output_stripped_string_dollar(const char *s);
 void copy_file_to_output(char *filename);
 void newline(void);
 void indent(void);
@@ -96,6 +100,7 @@ void prt_simple_declarator(declarator d, data_declaration ddecl,
 void prt_parameters(declaration gparms, declaration parms, psd_options options);
 bool prt_parameter(declaration parm, bool first, bool lastforward, psd_options options);
 void prt_ddecl_full_name(data_declaration ddecl, psd_options options);
+void prt_plain_ddecl(data_declaration ddecl, psd_options options);
 
 void prt_function_body(function_decl d);
 

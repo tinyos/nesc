@@ -665,6 +665,17 @@ expression type_array_size(type t)
   return t->u.array.size;
 }
 
+largest_int type_array_size_int(type t)
+/* Returns: number of elements in array type t if known, -1 otherwise */
+{
+  known_cst s;
+
+  if (t->u.array.size && (s = t->u.array.size->cst) && constant_integral(s))
+    return constant_sint_value(s);
+
+  return -1;
+}
+
 tag_declaration type_tag(type t)
 {
   assert(t->kind == tk_tagged);
@@ -1542,6 +1553,15 @@ type type_default_conversion(type from)
     return make_pointer_type(type_array_of(from));
 
   return from;
+}
+
+/* would be called type_default_function_array_conversion in gcc 3.x */
+type type_default_conversion_for_assignment(type from)
+{
+  if (type_array(from) || type_function(from))
+    return type_default_conversion(from);
+  else
+    return from;
 }
 
 type function_call_type(function_call fcall)

@@ -183,6 +183,7 @@ type default_conversion(expression e)
   return from;
 }
 
+/* called default_function_array_conversion in gcc 3.x */
 type default_conversion_for_assignment(expression e)
 {
   if (type_array(e->type) || type_function(e->type))
@@ -507,10 +508,13 @@ expression make_comma(location loc, expression elist)
 {
   expression result = CAST(expression, new_comma(parse_region, loc, elist));
   expression e;
+  bool all_cst = TRUE;
 
   scan_expression (e, elist)
     if (e->next) /* Not last */
       {
+	if (!e->cst)
+	  all_cst = FALSE;
 #if 0
 	if (!e->side_effects)
 	  {
@@ -535,9 +539,10 @@ expression make_comma(location loc, expression elist)
 
 	if (!pedantic)
 	  {
-	    /* XXX: I seemed to believe that , could be a constant expr in GCC,
-	       but cst3.c seems to disagree. Check gcc code again ?
-	       (It's a bad idea anyway) */
+	    /* (e1, ..., en) is a constant expression if all ei are constant
+	       expressions. Weird? (see cst10.c) */
+	    if (all_cst)
+	      result->cst = e->cst;
 	    result->lvalue = e->lvalue;
 	    result->isregister = e->isregister;
 	    result->bitfield = e->bitfield;
