@@ -11,7 +11,7 @@
 
 package net.tinyos.nesc.dump.xml;
 
-public class Constant
+abstract public class Constant
 {
     public static Constant decode(String s) {
 	switch (s.charAt(0)) {
@@ -21,5 +21,13 @@ public class Constant
 	case 'V': return new NonConstant();
 	case 'U': default: return new UnknownConstant();
 	}
+    }
+
+    public boolean known() {
+	return false;
+    }
+
+    public boolean constant() {
+	return false;
     }
 }

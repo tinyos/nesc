@@ -21,4 +21,10 @@ public class Xvalue extends Value
 	cst = Constant.decode(attrs.getValue("cst"));
 	return this;
     }
+
+    public boolean equals(Object obj) {
+	if (!(obj instanceof Xvalue))
+	    return false;
+	return cst.equals(((Xvalue)obj).cst);
+    }
 }

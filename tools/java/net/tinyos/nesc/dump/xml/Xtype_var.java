@@ -21,4 +21,10 @@ public class Xtype_var extends Type
 	if (subElement instanceof Xtypedef)
 	    var = (Xtypedef)subElement;
     }
+
+    public boolean equals(Object obj) {
+	if (!(obj instanceof Xtype_var))
+	    return false;
+	return var == ((Xtype_var)obj).var;
+    }
 }

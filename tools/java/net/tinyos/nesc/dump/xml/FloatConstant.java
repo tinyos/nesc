@@ -11,11 +11,17 @@
 
 package net.tinyos.nesc.dump.xml;
 
-public class FloatConstant extends Constant
+public class FloatConstant extends KnownConstant
 {
     public double value;
 
     public FloatConstant(String s) {
 	value = NDElement.realDecode(s.substring(2), 0.0);
+    }
+
+    public boolean equals(Object obj) {
+	if (!(obj instanceof FloatConstant))
+	    return false;
+	return value == ((FloatConstant)obj).value;
     }
 }

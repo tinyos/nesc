@@ -30,4 +30,14 @@ public class Xtype_qualified extends Type
 	if (subElement instanceof Type)
 	    subType = (Type)subElement;
     }
+
+    public boolean equals(Object obj) {
+	if (!(obj instanceof Xtype_qualified))
+	    return false;
+	Xtype_qualified other = (Xtype_qualified)obj;
+	return subType.equals(other.subType) &&
+	    qconst == other.qconst &&
+	    qvolatile == other.qvolatile &&
+	    qrestrict == other.qrestrict;
+    }
 }

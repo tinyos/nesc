@@ -33,4 +33,16 @@ public class Xtype_function extends Type
 	if (subElement instanceof Xfunction_parameters)
 	    parameters = ((Xfunction_parameters)subElement).l;
     }
+
+    public boolean equals(Object obj) {
+	if (!(obj instanceof Xtype_function))
+	    return false;
+	Xtype_function other = (Xtype_function)obj;
+
+	if (!returns.equals(other.returns))
+	    return false;
+	if (oldstyle || other.oldstyle)
+	    return oldstyle == other.oldstyle;
+	return varargs == other.varargs && parameters.equals(other.parameters);
+    }
 }

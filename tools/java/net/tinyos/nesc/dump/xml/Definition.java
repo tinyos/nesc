@@ -28,4 +28,17 @@ abstract public class Definition extends NDElement
 	    attributes.add(subElement);
 	}
     }
+
+    /* Returns an attribute called name, or null for none */
+    public Xattribute_value attributeLookup(String name) {
+	ListIterator elems = attributes.listIterator();
+
+	while (elems.hasNext()) {
+	    Xattribute_value attr = (Xattribute_value)elems.next();
+
+	    if (attr.attribute.name.equals(name))
+		return attr;
+	}
+	return null;
+    }
 }

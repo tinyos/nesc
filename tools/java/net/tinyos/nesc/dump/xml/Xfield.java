@@ -37,10 +37,12 @@ public class Xfield extends Definition
 	me.packed = boolDecode(attrs.getValue("packed"));
 	String s = attrs.getValue("size");
 	if (s != null)
-	    size = Constant.decode(s);
+	    me.size = Constant.decode(s);
 	s = attrs.getValue("bit-size");
 	if (s != null)
-	    bitSize = Constant.decode(s);
+	    me.bitSize = Constant.decode(s);
+
+	return me;
     }
 
     static synchronized Definition lookup(NDReader reader, Attributes attrs) {

@@ -13,4 +13,7 @@ package net.tinyos.nesc.dump.xml;
 
 public class NonConstant extends Constant
 {
+    public boolean equals(Object obj) {
+	return false;
+    }
 }

@@ -21,4 +21,10 @@ public class Xtype_interface extends Type
 	if (subElement instanceof Xinterface)
 	    intf = (Xinterface)subElement;
     }
+
+    public boolean equals(Object obj) {
+	if (!(obj instanceof Xtype_interface))
+	    return false;
+	return intf == ((Xtype_interface)obj).intf;
+    }
 }

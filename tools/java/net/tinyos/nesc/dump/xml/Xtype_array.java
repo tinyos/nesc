@@ -28,4 +28,13 @@ public class Xtype_array extends Type
 	if (subElement instanceof Type)
 	    subType = (Type)subElement;
     }
+
+    public boolean equals(Object obj) {
+	if (!(obj instanceof Xtype_array))
+	    return false;
+	Xtype_array other = (Xtype_array)obj;
+	return subType.equals(other.subType) &&
+	    ((!length.constant() && !other.length.constant()) ||
+	     length.equals(other.length));
+    }
 }

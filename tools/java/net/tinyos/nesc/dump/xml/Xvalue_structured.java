@@ -23,4 +23,8 @@ public class Xvalue_structured extends Value
 	if (subElement instanceof Xstructured_element)
 	    fields.add(subElement);
     }
+
+    public boolean equals(Object obj) {
+	return false;
+    }
 }

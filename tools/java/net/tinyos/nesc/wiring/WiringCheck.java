@@ -15,6 +15,7 @@ import net.tinyos.nesc.dump.xml.*;
 import net.tinyos.nesc.dump.*;
 import java.io.*;
 import java.util.*;
+import org.xml.sax.*;
 
 /* Expects an xml dump produced by
    -fnesc-dump=wiring Blink.nc -fnesc-dump=interfaces(attribute(atmostonce))
@@ -30,7 +31,8 @@ public class WiringCheck
     }
 
     void check1Wire(WiringNode from, boolean forwards, int min, int max) {
-	int count = forwards ? countForwards(from) : countBackwards(from);
+	WiringPosition pfrom = new WiringPosition(from);
+	int count = forwards ? countForwards(pfrom) : countBackwards(pfrom);
 
 	if (min >= 0 && count < min)
 	    System.err.println("Interface " + from.ep.name + " underwired");
@@ -40,8 +42,8 @@ public class WiringCheck
     
     /* We know the wiring graph is acyclic */
 
-    int countForwards(WiringNode position) {
-	ListIterator out = position.outgoingEdges();
+    int countForwards(WiringPosition position) {
+	ListIterator out = position.node.outgoingEdges();
 	int count = 0;
 	WiringPosition temp = new WiringPosition();
 
@@ -49,16 +51,17 @@ public class WiringCheck
 	    WiringEdge e = (WiringEdge)out.next();
 
 	    temp.copy(position);
-	    if (e.followForwards(temp)) {
+	    if (e.followForward(temp)) {
 		if (inModule(temp))
 		    count++;
 		count += countForwards(temp);
 	    }
 	}
+	return count;
     }
 
-    int countBackwards(WiringNode position) {
-	ListIterator out = position.incomingEdges();
+    int countBackwards(WiringPosition position) {
+	ListIterator out = position.node.incomingEdges();
 	int count = 0;
 	WiringPosition temp = new WiringPosition();
 
@@ -66,12 +69,13 @@ public class WiringCheck
 	    WiringEdge e = (WiringEdge)out.next();
 
 	    temp.copy(position);
-	    if (e.followBackwards(temp)) {
+	    if (e.followBackward(temp)) {
 		if (inModule(temp))
 		    count++;
 		count += countBackwards(temp);
 	    }
 	}
+	return count;
     }
 
     boolean inModule(WiringPosition pos) {
@@ -80,7 +84,7 @@ public class WiringCheck
     }
 
     void checkWiring() {
-	ListIterator toCheck = Xinterfaces.list.iterator();
+	ListIterator toCheck = Xinterfaces.list.listIterator();
 
 	while (toCheck.hasNext()) {
 	    int min = -1, max = -1;
@@ -107,7 +111,7 @@ public class WiringCheck
     public static void main(String[] args) throws IOException {
 	try {
 	    new NDReader().parse(new InputSource(System.in));
-	    nw WiringCheck().checkWiring();
+	    new WiringCheck().checkWiring();
 	}
 	catch (SAXException e) {
 	    System.err.println("no xml reader found");

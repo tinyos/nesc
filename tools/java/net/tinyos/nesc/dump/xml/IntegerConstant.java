@@ -11,11 +11,17 @@
 
 package net.tinyos.nesc.dump.xml;
 
-public class IntegerConstant extends Constant
+public class IntegerConstant extends KnownConstant
 {
     public long value;
 
     public IntegerConstant(String s) {
 	value = NDElement.numberDecode(s.substring(2), 0);
+    }
+
+    public boolean equals(Object obj) {
+	if (!(obj instanceof IntegerConstant))
+	    return false;
+	return value == ((IntegerConstant)obj).value;
     }
 }

@@ -23,4 +23,8 @@ public class Xvalue_array extends Value
 	if (subElement instanceof Xarray_element)
 	    elements.add(subElement);
     }
+
+    public boolean equals(Object obj) {
+	return false;
+    }
 }

@@ -22,4 +22,10 @@ public class SimpleType extends Type
 	cname = attrs.getValue("cname");
 	return this;
     }
+
+    public boolean equals(Object obj) {
+	if (!(obj instanceof SimpleType))
+	    return false;
+	return cname.equals(((SimpleType)obj).cname);
+    }
 }

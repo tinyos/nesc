@@ -16,6 +16,21 @@ public class WiringPosition
     public WiringNode node;
     public Xarguments args;
 
+    public WiringPosition() { }
+
+    public WiringPosition(WiringNode n) { 
+	node = n;
+    }
+
+    public WiringPosition(WiringNode n, Xarguments a) { 
+	node = n;
+	args = a;
+    }
+
+    public WiringPosition(WiringPosition p) { 
+	copy(p);
+    }
+    
     public void copy(WiringPosition from) {
 	node = from.node;
 	args = from.args;

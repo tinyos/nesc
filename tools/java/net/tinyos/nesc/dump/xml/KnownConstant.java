@@ -11,20 +11,13 @@
 
 package net.tinyos.nesc.dump.xml;
 
-import org.xml.sax.*;
-
-public class Xtype_pointer extends Type
+abstract public class KnownConstant extends Constant
 {
-    public Type subType;
-
-    public void child(NDElement subElement) {
-	if (subElement instanceof Type)
-	    subType = (Type)subElement;
+    public boolean known() {
+	return true;
     }
 
-    public boolean equals(Object obj) {
-	if (!(obj instanceof Xtype_pointer))
-	    return false;
-	return subType.equals(((Xtype_array)obj).subType);
+    public boolean constant() {
+	return true;
     }
 }

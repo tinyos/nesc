@@ -15,4 +15,9 @@ import org.xml.sax.*;
 
 public class Xarguments extends NDList
 {
+    public boolean equals(Object obj) {
+	if (!(obj instanceof Xarguments))
+	    return false;
+	return l.equals(((Xarguments)obj).l);
+    }
 }

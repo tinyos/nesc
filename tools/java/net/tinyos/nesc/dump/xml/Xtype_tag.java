@@ -21,4 +21,10 @@ public class Xtype_tag extends Type
 	if (subElement instanceof TagDefinition)
 	    tag = (TagDefinition)subElement;
     }
+
+    public boolean equals(Object obj) {
+	if (!(obj instanceof Xtype_tag))
+	    return false;
+	return tag == ((Xtype_tag)obj).tag;
+    }
 }

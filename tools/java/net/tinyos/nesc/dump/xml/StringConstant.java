@@ -11,11 +11,17 @@
 
 package net.tinyos.nesc.dump.xml;
 
-public class StringConstant extends Constant
+public class StringConstant extends KnownConstant
 {
     public String value;
 
     public StringConstant(String s) {
 	value = s.substring(2);
+    }
+
+    public boolean equals(Object obj) {
+	if (!(obj instanceof StringConstant))
+	    return false;
+	return value.equals(((StringConstant)obj).value);
     }
 }

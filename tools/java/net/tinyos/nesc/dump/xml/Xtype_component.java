@@ -21,4 +21,10 @@ public class Xtype_component extends Type
 	if (subElement instanceof Xinternal_component)
 	    component = (Xinternal_component)subElement;
     }
+
+    public boolean equals(Object obj) {
+	if (!(obj instanceof Xtype_component))
+	    return false;
+	return component == ((Xtype_component)obj).component;
+    }
 }

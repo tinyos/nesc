@@ -46,7 +46,7 @@ public class NDReader extends DefaultHandler
 	parser.setContentHandler(this);
     }
 
-    NDElement parse(InputSource source) throws IOException {
+    public NDElement parse(InputSource source) throws IOException {
 	top = null;
 	try {
 	    parser.parse(source);
@@ -56,7 +56,7 @@ public class NDReader extends DefaultHandler
 	return top;
     }
 
-    NDElement parse(String id) throws IOException {
+    public NDElement parse(String id) throws IOException {
 	return parse(new InputSource(id));
     }
 
