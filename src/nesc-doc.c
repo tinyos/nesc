@@ -1369,6 +1369,9 @@ source: <a href=\"%s\">%s</a>
 <h1 align=\"center\">Interface: %s</h1>
 ", idecl->name);
   }  
+  if( idecl->short_docstring ) {
+    output("<p>\n%s\n<p>\n\n", idecl->long_docstring ? idecl->long_docstring : idecl->short_docstring);
+  }
   
   // summary
   generate_intf_function_list("<h3>Defined Functions</h3>",
