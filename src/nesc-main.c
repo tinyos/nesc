@@ -283,6 +283,10 @@ static void destroy_target(const char *name)
 void nesc_compile(const char *filename, const char *target_name)
 {
   struct ilist *includes;
+  nesc_declaration program = NULL;
+  bool gencode = FALSE;
+  cgraph cg = NULL;
+  dd_list modules = NULL, components = NULL;
 
   if (filename == NULL)
     {
@@ -307,50 +311,46 @@ void nesc_compile(const char *filename, const char *target_name)
     require_c(toplevel_location, includes->name);
 
   if (nesc_filename(filename))
-    {
-      /* We need to assume some language - it will get fixed once we
-	 see the actual file */
-      nesc_declaration program = load(l_component, toplevel_location, filename, TRUE);
-
-      if (errorcount == 0)
-	{
-	  /* Destroy target in all circumstances (prevents surprises
-	     when "compiling" interfaces) */
-	  destroy_target(target_name);
-
-	  if (dump_msg_layout())
-	    ;
-	  else if (program->kind == l_component && !program->abstract)
-	    {
-	      cgraph cg;
-	      dd_list modules, components;
-
-	      connect_graphs(parse_region, program, &cg, &modules, &components);
-	      current.container = NULL;
-	      fold_program(program);
-
-	      if (errorcount == 0 && !generate_docs(filename, cg))
-		generate_c_code(program, target_name, cg, modules, components);
-	    }
-	  else /* generate docs if requested */
-	    generate_docs(filename, NULL);
-	}
-    }
+    /* We need to assume some language - it will get fixed once we
+       see the actual file */
+    program = load(l_component, toplevel_location, filename, TRUE);
   else
-    {
-      /* load C file and extract any requested message formats */
-      load_c(toplevel_location, filename, TRUE);
-      if (errorcount == 0)
-	{
-	  fold_program(NULL);
-	  if (errorcount == 0)
-	    {
-	      /* Destroy target in all circumstances (prevents surprises
-		 when "compiling" interfaces) */
-	      destroy_target(target_name);
+    load_c(toplevel_location, filename, TRUE);
 
-	      dump_msg_layout();
-	    }
-	}
+  if (errorcount)
+    return;
+
+  if (program && program->kind == l_component && !program->abstract)
+    {
+      connect_graphs(parse_region, program, &cg, &modules, &components);
+      current.container = NULL;
+      fold_program(program);
+      gencode = TRUE;
     }
+  else 
+    /* The "program" is a C file, interface or abstract component */
+    fold_program(NULL);
+
+  if (errorcount)
+    return;
+
+  /* Destroy target in all circumstances (prevents surprises
+     when "compiling" interfaces) */
+  destroy_target(target_name);
+
+  if (docs_requested())
+    {
+      if (program)
+	generate_docs(filename, cg);
+      else
+	error("documentation requested on a C file ");
+      gencode = FALSE;
+    }
+  if (layout_requested())
+    {
+      dump_msg_layout();
+      gencode = FALSE;
+    }
+  if (gencode)
+    generate_c_code(program, target_name, cg, modules, components);
 }

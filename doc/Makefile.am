@@ -11,7 +11,8 @@ EXTRA_DIST =					\
 	ncc.html                                \
 	ncg.html                                \
 	nesdoc.html                             \
-	ref.pdf
+	ref.pdf					\
+	user/generics-1.2.txt
 
 ref.pdf: ref.tex
 	pdflatex ref.tex

@@ -2718,12 +2718,15 @@ arrow indicates that the original wiring is \"<em>C = D</em>\".<p>\n\
 //////////////////////////////////////////////////
 // Generate all docs
 //////////////////////////////////////////////////
-bool generate_docs(const char *filename, cgraph cg)
+
+bool docs_requested(void)
+{
+  return docdir != NULL;
+}
+
+void generate_docs(const char *filename, cgraph cg)
 {
   // if no docdir is specified, then the user didn't request doc generation
-  if( !docdir ) 
-    return FALSE;
-
   // Initialization
   {
     // create the region
@@ -2834,7 +2837,6 @@ bool generate_docs(const char *filename, cgraph cg)
 
     assert(chdir(original_wd) == 0);
   }
-  return TRUE;
 }
 
 

@@ -155,16 +155,19 @@ static void dump_layout(tag_declaration tdecl)
   deleteregion(r);
 }
 
-bool dump_msg_layout(void)
+bool layout_requested(void)
+{
+  return selected_type || print_csts;
+}
+
+
+void dump_msg_layout(void)
 {
   tag_declaration tdecl;
 
   /* We look for a tagged type with name selected_type in the global
      environment, and dump the layout in a perl-friendly format.
      We also dump any requested constants. */
-
-  if (!(selected_type || print_csts))
-    return FALSE;
 
   if (selected_type)
     {
@@ -224,6 +227,5 @@ bool dump_msg_layout(void)
 	    }
 	}
     }
-  return TRUE;
 }
 

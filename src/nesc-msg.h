@@ -20,7 +20,8 @@ Boston, MA 02111-1307, USA.  */
 
 void select_nesc_msg(const char *name);
 void select_nesc_csts(void);
+bool layout_requested(void);
 
-bool dump_msg_layout(void);
+void dump_msg_layout(void);
 
 #endif

@@ -1,10 +1,14 @@
-This is the 1.1.1 release of nesC. 
+This is an alpha (early testing) release of the  1.2 version of nesC. 
 
 Installation instructions are in INSTALL. Note that nesC includes a patched
 GNU assembler for the AVR (to support debugging).  An appopriate version of
 the assembler is installed in ncc's support directory (usually
 /usr/local/lib/ncc) based on your installed version of avr-gcc (2.11.2 for
 avr-gcc up to 3.1.1, 2.13.2.1 for later avr-gcc's).
+
+Changes in nesC 1.2
+===================
+- generic components and interfaces. See doc/user/generics-1.2.txt
 
 Changes in nesC 1.1.2
 =====================

@@ -1,0 +1,218 @@
+Introduction
+============
+
+This is a quick introduction to generic components and interfaces, the new
+features of nesC 1.2. A generic component is a component that can be
+multiply instantiated at compile-time and which takes an optional parameter
+list (including type arguments). A generic interface is an interface with
+type arguments. This allows, e.g., the creation of reusable adapter
+components (such as "converting" a StdControl to a SplitControl interface),
+simplifies implementations of components with much in common (such as the
+TinyDB attributes), etc.
+
+Generic Components
+==================
+
+Both generic configurations and generic modules are supported. The syntax
+is straightforward, as this generic queue of ints (with no empty/full
+detection) shows:
+
+  interface IntQueue {
+    command void push(int x);
+    command int pop();
+  }
+
+  generic module IntQueueC(int n) {
+    provides interface IntQueue;
+  } implementation {
+    int q[n];
+    int p1 = 0, p2 = 0;
+
+    command void IntQueue.push(int x) { 
+      q[p1++] = x;
+      if (p1 == n) p1 = 0;
+    }
+
+    command int IntQueue.pop() {
+      int ret = q[p2++];
+      if (p2 == n) p2 = 0;
+      return ret;
+    }
+  }
+
+The n argument to IntQueueC can be used within the component as a constant
+expression; in this example it is used to dimension the q array.
+
+Generic components are instantiated in the `components' declaration
+of configurations:
+
+  configuration MyApp { }
+  implementation {
+    components MyCode, new IntQueueC(10) as MyQueue;
+
+    MyCode.Queue -> MyQueue;
+  }
+
+This creates a new 10 element int-queue, accessible as MyQueue within
+the MyApp configuration. This new component is not accessible outside
+MyApp, except via any interfaces wired within MyApp. You can also have
+generic configurations:
+
+  generic configuration SomeAssembly() {
+    provides interface X;
+  }
+  implementation {
+    components new SomeAssemblyM(), new IntQueueC(10) as MyQueue;
+
+    X = SomeAssemblyM.X;
+    SomeAssemblyM.Queue -> MyQueue;
+  }
+
+Every time SomeAssembly is instantiated, new instances of SomeAssemblyM and
+IntQueueC will also be instantiated.
+
+unique, uniqueCount work "correctly" (i.e., usefully ;-)): if unique is
+used within a generic component C, it returns a different value in
+each instance of C, and the call within the definition of C itself 
+does not affect the value returned by uniqueCount.
+
+Instantiating a generic component is effectively equivalent to creating a
+new component with the parameters replaced by the argument values. Thus,
+instantiating a generic module will produce two slightly different versions
+of the module's code; beware of code size explosion if you instantiate many
+modules... A future version of nesC may support code sharing between
+instances of generic modules, with some restrictions and at some runtime
+cost.
+
+
+Generic Interfaces and Type Parameters
+======================================
+
+Finally, generic components can also have type arguments. This is most
+useful in conjunction with generic interfaces, e.g., to create a queue
+of any type:
+
+  interface Queue<t> {
+    command void push(t x);
+    command t pop();
+  }
+
+  generic module QueueC(typedef t, int n) {
+    provides interface Queue<t>;
+    // Note: this is a shortcut for
+    //   provides interface Queue<t> as Queue
+    // hence the declarations below refer to Queue, not Queue<t>.
+    // Stylistically it's probably best to give a name to the
+    // provided or used interface.
+  } implementation {
+    t q[n];
+    int p1 = 0, p2 = 0;
+
+    command void Queue.push(t x) { 
+      q[p1++] = x;
+      if (p1 == n) p1 = 0;
+    }
+
+    command t Queue.pop() {
+      t ret = q[p2++];
+      if (p2 == n) p2 = 0;
+      return ret;
+    }
+  }
+
+The Queue interface takes a single type parameter t, which can be used
+within Queue as if it were a typedefed type. Type arguments must be
+provided for generic interfaces in uses and provides declarations. The
+generic component queue takes a type parameter t (using the funky "typedef
+t" syntax), and a size as in the IntQueue example. As with generic
+interfaces, component type parameters can be used as if they were typedefed
+types. 
+
+Generic components with type arguments are instantiated just like 
+other generic components:
+
+  configuration MyApp { }
+  implementation {
+    components MyCode, new QueueC(int, 10) as MyQueue;
+
+    MyCode.Queue -> MyQueue;
+  }
+
+One restriction: type arguments to generic components and interfaces can
+not be of array, function or incomplete type.
+
+The only operations that can be performed on a value of a type parameter
+are copying it, and passing it as an argument to some function. If a
+generic component needs some functionality on its type parameter, it can
+express that need by using an appropriate interface:
+
+  interface Compare<t> {
+    command bool lessthan(t x1, t x2);
+  }
+
+  generic module Sort(typedef t) {
+    uses interface Compare<t>;
+  }
+  implementation {
+    ...
+    void f() {
+      t x1, x2; 
+      ...
+      if (call Compare.lessthan(x1, x2))
+	...
+  }
+
+Types in Component Specifications and Other Changes
+===================================================
+
+As part of the changes for generic components, nesC now allows types to be
+defined in the specification of a component (both in generic and
+non-generic components). These types can be used in the component in which
+they are defined, and in configurations that include the component (as
+arguments to generic components). For example,
+
+  interface Send<t> {
+    command result_t send(t x);
+    event result_t sendDone();
+  }
+
+  generic configuration RadioStack(typedef messageType) {
+    typedef messageType *messagePtr;
+    provides interface Send<messagePtr>;
+  }
+  implementation {
+    ...
+  }
+
+
+  configuration MyRadioStack {
+    provides interface Send<MyMessageType *>;
+  }
+  implementation {
+    components new RadioStack(MyMessageType) as TheActualStack;
+
+    Send = TheActualStack.Send;
+    
+    // Build a queue of the message pointer type
+    components new QueueOf(TheActualStack.messagePtr) as MyQueue;
+    ...
+  }
+
+This example also shows that you can now intersperse wiring statements
+and component declarations. Additionally, you can have typedefs in the
+body of a configuration, so MyRadioStack could also be written as:
+
+  configuration MyRadioStack {
+    provides interface Send<MyMessageType *>;
+  }
+  implementation {
+    components new RadioStack(MyMessageType) as TheActualStack;
+
+    Send = TheActualStack.Send;
+    
+    // Build a queue of the message pointer type, using a local typedef
+    typedef TheActualStack.messagePtr MyMessageTypePtr;
+    components new QueueOf(MyMessageTypePtr) as MyQueue;
+    ...
+  }
+

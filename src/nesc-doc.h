@@ -33,9 +33,10 @@ void doc_set_dirsep(const char c);
 /* set the use_graphviz flag */
 void doc_use_graphviz(const bool use);
 
+bool docs_requested(void);
 
 /* actually generate docs */
-bool generate_docs(const char *filename, cgraph cg);
+void generate_docs(const char *filename, cgraph cg);
 
 /* tell the doc generation to create the whole-app page */
 void doc_is_app(const bool val);
