@@ -11,5 +11,6 @@
 void init_magic_functions(void);
 
 expression magic_reduce(function_call fcall);
+bool magic_print(function_call fcall);
 
 #endif

@@ -29,6 +29,7 @@ Boston, MA 02111-1307, USA. */
 #include "AST_utils.h"
 #include "errors.h"
 #include "nesc-semantics.h"
+#include "nesc-magic.h"
 
 /* Set this to 1 to avoid warnings from gcc about paren use with
    -Wparentheses */
@@ -1213,7 +1214,7 @@ void prt_function_call(function_call e, int context_priority)
 	  prt_asttype(e->va_arg_call);
 	  output("))");
 	}
-      else
+      else if (!magic_print(e))
 	{
 	  prt_expression(e->arg1, P_CALL);
 	  /* Generic calls have already started the argument list.

@@ -153,8 +153,9 @@ struct data_declaration {
   dd_list/*iduse*/ fn_uses;	/* list of uses of identifiers in this fn */
   struct connections *connections; /* See nesc-generate.c: what this command
 				      or event is connected to. */
-  /* reduction function for magic functions */
+  /* reduction and printing functions for magic functions */
   expression (*magic_reduce)(function_call fcall);
+  void (*magic_print)(function_call fcall);
 
   /* For variables */
   enum { variable_register, variable_static, variable_normal } vtype;
