@@ -58,6 +58,8 @@ typedef struct tag_declaration {
   bool defined, being_defined;
   bool fields_const, fields_volatile;
   bool transparent_union;	/* transparent_union attribute is present */
+  bool collapsed;		/* TRUE if this struct/union was collapsed
+				   into its parent. */
 
   largest_uint size;
   size_t alignment;

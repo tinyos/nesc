@@ -250,6 +250,7 @@ tag_declaration declare_tag_env(environment env, tag_ref t)
   tdecl->defined = tdecl->being_defined = FALSE;
   tdecl->fields_const = tdecl->fields_volatile = FALSE;
   tdecl->transparent_union = FALSE;
+  tdecl->collapsed = FALSE;
   tdecl->size = tdecl->alignment = 0;
   tdecl->size_cc = FALSE;
   tdecl->container = NULL;
@@ -2918,8 +2919,14 @@ type_element finish_struct(type_element t, declaration fields,
 	      error_with_location(floc, "anonymous field has incomplete type");
 	      continue;
 	    }
+	  if (anon_tdecl->name)
+	    {
+	      warning_with_location(floc, "declaration does not declare anything");
+	      continue;
+	    }
 
 	  /* Process alignment to this struct/union in "main" loop below */
+	  anon_tdecl->collapsed = TRUE;
 	  anon_member = TRUE;
 	  if (anon_tdecl->size_cc)
 	    fsize = anon_tdecl->size * BITSPERBYTE;

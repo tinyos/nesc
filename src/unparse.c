@@ -802,7 +802,11 @@ void prt_qualifier(qualifier q)
 
 void prt_tag_ref(tag_ref tr, pte_options options)
 {
-  name_tag(tr->tdecl);
+  /* We must not name anonymous struct/unions (those which are collapsed
+     into a containing struct/union) as that would make them non-anonymous
+     (in gcc 3.3 and following) */
+  if (!tr->tdecl->collapsed)
+    name_tag(tr->tdecl);
 
   set_location(tr->location);
   switch (tr->kind)
