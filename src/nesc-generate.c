@@ -45,7 +45,6 @@ static void prt_nesc_function_hdr(data_declaration fn_decl,
   prt_declarator(ifn_vd->declarator, NULL, ifn_vd->attributes, fn_decl, 
 		 psd_rename_parameters | options);
 }
-
 void prt_nesc_function_declaration(data_declaration fndecl, void *data)
 {
   if (fndecl->definition && fndecl->isused && !fndecl->suppress_definition)
@@ -548,13 +547,11 @@ static void mark_connected_function_list(cgraph cg,
       mark_reachable_function(cg, caller, conn->ep->function);
     }
 }
-
 static void mark_reachable_function(cgraph cg,
 				    data_declaration caller,
 				    data_declaration ddecl)
 {
   dd_list_pos use;
-
   if (caller && ddecl->kind == decl_function)
     graph_add_edge(fn_lookup(cg, caller), fn_lookup(cg, ddecl), NULL);
 
@@ -580,9 +577,10 @@ static void mark_reachable_function(cgraph cg,
       if (ddecl->suppress_definition)
 	return;
     }
-
+  
   dd_scan (use, ddecl->uses)
     mark_reachable_function(cg, ddecl, DD_GET(data_declaration, use));
+  fn_lookup(cg, ddecl);
 }
 
 static cgraph mark_reachable_code(void)
@@ -637,17 +635,14 @@ static void topological_prt(gnode gep, bool force)
       prt_nesc_function(fn);
     }
 }
-
 static void prt_inline_functions(cgraph callgraph)
 {
   gnode fns;
 
   graph_clear_all_marks(cgraph_graph(callgraph));
-
   graph_scan_nodes (fns, cgraph_graph(callgraph))
     {
       data_declaration fn = NODE_GET(endp, fns)->function;
-
       if (isinlined(fn))
 	{
 	  gedge callers;
@@ -674,7 +669,6 @@ static void prt_inline_functions(cgraph callgraph)
 static void prt_noninline_functions(cgraph callgraph)
 {
   gnode fns;
-
   graph_scan_nodes (fns, cgraph_graph(callgraph))
     {
       data_declaration fn = NODE_GET(endp, fns)->function;
