@@ -45,6 +45,12 @@ static int indent_level;
 static struct location output_loc;
 static bool at_line_start;
 
+/* separator used between module name and function name */
+static char *function_separator;
+
+/* modify behavior of low-level functions when printing docs */
+static bool documentation_mode;
+
 static region tempregion;
 
 typedef struct prt_closure {
@@ -125,6 +131,31 @@ void outputln(char *format, ...)
   newline();
 }
 
+
+/**
+ * copy a file to the output stream.
+ **/
+void copy_file_to_output(char *filename)
+{
+  char buf[1024 * 4];
+  FILE *infile = fopen(filename, "r");
+  size_t nread;
+  size_t nwritten;
+  assert(infile);
+  
+  while( !feof(infile) ) {
+    nread = fread(buf, 1, sizeof(buf), infile);
+    assert( !ferror(infile) );
+    if(nread > 0) {
+      nwritten = fwrite(buf, 1, nread, of);
+      assert( !ferror(of) );
+      assert(nwritten == nread);
+    }
+  }
+
+  fclose(infile);
+}
+
 #define STRIP_PREFIX "__nesc_keyword_"
 #define STRIP_PREFIX_LEN (sizeof(STRIP_PREFIX) - 1)
 
@@ -155,7 +186,8 @@ static void output_stripped_string(const char *s)
 static void output_stripped_string_dollar(const char *s)
 {
   output_stripped_string(s);
-  output("$");
+  //output("$");
+  output(function_separator);
 }
 
 static void output_line_directive(location l, bool include_filename)
@@ -290,7 +322,9 @@ void unparse_start(FILE *to)
   output_loc = *dummy_location;
   at_line_start = TRUE;
   no_line_directives = FALSE;
+  documentation_mode = FALSE;
   indent_level = 0;
+  function_separator = "$";
 }
 
 void unparse_end(void) deletes
@@ -319,6 +353,21 @@ void disable_line_directives(void)
 {
   no_line_directives = TRUE;
 }
+
+void set_function_separator(char *sep) {
+  function_separator = sep;
+}
+
+void enable_documentation_mode(void) 
+{
+  documentation_mode = TRUE;
+}
+
+void disable_documentation_mode(void)
+{
+  documentation_mode = FALSE;
+}
+
 
 void prt_toplevel_declarations(declaration dlist)
 {
@@ -421,6 +470,7 @@ void prt_data_decl(data_decl d)
     }
 }
 
+
 void prt_parameter_declarations(declaration dlist)
 {
   declaration d;
@@ -498,7 +548,7 @@ void prt_ddecl_full_name(data_declaration ddecl, psd_options options)
 {
   if (!ddecl->Cname)
     {
-      if (ddecl->container)
+      if (ddecl->container && !(options & psd_skip_container))
 	output_stripped_string_dollar(ddecl->container->name);
       if (ddecl->kind == decl_function && ddecl->interface)
 	output_stripped_string_dollar(ddecl->interface->name);
@@ -506,7 +556,12 @@ void prt_ddecl_full_name(data_declaration ddecl, psd_options options)
 	  (!ddecl->defined && ddecl->kind == decl_function &&
 	   (ddecl->ftype == function_event ||
 	    ddecl->ftype == function_command)))
-	output("default$");
+      {
+	//output("default$");
+        output("default");
+        output(function_separator);
+      }
+
     }
   output_stripped_string(ddecl->name);
 
@@ -662,7 +717,10 @@ void prt_rid(rid r)
 {
   switch (r->id)
     {
-    case RID_COMMAND: case RID_EVENT: case RID_TASK: case RID_DEFAULT:
+    case RID_COMMAND: case RID_EVENT: case RID_TASK: 
+      if(documentation_mode) output("%s", rid_name(r));  // show these in documenation mode, but not otherwise
+      break;
+    case RID_DEFAULT:
       break;
     default:
       set_location(r->location);
@@ -1113,7 +1171,8 @@ void prt_interface_deref(interface_deref e, int context_priority)
 			e->cstring.data);
 
   prt_expression(e->arg1, P_CALL);
-  output("$");
+  //output("$");
+  output(function_separator);
   output_stripped_cstring(e->cstring);
 }
 

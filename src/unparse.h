@@ -27,10 +27,14 @@ void unparse_start(FILE *to);
 void unparse_end(void) deletes;
 void enable_line_directives(void);
 void disable_line_directives(void);
+void set_function_separator(char *sep);
+void enable_documentation_mode(void);
+void disable_documentation_mode(void);
 
 struct location output_location(void);
 void output(char *format, ...) __attribute__((format (printf, 1, 2)));
 void outputln(char *format, ...) __attribute__((format (printf, 1, 2)));
+void copy_file_to_output(char *filename);
 void newline(void);
 void indent(void);
 void unindent(void);
@@ -69,7 +73,8 @@ typedef enum {
   psd_not_star = 1,
   psd_rename_parameters = 2,
   psd_rename_identifier = 4,
-  psd_print_default = 8
+  psd_print_default = 8,
+  psd_skip_container = 16
 } psd_options;
 
 void prt_declarator(declarator d, type_element elements, attribute attributes,

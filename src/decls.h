@@ -154,6 +154,10 @@ typedef struct data_declaration {
   /* For component_ref */
   component_declaration ctype;
 
+  /* For documentation comments */
+  char *short_docstring;
+  char *long_docstring;
+
 } *data_declaration;
 
 typedef struct label_declaration {

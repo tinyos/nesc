@@ -52,6 +52,7 @@ unsigned long lcm(unsigned long x, unsigned long y);
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 DECLARE_ARRAY(wchar_array, wchar_t)
+DECLARE_ARRAY(char_array, char)
 
 char *fix_filename(region r, const char *unix_filename);
 

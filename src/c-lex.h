@@ -84,4 +84,12 @@ struct lex_state
   int nextchar;  /* Buffered-back input character; faster than using ungetc.  */
 };
 
+
+/**
+ * Retrieve the latest code documentation string.  This is used to
+ * place the documentation into the appropriate data_declaration.
+ **/
+void get_latest_docstring(char **short_s, char **long_s);
+
+
 #endif

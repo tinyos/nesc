@@ -25,6 +25,7 @@ Boston, MA 02111-1307, USA. */
 #include "input.h"
 #include "flags.h"
 #include "c-parse.h"
+#include "c-lex.h"
 #include "env.h"
 #include "expr.h"
 #include "stmt.h"
@@ -220,6 +221,10 @@ data_declaration declare(environment b, data_declaration from,
     env_add(global_env->id_env, dd->name, dd);
   if (dd->spontaneous)
     dd_add_last(parse_region, spontaneous_calls, dd);
+
+  /* init doc stuff to NULL */
+  dd->short_docstring = NULL;
+  dd->long_docstring = NULL;
 
   return dd;
 }
@@ -1830,6 +1835,9 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   const char *id;
   void *idval;
   bool defaultp;
+  char *short_docstring = NULL;
+  char *long_docstring = NULL;
+
 
   if (!nested)
     assert(current.env->global_level && current.function_decl == NULL);
@@ -1851,6 +1859,14 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   fdecl->declared_type = function_type;
   fdecl->undeclared_variables = new_env(parse_region, NULL);
   fdecl->current_loop = NULL;
+
+
+  /* save any docstrings now.  This ensures that the docs aren't
+     incorrectly placed with a lower-down declaration (for example,
+     attaching docs to a parameter in a function declaration, rather
+     than the function itself.) */
+  get_latest_docstring( &short_docstring, &long_docstring );
+
 
   if (class == RID_AUTO)
     {
@@ -2020,6 +2036,15 @@ bool start_function(type_element elements, declarator d, attribute attribs,
 	    current.function_decl ? current.function_decl->scoped_labels : NULL);
   fdecl->ddecl = ddecl;
   fdecl->fdeclarator = fdeclarator;
+
+  /* fill in doc strings. NOTE: the assertion guarantees that we don't
+     overwrite doc strings */
+  assert( fdecl->ddecl );
+  assert( !fdecl->ddecl->short_docstring || !short_docstring );
+  if( short_docstring ) {
+    fdecl->ddecl->short_docstring = short_docstring;
+    fdecl->ddecl->long_docstring = long_docstring;
+  }
 
   current.env = fdeclarator->env;
   current.env->fdecl = current.function_decl = fdecl;
@@ -2241,6 +2266,15 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
 		      astmt, NULL);
   struct data_declaration tempdecl;
   data_declaration ddecl = NULL, old_decl;
+  char *short_docstring = NULL;
+  char *long_docstring = NULL;
+
+  /* save any docstrings now.  This ensures that the docs aren't
+     incorrectly placed with a lower-down declaration (for example,
+     attaching docs to a parameter in a function declaration, rather
+     than the function itself.) */
+  get_latest_docstring( &short_docstring, &long_docstring );
+
 
   if (current.env->parm_level)
     {
@@ -2511,6 +2545,17 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
   assert(ddecl);
   vd->ddecl = ddecl;
 
+  /* fill in doc strings.  NOTE: the check is done here, to make sure we don't overwrite an old docstring */
+  if( vd->ddecl ) {
+    /* we should never end up loosing documentation comments!! */
+    assert( !vd->ddecl->short_docstring || !short_docstring );
+    if( !vd->ddecl->short_docstring ) {
+      vd->ddecl->short_docstring = short_docstring;
+      vd->ddecl->long_docstring  = long_docstring;
+    }
+  }
+
+
   return CAST(declaration, vd);
 }
 
@@ -2602,6 +2647,15 @@ declaration declare_parameter(declarator d, type_element elements,
     }
 
   vd->ddecl = ddecl;
+
+  /* fill in doc strings.  NOTE: the check is done here, to make sure we don't overwrite an old docstring */
+  /*
+    FIXME: do I need this stuff?
+    if( vd->ddecl && !vd->ddecl->short_docstring )
+    get_latest_docstring( &vd->ddecl->short_docstring, &vd->ddecl->long_docstring );
+  */
+
+
   return CAST(declaration, dd);
 }
 

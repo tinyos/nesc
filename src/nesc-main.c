@@ -26,6 +26,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-component.h"
 #include "c-parse.h"
 #include "nesc-generate.h"
+#include "nesc-doc.h"
 #include "nesc-semantics.h"
 #include "nesc-cpp.h"
 #include "nesc-msg.h"
@@ -125,12 +126,14 @@ void nesc_compile(const char *filename, const char *target_name)
 
 	    connect_graphs(parse_region, program, &cg, &modules, &components);
 	    generate_c_code(program, target_name, cg, modules);
+            generate_docs(cg);
 	  }
 	break;
       }
     case l_interface:
       /* just does syntax/semantic checking */
       load_interface(&toplevel, filename, TRUE);
+      generate_docs(NULL);
       break;
     case l_c:
       /* load C file and extract any requested message formats */

@@ -1,5 +1,5 @@
 /* This file is part of the nesC compiler.
-   Copyright (C) 2002 Intel Corporation
+   Copyright (C) 2002 UC Berkeley
 
 The attached "nesC" software is provided to you under the terms and
 conditions of the GNU General Public License Version 2 as published by the
@@ -15,20 +15,22 @@ along with nesC; see the file COPYING.  If not, write to
 the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
-#ifndef NESC_ENV_H
-#define NESC_ENV_H
+#ifndef NESC_DOC_H
+#define NESC_DOC_H
 
-/* Top-level nesc environment. Keeps track of loaded interfaces and
-   components, loads them on demand */
+#include "nesc-cg.h"
 
-void init_nesc_env(region r);
-void interface_declare(interface_declaration d);
-void component_declare(component_declaration d);
-component_declaration require_component(location l, const char *name);
-interface_declaration require_interface(location l, const char *name);
-void require_c(location l, const char *name);
-env get_interface_env();
-env get_component_env();
 
+/* set the output dir */
+void doc_set_outdir(const char *dir);
+
+/* Add a top level source directory */
+void doc_add_topdir(const char *dir);
+     
+/* Set the directory separator - used for cygwin? */
+void doc_set_dirsep(const char c);
+
+/* actually generate docs */
+void generate_docs(cgraph cg);
 
 #endif

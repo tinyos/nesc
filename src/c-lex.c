@@ -106,6 +106,7 @@ static char *traditional token_buffer;	/* Pointer to token buffer.
 				   Actual allocated length is maxtoken + 2. */
 
 static wchar_array string_array;
+static char_array docstring_array;
 
 static int language_token;
 
@@ -138,6 +139,7 @@ init_lex (void)
   token_buffer = (char *) xmalloc (maxtoken + 2);
 
   string_array = new_wchar_array(parse_region, 512);
+  docstring_array = new_char_array(parse_region, 2048);
 
   int_type_size = type_size(int_type);
 
@@ -218,11 +220,107 @@ yyprint (file, yychar, yylval)
     }
 }
 
+/* flag to allow skipping of initial whitespace & * character */ 
+bool doc_skip_prefix;
+unsigned long prev_cpp_docstring_line = ULONG_MAX;
+
+/* initialize an accumulating documentation string */
+static void init_c_docstring() 
+{
+  /* warn about doc strings that are never added to a data_declaration */
+  if(char_array_length(docstring_array) != 0 )
+    warning("New docstring found, while previous was still unatached - error in formatting?  Old docstring discarded.");
+
+  char_array_reset(docstring_array);
+  doc_skip_prefix = FALSE;
+}
+
+/* set up for a CPP style documentation string.  This allows for
+   multiple comment lines to be strung together into a single comment */
+static void init_cpp_docstring() 
+{
+  if(prev_cpp_docstring_line + 1  !=  input_file_stack->l.lineno)
+    char_array_reset(docstring_array);
+  prev_cpp_docstring_line = input_file_stack->l.lineno;
+  doc_skip_prefix = FALSE;
+}
+
+
+/* add chars to the a documentation comment string */
+static void add_to_docstring(int c)
+{
+  /* skip the initial "   *" stuff after a newline */
+  if(doc_skip_prefix) {
+    if( c == ' ' || c == '\t' || c == '\r') 
+      return;
+    doc_skip_prefix = FALSE;
+    if( c == '*' ) /* skip the first * char */
+      return;
+  }
+  if(c == '\n')
+    doc_skip_prefix = TRUE;
+  
+  /* make sure there is space, and then copy the new char */
+  {
+    char *p = char_array_extend(docstring_array, 1);
+    *p = c;
+  }
+}
+
+/* copy out the current docstring, if any */
+void get_latest_docstring(char **short_s, char **long_s)
+{
+  size_t length = char_array_length(docstring_array);
+  char *str, *dot;
+  assert(short_s != NULL);
+  assert(long_s != NULL);
+
+  /* no doc string available */
+  if( length <= 0 ) {
+    *short_s = NULL;
+    *long_s = NULL;
+    return;
+  }
+
+
+  /* copy out the text, and reset docstring_array */
+  str = rarrayalloc(parse_region, length + 1, char);
+  memcpy(str, char_array_data(docstring_array), length * sizeof(char));
+  str[length] = '\0';
+  prev_cpp_docstring_line = ULONG_MAX;
+  char_array_reset(docstring_array);
+
+  /* find the short string, if any */
+  dot = strchr(str,'.');
+  if(dot == NULL) {
+    *short_s = str;
+    *long_s = NULL;
+  } else {
+    *dot = '\0';
+    *short_s = rstrdup(parse_region, str);
+    *dot = '.';
+    *long_s = str;
+  }
+
+}
+
+
+
 /* Skip / *-style comment. Note that unlike C, nesC has nested / *-comments. */
 static void skip_c_comment(void)
 {
   int last_c = 0, c, depth = 1;
   struct location start = input_file_stack->l;
+  bool docstring = FALSE;
+
+  /* if the first char is '*', then this is a code documentation comment */
+  c = GETC();
+  if(c == '*') {
+    docstring = TRUE;
+    init_c_docstring();
+  } else {
+    UNGETC(c);
+  }
 
   for (;;)
     {
@@ -248,13 +346,36 @@ static void skip_c_comment(void)
 	    ++depth;
 	  break;
 	}
+
+      /* add to the docstring, skipping the final "* /" sequence */
+      if( docstring ) {
+        if( last_c == '*' ) /* add any '*' that we skipped */
+          add_to_docstring('*');
+
+        if( c != '*' ) /* skip '/', in case its the beginning of the end... */
+          add_to_docstring(c);
+      }
+
       last_c = c;
     }
 }
 
+
+
+
 static void skip_cpp_comment(void)
 {
   int c;
+  bool docstring = FALSE;
+
+  /* if the first char is '/', then this is a code documentation comment */
+  c = GETC();
+  if(c == '/') {
+    docstring = TRUE;
+    init_cpp_docstring();
+  } else {
+    UNGETC(c);
+  }
 
   for (;;)
     {
@@ -268,6 +389,9 @@ static void skip_cpp_comment(void)
 	  input_file_stack->l.lineno++;
 	  return;
 	}
+      
+      if(docstring)
+        add_to_docstring( c );
     }
 }
 

@@ -33,6 +33,7 @@ Boston, MA 02111-1307, USA. */
 #include "nesc-paths.h"
 #include "nesc-cpp.h"
 #include "nesc-msg.h"
+#include "nesc-doc.h"
 
 /* Table of language-independent -f options.
    STRING is the option name.  VARIABLE is the address of the variable.
@@ -58,7 +59,9 @@ static char *lang_options[] =
   "-fnesc-no-debug",
   "-fnesc-msg=",
   "-fnesc-target=",
-   
+  "-fnesc-docdir=",
+  "-fnesc-topdir=",
+
   "-ansi",
   "-fallow-single-precision",
 
@@ -202,6 +205,14 @@ static void c_decode_option(char *p)
   else if (!strcmp (p, "-fnesc-no-debug"))
     {
       flag_no_debug = 1;
+    }
+  else if (!strncmp (p, "-fnesc-docdir=", strlen("-fnesc-docdir=")))
+    {
+      doc_set_outdir(p + strlen("-fnesc-docdir="));
+    }
+  else if (!strncmp (p, "-fnesc-topdir=", strlen("-fnesc-topdir=")))
+    {
+      doc_add_topdir(p + strlen("-fnesc-topdir="));
     }
   else if (!strcmp (p, "-ftraditional") || !strcmp (p, "-traditional"))
     {

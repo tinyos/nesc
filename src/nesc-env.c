@@ -28,6 +28,15 @@ Boston, MA 02111-1307, USA.  */
 /* The environments for components and interfaces */
 static env nesc_component_env, nesc_interface_env, nesc_c_env;
 
+
+/* hack, to give the doc generation an easy way to list interfaces & components */
+env get_interface_env() {
+  return nesc_interface_env;
+}
+env get_component_env() {
+  return nesc_component_env;
+}
+
 void init_nesc_env(region r)
 {
   nesc_interface_env = new_env(r, NULL);

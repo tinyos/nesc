@@ -94,6 +94,7 @@ unsigned long lcm(unsigned long x, unsigned long y)
 }
 
 DEFINE_ARRAY(wchar_array, wchar_t)
+DEFINE_ARRAY(char_array, char)
 
 #ifdef __CYGWIN32__
 #include <sys/cygwin.h>

@@ -101,6 +101,8 @@ libparser_a_SOURCES =				\
 	nesc-env.h				\
 	nesc-generate.c				\
 	nesc-generate.h				\
+	nesc-doc.c				\
+	nesc-doc.h				\
 	nesc-interface.c			\
 	nesc-interface.h			\
 	nesc-keywords.h				\
