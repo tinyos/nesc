@@ -747,11 +747,11 @@ example.
 
 \begin{figure}
 \begin{verbatim}
-interface X {             module M {
-  command void f();         provides interface X as P;
-  event void g();           uses interface X as U;
-}                           provides command void h();
-                          } implementation { ... }
+interface X {               module M {
+  command int f();            provides interface X as P;
+  event void g(int x);        uses interface X as U;
+}                             provides command void h();
+                            } implementation { ... }
 configuration C {
   provides interface X;
   provides command void h2();
@@ -863,7 +863,39 @@ implementation for $\alpha$.
 \end{itemize}
 The rules for \code{signal} expressions are identical.
 
-[show complete intermediate functions for example]
+\paragraph{Example Intermediate Functions} 
+
+Figure~\ref{fig:wiring-fns} shows the intermediate functions that are
+produced for the components of Figure~\ref{fig:wiring}, using a C-like
+syntax, where \code{list($x$)} produces a singleton list containing $x$,
+\code{empty\_list} is a constant for the 0 element list and
+\code{concat\_list} concatenates two lists. The calls to \code{M.P.f},
+\code{M.U.g}, \code{M.h} represent calls to the command and event
+implementations in module \code{M} (not shown).
+
+\begin{figure}
+\begin{tabular}{ll}
+\tt list of int $I_\code{M.P.f}()$ \{ & \tt list of void $I_\code{M.P.g}$(int x) \{ \\
+\tt \ \ return list(M.P.f());         & \tt \ \ list of int r1 = $I_\code{C.X.g}$(x); \\
+\tt }                                 & \tt \ \ list of int r1 = $I_\code{M.U.g}$(x); \\
+                                      & \tt \ \ return list\_concat(r1, r2); \\
+                                      & \tt } \\
+\\
+\tt list of int $I_\code{M.U.f}()$ \{ & \tt list of void $I_\code{M.U.g}$(int x) \{ \\
+\tt \ \ return $I_\code{M.P.f}$();    & \tt \ \ return list(M.U.g(x)); \\
+\tt \}                                & \tt \} \\
+\\
+\tt list of int $I_\code{C.X.f}()$ \{ & \tt list of void $I_\code{C.X.g}$(int x) \{ \\
+\tt \ \ return $I_\code{M.P.f}$();    & \tt \ \ return empty\_list; \\
+\tt \}                                & \tt \} \\
+\\
+\tt list of void $I_\code{C.h2}()$ \{ & \tt list of void $I_\code{M.h}$() \{ \\
+\tt \ \ return $I_\code{M.h}$();      & \tt \ \ return list(M.h()); \\
+\tt \}                                & \tt \} \\
+\end{tabular}
+\caption{Intermediate Functions for Figure~\ref{fig:wiring}}
+\label{fig:wiring-fns}
+\end{figure}
 
 \subsubsection{Wiring and Parameterised Functions}
 \label{sec:wiring-parms}
