@@ -25,12 +25,7 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	$nocompile = 1 if ($_ eq "-fsyntax-only");
 	if (/^-[WwvpfmD]/ || /^-pedantic/ || /^-ansi/) {
 	    push @nesc_args, $_ unless /^-fnesc-.*cfile=/;
-	    $target = $1 if /^-fnesc-target=(.*)/;
 	    $verbose = 1 if /^-v/;
-	}
-
-	if (/^-g$/) {
-	    push @nesc_args, "-fnesc-no-inline";
 	}
 
 	if (/^-I/) {
@@ -67,8 +62,6 @@ for ($i = 0; $i <= $#ARGV; $i++) {
     }
 }
 
-$target = "pc" if !defined($target);
-
 if ($source eq "") {
     printf STDERR "no source file specified\n";
     exit 2;
@@ -88,7 +81,6 @@ if ($objtarget eq "") {
     $objtarget =~ s/\.nc$/.s/ if $asmonly;
 }
 
-push @nesc_args, "-fnesc-no-debug" if $target eq "avr";
 push @nesc_args, $source;
 push @nesc_args, "-o";
 if ($nocompile) {

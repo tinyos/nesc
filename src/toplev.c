@@ -66,6 +66,7 @@ static char *lang_options[] =
   "-fnesc-is-app",
   "-fnesc-docs-use-graphviz",
   "-fnesc-verbose",
+  "-fnesc-include=",
 
   "-ansi",
   "-fallow-single-precision",
@@ -193,6 +194,10 @@ static void c_decode_option(char *p)
   if (!strncmp (p, "-fnesc-nido-tosnodes=", strlen("-fnesc-nido-tosnodes=")))
     {
       nido_num_nodes = p + strlen("-fnesc-nido-tosnodes=");
+    }
+  else if (!strncmp (p, "-fnesc-include=", strlen("-fnesc-include=")))
+    {
+      add_nesc_include(p + strlen("-fnesc-include="));
     }
   else if (!strncmp (p, "-fnesc-path=", strlen("-fnesc-path=")))
     {

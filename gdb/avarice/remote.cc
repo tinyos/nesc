@@ -763,10 +763,17 @@ void talkToGdb(void)
       {
 	  debugOut("single step from %x to %x\n", start, end);
 	  putpacket("OK");
-	  if (stepThrough(start, end))
+	  if (start == end)
+	  {
+	      if (!jtagSingleStep())
+		  gdbOut("Failed to single-step");
 	      reportStatus(SIGTRAP);
+	  }
 	  else
-	      reportStatus(SIGINT);
+	      if (stepThrough(start, end))
+		  reportStatus(SIGTRAP);
+	      else
+		  reportStatus(SIGINT);
       }
       break;
 

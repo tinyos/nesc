@@ -18,6 +18,7 @@ Boston, MA 02111-1307, USA.  */
 #ifndef NESC_MAIN_H
 #define NESC_MAIN_H
 
+void add_nesc_include(const char *name);
 void nesc_compile(const char *component_name, const char *target_name);
 
 #endif

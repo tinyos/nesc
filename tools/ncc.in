@@ -23,40 +23,22 @@
 # Boston, MA 02111-1307, USA.
 
 # Configuration
-$cygwin = "@CYGWINHACKS@";
 $prefix = "@prefix@";
 $exec_prefix = "@exec_prefix@";
 $NCDIR = "@libdir@/ncc";
-$TOSDIR = "@TOSDIR@";
-$TOSDIR = $ENV{"TOSDIR"} if defined($ENV{"TOSDIR"});
 
 # Runtime configuration
 $ENV{"PATH"} = "$NCDIR:$ENV{PATH}";
 $ENV{"NCDIR"} = $NCDIR;
 
 # Have fun with the arguments
+$gcc = "gcc";
 
 for ($i = 0; $i <= $#ARGV; $i++) {
     $strip = 0;
     $_ = $ARGV[$i];
     if (/^-/) {
-	if (/^-target=(.*)/) {
-	    &fail("multiple targets specified") if defined($target);
-	    $target = $1;
-	    $strip = 1;
-	}
-	elsif (/^-tosdir=(.*)/) {
-	    $TOSDIR = $1;
-	    $strip = 1;
-	}
-	elsif (/^-nostdinc$/) {
-	    $nostdinc = 1;
-	}
-	elsif (/^-board=(.*)/) {
-	    push @boards, $1;
-	    $strip = 1;
-	}
-	elsif (/^-docdir=(.*)/) {
+	if (/^-docdir=(.*)/) {
             $docdir = $1;
 	    $strip = 1;
 	}
@@ -72,76 +54,26 @@ for ($i = 0; $i <= $#ARGV; $i++) {
             }
 	    $strip = 1;
 	}
-	elsif (/^-print-tosdir$/) {
-	    $print_tosdir = 1;
-	    $strip = 1;
-	}
 	elsif (/^--version$/) {
 	    $print_version = 1;
 	    $strip = 1;
 	}
-	elsif (/^-g$/) {
-	    $debugging = 1;
+	elsif (/^-gcc=(.*)/) {
+	    $gcc = $1;
+	    $strip = 1;
+	}
+	elsif (/^--mingw-gcc$/) {
+	    $mingw_gcc = 1;
+	    $strip =1;
+	}
+	elsif (/^-v$/) {
+	    $verbose = 1;
 	}
     } 
 
     push @new_args, $_ if !$strip;
 }
 
-if ($print_tosdir)
-{
-    print $TOSDIR, "\n";
-    exit 0;
-}
-
-$target = "mica" if !defined($target);
-#@boards = ("basicsb") if !defined(@boards);
-
-
-#
-# target options 
-#
-if ($target eq "pc") {
-    $gcc = "gcc";
-    push @new_args, "-fnesc-target=pc";
-}
-elsif ($target eq "mica") {
-    $gcc = "avr-gcc";
-    push @new_args, ("-mmcu=atmega103", "-fnesc-target=avr");
-    # work around JTAG ICE bug (data in 0xdc->0xff range is
-    # read as random contents by JTAG ICE board)
-    # Note: this loses 160 bytes of RAM when debugging...
-    push @new_args, "-Wl,-Tdata=0x800100" if $debugging;
-    @commonplatforms = ("avrmote");
-}
-elsif ($target eq "mica128") {
-    $gcc = "avr-gcc";
-    push @new_args, ("-mmcu=atmega128", "-fnesc-target=avr");
-    @commonplatforms = ("mica", "avrmote");
-}
-elsif ($target eq "mica2") {
-    $gcc = "avr-gcc";
-    push @new_args, ("-mmcu=atmega128", "-fnesc-target=avr");
-    @commonplatforms = ("mica128", "mica", "avrmote");
-}
-elsif ($target eq "mica2dot") {
-    $gcc = "avr-gcc";
-    push @new_args, ("-mmcu=atmega128", "-fnesc-target=avr");
-    @commonplatforms = ("mica2", "mica128", "mica", "avrmote");
-}
-elsif ($target eq "rene2") {
-    $gcc = "avr-gcc";
-    push @new_args, ("-mmcu=atmega163", "-fnesc-target=avr");
-    @commonplatforms = ("avrmote");
-}
-elsif ($target eq "motor") {
-    $gcc = "avr-gcc";
-    push @new_args, ("-mmcu=atmega161", "-fnesc-target=avr");
-    @commonplatforms = ("avrmote");
-}
-else {
-    &fail("unknown target $target\n(known targets are pc, mica, mica128, mica2, mica2dot, rene2)");
-}
 
 if ($print_version) {
     print "ncc: @PACKAGE_VERSION@\n";
@@ -158,10 +90,6 @@ if( defined($docdir) ) {
     # add the doc output dir
     push @new_args, "-fnesc-docdir=$docdir";
     
-    # get the directory above TOSDIR
-    my ($tosparent) = ($TOSDIR =~ m!^(.*)/.*?$!);
-    push @topdirs, $tosparent;
-
     # add top level dirs, to strip out of package names
     foreach my $dir (@topdirs) {
         push @new_args, "-fnesc-topdir=$dir";
@@ -177,23 +105,11 @@ if( defined($docdir) ) {
 }
 
 
-unshift @new_args, map "-DBOARD_\U$_", @boards;
-unshift @new_args, "-DPLATFORM_\U$target";
 unshift @new_args, "-specs=$NCDIR/tdspecs";
 unshift @new_args, $gcc;
 $ENV{NESC_GCC} = $gcc;
 
-if (!$nostdinc) {
-    push @new_args, map "-I$TOSDIR/sensorboards/$_", @boards;
-    push @new_args, "-I$TOSDIR/platform/$target";
-    push @new_args, map "-I$TOSDIR/platform/$_", @commonplatforms;
-    push @new_args, "-I$TOSDIR/interfaces";
-    push @new_args, "-I$TOSDIR/types";
-    push @new_args, "-I$TOSDIR/system";
-    push @new_args, "-I$TOSDIR/lib";
-}
-
-if ($gcc eq "avr-gcc" && $cygwin) {
+if ($mingw_gcc) {
     # Yuck. Convert unix paths to windows paths
     $ENV{"NCDIR"} = &winpath($ENV{"NCDIR"});
     @ARGV = @new_args;
@@ -237,7 +153,7 @@ if ($gcc eq "avr-gcc" && $cygwin) {
     }
 }
 
-#print STDERR join(' ', @new_args), "\n";
+print STDERR join(' ', @new_args), "\n" if $verbose;
 exec @new_args;
 print STDERR "Couldn't execute $gcc\n";
 exit 2;
@@ -252,11 +168,6 @@ sub extractarg {
 	$arg = substr($ARGV[$i], 2);
     }
     return ($i, $arg);
-}
-
-sub fail {
-    print STDERR "$_[0]\n";
-    exit 2;
 }
 
 sub winpath {

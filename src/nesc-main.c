@@ -33,6 +33,29 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-magic.h"
 #include "edit.h"
 
+/* The set of C files to require before loading the main component */
+struct ilist
+{
+  struct ilist *next;
+  char *name;
+};
+
+static struct ilist *includelist;
+static region includeregion;
+
+void add_nesc_include(const char *name)
+{
+  struct ilist *np;
+
+  if (!includeregion)
+    includeregion = newregion();
+
+  np = ralloc(includeregion, struct ilist);
+  np->next = includelist;
+  includelist = np;
+  np->name = rstrdup(includeregion, name);
+}
+
 /* Adds the component graph 'component' to the whole program graph 'master' */
 static void connect_graph(cgraph master, cgraph component)
 {
@@ -90,6 +113,7 @@ static void connect_graphs(region r, nesc_declaration program,
 void nesc_compile(const char *filename, const char *target_name)
 {
   struct location toplevel;
+  struct ilist *includes;
 
   if (filename == NULL)
     {
@@ -111,7 +135,8 @@ void nesc_compile(const char *filename, const char *target_name)
   toplevel.lineno = 0;
   toplevel.in_system_header = FALSE;
   
-  require_c(&toplevel, "tos");
+  for (includes = includelist; includes; includes = includes->next)
+    require_c(&toplevel, includes->name);
 
   if (nesc_filename(filename))
     {
