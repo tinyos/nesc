@@ -741,7 +741,31 @@ The \code{M2.SC -> M1} line is equivalent to \code{M2.SC -> M1.StdControl}.
 We first explain the semantics of wiring in the absence of parameterised
 interfaces. Section~\ref{sec:wiring-parms} below covers parameterised
 interfaces. Finally, Section~\ref{sec:wiring-reqs} specifies requirements
-on the wiring statements of an application when viewed as a whole.
+on the wiring statements of an application when viewed as a whole. We will
+use the simple application of Figure~\ref{fig:wiring} as our running
+example.
+
+\begin{figure}
+\begin{verbatim}
+interface X {             module M {
+  command void f();         provides interface X as P;
+  event void g();           uses interface X as U;
+}                           provides command void h();
+                          } implementation { ... }
+configuration C {
+  provides interface X;
+  provides command void h2();
+}
+implementation {
+  components M;
+  X = M.P;
+  M.U -> M.P;
+  h2 = M.h;
+}  
+\end{verbatim}
+\caption{Simple Wiring Example}
+\label{fig:wiring}
+\end{figure}
 
 We define the meaning of wiring in terms of \emph{intermediate
 functions}.\footnote{\nesc can be compiled without explicit intermediate
@@ -749,18 +773,10 @@ functions, so the behaviour described in this section has no runtime cost
 beyond the actual function calls and the runtime dispatch necessary for
 parameterised commands or events.}  There is one intermediate function
 $I_\alpha$ for every command or event $\alpha$ of every component. For
-instance, with
-\begin{verbatim}
-interface X {             module M {
-  command void f();         provides interface X as P;
-  event void g();           uses interface X as U;
-}                           provides command void h();
-                          } implementation { ... }
-\end{verbatim}
-module M has intermediate functions $I_\code{M.P.f}$, $I_\code{M.P.g}$, $I_\code{M.U.f}$, $I_\code{M.U.g}$, $I_\code{M.h}$.
-In examples in the rest of this section we name intermediate functions
-based on their component, optional interface instance name and function
-name.
+instance, in Figure~\ref{fig:wiring}, module M has intermediate functions
+$I_\code{M.P.f}$, $I_\code{M.P.g}$, $I_\code{M.U.f}$, $I_\code{M.U.g}$,
+$I_\code{M.h}$.  In examples, we name intermediate functions based on their
+component, optional interface instance name and function name.
 
 An intermediate function is either used or provided. Each intermediate
 function takes the same arguments as the corresponding command or event in
@@ -783,25 +799,9 @@ functions. We first expand the wiring statements to refer to intermediate
 functions rather than specification elements, and we suppress the
 distinction between \code{=} and \code{->} wiring statements. We write
 \code{$I_1$ <-> $I_2$} for a connection between intermediate functions
-\code{$I_1$} and \code{$I_2$}. For instance, in:
-\begin{verbatim}
-interface X {             module M {
-  command void f();         provides interface X as P;
-  event void g();           uses interface X as U;
-}                           provides command void h();
-                          } implementation { ... }
-configuration C {
-  provides interface X;
-  provides command void h2();
-}
-implementation {
-  components M;
-  X = M.P;
-  M.U -> M.P;
-  h2 = M.h;
-}  
-\end{verbatim}
-we have the following intermediate function connections:\\
+\code{$I_1$} and \code{$I_2$}. For instance, configuration \code{C} from
+Figure~\ref{fig:wiring} specifies the following intermediate function
+connections:\\
 \begin{tabular}{ccc}
 $I_\code{C.X.f}$ \code{<->} $I_\code{M.P.f}$ & 
 $I_\code{M.U.f}$ \code{<->} $I_\code{M.P.f}$ & 
@@ -829,11 +829,13 @@ and $X$ is an external, provided or internal, used specification element.
 \end{itemize}
 If none of these conditions hold, \code{$I_1$} is a caller. The rules for
 wiring in Section~\ref{sec:wiring} ensure that a connection \code{$I_1$ <->
-$I_2$} cannot connect two callers or two callees. In our previous example,
-in configuration \code{C}, \code{C.X.f, C.h2, M.P.g, M.U.f} are callers
-and \code{C.X.g, M.P.f, M.U.g, M.h} are callees. Thus the connections of
-\code{C} specify that a call to \code{M.P.f} is added to \code{C.X.f}, a
-call to \code{C.X.g} is added to \code{M.P.g}, etc.
+$I_2$} cannot connect two callers or two callees. In configuration \code{C}
+from Figure~\ref{fig:wiring}, $I_\code{C.X.f}$, $I_\code{C.h2}$,
+$I_\code{M.P.g}$, $I_\code{M.U.f}$ are callers and $I_\code{C.X.g}$,
+$I_\code{M.P.f}$, $I_\code{M.U.g}$, $I_\code{M.h}$ are callees. Thus the
+connections of \code{C} specify that a call to $I_\code{M.P.f}$ is added to
+$I_\code{C.X.f}$, a call to $I_\code{C.X.g}$ is added to $I_\code{M.P.g}$,
+etc.
 
 
 \paragraph{Intermediate Functions and Modules}
@@ -860,6 +862,8 @@ compile-time error occurs if $L$ can be empty and there is no default
 implementation for $\alpha$.
 \end{itemize}
 The rules for \code{signal} expressions are identical.
+
+[show complete intermediate functions for example]
 
 \subsubsection{Wiring and Parameterised Functions}
 \label{sec:wiring-parms}
