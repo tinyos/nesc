@@ -32,6 +32,7 @@ struct yystype;
 typedef struct location
 { 
   const char *filename;
+  struct nesc_declaration *container; /* for instantiated code only */
   unsigned long lineno;
   bool in_system_header;
 } *location;
@@ -99,5 +100,6 @@ void get_latest_docstring(char **short_s, char **long_s, struct location **loc);
 char *get_docstring();
 void separate_short_docstring(char *str, char **short_s, char **long_s);
 
+location make_location(struct location l);
 
 #endif

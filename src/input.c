@@ -36,6 +36,7 @@ void set_input(FILE *f, const char *filename)
   input_file_stack = p;
 
   p->l.filename = filename;
+  p->l.container = NULL;
   p->l.lineno = 0;
   p->l.in_system_header = FALSE;
   p->lex.finput = f;

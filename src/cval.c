@@ -995,6 +995,29 @@ void cval_print(FILE *f, cval c)
     }
 }
 
+void cval_debug(cval c)
+/* For use while debugging. gdb doesn't print cvals right */
+{
+  switch (c.kind)
+    {
+    case cval_variable: printf("<top>"); break;
+    case cval_unk: printf("<unknown>"); break;
+    case cval_address:
+      if (c.ldecl)
+	printf("<address label=%s @%p", c.ldecl->name, c.ldecl);
+      else
+	printf("<address sym=%s @%p", c.ddecl->name, c.ddecl);
+      if (c.si > 0)
+	printf(" + %lld", c.si);
+      else
+	printf(" - %lld", -c.si);
+      printf(">");
+    default:
+      cval_print(stdout, c);
+    }
+  printf("\n");
+}
+
 cval cval_align_to(cval n, cval alignment)
 {
   cval count = cval_divide(cval_sub(cval_add(n, alignment),

@@ -179,6 +179,12 @@ print_spelling (buffer)
   return buffer;
 }
 
+static void save_expression_spelling(expression e)
+{
+  if (spelling_base)
+    e->spelling = print_spelling(rstralloc(regionof(e), spelling_length() + 1));
+}
+
 /* Issue an error message for a bad initializer component.
    MSGID identifies the message.
    The component name is taken from the spelling stack.  */
@@ -191,6 +197,19 @@ void error_init (const char *msgid)
   ofwhat = print_spelling ((char *) alloca (spelling_length () + 1));
   if (*ofwhat)
     error ("(near initialization for `%s')", ofwhat);
+}
+
+void error_init_expr(expression e, const char *msgid)
+{
+  const char *ofwhat;
+
+  error_with_location(e->location, "%s", msgid);
+  if (e->spelling)
+    ofwhat = e->spelling;
+  else
+    ofwhat = print_spelling ((char *) alloca (spelling_length () + 1));
+  if (*ofwhat)
+    error_with_location(e->location, "(near initialization for `%s')", ofwhat);
 }
 
 /* Issue a pedantic warning for a bad initializer component.
@@ -955,6 +974,38 @@ designator set_init_label(location loc, cstring fieldname)
   return d;
 }
 
+void check_init_element(expression init)
+{
+  /* Arrays are "constant" if they have a static address 
+     (see default_conversion on arrays) - this essentially handles the
+     case of string constants */
+  known_cst c;
+
+  if (!check_constant_once(init))
+    return;
+
+  c = type_array(init->type) ? init->static_address : init->cst;
+
+  if (!c)
+    {
+      error_init_expr(init, "initializer element is not constant");
+      return;
+    }
+#if 0
+  /* This is no longer detected as constant_unknown has been recycled
+     for use with abstract component arguments. It could be resurrected
+     if we made cval more complicated, but it doesn't seem worth the
+     effort. */
+  else if (constant_uncomputable(c))
+    {
+      error_init_expr(init, "initializer element is not computable at load time");
+      return;
+    }
+#endif
+  else
+    constant_overflow_warning(c);
+}
+
 /* "Output" the next constructor element.
    At top level, really output it to assembler code now.
    Otherwise, collect it in a list from which we will make a CONSTRUCTOR.
@@ -969,30 +1020,13 @@ static void output_init_element(expression init, type t)
 {
   if (require_constant_value)
     {
-      /* Arrays are "constant" if they have a static address 
-	 (see default_conversion on arrays) - this essentially handles the
-	 case of string constants */
-      known_cst c = type_array(init->type) ? init->static_address : init->cst;
-
-      if (!c)
-	{
-	  error_init("initializer element is not constant");
-	  return;
-	}
-#if 0
-      /* This is no longer detected as constant_unknown has been recycled
-	 for use with abstract component arguments. It could be resurrected
-	 if we made cval more complicated, but it doesn't seem worth the
-	 effort. */
-      else if (constant_uncomputable(c))
-	{
-	  error_init("initializer element is not computable at load time");
-	  return;
-	}
-#endif
-      else
-	constant_overflow_warning(c);
+      check_init_element(init);
+      /* If we haven't checked it yet then we'll need the spelling later
+	 (see nesc-constants.c) */
+      if (!init->cst_checked)
+	save_expression_spelling(init);
     }
+
   digest_init(t, init);
 }
 

@@ -27,6 +27,7 @@ Boston, MA 02111-1307, USA.  */
 #include "semantics.h"
 #include "constants.h"
 #include "nesc-constants.h"
+#include "c-lex.h"
 
 static AST_walker clone_walker;
 
@@ -68,12 +69,19 @@ static AST_walker clone_walker;
 
 static void *clone(region r, void *vn)
 {
+  struct location l;
   node *n = vn;
   node new = AST_clone(r, *n);
 
   (*n)->instantiation = new;
   new->instantiation = NULL;
   *n = new;
+
+  /* Update location to include the container (so we can print instance
+     names in error messages) */
+  l = *new->location;
+  l.container = current.container;
+  new->location = make_location(l);
 
   return new;
 }

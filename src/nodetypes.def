@@ -122,6 +122,7 @@
 (deffield fdecl field_declaration ())
 (deffield cst_checked bool ())
 (deffield instantiation node ())
+(deffield spelling "const char *" ())
 
 ;; nesc fields
 (deffield call_kind nesc_call_kind (init))
@@ -168,7 +169,7 @@ dangling node as we drop these nested statements from the AST)")
 
 (deftype expression node (lvalue side_effects cst bitfield isregister
 			  type static_address converted_to_pointer
-			  cst_checked)
+			  cst_checked spelling)
   "Expression nodes are subtypes of this type.
 LVALUE is true if this expression can be used in a context requiring an lvalue.
 BITFIELD is true if this lvalue is a bitfield.
@@ -182,7 +183,9 @@ indicates need converting to pointer type (note that these nodes did not have
 their type changed)
 CST_CHECKED is set to true once we've successfully checked this expression's
 constantness, and associated constant value (used to avoid duplicate error
-messages in repeated constant folding passes)")
+messages in repeated constant folding passes)
+SPELLING saves the `spelling' (a user-friendly name) of expressions used
+in initialisers.")
 
 (deftype type_element node ()
   "A common super-type for all type-building elements (qualifiers, etc)")

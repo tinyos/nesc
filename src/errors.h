@@ -34,10 +34,6 @@ extern int warningcount;
 void set_error_location(location l);
 void clear_error_location(void);
 
-/* Report error msg at filename, lineno */
-void verror_with_file_and_line(const char *filename, int lineno,
-			       const char *format, va_list args);
-
 /* Report error msg at l */
 void verror_with_location(location l, const char *format, va_list args);
 
@@ -61,10 +57,6 @@ void vfatal(const char *format, va_list args);
 
 void fatal(const char *format, ...);
 
-/* Report warning msg at filename, lineno */
-void vwarning_with_file_and_line(const char *filename, int lineno,
-				 const char *format, va_list args);
-
 /* Report warning msg at l */
 void vwarning_with_location(location l, const char *format, va_list args);
 
@@ -78,10 +70,6 @@ void vwarning(const char *format, va_list args);
 void warning(const char *format, ...);
 
 
-/* Report warning msg at filename, lineno */
-void warning_with_file_and_line(const char *filename, int lineno,
-				const char *format, ...);
-
 /* Report warning msg at decl */
 void warning_with_decl(declaration d, const char *format, ...);
 
@@ -90,12 +78,6 @@ void warning_with_location(location l, const char *format, ...);
 
 /* Report warning msg at current filename, lineno */
 void warning_or_error(bool iswarning, const char *format, ...);
-
-
-/* Report warning msg at filename, lineno */
-void warning_or_error_with_file_and_line(bool iswarning,
-					 const char *filename, int lineno,
-					 const char *format, ...);
 
 /* Report warning msg at decl */
 void warning_or_error_with_decl(bool iswarning, declaration d,

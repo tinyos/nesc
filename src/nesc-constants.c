@@ -24,11 +24,13 @@ Boston, MA 02111-1307, USA.  */
 #include "AST_walk.h"
 #include "semantics.h"
 #include "constants.h"
+#include "init.h"
 
 static AST_walker folder_walker;
 
 struct folder_data {
-  bool done;
+  bool require_constant_value;
+  bool *done;
   int pass;
 };
 
@@ -40,7 +42,17 @@ static AST_walker_result folder_expression(AST_walker spec, void *data,
   known_cst c = NULL, sa = NULL;
   
   /* Constant-fold children first */
-  AST_walk_children(spec, data, CAST(node, e));
+  if (d->require_constant_value && !(is_init_list(*n) || is_init_specific(*n)))
+    {
+      /* require_constant_value only applies to the actual initialiser
+	 expressions, not to every subexpression */
+      struct folder_data newd = *d;
+
+      newd.require_constant_value = FALSE;
+      AST_walk_children(spec, &newd, CAST(node, e));
+    }
+  else
+    AST_walk_children(spec, data, CAST(node, e));
 
   /* XXX: default_conversion */
 
@@ -138,7 +150,10 @@ static AST_walker_result folder_expression(AST_walker spec, void *data,
 
   /* Notice unknown csts */
   if ((sa && constant_unknown(sa)) || (c && constant_unknown(c)))
-    d->done = FALSE;
+    *d->done = FALSE;
+
+  if (d->require_constant_value)
+    check_init_element(e);
 
   return aw_done;
 }
@@ -150,13 +165,15 @@ bool fold_constants_list(node n, int pass)
  */
 {
   struct folder_data d;
+  bool done = TRUE;
 
-  d.done = TRUE;
+  d.done = &done;
   d.pass = pass;
+  d.require_constant_value = FALSE;
 
   AST_walk_list(folder_walker, &d, CASTPTR(node, &n));
 
-  return d.done;
+  return done;
 }
 
 static AST_walker_result folder_array_declarator(AST_walker spec, void *data,
@@ -208,6 +225,23 @@ static AST_walker_result folder_tag_ref(AST_walker spec, void *data,
   return aw_done;
 }
 
+static AST_walker_result folder_variable_decl(AST_walker spec, void *data,
+					      variable_decl *n)
+{
+  struct folder_data *d = data;
+  struct folder_data newd = *d;
+
+  newd.require_constant_value = (*n)->ddecl->needsmemory;
+
+  /* AST_walk_list handles the NULL case... */
+  AST_walk_list(folder_walker, d, CASTPTR(node, &(*n)->declarator));
+  AST_walk_list(folder_walker, d, CASTPTR(node, &(*n)->attributes));
+  AST_walk_list(folder_walker, &newd, CASTPTR(node, &(*n)->arg1));
+  AST_walk_list(folder_walker, d, CASTPTR(node, &(*n)->asm_stmt));
+  
+  return aw_done;
+}
+
 void init_nesc_constants(void)
 {
   folder_walker = new_AST_walker(permanent);
@@ -216,4 +250,5 @@ void init_nesc_constants(void)
   AST_walker_handle(folder_walker, kind_tag_ref, folder_tag_ref);
   AST_walker_handle(folder_walker, kind_enum_ref, folder_enum_ref);
   AST_walker_handle(folder_walker, kind_enumerator, folder_enumerator);
+  AST_walker_handle(folder_walker, kind_variable_decl, folder_variable_decl);
 }

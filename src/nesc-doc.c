@@ -311,7 +311,7 @@ static char *doc_filename(const char *src_filename)
 
 
 
-struct location doc_empty_location = {"nofile",-1,0};
+struct location doc_empty_location = {"nofile",NULL,-1,0};
 
 
 static char *interface_docfile_name(const char *interface_name) 

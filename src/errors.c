@@ -151,29 +151,24 @@ void report_error_function(const char *file)
 }
 
 
-void pfile_and_line(FILE *f, const char *filename, int lineno)
+static void pfile_and_line(FILE *f, location l)
 {
-  if (lineno)
-    fprintf(f, "%s:%d: ", filename, lineno);
+  if (l->container)
+    fprintf(f, "%s(%s):%lu: ", l->filename, l->container->instance_name, l->lineno);
+  else if (l->lineno)
+    fprintf(f, "%s:%lu: ", l->filename, l->lineno);
   else
-    fprintf(f, "%s: ", filename);
-}
-
-/* Report error msg at filename, lineno */
-void verror_with_file_and_line(const char *filename, int lineno,
-			       const char *format, va_list args)
-{
-  count_error(FALSE);
-  report_error_function(filename);
-  pfile_and_line(stderr, filename, lineno);
-  vfprintf(stderr, format, args);
-  putc('\n', stderr);
+    fprintf(f, "%s: ", l->filename);
 }
 
 /* Report error msg at l */
 void verror_with_location(location l, const char *format, va_list args)
 {
-  verror_with_file_and_line(l->filename, l->lineno, format, args);
+  count_error(FALSE);
+  report_error_function(l->filename);
+  pfile_and_line(stderr, l);
+  vfprintf(stderr, format, args);
+  putc('\n', stderr);
 }
 
 /* Report error msg at decl */
@@ -244,24 +239,17 @@ void fatal(const char *format, ...)
   va_end(args);
 }
 
-/* Report warning msg at filename, lineno */
-void vwarning_with_file_and_line(const char *filename, int lineno,
-				 const char *format, va_list args)
+/* Report warning msg at l */
+void vwarning_with_location(location l, const char *format, va_list args)
 {
   if (count_error(TRUE))
     {
-      report_error_function(filename);
-      pfile_and_line(stderr, filename, lineno);
+      report_error_function(l->filename);
+      pfile_and_line(stderr, l);
       fprintf(stderr, "warning: ");
       vfprintf(stderr, format, args);
       putc('\n', stderr);
     }
-}
-
-/* Report warning msg at l */
-void vwarning_with_location(location l, const char *format, va_list args)
-{
-  vwarning_with_file_and_line(l->filename, l->lineno, format, args);
 }
 
 /* Report warning msg at decl */
@@ -296,17 +284,6 @@ void warning(const char *format, ...)
 }
 
 
-/* Report warning msg at filename, lineno */
-void warning_with_file_and_line(const char *filename, int lineno,
-				const char *format, ...)
-{
-  va_list args;
-
-  va_start(args, format);
-  vwarning_with_file_and_line(filename, lineno, format, args);
-  va_end(args);
-}
-
 /* Report warning msg at decl */
 void warning_with_decl(declaration d, const char *format, ...)
 {
@@ -340,21 +317,6 @@ void warning_or_error(bool iswarning, const char *format, ...)
   va_end(args);
 }
 
-
-/* Report warning msg at filename, lineno */
-void warning_or_error_with_file_and_line(bool iswarning,
-					 const char *filename, int lineno,
-					 const char *format, ...)
-{
-  va_list args;
-
-  va_start(args, format);
-  if (iswarning)
-    vwarning_with_file_and_line(filename, lineno, format, args);
-  else
-    verror_with_file_and_line(filename, lineno, format, args);
-  va_end(args);
-}
 
 /* Report warning msg at decl */
 void warning_or_error_with_decl(bool iswarning, declaration d,

@@ -91,7 +91,6 @@ static void connect(location loc, nesc_declaration cdecl,
 {
   nesc_declaration loop;
 
-  push_instance(cdecl);
   if ((loop = abstract_recursion()))
     {
       /* We can help the programmer find the loop by showing the 
@@ -117,15 +116,14 @@ static void connect(location loc, nesc_declaration cdecl,
 
 	  scan_component_ref (comp, c->components)
 	    {
+	      push_instance(comp->cdecl);
 	      if (comp->cdecl->original)
 		instantiate(comp->cdecl);
-
 	      connect(comp->location, comp->cdecl, cg, modules, components);
+	      pop_instance();
 	    }
 	}
     }
-
-  pop_instance();
 }
 
 static void connect_graphs(region r, nesc_declaration program,
@@ -135,7 +133,9 @@ static void connect_graphs(region r, nesc_declaration program,
   *modules = dd_new_list(r);
   *components = dd_new_list(r);
 
+  push_instance(program);
   connect(toplevel_location, program, *cg, *modules, *components);
+  pop_instance();
 }
 
 bool nesc_option(char *p)

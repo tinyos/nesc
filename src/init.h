@@ -37,4 +37,6 @@ expression make_init_specific(designator dlist, expression initval);
 expression make_init_list(location loc, expression elist);
 expression make_cast_list(location loc, asttype t, expression init);
 
+void check_init_element(expression init);
+
 #endif

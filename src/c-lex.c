@@ -60,10 +60,11 @@ location dummy_location, toplevel_location;
 /* Location cache handling */
 static location last_allocated_location;
 
-static location make_location(struct location l)
+location make_location(struct location l)
 {
   if (l.lineno == last_allocated_location->lineno &&
       l.filename == last_allocated_location->filename &&
+      l.container == last_allocated_location->container &&
       l.in_system_header == last_allocated_location->in_system_header)
     return last_allocated_location;
 
