@@ -27,7 +27,7 @@ kdedir=$(editordir)/kde
 
 bin_SCRIPTS = mig ncg ncc nescc nesdoc
 
-ncclib_DATA = genjava.pm gencstjava.pm genchsarp.pm gencstc.pm migdecode.pm
+ncclib_DATA = genjava.pm gencstjava.pm gencsharp.pm gencstc.pm migdecode.pm
 emacs_DATA =					\
 	editor-modes/emacs/nesc.el 		\
 	editor-modes/emacs/new-nesc.el		\
