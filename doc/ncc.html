@@ -85,7 +85,9 @@ outside the main TinyOS distribution.
 <b>-graphviz=y|n</b><blockquote> explicitly enable or disable the use of the
 graphviz tool in the generated documentation. Without this option, graphviz
 is enabled iff the `dot' program is found in the current path. Use of
-graphviz requires `dot'.</blockquote>
+graphviz requires `dot'.  The documentation generation tool checks the
+version of `dot', and enables client-side image maps, if supported.
+</blockquote>
 
 
 <p>
