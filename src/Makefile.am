@@ -51,6 +51,8 @@ libparser_a_SOURCES =				\
 	AST_utils.h				\
 	array.h					\
 	array.c					\
+	attributes.h				\
+	attributes.c				\
 	c-gperf.h				\
 	c-lex.c					\
 	c-lex.h					\

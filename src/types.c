@@ -32,6 +32,7 @@ struct type
   enum { tk_primitive, tk_complex, tk_tagged, tk_error, tk_void,
 	 tk_pointer, tk_function, tk_array, tk_iref } kind;
   type_quals qualifiers;
+  data_declaration combiner;
 
   /* size is not used for aggregate types
      (as the values may be discovered after the type is created)
@@ -186,7 +187,8 @@ static type new_type(int kind)
 
   nt->kind = kind;
   /*nt->qualifiers = 0;
-    nt->size = nt->alignment = 0;*/
+    nt->size = nt->alignment = 0;
+    nt->combiner = NULL;*/
   return nt;
 }
 
@@ -1701,3 +1703,290 @@ bool type_functional(type t)
   return t->kind == tk_function && t->u.fn.fkind != tkf_generic;
 }
 
+type make_combiner_type(type t, data_declaration combiner)
+{
+  type nt = copy_type(t);
+
+  nt->combiner = combiner;
+
+  return nt;
+}
+
+data_declaration type_combiner(type t)
+{
+  return t->combiner;
+}
+
+static char *primname[] = {
+  NULL,
+  "int16_t",
+  "uint16_t",
+  "int32_t",
+  "uint32_t",
+  "int64_t",
+  "uint64_t",
+  "char",
+  "signed char",
+  "unsigned char",
+  "short",
+  "unsigned short",
+  "int",
+  "unsigned int",
+  "long",
+  "unsigned long",
+  "long long",
+  "unsigned long long",
+  "float",
+  "double",
+  "long double"
+};
+
+static const char *rconcat(region r, const char *s1, const char *s2)
+{
+  int l = strlen(s1) + strlen(s2) + 1;
+  char *s = rstralloc(r, l);
+
+  strcpy(s, s1);
+  strcat(s, s2);
+  
+  return s;
+}
+
+static const char *add_qualifiers(region r, type_quals qs, const char *to)
+{
+  type_quals q;
+
+  for (q = 1; q < last_qualifier; q <<= 1)
+    if (qs & q)
+      {
+	to = rconcat(r, " ", to);
+	to = rconcat(r, qualifier_name(q), to);
+      }
+
+  return to;
+}
+
+static const char *add_parens(region r, const char *to)
+{
+  to = rconcat(r, "(", to);
+  to = rconcat(r, to, ")");
+  return to;
+}
+
+static void split_type_name(region r, type t, const char **prefix,
+			    const char **decls, bool decls_is_star)
+{
+  const char *basic;
+
+  switch (t->kind)
+    {
+    case tk_primitive:
+      basic = primname[t->u.primitive];
+      basic = add_qualifiers(r, t->qualifiers, basic);
+      break;
+    case tk_complex:
+      basic = rconcat(r, "complex ", primname[t->u.primitive]);
+      basic = add_qualifiers(r, t->qualifiers, basic);
+      break;
+    case tk_void:
+      basic = "void";
+      basic = add_qualifiers(r, t->qualifiers, basic);
+      break;
+    case tk_pointer: 
+      *decls = add_qualifiers(r, t->qualifiers, *decls);
+      *decls = rconcat(r, "*", *decls);
+      split_type_name(r, t->u.pointsto, &basic, decls, TRUE);
+      break;
+    case tk_array:
+      /* can't have qualifiers here - see make_qualified_type */
+      if (decls_is_star)
+	*decls = add_parens(r, *decls);
+      *decls = rconcat(r, *decls, "[]");
+      split_type_name(r, t->u.array.arrayof, &basic, decls, FALSE);
+      break;
+    case tk_function: {
+      const char *args= "";
+
+      if (!t->u.fn.oldstyle)
+	{
+	  typelist_scanner scanargs;
+	  type argt;
+	  bool first = TRUE;
+
+	  typelist_scan(t->u.fn.argtypes, &scanargs);
+	  while ((argt = typelist_next(&scanargs)))
+	    {
+	      if (!first)
+		args = rconcat(r, args, ", ");
+	      args = rconcat(r, args, type_name(r, argt));
+	      first = FALSE;
+	    }
+	  if (t->u.fn.varargs)
+	    args = rconcat(r, args, ", ...");
+	}
+
+      if (decls_is_star)
+	*decls = add_parens(r, *decls);
+
+      if (t->qualifiers)
+	/* This isn't legal C syntax, but seems the reasonable rep */
+	*decls = add_parens(r, add_qualifiers(r, t->qualifiers, *decls));
+
+      *decls = rconcat(r, *decls, add_parens(r, args));
+
+      split_type_name(r, t->u.fn.returns, &basic, decls, FALSE);
+      break;
+    }
+    case tk_tagged: {
+      tag_declaration tdecl = t->u.tag;
+
+      switch (tdecl->kind)
+	{
+	case kind_struct_ref: basic = "struct "; break;
+	case kind_union_ref: basic = "union "; break;
+	case kind_enum_ref: basic = "enum "; break;
+	default: assert(0); basic = ""; break;
+	}
+      if (tdecl->container)
+	{
+	  basic = rconcat(r, basic, tdecl->container->name);
+	  basic = rconcat(r, basic, ".");
+	}
+      if (tdecl->name)
+	basic = rconcat(r, basic, tdecl->name);
+      else
+	basic = rconcat(r, basic, "/*anon*/");
+      basic = add_qualifiers(r, t->qualifiers, basic);
+      break;
+    }
+    default: /* for bugs, tk_error tk_iref */
+      basic = "error";
+      break;
+    }
+
+  *prefix = basic;
+}
+
+const char *type_name(region r, type t)
+{
+  const char *prefix, *decls;
+
+  decls = "";
+  split_type_name(r, t, &prefix, &decls, FALSE);
+
+  if (decls[0])
+    return rconcat(r, prefix, rconcat(r, " ", decls));
+  else
+    return prefix;
+}
+
+
+enum {
+  TYPE_HASH_PRIMITIVE = 1,
+  TYPE_HASH_COMPLEX = TYPE_HASH_PRIMITIVE + tp_last,
+  TYPE_HASH_ERROR = TYPE_HASH_COMPLEX + tp_last,
+  TYPE_HASH_VOID,
+  TYPE_HASH_FUNCTION
+};
+
+
+/* Return a hash value to distinguish types.  Note that we are much
+   less careful here than in type_equal, since hash collisions only
+   effect performance. */
+unsigned long type_hash(type t)
+{
+  switch (t->kind)
+    {
+    case tk_error:
+      return TYPE_HASH_ERROR;
+
+    case tk_primitive: 
+      return TYPE_HASH_PRIMITIVE + t->u.primitive;
+
+    case tk_complex:
+      return TYPE_HASH_COMPLEX + t->u.primitive;
+
+    case tk_void:
+      return TYPE_HASH_VOID;
+
+    case tk_tagged:
+      return hash_ptr(t->u.tag);
+
+    case tk_pointer:
+      return (type_hash(t->u.pointsto) << 1) ^ 0x51353157;
+
+    case tk_function:
+      return TYPE_HASH_FUNCTION;
+
+    case tk_array:
+      return (type_hash(t->u.array.arrayof) << 1) ^ 0x40142453 ;
+
+    default: 
+      assert(0);
+    }
+}
+
+
+/* True if an assignment to type child could modify a value of type parent
+   according to the ANSI C rules.
+   Note: child cannot be an array type (assignments to arrays do not exist
+   in C)
+*/
+bool type_contains(type parent, type child)
+{
+  assert(!type_array(child));
+
+  /* Short-circuit easy case */
+  if (parent == child)
+    return TRUE;
+
+  /* Char writes can be used on any value */
+  if (type_char(child))
+    return TRUE;
+
+  switch (parent->kind)
+    {
+    default:
+      /* for primitive, void, function */
+      return type_equal_unqualified(parent, child);
+
+    case tk_complex:
+      /* true if child is primitive or complex and same base primitive type */
+      return (child->kind == tk_primitive || child->kind == tk_complex) &&
+	parent->u.primitive == child->u.primitive;
+
+    case tk_tagged: {
+      /* Same tags -> yes. Otherwise, for structs, unions: true if parent
+	 has a field type that contains child */
+      field_declaration field;
+
+      if (child->kind == tk_tagged && parent->u.tag == child->u.tag)
+	return TRUE;
+
+      if (parent->u.tag->kind == kind_enum_ref)
+	return FALSE;
+
+      for (field = parent->u.tag->fieldlist; field; field = field->next)
+	if (type_contains(field->type, child))
+	  return TRUE;
+
+      return FALSE;
+    }
+
+    case tk_pointer:
+      /* base types must match, but can have different qualifiers
+	 (this is different from type_equal) */
+      return 
+	child->kind == tk_pointer &&
+	type_equal_unqualified(parent->u.pointsto, child->u.pointsto);
+
+    case tk_array: {
+      type base_parent = parent;
+    
+      while (base_parent->kind == tk_array)
+	base_parent = base_parent->u.array.arrayof;
+
+      return type_contains(base_parent, child);
+    }
+    }
+}

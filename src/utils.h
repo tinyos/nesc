@@ -50,4 +50,10 @@ int wcs_mb_size(const wchar_t *wstr);
      or -1 if wstr cannot be converted
 */
 
+/* Some basic hash functions, that are re-used in a number of places */
+unsigned long hash_ptr(void *p);
+int compare_ptr(void *entry1, void *entry2);
+
+unsigned long hash_str(const char *);
+
 #endif

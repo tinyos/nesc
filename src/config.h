@@ -69,4 +69,8 @@ void *alloca(size_t n);
 #define USE_UNNAMED_UNION
 #endif
 
+/* The number of non-significant low-order bits in pointer addresses
+   (typically log2 of the alignment of allocations) */
+#define ALIGNMENT_BITS 3
+
 #endif

@@ -145,3 +145,36 @@ int wcs_mb_size(const wchar_t *wstr)
 
   return len + 1;
 }
+
+unsigned long hash_ptr(void *p) 
+/* Returns: a reasonable hash for a pointer value
+ */
+{
+  return (unsigned long)p >> ALIGNMENT_BITS;
+}
+
+int compare_ptr(void *entry1, void *entry2)
+/* Returns: entry1 == entry2 (use with new_dhash_table) */
+{
+  return entry1 == entry2;
+}
+
+unsigned long hash_str(const char *s) 
+/* Returns: a reasonable hash for a character string.  
+    FIXME: the return value is only effected by the final 32 characters
+    in the string.
+ */
+{
+  register unsigned long code = 0;
+
+  if( !s ) 
+    return 0x57954317;
+
+  while (*s)
+    {
+      code = ((code << 1) + *s) ^ 0x57954317;
+      s++;
+    }
+
+  return code;
+}

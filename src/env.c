@@ -22,6 +22,7 @@ Boston, MA 02111-1307, USA. */
 #include "parser.h"
 #include "env.h"
 #include "dhash.h"
+#include "utils.h"
 
 #define DEFAULT_ENV_SIZE 16
 
@@ -48,19 +49,11 @@ static int env_compare(void *entry1, void *entry2)
 static unsigned long env_hash(void *entry)
 {
   struct entry *e = entry;
-  unsigned const char *name = e->name;
-  unsigned long code = 0;
 
-  if (!name) /* Special hash for unnamed functions. Use pointer address */
-    return (unsigned long)entry >> 3;
-
-  while (*name)
-    {
-      code = ((code << 1) + *name) ^ 0x57954317;
-      name++;
-    }
-
-  return code;
+  if (e->name) 
+    return hash_str(e->name);
+  else /* unnamed (distinct from all other entries), hash on address */
+    return hash_ptr(e);
 }
 
 /* Create a new, empty environment with ancestor 'parent'.

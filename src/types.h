@@ -213,5 +213,13 @@ type make_event_type(type t, typelist argtypes, bool varargs);
 type make_task_type(type t, typelist argtypes, bool varargs);
 type make_generic_type(type t, typelist argtypes);
 
+type make_combiner_type(type t, data_declaration combiner);
+data_declaration type_combiner(type t);
 
+const char *type_name(region r, type t);
+
+unsigned long type_hash(type t);
+
+bool type_contains(type parent, type child);
+ 
 #endif
