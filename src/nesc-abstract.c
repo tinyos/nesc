@@ -606,7 +606,7 @@ void set_parameter_values(nesc_declaration cdecl, expression args)
 		  if (!constant_float(args->cst))
 		    error_with_location(l, "floating-point constant expected");
 		}
-	      else if (type_chararray(vd->ddecl->type, FALSE))
+	      else if (type_charstar(vd->ddecl->type))
 		{
 		  /* Check that it's an actual string */
 		  data_declaration sym;

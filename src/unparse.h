@@ -46,6 +46,7 @@ void output_string(const char *s);
 void output_cstring(cstring s);
 void output_stripped_string(const char *s);
 void output_stripped_string_dollar(const char *s);
+void output_quoted_wide(const wchar_t *s);
 void copy_file_to_output(char *filename);
 void newline(void);
 void indent(void);

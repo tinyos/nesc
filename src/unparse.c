@@ -21,6 +21,7 @@ Boston, MA 02111-1307, USA. */
 
 #include <stdarg.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #include "parser.h"
 #include "unparse.h"
@@ -150,6 +151,28 @@ void output_quoted(const char *s)
 }
 
 
+void output_quoted_wide(const wchar_t *s)
+{
+  /* Output a string which may contain newlines, \ and " */
+  while (*s)
+    {
+      if (*s == '\n') /* don't confuse the line numbers */
+	fputs("\\n", of);
+      else if ((unsigned char)*s == *s && isprint(*s))
+	{
+	  if (*s == '\\' || *s == '"')
+	    putc('\\', of);
+	  putc(*s, of);
+	}
+      else 
+	/* The "" at the end avoids confusion if the next character
+	   is '0'-'9', 'a'-'f' or 'A'-'F' */
+	output("\\x%x\"\"", *s);
+      s++;
+    }
+}
+
+
 /**
  * copy a file to the output stream.
  **/
@@ -271,6 +294,67 @@ void clear_fixed_location(void)
 struct location output_location(void)
 {
   return output_loc;
+}
+
+static void output_complex(known_cst c)
+{
+  assert(0);
+}
+
+void output_constant(known_cst c)
+/* Requires: (constant_integral(c) || constant_float(c)) &&
+   	     type_arithmetic(c->type)
+	     or c denotes a string constant && type_chararray(c->type, FALSE)
+   Effects: prints a parsable representable of c to f
+ */
+{
+  type t = c->type;
+
+  if (type_complex(t))
+    {
+      output_complex(c);
+      return;
+    }
+
+  if (type_floating(t))
+    {
+      /* XXX: hacky version */
+      output("%.20Le", constant_float_value(c));
+    }
+  else if (type_chararray(t, FALSE))
+    {
+      data_declaration ddecl = cval_ddecl(c->cval);
+
+      assert(ddecl && ddecl->kind == decl_magic_string);
+      output("\"");
+      output_quoted_wide(ddecl->chars);
+      output("\"");
+    }
+  else
+    {
+      assert(type_integral(t));
+
+      if (type_unsigned(t))
+	output("%llu", constant_uint_value(c));
+      else
+	output("%lld", constant_sint_value(c));
+
+      if (type_size_int(t) <= type_size_int(int_type))
+	{
+	  if (type_unsigned(t))
+	    output("U");
+	}
+      else if (type_long(t))
+	output("L");
+      else if (type_unsigned_long(t))
+	output("UL");
+      else if (type_long_long(t))
+	output("LL");
+      else if (type_unsigned_long_long(t))
+	output("ULL");
+      else
+	assert(0);
+    }
 }
 
 
@@ -1204,10 +1288,7 @@ void prt_identifier(identifier e, int context_priority)
 
   set_location(e->location);
   if (decl->kind == decl_constant && decl->substitute)
-    {
-      output_indent_if_needed();
-      constant_print(of, decl->value);
-    }
+    output_constant(decl->value);
   else
     prt_plain_ddecl(decl, 0);
       
@@ -1245,10 +1326,7 @@ void prt_function_call(function_call e, int context_priority)
 	  output("))");
 	}
       else if (get_magic(e))
-	{
-	  output_indent_if_needed();
-	  constant_print(of, e->cst);
-	}
+	output_constant(e->cst);
       else
 	{
 	  prt_expression(e->arg1, P_CALL);

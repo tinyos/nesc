@@ -124,7 +124,7 @@ static known_cst unique_fold(function_call fcall, int pass)
 	 On subsequent passes, we stick to our choice
       */
       if (pass == 0)
-	return make_unknown_cst(unsigned_int_type);
+	return make_unknown_cst(cval_unknown_number, unsigned_int_type);
       else if (pass == 1)
 	return make_unsigned_cst((*lastval)++, unsigned_int_type);
       else
@@ -145,7 +145,7 @@ static known_cst uniqueCount_fold(function_call fcall, int pass)
 	 On pass 2 and subsequent, we get the value from the unique env
       */
       if (pass < 2)
-	return make_unknown_cst(unsigned_int_type);
+	return make_unknown_cst(cval_unknown_number, unsigned_int_type);
       else
 	return make_unsigned_cst(*lastval, unsigned_int_type);
     }

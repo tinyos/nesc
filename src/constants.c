@@ -256,7 +256,7 @@ known_cst fold_binary(type t, expression e)
 	      if (b->kind == kind_andand ? !c1val : c1val)
 		return make_signed_cst(c1val, t);
 	    }
-	  if (constant_unknown(c1))
+	  if (constant_unknown_number(c1))
 	    return make_unknown_cst(cval_unknown_number, t);
 	}
 
@@ -269,7 +269,7 @@ known_cst fold_binary(type t, expression e)
 		return make_signed_cst(c2val, t);
 	    }
 
-	  if (constant_unknown(c2))
+	  if (constant_unknown_number(c2))
 	    return make_unknown_cst(cval_unknown_number, t);
 	}
     }
@@ -347,6 +347,7 @@ known_cst fold_conditional(expression e)
   if (cond)
     {
       expression arg1 = c->arg1 ? c->arg1 : c->condition;
+      known_cst kc1 = arg1->cst, kc2 = c->arg2->cst;
 
       if (constant_knownbool(cond))
 	{
@@ -358,15 +359,12 @@ known_cst fold_conditional(expression e)
 	  else
 	    return NULL;
 	}
-      else if (arg1->cst && c->arg2->cst)
-	{
-	  // XXX: Yuck.
-	  cval v1 = arg1->cst->cval, v2 = c->arg2->cst->cval;
-
-	  if (cval_isaddress(v1) != cval_isaddress(v2))
-	    return NULL;
-	  return make_unknown_cst(v1, e->type);
-	}
+      else if (constant_unknown_number(cond) && kc1 && kc2)
+	/* Faced with an unknown condition and two constant arguments, we
+	   return an unknown constant. Unknown number if both arg1 and arg2
+	   are unknown numbers, an unknown address otherwise */
+	return make_unknown_cst(cval_isaddress(kc1->cval) ?
+				kc1->cval : kc2->cval, e->type);
     }
 
   return NULL;
@@ -559,65 +557,6 @@ char *string_cst_to_c(region r, string_cst s)
   assert(length_as_str >= 0);
 
   return str;
-}
-
-static void complex_print(FILE *f, known_cst c)
-{
-  assert(0);
-}
-
-void constant_print(FILE *f, known_cst c)
-/* Requires: (constant_integral(c) || constant_float(c)) &&
-   	     type_arithmetic(c->type)
-	     or c denotes a string constant && type_chararray(c->type, FALSE)
-   Effects: prints a parsable representable of c to f
- */
-{
-  type t = c->type;
-
-  if (type_complex(t))
-    {
-      complex_print(f, c);
-      return;
-    }
-
-  if (type_floating(t))
-    {
-      /* XXX: hacky version */
-      fprintf(f, "%.20Le", constant_float_value(c));
-    }
-  else if (type_chararray(t, FALSE))
-    {
-      data_declaration ddecl = cval_ddecl(c->cval);
-
-      assert(ddecl && ddecl->kind == decl_magic_string);
-      printf("\"%ls\"", ddecl->chars);
-    }
-  else
-    {
-      assert(type_integral(t));
-
-      if (type_unsigned(t))
-	fprintf(f, "%llu", constant_uint_value(c));
-      else
-	fprintf(f, "%lld", constant_sint_value(c));
-
-      if (type_size_int(t) <= type_size_int(int_type))
-	{
-	  if (type_unsigned(t))
-	    putc('U', f);
-	}
-      else if (type_long(t))
-	putc('L', f);
-      else if (type_unsigned_long(t))
-	fputs("UL", f);
-      else if (type_long_long(t))
-	fputs("LL", f);
-      else if (type_unsigned_long_long(t))
-	fputs("ULL", f);
-      else
-	assert(0);
-    }
 }
 
 bool check_constant_once(expression e)

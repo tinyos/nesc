@@ -85,9 +85,12 @@ void constant_overflow_warning(known_cst c);
 
 /*bool constant_unknown(known_cst c);*/
 #define constant_unknown(c) cval_isunknown((c)->cval)
-/* Returns: TRUE if c is a constant whose value is not computable 
-   at load time (these behave for most, but not all, purposes as 
-   non-constant expressions)
+/* Returns: TRUE if c is a constant whose value is not yet known
+ */
+
+/*bool constant_unknown_number(known_cst c);*/
+#define constant_unknown_number(c) cval_isunknown_number((c)->cval)
+/* Returns: TRUE if c is a numeric constant whose value is not yet known
  */
 
 /*bool constant_integral(known_cst c);*/
@@ -135,11 +138,6 @@ char *string_cst_to_c(region r, string_cst s);
      no such representation can be created (which means s is a wide character
      string and wcstombs failed)
 */
-
-void constant_print(FILE *f, known_cst c);
-/* Requires: constant_integral(c) || constant_float(c)
-   Effects: prints a parsable representable of c to f
- */
 
 bool check_constant_once(expression e);
 /* Effects: We want to check whether e is a constant, and possibly for
