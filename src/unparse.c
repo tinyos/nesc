@@ -313,8 +313,7 @@ void prt_field_ref(field_ref e, int context_priority);
 void prt_unary(unary e, int context_priority);
 void prt_binary(binary e, int context_priority);
 void prt_init_list(init_list e, int context_priority);
-void prt_init_index(init_index e, int context_priority);
-void prt_init_field(init_field e, int context_priority);
+void prt_init_specific(init_specific e, int context_priority);
 void prt_lexical_cst(lexical_cst e, int context_priority);
 void prt_string(string e, int context_priority);
 void prt_parameter_declarations(declaration dlist);
@@ -495,13 +494,16 @@ void prt_data_decl(data_decl d)
       data_declaration vdecl = vdd->ddecl;
       pte_options extraopts = 0;
 
-      if (vdecl) /* because of build_declaration */
+      if (vdecl) /* because build_declaration does not make a
+		    data_declaration */
 	{
 	  /* Ignore unused non-local declarations 
 	     (local ones might have an initialiser which must still be
 	     executed) */
 	  if (((vdecl->kind == decl_function || vdecl->kind == decl_variable)
 	       && !vdecl->isused && !vdecl->islocal))
+	    continue;
+	  if (use_nido && is_module_local_static(vdecl))
 	    continue;
 
 	  extraopts = prefix_decl(vdecl);
@@ -615,6 +617,16 @@ void prt_plain_ddecl(data_declaration ddecl, psd_options options)
       }
 
     }
+
+  /* static local module variables are printed as mod$fn$var in nido */
+  if (use_nido && is_module_local_static(ddecl))
+    {
+      data_declaration fn = ddecl->container_function;
+
+      output_stripped_string_dollar(fn->container->name);
+      output_stripped_string_dollar(fn->name);
+    }
+
   output_stripped_string(ddecl->name);
 }
 
@@ -625,7 +637,9 @@ void prt_ddecl_full_name(data_declaration ddecl, psd_options options)
     output("[%s]", nido_num_nodes);
 }
 
-void prt_simple_declarator(declarator d, data_declaration ddecl,
+/* The return value is TRUE iff d is an identifier_declarator possibly
+   prefixed with qualified_declarators */
+bool prt_simple_declarator(declarator d, data_declaration ddecl,
 			   psd_options options)
 {
   if (d)
@@ -647,12 +661,28 @@ void prt_simple_declarator(declarator d, data_declaration ddecl,
       case kind_array_declarator:
 	{
 	  array_declarator ad = CAST(array_declarator, d);
+	  bool is_id;
 
-	  prt_simple_declarator(ad->declarator, ddecl,
-				options | psd_need_paren_for_star |
-				psd_need_paren_for_qual);
+	  is_id = prt_simple_declarator(ad->declarator, ddecl,
+					options | psd_need_paren_for_star |
+					psd_need_paren_for_qual);
 	  if (!ad->arg1)
-	    output("[]");
+	    {
+	      /* The array-type test is necessary because char x[] in a
+		 parameter declaration is really a pointer declaration */
+	      if (ddecl && is_id && type_array(ddecl->type))
+		{
+		  /* This is a declaration of an incomplete array type.
+		     The type of ddecl contains the size of the array if
+		     it is known. */
+		  expression dsize = type_array_size(ddecl->type);
+
+		  output("[%lu]",
+			 (unsigned long)constant_uint_value(dsize->cst));
+		}
+	      else
+		output("[]");
+	    }
 	  else
 	    {
 	      set_location(ad->arg1->location);
@@ -665,16 +695,17 @@ void prt_simple_declarator(declarator d, data_declaration ddecl,
       case kind_qualified_declarator:
 	{
 	  qualified_declarator qd = CAST(qualified_declarator, d);
+	  bool is_id;
 
 	  set_location(qd->modifiers->location);
 	  if (options & psd_need_paren_for_qual)
 	    output("(");
 	  prt_type_elements(qd->modifiers, 0);
-	  prt_simple_declarator(qd->declarator, ddecl,
-				options & ~psd_need_paren_for_qual);
+	  is_id = prt_simple_declarator(qd->declarator, ddecl,
+					options & ~psd_need_paren_for_qual);
 	  if (options & psd_need_paren_for_qual)
 	    output(")");
-	  break;
+	  return is_id;
 	}
       case kind_pointer_declarator:
 	{
@@ -698,7 +729,7 @@ void prt_simple_declarator(declarator d, data_declaration ddecl,
 	  prt_ddecl_full_name(ddecl, options);
 	else
 	  output_stripped_cstring(CAST(identifier_declarator, d)->cstring);
-	break;
+	return TRUE;
 
       case kind_interface_ref_declarator:
 	prt_simple_declarator(CAST(interface_ref_declarator, d)->declarator,
@@ -708,6 +739,7 @@ void prt_simple_declarator(declarator d, data_declaration ddecl,
 
       default: assert(0); break;
       }
+  return FALSE;
 }
 
 void prt_type_elements(type_element elements, pte_options options)
@@ -1051,8 +1083,7 @@ void prt_expression(expression e, int context_priority)
       PRTEXPR(field_ref, e);
       PRTEXPR(interface_deref, e);
       PRTEXPR(init_list, e);
-      PRTEXPR(init_index, e);
-      PRTEXPR(init_field, e);
+      PRTEXPR(init_specific, e);
     case kind_string_cst:
       PRTEXPR(lexical_cst, e);
       PRTEXPR(string, e);
@@ -1150,7 +1181,7 @@ void prt_identifier(identifier e, int context_priority)
   set_location(e->location);
   prt_plain_ddecl(decl, 0);
   if (use_nido && is_module_variable(decl))
-    output("[tos_state.current_node]");
+    output("[%s]", nido_mote_number);
 }
 
 void prt_compound_expr(compound_expr e, int context_priority)
@@ -1444,24 +1475,42 @@ void prt_init_list(init_list e, int context_priority)
   output(" }");
 }
 
-void prt_init_index(init_index e, int context_priority)
+void prt_designator(designator dl)
 {
-  set_location(e->location);
-  output("[");
-  prt_expression(e->arg1, P_ASSIGN);
-  if (e->arg2)
-    {
-      output(" ... ");
-      prt_expression(e->arg2, P_ASSIGN);
-    }
-  output("] ");
-  prt_expression(e->init_expr, P_ASSIGN);
+  designator d;
+
+  scan_designator (d, dl)
+    switch (d->kind)
+      {
+      case kind_designate_field: {
+	designate_field df = CAST(designate_field, d);
+
+	output(".");
+	output_cstring(df->cstring);
+	break;
+      }
+      case kind_designate_index: {
+	designate_index di = CAST(designate_index, d);
+
+	output("[");
+	prt_expression(di->arg1, P_ASSIGN);
+	if (di->arg2)
+	  {
+	    output(" ... ");
+	    prt_expression(di->arg2, P_ASSIGN);
+	  }
+	output("] ");
+	break;
+      }
+      default: assert(0);
+      }
 }
 
-void prt_init_field(init_field e, int context_priority)
+void prt_init_specific(init_specific e, int context_priority)
 {
-  prt_word(e->word1);
-  output(" : ");
+  set_location(e->location);
+  prt_designator(e->designator);
+  output(" = ");
   prt_expression(e->init_expr, P_ASSIGN);
 }
 

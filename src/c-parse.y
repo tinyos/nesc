@@ -43,6 +43,7 @@ Boston, MA 02111-1307, USA. */
 #include "input.h"
 #include "expr.h"
 #include "stmt.h"
+#include "init.h"
 #include "nesc-semantics.h"
 #include "nesc-interface.h"
 #include "nesc-component.h"
@@ -145,7 +146,8 @@ void yyerror();
 %type <u.nested> absfn_declarator array_or_absfn_declarator
 %type <u.expr> cast_expr expr expr_no_commas exprlist init initlist_maybe_comma
 %type <u.expr> initlist1 initelt nonnull_exprlist primary string_component 
-%type <u.expr> STRING string_list nonnull_exprlist_
+%type <u.expr> STRING string_list nonnull_exprlist_ initval
+%type <u.designator> designator_list designator
 %type <u.expr> unary_expr xexpr function_call
 %type <u.id_label> id_label maybe_label_decls label_decls label_decl
 %type <u.id_label> identifiers_or_typenames
@@ -822,49 +824,19 @@ cast_expr:
 	  	{ $$ = make_cast($1.location, $2, $4); }
 	| '(' typename ')' '{' 
 		{ 
-#if 0
-		  start_init (NULL, NULL, 0);
-		  $2 = groktypename ($2);
-		  really_start_incremental_init ($2); 
-#endif
+		  start_init(NULL);
+		  really_start_incremental_init($2->type); 
 		}
 	  initlist_maybe_comma '}'
 		{ 
-		  $$ = CAST(expression, new_cast_list(pr, $1.location, $2, CAST(expression, new_init_list(pr, $6->location, $6))));
-		  $$->type = $2->type;
-		  $$->lvalue = TRUE;
-		  /* XXX: Evil hack for foo((int[5]) {1, 2, 3}) */
-		  /* XXX: what does gcc do ? */
-		  /* XXX: why on earth does gcc consider this an lvalue ?
-		     (see cparser/tests/addr1.c) */
-		  if (type_array($$->type))
-		    $$->lvalue = TRUE;
+		  expression constructor = make_init_list($4.location, $6);
+
+		  finish_init();
 
 		  if (pedantic)
 		    pedwarn("ANSI C forbids constructor expressions");
-#if 0
-		  char *name;
-		  tree result = pop_init_level (0);
-		  tree type = $2;
-		  finish_init ();
 
-		  if (TYPE_NAME (type) != 0)
-		    {
-		      if (TREE_CODE (TYPE_NAME (type)) == IDENTIFIER_NODE)
-			name = IDENTIFIER_POINTER (TYPE_NAME (type));
-		      else
-			name = IDENTIFIER_POINTER (DECL_NAME (TYPE_NAME (type)));
-		    }
-		  else
-		    name = "";
-		  $$ = result;
-		  if (TREE_CODE (type) == ARRAY_TYPE && TYPE_SIZE (type) == 0)
-		    {
-		      int failure = complete_array_type (type, $$, 1);
-		      if (failure)
-			abort ();
-		    }
-#endif
+		  $$ = make_cast_list($1.location, $2, constructor);
 		}
 	;
 
@@ -1487,10 +1459,12 @@ maybeasm:
 initdcl:
 	  declarator maybeasm maybe_attribute '='
 		{ $<u.decl>$ = start_decl($1, $2, pstate.declspecs, 1,
-					  prefix_attr($3)); }
+					  prefix_attr($3));
+		  start_init($<u.decl>$); }
 	  init
 /* Note how the declaration of the variable is in effect while its init is parsed! */
-		{ $$ = finish_decl($<u.decl>5, $6); }
+		{ finish_init();
+		  $$ = finish_decl($<u.decl>5, $6); }
 	| declarator maybeasm maybe_attribute
 		{ declaration d = start_decl($1, $2, pstate.declspecs, 0,
 					     prefix_attr($3));
@@ -1500,10 +1474,12 @@ initdcl:
 notype_initdcl:
 	  notype_declarator maybeasm maybe_attribute '='
 		{ $<u.decl>$ = start_decl($1, $2, pstate.declspecs, 1,
-					 prefix_attr($3)); }
+					 prefix_attr($3));
+		  start_init($<u.decl>$); }
 	  init
 /* Note how the declaration of the variable is in effect while its init is parsed! */
-		{ $$ = finish_decl($<u.decl>5, $6); }
+		{ finish_init();
+		  $$ = finish_decl($<u.decl>5, $6); }
 	| notype_declarator maybeasm maybe_attribute
 		{ declaration d = start_decl($1, $2, pstate.declspecs, 0,
 					     prefix_attr($3));
@@ -1571,11 +1547,11 @@ any_word:
 /* Initializers.  `init' is the entry point.  */
 
 init:
-	  expr_no_commas
+	  expr_no_commas { $$ = $1; simple_init($$); }
 	| '{'
+		{ really_start_incremental_init(NULL); }
 	  initlist_maybe_comma '}'
-		{ $$ = CAST(expression, new_init_list(pr, $1.location, $2)); 
-		  $$->type = error_type; }
+		{ $$ = make_init_list($1.location, $3); }
 	| error
 		{ $$ = make_error_expr(last_location); }
 	;
@@ -1597,23 +1573,51 @@ initlist1:
 /* `initelt' is a single element of an initializer.
    It may use braces.  */
 initelt:
-	  expr_no_commas { $$ = $1; }
-	| '{' initlist_maybe_comma '}'
-		{ $$ = CAST(expression, new_init_list(pr, $1.location, $2)); }
+	  designator_list '=' initval
+		{ if (pedantic)
+		    pedwarn("ANSI C forbids specifying subobject to initialize"); 
+		  $$ = make_init_specific($1, $3); }
+	| designator initval
+		{ if (pedantic)
+		    pedwarn("obsolete use of designated initializer without `='");
+		  $$ = make_init_specific($1, $2); }
+	| identifier ':'
+		{ $<u.designator>$ = set_init_label($1.location, $1.id);
+		  if (pedantic)
+		    pedwarn("obsolete use of designated initializer with `:'"); }
+	  initval
+		{ $$ = make_init_specific($<u.designator>3, $4); }
+	| initval
+	;
+
+initval:
+	  '{'
+		{ push_init_level (0); }
+	  initlist_maybe_comma '}'
+		{ $$ = make_init_list($1.location, $3); 
+		  process_init_element(NULL); }
+	| expr_no_commas
+		{ process_init_element($1); $$ = $1; }
 	| error { $$ = make_error_expr(last_location); }
+	;
+
+designator_list:
+	  designator 
+	| designator_list designator { $$ = designator_chain($1, $2); }
+	;
+
+designator:
+	  '.' identifier
+		{ $$ = set_init_label($2.location, $2.id); }
 	/* These are for labeled elements.  The syntax for an array element
 	   initializer conflicts with the syntax for an Objective-C message,
 	   so don't include these productions in the Objective-C grammar.  */
-	| '[' expr_no_commas ELLIPSIS expr_no_commas ']' '=' initelt
-	    	{ $$ = CAST(expression, new_init_index(pr, $1.location, $2, $4, $7)); }
-	| '[' expr_no_commas ']' '=' initelt
-	    	{ $$ = CAST(expression, new_init_index(pr, $1.location, $2, NULL, $5)); }
-	| '[' expr_no_commas ']' initelt
-	    	{ $$ = CAST(expression, new_init_index(pr, $1.location, $2, NULL, $4)); }
-	| idword ':' initelt
-	    	{ $$ = CAST(expression, new_init_field(pr, $1->location, $1, $3)); }
-	| '.' idword '=' initelt
-	    	{ $$ = CAST(expression, new_init_field(pr, $1.location, $2, $4)); }
+	| '[' expr_no_commas ELLIPSIS expr_no_commas ']'
+		{ $$ = set_init_index($1.location, $2, $4);
+		  if (pedantic)
+		    pedwarn ("ISO C forbids specifying range of elements to initialize"); }
+	| '[' expr_no_commas ']'
+		{ $$ = set_init_index($1.location, $2, NULL); }
 	;
 
 nested_function:

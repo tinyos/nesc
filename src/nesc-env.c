@@ -52,6 +52,8 @@ nesc_declaration new_nesc_declaration(region r, source_language kind,
 
   new->kind = kind;
   new->name = name;
+  if (kind == l_component && use_nido)
+    new->local_statics = dd_new_list(r);
 
   return new;
 }

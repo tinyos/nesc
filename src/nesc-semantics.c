@@ -292,15 +292,19 @@ nesc_declaration load(source_language sl, location l,
   return decl;
 }
 
+bool is_module_local_static(data_declaration ddecl)
+{
+  return ddecl->kind == decl_variable &&
+    (ddecl->vtype == variable_static && ddecl->container_function &&
+     ddecl->container_function->container); 
+}
+
 bool is_module_variable(data_declaration ddecl)
 {
   return ddecl->kind == decl_variable &&
     ddecl->Cname == FALSE &&
-     /* top-level module var */
-    (ddecl->container || 
-     /* static var in module function */
-     (ddecl->vtype == variable_static && ddecl->container_function &&
-      ddecl->container_function->container)); 
+    /* top-level module var or local static module var */
+    (ddecl->container || is_module_local_static(ddecl));
 }
 
 const char *make_intf_printname(const char *iname, const char *fname)

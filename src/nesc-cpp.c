@@ -189,8 +189,7 @@ void create_nesc_keyword_macros(const char *macro_filename)
      during compilation by the flag "-fnesc-nido-tosnodes = 1000"
      which in this case is 1000. */     
   if (use_nido)
-    fprintf(mf, "#define TOSH_NUM_NODES %s\n",
-	    nido_num_nodes ? nido_num_nodes : "1000");
+    fprintf(mf, "#define TOSH_NUM_NODES %s\n", nido_num_nodes);
 
   fclose(mf);
 }

@@ -1006,7 +1006,7 @@ readescape (int *ignore_ptr)
 	;
       else if (count - 1 >= int_type_size * 2
 	       || (count > 1
-		   && ((1 << (int_type_size - (count - 1) * 4))
+		   && ((1 << (int_type_size * 8 - (count - 1) * 4))
 		       <= firstdig)))
 	pedwarn ("hex escape out of range");
       return code;

@@ -68,6 +68,11 @@ void build(nesc_declaration decl, nesc_decl ast);
 
 bool is_module_variable(data_declaration ddecl);
 /* Returns: TRUE if ddecl is a module variable
+   (this includes is_module_local_static)
+ */
+
+bool is_module_local_static(data_declaration ddecl);
+/* Returns: TRUE if ddecl is a local static variable inside a module
  */
 
 const char *make_intf_printname(const char *iname, const char *fname);

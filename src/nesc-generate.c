@@ -473,6 +473,43 @@ void prt_nesc_module(cgraph cg, nesc_declaration mod)
 {
   prt_nesc_called_function_headers(cg, mod);
   prt_toplevel_declarations(CAST(module, mod->impl)->decls);
+
+  /* Make local static variables gloabal when nido is used.
+     Note: this raises several issues (aka problems):
+     - local static variables are named mod$fn$x rather than just x
+       (mildly confusing when debugging)
+     - the generated code will have errors (or worse, incorrect 
+       behaviour) if the local static declaration relied on local
+       declarations inside fn (e.g., typedefs, enums, structs).
+       There's no really nice fix to this except renaming and
+       extracting all such entities (maybe this can be done when
+       we have our own version of gdb and preserving symbol names
+       is less important)
+   */
+  if (use_nido)
+    {
+      dd_list_pos scan;
+
+      dd_scan (scan, mod->local_statics)
+	{
+	  data_declaration localsvar = DD_GET(data_declaration, scan);
+	  variable_decl localsvd;
+	  data_decl localsdd;
+
+	  if (!localsvar->isused)
+	    continue;
+
+	  localsvd = CAST(variable_decl, localsvar->ast);
+	  localsdd = CAST(data_decl, localsvd->parent);
+	  /* Note: we don't print the elements with pte_duplicate as we
+	     don't (easily) know here if the elements will be printed
+	     several times. If the type elements define a new type we most
+	     likely have a problem anyway (see discussion above) */
+	  prt_type_elements(localsdd->modifiers, 0);
+	  prt_variable_decl(localsvd);
+	  outputln(";");
+	}
+    }
 }
 
 static bool find_reachable_functions(struct connections *c, gnode n,
@@ -761,6 +798,107 @@ static void suppress_function(const char *name)
     d->suppress_definition = TRUE;
 }
 
+static void prt_ddecl_for_init(data_declaration ddecl)
+{
+  prt_plain_ddecl(ddecl, 0);
+  output("[__nesc_mote]");
+}
+
+static void prt_nido_initializer(variable_decl vd)
+{
+  data_declaration ddecl = vd->ddecl;
+  expression init;
+
+  if (!ddecl || !ddecl->isused || ddecl->kind != decl_variable)
+    return; /* Don't print if not referenced */
+
+  init = vd->arg1;
+
+  if (!init)
+    {
+      output("memset(&");
+      prt_ddecl_for_init(ddecl);
+      output(", 0, sizeof ");
+      prt_ddecl_for_init(ddecl);
+      output(")");
+    }
+  else if (is_init_list(init))
+    {
+      declarator vtype;
+      type_element vmods;
+
+      output("memcpy(&");
+      prt_ddecl_for_init(ddecl);
+
+      output(", &");
+      type2ast(parse_region, dummy_location, ddecl->type, NULL,
+	       &vtype, &vmods);
+      output("(");
+      prt_declarator(vtype, vmods, NULL, NULL, 0);
+      output(")");
+      prt_expression(init, P_ASSIGN);
+
+      output(", sizeof ");
+      prt_ddecl_for_init(ddecl);
+      output(")");
+    }
+  else 
+    {
+      prt_ddecl_for_init(ddecl);
+      output(" = ");
+      prt_expression(init, P_ASSIGN);
+    }
+  outputln(";");
+}
+
+static void prt_nido_initializations(nesc_declaration mod) 
+{
+  declaration dlist = CAST(module, mod->impl)->decls;
+  declaration d;
+  dd_list_pos lscan;
+
+  outputln("/* Module %s */", mod->name);
+
+  /* Static variables */
+  scan_declaration (d, dlist)
+    {
+      declaration reald = ignore_extensions(d);
+      variable_decl vd;
+
+      if (reald->kind != kind_data_decl)
+	continue;
+
+      scan_variable_decl (vd, CAST(variable_decl, CAST(data_decl, d)->decls))
+	prt_nido_initializer(vd);
+    }
+
+  /* Local static variables */
+  dd_scan (lscan, mod->local_statics)
+    {
+      data_declaration localsd = DD_GET(data_declaration, lscan);
+
+      prt_nido_initializer(CAST(variable_decl, localsd->ast));
+    }
+  newline();
+}
+
+static void prt_nido_initialize(dd_list modules) 
+{
+  dd_list_pos mod;
+
+  nido_mote_number = "__nesc_mote";
+  outputln("/* Invoke static initialisers for mote '__nesc_mote' */\n");
+  outputln("static void Nido$nido_initialize(int __nesc_mote)");
+  outputln("{");
+  indent();
+
+  dd_scan (mod, modules) 
+    prt_nido_initializations(DD_GET(nesc_declaration, mod));
+ 
+  unindent();
+  outputln("}");
+}
+
 void generate_c_code(nesc_declaration program, const char *target_name,
 		     cgraph cg, dd_list modules)
 {
@@ -829,6 +967,12 @@ void generate_c_code(nesc_declaration program, const char *target_name,
 
   prt_inline_functions(callgraph);
   prt_noninline_functions(callgraph);
+
+  if (use_nido)
+    {
+      disable_line_directives();
+      prt_nido_initialize(modules); 
+    }
 
   unparse_end();
 

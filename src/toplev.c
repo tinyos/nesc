@@ -54,34 +54,6 @@ static struct { char *string; int *variable; int on_value;} f_options[] =
 
 static char *lang_options[] =
 {
-  "-fnesc-nido-tosnodes=",
-  "-fnesc-path=",
-  "-fnesc-no-debug",
-  "-fnesc-no-inline",
-  "-fnesc-save-macros",
-  "-fnesc-msg=",
-  "-fnesc-csts",
-  "-fnesc-target=",
-  "-fnesc-docdir=",
-  "-fnesc-topdir=",
-  "-fnesc-is-app",
-  "-fnesc-docs-use-graphviz",
-  "-fnesc-verbose",
-  "-fnesc-include=",
-
-  /* nesC warnings */
-  "-Wnesc-docstring",
-  "-Wno-nesc-docstring",
-  "-Wnesc-fnptr",
-  "-Wnesc-no-fnptr",
-  "-Wnesc-data-race",
-  "-Wnesc-no-data-race",
-  "-Wnesc-async",
-  "-Wnesc-no-async",
-  "-Wnesc-combine",
-  "-Wnesc-no-combine",
-  "-Wnesc-all",
-
   "-ansi",
   "-fallow-single-precision",
 
@@ -201,9 +173,7 @@ static void pipe_closed (int signo)
 /* Decode the string P as a language-specific option for C. */
 static void c_decode_option(char *p)
 {
-  if (nesc_option(p))
-    ;
-  else if (!strcmp (p, "-ftraditional") || !strcmp (p, "-traditional"))
+  if (!strcmp (p, "-ftraditional") || !strcmp (p, "-traditional"))
     {
       flag_traditional = 1;
     }
@@ -432,6 +402,8 @@ int region_main(int argc, char **argv) deletes
 	/* If the option is valid for *some* language,
 	   treat it as valid even if this language doesn't understand it.  */
 	c_decode_option(argv[i]);
+      else if (nesc_option(argv[i]))
+	;
       else if (argv[i][0] == '-' && argv[i][1] != 0)
 	{
 	  register char *str = argv[i] + 1;

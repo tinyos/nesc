@@ -229,7 +229,10 @@ int flag_save_macros;
 bool use_nido;
 
 /* specifies the maximum number of nodes that can be simulated at one time */
-char* nido_num_nodes;
+char* nido_num_nodes = "1000";
+
+/* the expression that gives the current mote number */
+char *nido_mote_number = "tos_state.current_node";
 
 /* Nonzero for -v */
 int flag_verbose;

@@ -225,7 +225,10 @@ extern int flag_save_macros;
 extern bool use_nido;
 
 /* specifies the maximum number of nodes that can be simulated at one time */
-extern char* nido_num_nodes;
+extern char *nido_num_nodes;
+
+/* the expression that gives the current mote number */
+extern char *nido_mote_number;
 
 /* Nonzero for -v */
 extern int flag_verbose;

@@ -343,7 +343,7 @@ cval cval_cast(cval c, type to)
 
 	case cval_address:
 	  /* Lose value if cast address of symbol to too-narrow a type */
-	  if (tosize < type_size(intptr_type))
+	  if (!type_array(to) && tosize < type_size(intptr_type))
 	    return cval_unknown;
 	  /* Otherwise nothing happens (the offset is already restricted to
 	     the range of intptr_type). */

@@ -119,6 +119,10 @@ bool nesc_option(char *p)
     {
       nido_num_nodes = p + strlen("-fnesc-nido-tosnodes=");
     }
+  else if (!strncmp (p, "-fnesc-nido-motenumber=", strlen("-fnesc-nido-motenumber=")))
+    {
+      nido_mote_number = p + strlen("-fnesc-nido-motenumber=");
+    }
   else if (!strncmp (p, "-fnesc-include=", strlen("-fnesc-include=")))
     {
       add_nesc_include(p + strlen("-fnesc-include="));

@@ -59,4 +59,7 @@ wchar_t asm_rwmode(string s);
      The result is (wchar_t)-1 if s is the empty string.
 */
 
+declaration ignore_extensions(declaration d);
+/* Ignore extension_decls at d, returning the "real" declaration */
+
 #endif

@@ -22,6 +22,9 @@ Boston, MA 02111-1307, USA. */
 #ifndef UNPARSE_H
 #define UNPARSE_H
 
+/* string which accesses current mote number in nido */
+extern char *nido_mote_number;
+
 void unparse(FILE *to, declaration program) deletes;
 void unparse_start(FILE *to);
 void unparse_end(void) deletes;
@@ -70,6 +73,7 @@ const char *binary_op_name(AST_kind kind);
 #define P_CALL 14
 
 void prt_data_decl(data_decl d);
+void prt_variable_decl(variable_decl d);
 void prt_toplevel_declarations(declaration d);
 void prt_toplevel_declaration(declaration d);
 void prt_nelements(expression array);
@@ -95,7 +99,7 @@ typedef enum {
 
 void prt_declarator(declarator d, type_element elements, attribute attributes,
 		    data_declaration ddecl, psd_options options);
-void prt_simple_declarator(declarator d, data_declaration ddecl,
+bool prt_simple_declarator(declarator d, data_declaration ddecl,
 			   psd_options options);
 void prt_parameters(declaration gparms, declaration parms, psd_options options);
 bool prt_parameter(declaration parm, bool first, bool lastforward, psd_options options);

@@ -88,14 +88,8 @@ static size_t expression_size(expression expr)
       sum += expression_size(CAST(cast_list, expr)->init_expr);
       break;
     }
-    case kind_init_index: {
-      init_index init = CAST(init_index, expr);
-
-      sum += expression_size(init->init_expr);
-      break;
-    }
-    case kind_init_field: {
-      init_field init = CAST(init_field, expr);
+    case kind_init_specific: {
+      init_specific init = CAST(init_specific, expr);
 
       sum += expression_size(init->init_expr);
       break;

@@ -132,6 +132,7 @@
 (deffield external bool (init))
 (deffield ienv environment (init))
 (deffield docstring "char *" (init))
+(deffield designator designator (init tree))
 
 (deffield cdecl nesc_declaration ())
 
@@ -454,13 +455,25 @@ CALL_KIND is one of c_call, post_task, command_call or event_signal.")
 ;; Initialiser expressions (not allowed in most contexts)
 
 (deftype init_list expression (args)
-  "{ ARGS }. ARGS is a list of expressions")
+  "{ ARGS }. ARGS is a list of expressions
+The type of the init_list is the type of the initialised entity.
+If this entity is an incomplete array type, the type of the init_list
+is the actual array size deduced from the initialiser.")
 
-(deftype init_index expression (arg1 arg2 init_expr)
-  "[ ARG1 ... ARG2] INIT_EXPR (GCC). ARG2 is optional")
+(deftype init_specific expression (designator init_expr)
+  "DESIGNATOR = INIT_EXPR in an init_list.
+DESIGNATOR is a list
+The type is not set in init_specific nodes")
 
-(deftype init_field expression (word1 init_expr)
-  "WORD1 : INIT_EXPR (GCC)")
+(deftype designator node ()
+  "Base type for designators")
+
+(deftype designate_field designator (cstring)
+  ". CSTRING in an initialisation designator")
+
+(deftype designate_index designator (arg1 arg2)
+  "[ARG1] or [ARG1 ... ARG2] in a designator. ARG2 is optional.
+ARG2 is a GCC extension")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants

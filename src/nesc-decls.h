@@ -29,6 +29,7 @@ typedef struct nesc_declaration {
   /* for components */
   implementation impl;
   struct cgraph *connections;
+  dd_list local_statics;	/* Local static variables (for nido) */
 } *nesc_declaration;
 
 #endif

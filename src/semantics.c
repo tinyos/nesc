@@ -916,14 +916,14 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	    /* Check for some types that there cannot be arrays of.  */
 	    if (type_void(t))
 	      {
-		error_with_location(d->location,
+		error_with_location(ad->location,
 				    "declaration of `%s' as array of voids", printname);
 		t = error_type;
 	      }
 
 	    if (type_function(t))
 	      {
-		error_with_location(d->location,
+		error_with_location(ad->location,
 				    "declaration of `%s' as array of functions", printname);
 		t = error_type;
 	      }
@@ -938,13 +938,13 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	      {
 		if (!type_integer(size->type))
 		  {
-		    error_with_location(d->location,
+		    error_with_location(ad->location,
 					"size of array `%s' has non-integer type", printname);
 		    size = oneexpr;
 		  }
 
 		if (pedantic && definite_zero(size))
-		  pedwarn_with_location(d->location,
+		  pedwarn_with_location(ad->location,
 					"ANSI C forbids zero-size array `%s'", printname);
 
 		if (size->cst && constant_integral(size->cst))
@@ -953,7 +953,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 		      constant_overflow_warning(size->cst);
 		    if (cval_intcompare(size->cst->cval, cval_zero) < 0)
 		      {
-			error_with_location(d->location,
+			error_with_location(ad->location,
 					    "size of array `%s' is negative", printname);
 			size = oneexpr;
 		      }
@@ -963,16 +963,16 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 		    if (!(current.function_decl || current.env->parm_level))
 		      {
 			if (size->cst)
-			  error_with_location(d->location, "type size can't be explicitly evaluated");
+			  error_with_location(ad->location, "type size can't be explicitly evaluated");
 			else
-			  error_with_location(d->location, "variable-size type declared outside of any function");
+			  error_with_location(ad->location, "variable-size type declared outside of any function");
 		      }
 		    else if (pedantic)
 		      {
 			if (size->cst)
-			  pedwarn_with_location(d->location, "ANSI C forbids array `%s' whose size can't be evaluated", printname);
+			  pedwarn_with_location(ad->location, "ANSI C forbids array `%s' whose size can't be evaluated", printname);
 			else
-			  pedwarn_with_location(d->location, "ANSI C forbids variable-size array `%s'", printname);
+			  pedwarn_with_location(ad->location, "ANSI C forbids variable-size array `%s'", printname);
 		      }
 
 
@@ -1004,14 +1004,14 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	    /* Warn about some types functions can't return.  */
 	    if (type_function(t))
 	      {
-		error_with_location(d->location,
+		error_with_location(fd->location,
 				    "`%s' declared as function returning a function",
 		      printname);
 		t = int_type;
 	      }
 	    if (type_array(t))
 	      {
-		error_with_location(d->location,
+		error_with_location(fd->location,
 				    "`%s' declared as function returning an array",
 		      printname);
 		t = int_type;
@@ -1047,10 +1047,10 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 		if (*oclass == RID_TASK)
 		  {
 		    if (fd->parms)
-		      error_with_location(d->location,
+		      error_with_location(fd->location,
 		        "`%s' declared as a task with parameters", printname);
 		    if (!type_void(t))
-		      error_with_location(d->location,
+		      error_with_location(fd->location,
 			"task `%s' must return void", printname);
 		  }
 
@@ -1095,7 +1095,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	    if (ointf)
 	      *ointf = id->word1->cstring.data;
 	    else
-	      error_with_location(d->location,
+	      error_with_location(id->location,
 		"unexpected interface reference in declaration of `%s'",
 				  printname);
 	    break;
@@ -1745,7 +1745,7 @@ void check_function(data_declaration dd, declaration fd, int class,
 data_declaration declare_string(const char *name, bool wide, size_t length)
 {
   struct data_declaration tempdecl;
-  expression expr_l = build_uint_constant(parse_region, dummy_location, size_t_type, length);
+  expression expr_l = build_uint_constant(parse_region, dummy_location, size_t_type, length + 1);
   type value_type = make_array_type(wide ? wchar_type : char_type, expr_l);
 
   init_data_declaration(&tempdecl, new_error_decl(parse_region, dummy_location),
@@ -1865,6 +1865,30 @@ static void declare_function_name(void)
   declare_magic_string("__PRETTY_FUNCTION__", printable_name);
 }
 
+static void error_assert(bool ok)
+{
+  if (!ok)
+    {
+      error("confused by earlier errors - bailing out");
+      exit(FATAL_EXIT_CODE);
+    }
+}
+
+static void detect_bogus_env(void)
+{
+  /* We should not come here with the current env as parm level and not
+     in a function. If we do, it's because the error recovery productions
+     failed to pop some levels. So do it now. */
+  while (!current.function_decl && current.env->parm_level)
+    {
+      /* This should only be possible after a (parse) error. Ensure that
+	 we aren't confused... */
+      assert(errorcount > 0);
+      poplevel();
+    }
+
+}
+
 /* Start definition of function 'elements d' with attributes attribs.
    nested is true for nested function definitions.
    Returns false in case of error.
@@ -1889,8 +1913,10 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   location doc_location = NULL;
   dd_list extra_attr;
 
+  detect_bogus_env();
+
   if (!nested)
-    assert(current.env->global_level && current.function_decl == NULL);
+    error_assert(current.env->global_level && current.function_decl == NULL);
 
   parse_declarator(elements, d, FALSE, TRUE, &class, &scf,
 		   &intf, &name, &function_type, &defaulted_int, &fdeclarator,
@@ -2191,7 +2217,7 @@ declaration finish_function(statement body)
   declaration fn = CAST(declaration, current.function_decl);
 
   current.function_decl->stmt = body;
-  assert(current.env->parm_level);
+  error_assert(current.env->parm_level);
   poplevel(); /* Pop parameter level */
   check_labels();
   current.function_decl = current.function_decl->parent_function;
@@ -2316,6 +2342,8 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
   char *long_docstring = NULL;
   location doc_location = NULL;
 
+  detect_bogus_env();
+
   /* save any docstrings now.  This ensures that the docs aren't
      incorrectly placed with a lower-down declaration (for example,
      attaching docs to a parameter in a function declaration, rather
@@ -2369,7 +2397,7 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
 
       if (initialised)
 	error("parameter `%s' is initialized",
-	      vd->ddecl->name ? vd->ddecl->name : "type name");
+	      vd->ddecl ? vd->ddecl->name : "type name");
     }
   else
     {
@@ -2611,23 +2639,20 @@ declaration finish_decl(declaration decl, expression init)
 
   if (init)
     {
-      /* XXX: This is missing a lot of stuff */
       if (dd->kind == decl_typedef)
 	dd->type = init->type;
       else if (type_array(dd->type))
 	{
-	  /* XXX: lots missing */
+	  /* Incomplete array types get their size from the initialiser
+	     (this is set correctly for both strings and init_lists) */
 	  if (!type_array_size(dd->type))
-	    {
-	      expression size = build_uint_constant(parse_region, dummy_location, size_t_type, 0);
-
-	      dd->type = make_array_type(type_array_of(dd->type), size);
-	    }
+	    dd->type = init->type;
 	}
-      else
-	check_assignment(dd->type, default_conversion_for_assignment(init),
-			 init, "initialization", NULL, 0);
     }
+
+  if (is_module_local_static(dd) && use_nido)
+    dd_add_last(regionof(current.container->local_statics),
+		current.container->local_statics, dd);
 
   return decl;
 }
@@ -2835,18 +2860,14 @@ type_element finish_struct(type_element t, declaration fields,
 
   scan_declaration (fdecl, fields)
     {
-      declaration fieldlist;
       data_decl flist;
       field_decl field = NULL;
       largest_int bitwidth;
       size_t falign, fsize;
       bool anon_member = FALSE;
 
-      /* Skip down to real list of fields */
-      fieldlist = fdecl;
-      while (is_extension_decl(fieldlist))
-	fieldlist = CAST(extension_decl, fieldlist)->decl;
-      flist = CAST(data_decl, fieldlist);
+      /* Get real list of fields */
+      flist = CAST(data_decl, ignore_extensions(fdecl));
 
       if (!flist->decls) /* possibly a struct/union we should merge in */
 	{
@@ -2962,7 +2983,7 @@ type_element finish_struct(type_element t, declaration fields,
 	      field_type = fdecl->type; /* attributes might change type */
 
 	      bitwidth = -1;
-	      if (field->arg1)
+	      if (field->arg1 && field->arg1->cst)
 		{
 		  known_cst cwidth = field->arg1->cst;
 

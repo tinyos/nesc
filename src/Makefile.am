@@ -84,6 +84,8 @@ libparser_a_SOURCES =				\
 	flags.h					\
 	graph.c					\
 	graph.h					\
+	init.c					\
+	init.h					\
 	input.c					\
 	input.h					\
 	machine.c				\

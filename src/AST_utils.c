@@ -257,3 +257,12 @@ wchar_t asm_rwmode(string s)
   else
     return (wchar_t)-1;
 }
+
+declaration ignore_extensions(declaration d)
+{
+  while (is_extension_decl(d))
+    d = CAST(extension_decl, d)->decl;
+
+  return d;
+}
+
