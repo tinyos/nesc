@@ -10,7 +10,11 @@
 
 void init_magic_functions(void);
 
-expression magic_reduce(function_call fcall);
-bool magic_print(function_call fcall);
+data_declaration get_magic(function_call fcall);
+/* Returns: magic function called by fcall if it's a magic function call,
+     NULL otherwise
+*/
+
+known_cst fold_magic(function_call fcall, int pass);
 
 #endif

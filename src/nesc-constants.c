@@ -27,9 +27,15 @@ Boston, MA 02111-1307, USA.  */
 
 static AST_walker folder_walker;
 
+struct folder_data {
+  bool done;
+  int pass;
+};
+
 static AST_walker_result folder_expression(AST_walker spec, void *data,
 					   expression *n)
 {
+  struct folder_data *d = data;
   expression e = *n;
   known_cst c = NULL, sa = NULL;
   
@@ -74,10 +80,10 @@ static AST_walker_result folder_expression(AST_walker spec, void *data,
       c = fold_conditional(e);
       break;
     case kind_function_call:
-      c = fold_function_call(e);
+      c = fold_function_call(e, d->pass);
       break;
     case kind_identifier:
-      c = fold_identifier(e, CAST(identifier, e)->ddecl);
+      c = fold_identifier(e, CAST(identifier, e)->ddecl, d->pass);
       sa = foldaddress_identifier(e, CAST(identifier, e)->ddecl);
       break;
     case kind_field_ref:
@@ -130,14 +136,27 @@ static AST_walker_result folder_expression(AST_walker spec, void *data,
   if (e->converted_to_pointer)
     e->cst = sa;
 
+  /* Notice unknown csts */
+  if ((sa && constant_unknown(sa)) || (c && constant_unknown(c)))
+    d->done = FALSE;
+
   return aw_done;
 }
 
-void fold_constants_list(node n)
+bool fold_constants_list(node n, int pass)
 /* Effects: Folds constants and lays out types in AST n
+   Returns: FALSE if any constant folding op returned an unknown cst, TRUE
+     otherwise
  */
 {
-  AST_walk_list(folder_walker, NULL, CASTPTR(node, &n));
+  struct folder_data d;
+
+  d.done = TRUE;
+  d.pass = pass;
+
+  AST_walk_list(folder_walker, &d, CASTPTR(node, &n));
+
+  return d.done;
 }
 
 void init_nesc_constants(void)

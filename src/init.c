@@ -979,11 +979,17 @@ static void output_init_element(expression init, type t)
 	  error_init("initializer element is not constant");
 	  return;
 	}
-      else if (constant_unknown(c))
+#if 0
+      /* This is no longer detected as constant_unknown has been recycled
+	 for use with abstract component arguments. It could be resurrected
+	 if we made cval more complicated, but it doesn't seem worth the
+	 effort. */
+      else if (constant_uncomputable(c))
 	{
 	  error_init("initializer element is not computable at load time");
 	  return;
 	}
+#endif
       else
 	constant_overflow_warning(c);
     }

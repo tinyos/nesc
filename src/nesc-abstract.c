@@ -17,6 +17,7 @@ Boston, MA 02111-1307, USA.  */
 
 #include "parser.h"
 #include "nesc-cg.h"
+#include "nesc-c.h"
 #include "nesc-abstract.h"
 #include "c-parse.h"
 #include "nesc-component.h"
@@ -512,15 +513,17 @@ static void set_parameter_values(nesc_declaration cdecl, expression args)
     }
 }
 
-void fold_components(region r, nesc_declaration cdecl)
+static bool fold_components(nesc_declaration cdecl, int pass)
 {
-  if (cdecl->folded)
-    return;
+  bool done;
 
-  cdecl->folded = TRUE;
+  if (cdecl->folded == pass)
+    return TRUE;
+
+  cdecl->folded = pass;
 
   current.container = cdecl;
-  fold_constants_list(CAST(node, cdecl->impl));
+  done = fold_constants_list(CAST(node, cdecl->impl), pass);
 
   if (is_module(cdecl->impl))
     ;
@@ -533,9 +536,25 @@ void fold_components(region r, nesc_declaration cdecl)
 	{
 	  current.container = cdecl;
 	  set_parameter_values(comp->cdecl, comp->args);
-	  fold_components(r, comp->cdecl);
+	  done = fold_components(comp->cdecl, pass) && done;
 	}
     }
+  return done;
+}
+
+void fold_program(nesc_declaration program)
+{
+  int pass = 1;
+  bool done;
+
+  do
+    {
+      done = fold_constants_list(CAST(node, all_cdecls), pass);
+      if (program)
+	done = fold_components(program, pass) && done;
+      pass++;
+    }
+  while (!done);
 }
 
 void init_abstract(void)

@@ -31,7 +31,6 @@ Boston, MA 02111-1307, USA. */
 #include "AST_utils.h"
 #include "nesc-module.h"
 #include "nesc-component.h"
-#include "nesc-magic.h"
 #include "nesc-semantics.h"
 
 /* Return TRUE if TTL and TTR are pointers to types that are equivalent,
@@ -1248,7 +1247,7 @@ expression make_identifier(location loc, cstring id, bool maybe_implicit)
   result->type = decl->type;
   result->lvalue = decl->kind == decl_variable ||
     decl->kind == decl_magic_string;
-  result->cst = fold_identifier(CAST(expression, result), decl);
+  result->cst = fold_identifier(CAST(expression, result), decl, 0);
   result->isregister = decl->kind == decl_variable &&
     decl->vtype == variable_register;
   result->static_address = foldaddress_identifier(CAST(expression, result), decl);
@@ -1397,10 +1396,8 @@ expression make_function_call(location loc, expression fn, expression arglist)
   if (!type_void(rettype))
     result->type = require_complete_type(result, rettype);
 
-  result->cst = fold_function_call(result);
-
   if (argumentsok)
-    result = magic_reduce(CAST(function_call, result));
+    result->cst = fold_function_call(result, 0);
 
   return result;
 }

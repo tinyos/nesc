@@ -26,10 +26,16 @@ Boston, MA 02111-1307, USA. */
    add, sub, times, divide, realpart, imagpart, conjugate
 */
 typedef struct {
-  enum { cval_variable, cval_unk, cval_address,
-	 cval_float, cval_float_complex,
-	 cval_uint, cval_uint_complex,
-	 cval_sint, cval_sint_complex } kind;
+  /* we could add cval_address_unknown for symbols offset by some
+     unknown number (created from <address> +/- <unknown>) */
+  enum {
+    cval_variable,		    /* not a constant */
+    cval_unk, 			    /* some unknown number */
+    cval_address,		    /* symbol with offset */
+    cval_float, cval_float_complex, /* a (complex) floating point number */
+    cval_uint, cval_uint_complex,   /* a (complex) unsigned number */
+    cval_sint, cval_sint_complex    /* a (complex) signed number */
+  } kind;
 #ifdef USE_UNNAMED_UNION
   union {
     struct {

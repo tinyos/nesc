@@ -38,7 +38,7 @@ typedef struct nesc_declaration {
 				   generic interfaces */
   declaration parameters;	/* Parameters for abstract components and
 				   generic interfaces */
-  bool folded;			/* TRUE if constants have been folded */
+  int folded;			/* number of last constant folding pass */
 
   /* for components */
   implementation impl;

@@ -245,7 +245,7 @@ expression build_identifier(region r, location loc, data_declaration id)
 
   assert(id->kind == decl_variable || id->kind == decl_function);
   e->type = id->type;
-  e->cst = fold_identifier(CAST(expression, e), id);
+  e->cst = fold_identifier(CAST(expression, e), id, 0);
 
   return CAST(expression, e);
 }

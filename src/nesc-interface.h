@@ -19,5 +19,6 @@ Boston, MA 02111-1307, USA.  */
 #define NESC_INTERFACE_H
 
 void build_interface(region r, nesc_declaration idecl);
+declaration declare_interface_parm(location l, cstring id);
 
 #endif

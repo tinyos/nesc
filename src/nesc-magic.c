@@ -8,33 +8,48 @@
 #include "constants.h"
 #include "unparse.h"
 
-void declare_magic(const char *name,
-		   type return_type, typelist argument_types,
-		   expression (*magic_reduce)(function_call fcall),
-		   void (*magic_print)(function_call fcall))
+static void declare_magic(const char *name,
+			  type return_type, typelist argument_types,
+			  known_cst (*magic_fold)(function_call fcall, int pass))
 {
   struct data_declaration tempdecl;
   type ftype = make_function_type(return_type, argument_types, FALSE, FALSE);
 
   init_data_declaration(&tempdecl, new_error_decl(parse_region, dummy_location), name, ftype);
   tempdecl.kind = decl_magic_function;
-  tempdecl.magic_reduce = magic_reduce;
-  tempdecl.magic_print = magic_print;
+  tempdecl.magic_fold = magic_fold;
   tempdecl.ftype = function_normal;
 
   declare(global_env, &tempdecl, FALSE);
 }
 
-expression magic_reduce(function_call fcall)
+data_declaration get_magic(function_call fcall)
+/* Returns: magic function called by fcall if it's a magic function call,
+     NULL otherwise
+*/
 {
   if (is_identifier(fcall->arg1))
     {
       identifier called = CAST(identifier, fcall->arg1);
 
       if (called->ddecl->kind == decl_magic_function)
+	return called->ddecl;
+    }
+  return NULL;
+}
+
+
+known_cst fold_magic(function_call fcall, int pass)
+{
+  data_declaration called = get_magic(fcall);
+
+  if (called)
+    {
+      /* we can assume arguments are of valid type and number,
+	 check that they are constants in the parse phase */
+
+      if (pass == 0)
 	{
-	  /* we can assume arguments are of valid type and number,
-	     check that they are constants */
 	  bool all_constant = TRUE;
 	  expression arg;
 	  int argn = 1;
@@ -44,38 +59,25 @@ expression magic_reduce(function_call fcall)
 	      if (!(arg->cst || is_string(arg)))
 		{
 		  error("argument %d to magic function `%s' is not constant",
-			argn, called->ddecl->name);
+			argn, called->name);
 		  all_constant = FALSE;
 		}
 	      argn++;
 	    }
 	  
-	  if (all_constant)
-	    return called->ddecl->magic_reduce(fcall);
+	  if (!all_constant)
+	    return NULL;
 	}
-    }
-  return CAST(expression, fcall);
-}
 
-bool magic_print(function_call fcall)
-{
-  if (is_identifier(fcall->arg1))
-    {
-      identifier called = CAST(identifier, fcall->arg1);
-
-      if (called->ddecl->kind == decl_magic_function)
-	{
-	  called->ddecl->magic_print(fcall);
-	  return TRUE;
-	}
+      return called->magic_fold(fcall, pass);
     }
-  return FALSE;
+  return NULL;
 }
 
 static env unique_env;
 static region unique_region;
 
-unsigned int *unique_parse(const char *uname, function_call fcall)
+static unsigned int *unique_parse(const char *uname, function_call fcall)
 {
   expression name = fcall->args;
   unsigned int *lastval;
@@ -111,30 +113,44 @@ unsigned int *unique_parse(const char *uname, function_call fcall)
   return lastval;
 }
 
-expression unique_reduce(function_call fcall)
+static known_cst unique_fold(function_call fcall, int pass)
 {
   unsigned int *lastval = unique_parse("unique", fcall);
 
   if (lastval)
-    return build_uint_constant(parse_region, fcall->location,
-			       unsigned_int_type, (*lastval)++);
+    {
+      /* On pass 0, we don't know the value
+	 On pass 1, we pick a value
+	 On subsequent passes, we stick to our choice
+      */
+      if (pass == 0)
+	return make_unknown_cst(unsigned_int_type);
+      else if (pass == 1)
+	return make_unsigned_cst((*lastval)++, unsigned_int_type);
+      else
+	return fcall->cst;
+    }
   else
-    return CAST(expression, fcall);
+    return NULL;
 }
 
-expression uniqueCount_reduce(function_call fcall)
+static known_cst uniqueCount_fold(function_call fcall, int pass)
 {
-  unique_parse("uniqueCount", fcall);
+  unsigned int *lastval = unique_parse("unique", fcall);
 
-  fcall->cst = make_unsigned_cst(0, unsigned_int_type);
-  return CAST(expression, fcall);
-}
-
-void uniqueCount_print(function_call fcall)
-{
-  /* We already checked for errors when uniqueCount_reduce was called.
-     So unique_parse will succeed. */
-  output("%u", *unique_parse("uniqueCount", fcall));
+  if (lastval)
+    {
+      /* On pass 0, we don't know the value
+	 On pass 1, we still don't know (haven't seen all uniques)
+	 On pass 2 and subsequent, we get the value from the unique env
+      */
+      if (pass < 2)
+	return make_unknown_cst(unsigned_int_type);
+      else
+	return make_unsigned_cst(*lastval, unsigned_int_type);
+    }
+  else
+    return NULL;
 }
 
 static void unique_init(void)
@@ -143,9 +159,9 @@ static void unique_init(void)
 
   string_args = new_typelist(parse_region);
   typelist_append(string_args, make_pointer_type(char_type));
-  declare_magic("unique", unsigned_int_type, string_args, unique_reduce, NULL);
+  declare_magic("unique", unsigned_int_type, string_args, unique_fold);
   declare_magic("uniqueCount", unsigned_int_type, string_args,
-		uniqueCount_reduce, uniqueCount_print);
+		uniqueCount_fold);
   unique_region = newregion();
   unique_env = new_env(unique_region, NULL);
 }

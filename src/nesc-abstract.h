@@ -26,8 +26,6 @@ void instantiate(nesc_declaration component);
        copies) 
 */
 
-void fold_components(region r, nesc_declaration cdecl);
-
 void push_instance(nesc_declaration component);
 /* Effects: push (concrete) component on the stack and set its full instance
      name.
@@ -40,6 +38,8 @@ nesc_declaration abstract_recursion(void);
      component (another instance of X).
      Return Y if this is the case, NULL if not.
 */
+
+void fold_program(nesc_declaration program);
 
 void pop_instance(void);
 

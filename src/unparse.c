@@ -687,7 +687,11 @@ bool prt_simple_declarator(declarator d, data_declaration ddecl,
 		{
 		  /* This is a declaration of an incomplete array type.
 		     The type of ddecl contains the size of the array if
-		     it is known. */
+		     it is known. 
+		     We need to print the size because of tossim
+		     (a declaration like 'char foo[TOSNODES][]' would
+		     be illegal)
+		  */
 		  expression dsize = type_array_size(ddecl->type);
 
 		  output("[%lu]",
@@ -1233,7 +1237,12 @@ void prt_function_call(function_call e, int context_priority)
 	  prt_asttype(e->va_arg_call);
 	  output("))");
 	}
-      else if (!magic_print(e))
+      else if (get_magic(e))
+	{
+	  output_indent_if_needed();
+	  constant_print(of, e->cst);
+	}
+      else
 	{
 	  prt_expression(e->arg1, P_CALL);
 	  /* Generic calls have already started the argument list.

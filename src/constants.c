@@ -36,6 +36,7 @@ Boston, MA 02111-1307, USA. */
 #include "c-parse.h"
 #include "semantics.h"
 #include "cval.h"
+#include "nesc-magic.h"
 #include <stdlib.h>
 #include "AST_utils.h"
 
@@ -239,11 +240,14 @@ known_cst fold_binary(type t, expression e)
   
   if (b->kind == kind_andand || b->kind == kind_oror)
     {
-      bool c1val;
+      if (c1 && constant_knownbool(c1))
+	{
+	  bool c1val = constant_boolvalue(c1);
 
-      if (c1 && constant_knownbool(c1) && 
-	  (c1val = constant_boolvalue(c1), b->kind == kind_andand ? !c1val : c1val))
-	return make_signed_cst(FALSE, t);
+	  if (b->kind == kind_andand ? !c1val : c1val)
+	    return make_signed_cst(b->kind == kind_oror, t);
+	}
+
       if (c1 && c2)
 	{
 	  if (constant_knownbool(c2))
@@ -334,23 +338,29 @@ known_cst fold_conditional(expression e)
       else
 	return NULL;
     }
+  else if (cond && (!c->arg1 || c->arg1->cst) && c->arg2->cst)
+    return make_unknown_cst(e->type);
+
   return NULL;
 }
 
-known_cst fold_function_call(expression e)
+known_cst fold_function_call(expression e, int pass)
 {
   function_call fce = CAST(function_call, e);
 
   if (call_to(builtin_constant_p, fce) && fce->args)
     return make_signed_cst(fce->args->cst != NULL, int_type);
 
-  return NULL;
+  return fold_magic(fce, pass);
 }
 
-known_cst fold_identifier(expression e, data_declaration decl)
+known_cst fold_identifier(expression e, data_declaration decl, int pass)
 {
   if (decl->kind == decl_constant)
-    return decl->value;
+    // We don't know template arg values at parse time
+    return pass == 0 && decl->substitute ?
+      make_unknown_cst(e->type) :
+      decl->value;
   else
     return NULL;
 }
@@ -544,7 +554,7 @@ void constant_print(FILE *f, known_cst c)
   if (type_floating(t))
     {
       /* XXX: hacky version */
-      fprintf(f, "%.20e", constant_float_value(c));
+      fprintf(f, "%.20Le", constant_float_value(c));
     }
   else
     {

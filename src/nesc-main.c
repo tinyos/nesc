@@ -309,8 +309,7 @@ void nesc_compile(const char *filename, const char *target_name)
 
 	      connect_graphs(parse_region, program, &cg, &modules, &components);
 	      current.container = NULL;
-	      fold_constants_list(CAST(node, all_cdecls));
-	      fold_components(parse_region, program);
+	      fold_program(program);
 
 	      if (errorcount == 0 && !generate_docs(filename, cg))
 		generate_c_code(program, target_name, cg, modules);
@@ -325,11 +324,15 @@ void nesc_compile(const char *filename, const char *target_name)
       load_c(toplevel_location, filename, TRUE);
       if (errorcount == 0)
 	{
-	  /* Destroy target in all circumstances (prevents surprises
-	     when "compiling" interfaces) */
-	  destroy_target(target_name);
+	  fold_program(NULL);
+	  if (errorcount == 0)
+	    {
+	      /* Destroy target in all circumstances (prevents surprises
+		 when "compiling" interfaces) */
+	      destroy_target(target_name);
 
-	  dump_msg_layout();
+	      dump_msg_layout();
+	    }
 	}
     }
 }

@@ -160,9 +160,10 @@ struct data_declaration {
   dd_list/*iduse*/ fn_uses;	/* list of uses of identifiers in this fn */
   struct connections *connections; /* See nesc-generate.c: what this command
 				      or event is connected to. */
-  /* reduction and printing functions for magic functions */
-  expression (*magic_reduce)(function_call fcall);
-  void (*magic_print)(function_call fcall);
+  /* folding function for magic functions. pass is 0 when constant
+     folding during parsing, and goes from 1 to n for each final
+     constant folding pass (after all components loaded) */
+  known_cst (*magic_fold)(function_call fcall, int pass);
 
   /* For variables */
   enum { variable_register, variable_static, variable_normal } vtype;

@@ -34,6 +34,15 @@ cval cval_unknown; /* The unknown value */
 cval cval_zero; /* A zero value. Use cval_cast to make the desired kind of
 		   constant */
 
+/* We use cval_invalid_address to mark those places where a constant
+   is computed which is "not computable at load time"
+   (these used to be cval_unknown, but we're reusing that for constants
+   built from abstract component args. Knowing that something is a
+   constant "not computable at load time" seems to have no use, except
+   in producing a slightly nicer error message) 
+*/
+#define cval_invalid_address cval_top
+
 void cval_init(void)
 {
   /* Code will be unhappy if this is not true. */
@@ -305,7 +314,7 @@ cval cval_cast(cval c, type to)
     {
       switch (c.kind)
 	{
-	case cval_address: return cval_top; /* And not cval_unknown for some reason */
+	case cval_address: return cval_top; /* And not cval_invalid_address for some reason */
 	case cval_sint: case cval_uint:
 	  c.kind = cval_float;
 	  /* Note that the cast is necessary otherwise it would cast to the common
@@ -349,7 +358,7 @@ cval cval_cast(cval c, type to)
 	case cval_address:
 	  /* Lose value if cast address of symbol to too-narrow a type */
 	  if (!type_array(to) && tosize < type_size(intptr_type))
-	    return cval_unknown;
+	    return cval_invalid_address;
 	  /* Otherwise nothing happens (the offset is already restricted to
 	     the range of intptr_type). */
 	  return c;
@@ -390,7 +399,8 @@ cval cval_negate(cval c)
   switch (c.kind)
     {
     case cval_variable: return cval_top;
-    case cval_unk: case cval_address: return cval_unknown;
+    case cval_unk: return cval_unknown;
+    case cval_address: return cval_invalid_address;
     case cval_sint: c.si = -c.si; return c; /* XXX: overflow */
     case cval_uint: c.ui = truncate_unsigned(-c.ui, c.isize); return c;
     case cval_float: c.d = -c.d; return c;
@@ -412,7 +422,8 @@ cval cval_bitnot(cval c)
   switch (c.kind)
     {
     case cval_variable: return cval_top;
-    case cval_unk: case cval_address: return cval_unknown;
+    case cval_unk: return cval_unknown;
+    case cval_address: return cval_invalid_address;
     case cval_sint: c.si = truncate_signed(~c.si, c.isize); return c;
     case cval_uint: c.ui = truncate_unsigned(~c.ui, c.isize); return c;
     default: abort(); return cval_top;
@@ -473,13 +484,23 @@ cval cval_add(cval c1, cval c2)
   if (cval_istop(c1) || cval_istop(c2))
     return cval_top;
 
-  if (cval_isunknown(c1) || cval_isunknown(c2))
-    return cval_unknown;
-
   if (cval_isaddress(c2))
     {
       cval tmp = c1; c1 = c2; c2 = tmp;
     }
+
+  if (cval_isaddress(c1))
+    switch (c2.kind)
+      {
+      case cval_unk: return cval_top; // make_cval_address_unknown(c1);
+      case cval_address: return cval_invalid_address;
+      case cval_sint: c1.si = truncate_signed(c1.si + c2.si, c1.isize); return c1;
+      case cval_uint: c1.si = truncate_signed(c1.si + c2.ui, c1.isize); return c1;
+      default: assert(0); return c1;
+      }
+
+  if (cval_isunknown(c1) || cval_isunknown(c2))
+    return cval_unknown;
 
   switch (c1.kind)
     {
@@ -487,15 +508,6 @@ cval cval_add(cval c1, cval c2)
       assert(c2.kind == cval_float);
       c1.d += c2.d;
       return c1;
-
-    case cval_address:
-      switch (c2.kind)
-	{
-	case cval_address: return cval_unknown;
-	case cval_sint: c1.si = truncate_signed(c1.si + c2.si, c1.isize); return c1;
-	case cval_uint: c1.si = truncate_signed(c1.si + c2.ui, c1.isize); return c1;
-	default: assert(0); return c1;
-	}
 
     case cval_sint:
       assert(c2.kind == cval_sint && c1.isize == c2.isize);
@@ -536,6 +548,28 @@ cval cval_sub(cval c1, cval c2)
   if (cval_istop(c1) || cval_istop(c2))
     return cval_top;
 
+  // <x> - <address> is cst iff x is an address from the same symbol
+  // (in particular, x cannot be unknown)
+  if (cval_isaddress(c2))
+    {
+      if (cval_isaddress(c1) && c1.ddecl == c2.ddecl && c1.ldecl == c2.ldecl)
+	{
+	  c1.kind = cval_sint;
+	  c1.si = truncate_signed(c1.si - c2.si, c1.isize);
+	  return c1;
+	}
+      return cval_invalid_address;
+    }
+  // <address> - <x>
+  if (cval_isaddress(c1))
+    switch (c2.kind)
+      {
+      case cval_unk: return cval_top; // make_cval_address_unknown(c1);
+      case cval_sint: c1.si = truncate_signed(c1.si - c2.si, c1.isize); return c1;
+      case cval_uint: c1.si = truncate_signed(c1.si - c2.ui, c1.isize); return c1;
+      default: assert(0); return c1;
+      }
+
   if (cval_isunknown(c1) || cval_isunknown(c2))
     return cval_unknown;
 
@@ -546,31 +580,12 @@ cval cval_sub(cval c1, cval c2)
       c1.d -= c2.d;
       return c1;
 
-    case cval_address:
-      switch (c2.kind)
-	{
-	case cval_address: 
-	  if (c1.ddecl != c2.ddecl || c1.ldecl != c2.ldecl)
-	    return cval_unknown; /* Difference of different symbols */
-	  c1.kind = cval_sint;
-	  c1.si = truncate_signed(c1.si - c2.si, c1.isize);
-	  return c1;
-
-	case cval_sint: c1.si = truncate_signed(c1.si - c2.si, c1.isize); return c1;
-	case cval_uint: c1.si = truncate_signed(c1.si - c2.ui, c1.isize); return c1;
-	default: assert(0); return c1;
-	}
-
     case cval_sint:
-      if (c2.kind == cval_address)
-	return cval_unknown;
       assert(c2.kind == cval_sint && c1.isize == c2.isize);
       c1.si = truncate_signed(c1.si - c2.si, c1.isize);
       return c1;
       
     case cval_uint:
-      if (c2.kind == cval_address)
-	return cval_unknown;
       assert(c2.kind == cval_uint && c1.isize == c2.isize);
       c1.ui = truncate_unsigned(c1.ui - c2.ui, c1.isize);
       return c1;
@@ -604,13 +619,19 @@ cval cval_times(cval c1, cval c2)
   if (cval_istop(c1) || cval_istop(c2))
     return cval_top;
 
+  // <address> * 1 and 1 * <address> are csts, everything else involving 
+  // addresses isn't
+  if (cval_isaddress(c1) || cval_isaddress(c2))
+    {
+      if (cval_isone(c1))
+	return c2;
+      if (cval_isone(c2))
+	return c1;
+      return cval_invalid_address;
+    }
+
   if (cval_isunknown(c1) || cval_isunknown(c2))
     return cval_unknown;
-
-  if (cval_isaddress(c2))
-    {
-      cval tmp = c1; c1 = c2; c2 = tmp;
-    }
 
   if (cval_iscomplex(c1))
     {
@@ -634,9 +655,6 @@ cval cval_times(cval c1, cval c2)
       c1.d *= c2.d;
       return c1;
 
-    case cval_address:
-      return cval_isone(c2) ? c1 : cval_unknown;
-
     case cval_sint:
       assert(c2.kind == cval_sint && c1.isize == c2.isize);
       c1.si = truncate_signed(c1.si * c2.si, c1.isize);
@@ -657,6 +675,10 @@ cval cval_divide(cval c1, cval c2)
 {
   if (cval_istop(c1) || cval_istop(c2))
     return cval_top;
+
+  // <address> / 1 is a cst, everything else involving addresses isn't
+  if (cval_isaddress(c1) || cval_isaddress(c2))
+    return cval_isone(c2) ? c1 : cval_invalid_address;
 
   if (cval_isunknown(c1) || cval_isunknown(c2))
     return cval_unknown;
@@ -686,12 +708,7 @@ cval cval_divide(cval c1, cval c2)
       c1.d /= c2.d;
       return c1;
 
-    case cval_address:
-      return cval_isone(c2) ? c1 : cval_unknown;
-
     case cval_sint:
-      if (c2.kind == cval_address)
-	return cval_unknown;
       assert(c2.kind == cval_sint && c1.isize == c2.isize);
       if (c2.si == 0)
 	return cval_top;
@@ -700,8 +717,6 @@ cval cval_divide(cval c1, cval c2)
       return c1;
       
     case cval_uint:
-      if (c2.kind == cval_address)
-	return cval_unknown;
       assert(c2.kind == cval_uint && c1.isize == c2.isize);
       if (c2.ui == 0)
 	return cval_top;
@@ -722,8 +737,10 @@ cval cval_modulo(cval c1, cval c2)
   if (cval_isone(c2))
     return make_cval_signed(0, int_type);
 
-  if (cval_isunknown(c1) || cval_isunknown(c2) ||
-      cval_isaddress(c1) || cval_isaddress(c2))
+  if (cval_isaddress(c1) || cval_isaddress(c2))
+    return cval_invalid_address;
+
+  if (cval_isunknown(c1) || cval_isunknown(c2))
     return cval_unknown;
 
   switch (c1.kind)
@@ -758,8 +775,9 @@ cval cval_modulo(cval c1, cval c2)
   if (cval_istop(c1) || cval_istop(c2)) \
     return cval_top; \
  \
-  if (cval_isunknown(c1) || cval_isunknown(c2) || \
-      cval_isaddress(c1) || cval_isaddress(c2)) \
+  if (cval_isaddress(c1) || cval_isaddress(c2)) \
+    return cval_invalid_address; \
+  if (cval_isunknown(c1) || cval_isunknown(c2)) \
     return cval_unknown; \
  \
   assert(c1.kind == c2.kind && c1.isize == c2.isize); \
@@ -792,9 +810,10 @@ cval cval_bitxor(cval c1, cval c2) CVAL_BITOP(^)
   if (cval_istop(c1) || cval_istop(c2)) \
     return cval_top; \
  \
+  if (cval_isaddress(c1) || cval_isaddress(c2)) \
+    return cval_invalid_address; \
   /* Surprisingly (?) &x == &x is not a constant expression */ \
-  if (cval_isunknown(c1) || cval_isunknown(c2) || \
-      cval_isaddress(c1) || cval_isaddress(c2)) \
+  if (cval_isunknown(c1) || cval_isunknown(c2)) \
     return cval_unknown; \
  \
   switch (c1.kind) \

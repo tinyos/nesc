@@ -135,7 +135,8 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->fn_uses = NULL;
   dd->connections = NULL;
   dd->spontaneous = 0;
-  dd->magic_reduce = NULL;
+  dd->magic_fold = NULL;
+  dd->substitute = FALSE;
   dd->makeinline = FALSE;
   dd->container_function = NULL;
   dd->use_summary = 0;
