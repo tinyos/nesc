@@ -93,7 +93,7 @@ static void putDebugChar(char c)
 	if (ret == 0) // this shouldn't happen?
 	    check(false, GDB_CAUSE);
 
-	if (ret != EAGAIN)
+	if (errno != EAGAIN)
 	    gdbCheck(ret);
 
 	waitForGdbOutput();
@@ -298,38 +298,12 @@ static void reportStatus(int sigval)
 {
     char *ptr = remcomOutBuffer;
 
-#if 0
-    *ptr++ = 'T';	// notify gdb with signo
-    ptr = byteToHex(sigval, ptr);
-
-    ptr = byteToHex(PC, ptr);
-    *ptr++ = ':';
-    unsigned long newPC = getProgramCounter();
-    debugOut("TPC = %x\n", newPC);
-    ptr = byteToHex(newPC & 0xff, ptr); newPC >>= 8;
-    ptr = byteToHex(newPC & 0xff, ptr); newPC >>= 8;
-    ptr = byteToHex(newPC & 0xff, ptr); newPC >>= 8;
-    ptr = byteToHex(newPC & 0xff, ptr);
-    *ptr++ = ';';
-
-#if 0
-    ptr = byteToHex(SP, ptr);
-    *ptr++ = ':';
-    uchar *jtagBuffer = jtagRead(0x5d + DATA_SPACE_ADDR_OFFSET, 2);
-    ptr = byteToHex(jtagBuffer[0], ptr);
-    ptr = byteToHex(jtagBuffer[1], ptr);
-    *ptr++ =';';
-#endif
-
-#else
     // We could use 'T'. But this requires reading PC, SP, FP at least, so
     // won't be significantly faster than the 'g' operation that gdb will
     // request if we use 'S' here
 
     *ptr++ = 'S';	// notify gdb with signo
     ptr = byteToHex(sigval, ptr);
-#endif
-
     *ptr++ = 0;
 }
 
