@@ -971,8 +971,27 @@ static void prt_nido_initialize(dd_list modules)
   outputln("}");
 }
 
+void prt_nesc_typedefs(nesc_declaration comp)
+{
+  declaration parm;
+
+  assert(!comp->abstract);
+  if (comp->original)
+    scan_declaration (parm, comp->parameters)
+      if (is_type_parm_decl(parm))
+	{
+	  type_parm_decl td = CAST(type_parm_decl, parm);
+	  asttype arg = CAST(type_argument, td->ddecl->initialiser)->asttype;
+
+	  output("typedef ");
+	  prt_declarator(arg->declarator, arg->qualifiers, NULL, td->ddecl,
+			 psd_print_ddecl);
+	  outputln(";");
+	}
+}
+
 void generate_c_code(nesc_declaration program, const char *target_name,
-		     cgraph cg, dd_list modules)
+		     cgraph cg, dd_list modules, dd_list components)
 {
   dd_list_pos mod;
   cgraph callgraph;
@@ -1028,6 +1047,10 @@ void generate_c_code(nesc_declaration program, const char *target_name,
   enable_line_directives();
   prt_toplevel_declarations(all_cdecls);
   disable_line_directives();
+
+  /* Typedefs for abstract module type arguments */
+  dd_scan (mod, components)
+    prt_nesc_typedefs(DD_GET(nesc_declaration, mod));
 
   dd_scan (mod, modules)
     prt_nesc_function_declarations(DD_GET(nesc_declaration, mod));

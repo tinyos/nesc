@@ -565,32 +565,47 @@ static void process_connections(configuration c)
 void check_component_arguments(data_declaration ddecl,
 			       declaration parms, expression arglist)
 {
-  data_decl parm;
   location loc = ddecl->ast->location;
   int parmnum = 1;
 
-  parm = CAST(data_decl, parms);
-  while (parm && arglist)
+  while (parms && arglist)
     {
-      variable_decl vparm = CAST(variable_decl, parm->decls);
-      type parmtype = vparm->ddecl->type;
-
-      if (type_incomplete(parmtype))
-	error("type of formal parameter %d is incomplete", parmnum);
-      else 
+      if (is_data_decl(parms))
 	{
-	  set_error_location(arglist->location);
-	  check_assignment(parmtype, default_conversion_for_assignment(arglist),
-			   arglist, NULL, ddecl, parmnum);
-	}
+	  variable_decl vparm = CAST(variable_decl, CAST(data_decl, parms)->decls);
+	  type parmtype = vparm->ddecl->type;
 
+	  if (type_incomplete(parmtype))
+	    error("type of formal parameter %d is incomplete", parmnum);
+	  else if (is_type_argument(arglist))
+	    error("formal parameter %d must be a value", parmnum);
+	  else 
+	    {
+	      set_error_location(arglist->location);
+	      check_assignment(parmtype, default_conversion_for_assignment(arglist),
+			       arglist, NULL, ddecl, parmnum);
+	    }
+	}
+      else /* type argument */
+	{
+	  if (!is_type_argument(arglist))
+	    error("formal parameter %d must be a type", parmnum);
+	  else if (type_array(arglist->type))
+	    error("type parameter cannot be an array type (parameter %d)",
+		  parmnum);
+	  else if (type_function(arglist->type))
+	    error("type parameter cannot be a function type (parameter %d)",
+		  parmnum);
+	  else if (type_incomplete(arglist->type))
+	    error("type parameter %d is an incomplete type", parmnum);
+	}
       parmnum++;
       arglist = CAST(expression, arglist->next);
-      parm = CAST(data_decl, parm->next);
+      parms = CAST(declaration, parms->next);
     }
   clear_error_location();
 
-  if (parm)
+  if (parms)
     error_with_location(loc, "too few arguments to component `%s'",
 			ddecl->name);
   else if (arglist)

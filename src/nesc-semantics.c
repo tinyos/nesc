@@ -463,6 +463,38 @@ declaration declare_template_parameter(declarator d, type_element elements,
   return CAST(declaration, dd);
 }
 
+declaration declare_type_parameter(location l, cstring id)
+{
+  type_parm_decl d = new_type_parm_decl(parse_region, l, id, NULL);
+  data_declaration ddecl;
+
+  if ((ddecl = lookup_id(id.data, TRUE)))
+    error("duplicate parameter name `%s' in parameter list", id.data);
+  else
+    {
+      struct data_declaration tempdecl;
+
+      init_data_declaration(&tempdecl, CAST(declaration, d), id.data,
+			    error_type);
+      tempdecl.kind = decl_typedef;
+      tempdecl.definition = tempdecl.ast;
+      ddecl = declare(current.env, &tempdecl, FALSE);
+      ddecl->type = make_variable_type(ddecl);
+    }
+  d->ddecl = ddecl;
+
+  return CAST(declaration, d);
+}
+
+expression make_type_argument(asttype t)
+{
+  type_argument e = new_type_argument(parse_region, t->location, t);
+
+  e->type = t->type;
+
+  return CAST(expression, e);
+}
+
 nesc_declaration original_component(nesc_declaration c)
 {
   while (c->original)

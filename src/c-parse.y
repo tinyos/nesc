@@ -151,7 +151,7 @@ void yyerror();
 %type <u.expr> unary_expr xexpr function_call
 %type <u.id_label> id_label maybe_label_decls label_decls label_decl
 %type <u.id_label> identifiers_or_typenames
-%type <idtoken> identifier IDENTIFIER TYPENAME MAGIC_STRING
+%type <idtoken> identifier IDENTIFIER TYPENAME MAGIC_STRING type_parm
 %type <u.iexpr> if_prefix
 %type <u.istmt> stmt_or_labels simple_if stmt_or_label
 %type <u.itoken> unop extension '~' '!' compstmt_start '{' ';'
@@ -468,7 +468,11 @@ interface_parm_list:
 	;
 
 interface_parm:
-	  IDENTIFIER { $$ = declare_interface_parm($1.location, $1.id); }
+	  type_parm { $$ = declare_type_parameter($1.location, $1.id); }
+	;
+
+type_parm:
+	  IDENTIFIER
 	;
 
 datadef_list: 
@@ -584,6 +588,8 @@ template_parm:
 		{ $$ = declare_template_parameter($3, $1, $4); }
 	| declspecs_nots xreferror notype_declarator maybe_attribute
 		{ $$ = declare_template_parameter($3, $1, $4); }
+	| type_parm 
+		{ $$ = declare_type_parameter($1.location, $1.id); }
 	;
 
 requires_or_provides_list: 
@@ -693,11 +699,9 @@ generic_arglist:
 	;
 
 generic_arg:
-	  expr_no_commas {
-	    if (!$1->cst)
-	      error("argument to component not constant");
-	  }
-	| typename { $$ = CAST(expression, new_type_argument(pr, $1->location, $1)); }
+	  expr_no_commas 
+		{ if (!$1->cst) error("argument to component not constant"); }
+	| typename { $$ = make_type_argument($1); }
 	;
 
 connection_list: 

@@ -18,7 +18,7 @@ Boston, MA 02111-1307, USA.  */
 #ifndef NESC_ABSTRACT_H
 #define NESC_ABSTRACT_H
 
-void instantiate(nesc_declaration component);
+void instantiate(nesc_declaration component, expression arglist);
 /* Effects: Actually instantiate an abstract component.
      For modules: temp noop
      For configurations: make new shallow copies of included abstract

@@ -655,107 +655,113 @@ void prt_ddecl_full_name(data_declaration ddecl, psd_options options)
 bool prt_simple_declarator(declarator d, data_declaration ddecl,
 			   psd_options options)
 {
-  if (d)
-    switch (d->kind)
+  if (!d)
+    {
+      if (options & psd_print_ddecl)
+	prt_ddecl_full_name(ddecl, options);	
+      return FALSE;
+    }
+
+  switch (d->kind)
+    {
+    case kind_function_declarator:
       {
-      case kind_function_declarator:
-	{
-	  function_declarator fd = CAST(function_declarator, d);
+	function_declarator fd = CAST(function_declarator, d);
 
-	  prt_simple_declarator(fd->declarator, ddecl,
-				options | psd_need_paren_for_star |
-				psd_need_paren_for_qual);
-	  prt_parameters(fd->gparms ? fd->gparms :
-			 ddecl ? ddecl_get_gparms(ddecl) : NULL,
-			 fd->parms,
-			 options & psd_rename_parameters);
-	  break;
-	}
-      case kind_array_declarator:
-	{
-	  array_declarator ad = CAST(array_declarator, d);
-	  bool is_id;
-
-	  is_id = prt_simple_declarator(ad->declarator, ddecl,
-					options | psd_need_paren_for_star |
-					psd_need_paren_for_qual);
-	  if (!ad->arg1)
-	    {
-	      /* The array-type test is necessary because char x[] in a
-		 parameter declaration is really a pointer declaration */
-	      if (ddecl && is_id && type_array(ddecl->type))
-		{
-		  /* This is a declaration of an incomplete array type.
-		     The type of ddecl contains the size of the array if
-		     it is known. 
-		     We need to print the size because of tossim
-		     (a declaration like 'char foo[TOSNODES][]' would
-		     be illegal)
-		  */
-		  expression dsize = type_array_size(ddecl->type);
-
-		  output("[%lu]",
-			 (unsigned long)constant_uint_value(dsize->cst));
-		}
-	      else
-		output("[]");
-	    }
-	  else
-	    {
-	      set_location(ad->arg1->location);
-	      output("[");
-	      prt_expression(ad->arg1, P_TOP);
-	      output("]");
-	    }
-	  break;
-	}
-      case kind_qualified_declarator:
-	{
-	  qualified_declarator qd = CAST(qualified_declarator, d);
-	  bool is_id;
-
-	  set_location(qd->modifiers->location);
-	  if (options & psd_need_paren_for_qual)
-	    output("(");
-	  prt_type_elements(qd->modifiers, 0);
-	  is_id = prt_simple_declarator(qd->declarator, ddecl,
-					options & ~psd_need_paren_for_qual);
-	  if (options & psd_need_paren_for_qual)
-	    output(")");
-	  return is_id;
-	}
-      case kind_pointer_declarator:
-	{
-	  pointer_declarator pd = CAST(pointer_declarator, d);
-
-	  if (options & psd_need_paren_for_star)
-	    output("(");
-	  output("*");
-	  prt_simple_declarator(pd->declarator, ddecl,
-				options & ~(psd_need_paren_for_star |
-					    psd_need_paren_for_qual));
-	  if (options & psd_need_paren_for_star)
-	    output(")");
-	  break;
-	}
-      case kind_identifier_declarator:
-	set_location(d->location);
-	if (options & psd_rename_identifier)
-	  output("arg_%p", ddecl);
-	else if (ddecl)
-	  prt_ddecl_full_name(ddecl, options);
-	else
-	  output_stripped_cstring(CAST(identifier_declarator, d)->cstring);
-	return TRUE;
-
-      case kind_interface_ref_declarator:
-	prt_simple_declarator(CAST(interface_ref_declarator, d)->declarator,
-			      ddecl, options | psd_need_paren_for_star |
+	prt_simple_declarator(fd->declarator, ddecl,
+			      options | psd_need_paren_for_star |
 			      psd_need_paren_for_qual);
+	prt_parameters(fd->gparms ? fd->gparms :
+		       ddecl ? ddecl_get_gparms(ddecl) : NULL,
+		       fd->parms,
+		       options & psd_rename_parameters);
 	break;
-
-      default: assert(0); break;
       }
+    case kind_array_declarator:
+      {
+	array_declarator ad = CAST(array_declarator, d);
+	bool is_id;
+
+	is_id = prt_simple_declarator(ad->declarator, ddecl,
+				      options | psd_need_paren_for_star |
+				      psd_need_paren_for_qual);
+	if (!ad->arg1)
+	  {
+	    /* The array-type test is necessary because char x[] in a
+	       parameter declaration is really a pointer declaration */
+	    if (ddecl && is_id && type_array(ddecl->type))
+	      {
+		/* This is a declaration of an incomplete array type.
+		   The type of ddecl contains the size of the array if
+		   it is known. 
+		   We need to print the size because of tossim
+		   (a declaration like 'char foo[TOSNODES][]' would
+		   be illegal)
+		*/
+		expression dsize = type_array_size(ddecl->type);
+
+		output("[%lu]",
+		       (unsigned long)constant_uint_value(dsize->cst));
+	      }
+	    else
+	      output("[]");
+	  }
+	else
+	  {
+	    set_location(ad->arg1->location);
+	    output("[");
+	    prt_expression(ad->arg1, P_TOP);
+	    output("]");
+	  }
+	break;
+      }
+    case kind_qualified_declarator:
+      {
+	qualified_declarator qd = CAST(qualified_declarator, d);
+	bool is_id;
+
+	set_location(qd->modifiers->location);
+	if (options & psd_need_paren_for_qual)
+	  output("(");
+	prt_type_elements(qd->modifiers, 0);
+	is_id = prt_simple_declarator(qd->declarator, ddecl,
+				      options & ~psd_need_paren_for_qual);
+	if (options & psd_need_paren_for_qual)
+	  output(")");
+	return is_id;
+      }
+    case kind_pointer_declarator:
+      {
+	pointer_declarator pd = CAST(pointer_declarator, d);
+
+	if (options & psd_need_paren_for_star)
+	  output("(");
+	output("*");
+	prt_simple_declarator(pd->declarator, ddecl,
+			      options & ~(psd_need_paren_for_star |
+					  psd_need_paren_for_qual));
+	if (options & psd_need_paren_for_star)
+	  output(")");
+	break;
+      }
+    case kind_identifier_declarator:
+      set_location(d->location);
+      if (options & psd_rename_identifier)
+	output("arg_%p", ddecl);
+      else if (ddecl)
+	prt_ddecl_full_name(ddecl, options);
+      else
+	output_stripped_cstring(CAST(identifier_declarator, d)->cstring);
+      return TRUE;
+
+    case kind_interface_ref_declarator:
+      prt_simple_declarator(CAST(interface_ref_declarator, d)->declarator,
+			    ddecl, options | psd_need_paren_for_star |
+			    psd_need_paren_for_qual);
+      break;
+
+    default: assert(0); break;
+    }
   return FALSE;
 }
 

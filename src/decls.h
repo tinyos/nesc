@@ -117,7 +117,8 @@ struct data_declaration {
 
   declaration definition; /* Pointer to actual definition, if any */
   declaration ast; /* Last declaration */
-  expression initialiser; /* NULL if none */
+  expression initialiser; /* NULL if none. For type arguments, this gets set
+			     to the argument type (type_argument node) */
 
   bool islimbo; /* TRUE if comes from an extern declaration in an inner scope
 		   (also true for implicit function declarations) */

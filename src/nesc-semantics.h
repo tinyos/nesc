@@ -98,6 +98,9 @@ void handle_combine_attribute(location loc, const char *combiner, type *t);
 
 declaration declare_template_parameter(declarator d, type_element elements,
 				       attribute attributes);
+declaration declare_type_parameter(location l, cstring id);
+
+expression make_type_argument(asttype t);
 
 nesc_declaration original_component(nesc_declaration c);
 

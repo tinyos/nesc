@@ -634,8 +634,8 @@ An atomic_stmt is not made for lexically nested atomic statements")
 ;; types for the polymorphic extensions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftype interface_parm_decl declaration (cstring ddecl)
-  "A declaration of interface type parameter CSTRING")
+(deftype type_parm_decl declaration (cstring ddecl)
+  "A declaration of type parameter CSTRING")
 
 (deftype type_argument expression (asttype)
   "ASTTYPE used as a template argument")

@@ -118,7 +118,7 @@ static void connect(location loc, nesc_declaration cdecl,
 	    {
 	      push_instance(comp->cdecl);
 	      if (comp->cdecl->original)
-		instantiate(comp->cdecl);
+		instantiate(comp->cdecl, comp->args);
 	      connect(comp->location, comp->cdecl, cg, modules, components);
 	      pop_instance();
 	    }
@@ -312,7 +312,7 @@ void nesc_compile(const char *filename, const char *target_name)
 	      fold_program(program);
 
 	      if (errorcount == 0 && !generate_docs(filename, cg))
-		generate_c_code(program, target_name, cg, modules);
+		generate_c_code(program, target_name, cg, modules, components);
 	    }
 	  else /* generate docs if requested */
 	    generate_docs(filename, NULL);

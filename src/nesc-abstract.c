@@ -41,6 +41,7 @@ static AST_walker clone_walker;
    interface_deref
    typename
    variable_decl
+   type_parm_decl
 */
 
 /* tag_declaration in:
@@ -276,6 +277,21 @@ static AST_walker_result clone_variable_decl(AST_walker spec, void *data,
   return aw_walk;
 }
 
+static AST_walker_result clone_type_parm_decl(AST_walker spec, void *data,
+					     type_parm_decl *n)
+{
+  type_parm_decl new = clone(data, n);
+  data_declaration instance;
+
+  clone_ddecl(new->ddecl);
+  instance = new->ddecl->instantiation;
+  instance->definition = CAST(declaration, new);
+  instance->ast = CAST(declaration, new);
+  new->ddecl = instance;
+
+  return aw_walk;
+}
+
 static AST_walker_result clone_typename(AST_walker spec, void *data,
 					typename *n)
 {
@@ -494,6 +510,7 @@ static void init_clone(void)
   AST_walker_handle(clone_walker, kind_asttype, clone_asttype);
   AST_walker_handle(clone_walker, kind_function_decl, clone_function_decl);
   AST_walker_handle(clone_walker, kind_variable_decl, clone_variable_decl);
+  AST_walker_handle(clone_walker, kind_type_parm_decl, clone_type_parm_decl);
   AST_walker_handle(clone_walker, kind_typename, clone_typename);
   AST_walker_handle(clone_walker, kind_enumerator, clone_enumerator);
   AST_walker_handle(clone_walker, kind_configuration, clone_configuration);
@@ -501,7 +518,56 @@ static void init_clone(void)
   AST_walker_handle(clone_walker, kind_tag_ref, clone_tag_ref);
 }
 
-void instantiate(nesc_declaration component)
+static void set_parameter_values(nesc_declaration cdecl, expression args)
+{
+  declaration parm;
+
+  /* We know args is the same length as parameters (earlier error if not) */
+  scan_declaration (parm, cdecl->parameters)
+    {
+      if (is_data_decl(parm))
+	{
+	  variable_decl vd = CAST(variable_decl, CAST(data_decl, parm)->decls);
+
+	  if (check_constant_once(args))
+	    {
+	      location l = args->location;
+
+	      /* We can assume the type is arithmetic (for now at least)
+		 (see declare_template_parameter) */
+	      if (!args->cst)
+		error_with_location(l, "component arguments must be constants");
+	      else if (type_integer(vd->ddecl->type))
+		{
+		  if (!constant_integral(args->cst))
+		    error_with_location(l, "integer constant expected");
+		  else if (!cval_inrange(args->cst->cval, vd->ddecl->type))
+		    error_with_location(l, "constant out of range for argument type");
+		}
+	      else if (type_floating(vd->ddecl->type))
+		{
+		  if (!constant_float(args->cst))
+		    error_with_location(l, "floating-point constant expected");
+		}
+	      else
+		assert(0);
+	    }
+
+	  vd->ddecl->value = args->cst;
+	}
+      else /* type */
+	{
+	  type_parm_decl td = CAST(type_parm_decl, parm);
+
+	  td->ddecl->type = args->type;
+	  td->ddecl->initialiser = args;
+	}
+
+      args = CAST(expression, args->next);
+    }
+}
+
+void instantiate(nesc_declaration component, expression arglist)
 /* Effects: Actually instantiate an abstract component
      For modules: temp noop
      For configurations: make new shallow copies of included abstract
@@ -519,6 +585,7 @@ void instantiate(nesc_declaration component)
      implementation. */
 
   component->parameters = instantiate_parameters(r, component->parameters);
+  set_parameter_values(component, arglist);
   set_specification_instantiations(component);
 
   /* A new dummy env for all instantiations in the implementation */
@@ -631,17 +698,19 @@ void pop_instance(void)
     current.container = NULL;
 }
 
-static void set_parameter_values(nesc_declaration cdecl, expression args)
+static void check_cg(cgraph connections)
+/* Effects: Checks constants used in the connections graph
+ */
 {
-  data_decl parm;
+  ggraph g = cgraph_graph(connections);
+  gnode n;
 
-  /* We know args is the same length as parameters (earlier error if not) */
-  scan_data_decl (parm, CAST(data_decl, cdecl->parameters))
+  graph_scan_nodes (n, g)
     {
-      variable_decl vd = CAST(variable_decl, parm->decls);
+      endp ep = NODE_GET(endp, n);
 
-      assert(args->cst);  // checked in c-parse.y
-      vd->ddecl->value = args->cst;
+      if (ep->args_node)
+	check_generic_arguments(ep->args_node->args, endpoint_args(ep));
     }
 }
 
@@ -663,6 +732,8 @@ static bool fold_components(nesc_declaration cdecl, int pass)
       component_ref comp;
       configuration c = CAST(configuration, cdecl->impl);
 
+      check_cg(cdecl->connections);
+
       scan_component_ref (comp, c->components)
 	{
 	  set_parameter_values(comp->cdecl, comp->args);
@@ -670,78 +741,6 @@ static bool fold_components(nesc_declaration cdecl, int pass)
 	}
     }
   return done;
-}
-
-static void check_parameter_values(nesc_declaration cdecl, expression args)
-{
-  data_decl parm;
-
-  /* We know args is the same length as parameters (earlier error if not) */
-  scan_data_decl (parm, CAST(data_decl, cdecl->parameters))
-    {
-      variable_decl vd = CAST(variable_decl, parm->decls);
-
-      assert(args->cst);  // checked in c-parse.y
-
-      /* We can assume the type is arithmetic (for now at least)
-	 (see declare_template_parameter) */
-      if (type_integer(vd->ddecl->type))
-	{
-	  if (!constant_integral(args->cst))
-	    error_with_location(args->location, "integer constant expected");
-	  else if (!cval_inrange(args->cst->cval, vd->ddecl->type))
-	    error_with_location(args->location, "constant out of range for argument type");
-	}
-      else if (type_floating(vd->ddecl->type))
-	{
-	  if (!constant_float(args->cst))
-	    error_with_location(args->location, "floating-point constant expected");
-	}
-      else
-	assert(0);
-    }
-}
-
-static void check_cg(cgraph connections)
-/* Effects: Checks constants used in the connections graph
- */
-{
-  ggraph g = cgraph_graph(connections);
-  gnode n;
-
-  graph_scan_nodes (n, g)
-    {
-      endp ep = NODE_GET(endp, n);
-
-      if (ep->args_node)
-	check_generic_arguments(ep->args_node->args, endpoint_args(ep));
-    }
-}
-
-static void check_constant_uses_components(nesc_declaration cdecl)
-{
-  if (!cdecl->folded)
-    return;
-
-  cdecl->folded = 0;
-
-  current.container = cdecl;
-
-  if (is_module(cdecl->impl))
-    ;
-  else
-    {
-      component_ref comp;
-      configuration c = CAST(configuration, cdecl->impl);
-
-      check_cg(cdecl->connections);
-      scan_component_ref (comp, c->components)
-	{
-	  current.container = cdecl;
-	  check_parameter_values(comp->cdecl, comp->args);
-	  check_constant_uses_components(comp->cdecl);
-	}
-    }
 }
 
 void fold_program(nesc_declaration program)
@@ -759,8 +758,6 @@ void fold_program(nesc_declaration program)
   while (!done);
 
   current.container = NULL;
-  if (program)
-    check_constant_uses_components(program);
 }
 
 void init_abstract(void)

@@ -95,7 +95,8 @@ typedef enum {
   psd_rename_parameters = 4,
   psd_rename_identifier = 8,
   psd_print_default = 16,
-  psd_skip_container = 32
+  psd_skip_container = 32,
+  psd_print_ddecl = 64 /* print ddecl as the name inside a declarator */
 } psd_options;
 
 void prt_declarator(declarator d, type_element elements, attribute attributes,
