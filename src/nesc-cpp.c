@@ -173,7 +173,8 @@ FILE *preprocess(const char *filename, source_language l)
       argv[arg++] = NULL;
       assert(arg <= nargs);
 
-      if (flag_verbose)
+      /* It's really spammy with this on */
+      if (flag_verbose >= 2)
 	{
 	  for (i = 0; i < arg - 1; i++)
 	    fprintf(stderr, "%s ", argv[i]);

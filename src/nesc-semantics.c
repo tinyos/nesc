@@ -237,7 +237,7 @@ nesc_decl dummy_nesc_decl(source_language sl, const char *name)
 void build(nesc_declaration decl, environment env, nesc_decl ast)
 {
   decl->env = env;
-  decl->ast = parsed_nesc_decl;
+  decl->ast = ast;
 
   if (ast->docstring)
     separate_short_docstring(ast->docstring, &decl->short_docstring,

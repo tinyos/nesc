@@ -12,7 +12,7 @@ mig - message interface generator for nesC
 <h3>SYNOPSIS</h3>
 
 <blockquote>
-mig [<b>-I</b> <u>dir</u>] [<b>-target=pc|mica|rene2</b>]
+mig [any ncc option] 
 [<b>-o</b> <u>output-file</u>]
 [<b>-java-classname=</b><u>full-class-name</u>]
 [<b>-java-extends=</b><u>class-name</u>]
@@ -47,17 +47,23 @@ to this tool. It is described below.
 <b>-o</b> <u>output-file</u> <blockquote> specify the file in which to
 output the generated code.</blockquote>
 
-
-<p>
-<b>-I</b> <u>dir</u> <blockquote> specify an additional search directory
-for nesC components.</blockquote>
-
-
+mig works by invoking ncc. It will generally be necessary to pass some options
+through to ncc so that your file can be compiled. Some commonly necessary
+options are:
 <p>
 <b>-target=pc|mica|rene2</b> <blockquote> specify the target architecture
 of your TinyOS application which is generating or receiving messages. So,
 if compiling your application for tossim, generate mig tools with
 -target=pc. The default target is ncc's default target.</blockquote>
+
+
+<b>-I</b> <u>dir</u> <blockquote> specify an additional search directory
+for nesC components.</blockquote>
+
+
+<b>-board=micasb|basicsb|micawb</b><blockquote> specify one (or more)
+sensor boards. This effects the search path and preprocessor symbols (and
+may therefore be necessary when feeding a file to mig).</blockquote>
 
 </blockquote>
 

@@ -63,6 +63,7 @@ static char *lang_options[] =
   "-fnesc-docdir=",
   "-fnesc-topdir=",
   "-fnesc-docs-use-graphviz",
+  "-fnesc-verbose",
 
   "-ansi",
   "-fallow-single-precision",
@@ -209,6 +210,10 @@ static void c_decode_option(char *p)
   else if (!strcmp (p, "-fnesc-no-debug"))
     {
       flag_no_debug = 1;
+    }
+  else if (!strcmp (p, "-fnesc-verbose"))
+    {
+      flag_verbose = 2;
     }
   else if (!strcmp (p, "-fnesc-save-macros"))
     {

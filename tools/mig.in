@@ -27,15 +27,7 @@ for ($i = 0; $i <= $#ARGV; $i++) {
     $_ = $ARGV[$i];
 
     if (/^-/) {
-	if (/^-I/) {
-	    ($i, $idir) = &extractarg($i);
-	    push @args, "-I$idir";
-	}
-	elsif (/^-target=.*/) {
-	    push @args, $_;
-	    $targetset = 1;
-	}
-	elsif (/^-java-classname=(.*)$/) {
+	if (/^-java-classname=(.*)$/) {
 	    $java_classname = $1;
 	}
 	elsif (/^-java-extends=(.*)$/) {
@@ -44,8 +36,24 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	elsif (/^-o/) {
 	    ($i, $ofile) = &extractarg($i);
 	}
+	# pass ncc options on through
+	# (yes, -o was captured above. This is "generic" code)
+	elsif (/^-[oILxubV]/) {
+	    # pass option and arg through unchanged
+	    $opt = substr $_, 1, 1;
+	    ($i, $arg) = &extractarg($i);
+	    push @new_args, "-$opt$arg";
+	}
+	elsif ($i < $#ARGV &&
+	       (/^-idirafter$/ || /^-include$/ || /^-imacros$/ ||
+		/^-iprefix$/ || /^-iwithprefix$/ || /^-iwithprefixbefore$/ ||
+		/^-isystem$/ || /^-Xlinker$/)) {
+	    # convert argument filename which is in next arg
+	    push @new_args, $_;
+	    push @new_args, $ARGV[++$i];
+	}
 	else {
-	    &usage("unknown option $_");
+	    push @new_args, $_;
 	}
     }
     else {
