@@ -189,55 +189,66 @@ sub gen() {
 	print "        set$java_access(offset\u$javafield($passargs), $bitlength, value);\n";
 	print "    }\n\n";
 
-	print "    /**\n";
-	print "     * Return the size, in bits, of the field: $field\n";
-	print "     */\n";
-	print "    public static int size\u$javafield() {\n";
-
-	
+        # For arrays
 	if (@$amax) {
-	    $bitsize = $$abitsize[0] * $$amax[0];
-	}
-	else {
-	    $bitsize = $bitlength;
-	}
-	print "        return $bitsize;\n";
-	print "    }\n\n";
+	  print "    /**\n";
+	  print "     * Return the size, in bits, of each element of the array field: $field\n";
+	  print "     */\n";
+	  print "    public static int elementSize\u$javafield() {\n";
+	  print "        return $$abitsize[0];\n";
+	  print "    }\n\n";
 
-	if (@$amax==1 && $bitlength == 8) {
-	    print "    /**\n";
-	    print "     * Fill in the char array with a String \n";
+	  if ($$amax[0] != 0) {
+  	    print "    /**\n";
+	    print "     * Return the number of elements in the array field: $field\n";
 	    print "     */\n";
-	    print "    public void set\u$javafield(String s) { \n";
-	    if ($amax[0] != 0) {
-              print "         int len = Math.min(s.length(), $$amax[0]-1);\n";
-	    } else {
-              print "         int len = s.length();\n";
-	    }
-	    print "         int i;\n";
-	    print "         for (i = 0; i < len; i++) {\n";
-	    print "             set\u$javafield(i, s.charAt(i));\n";
-            print "         }\n";
-	    print "         set\u$javafield(i, (char)0); //null terminate\n";
+	    print "    public static int numElements\u$javafield() {\n";
+	    print "        return $$amax[0];\n";
 	    print "    }\n\n";
+	  }
 
-	    if ($amax[0] != 0) {
-  	      print "    /**\n";
- 	      print "     * Read the char array into a String  \n";
+	  if (@$amax==1 && $bitlength == 8) {
+	      print "    /**\n";
+	      print "     * Fill in the char array with a String \n";
 	      print "     */\n";
-	      print "    public String get\u$javafield() { \n";
-              print "         char carr[] = new char[$$amax[0]];\n";
+	      print "    public void set\u$javafield(String s) { \n";
+	      if ($amax[0] != 0) {
+                print "         int len = Math.min(s.length(), $$amax[0]-1);\n";
+	      } else {
+                print "         int len = s.length();\n";
+	      }
 	      print "         int i;\n";
-	      print "         for (i = 0; i < $$amax[0]; i++) {\n";
-	      print "             if (get\u$javafield(i) == 0) break;\n";
-	      print "             carr[i] = get\u$javafield(i);\n";
+	      print "         for (i = 0; i < len; i++) {\n";
+	      print "             set\u$javafield(i, s.charAt(i));\n";
               print "         }\n";
-              print "         return new String(carr,0,i-1);\n";
+	      print "         set\u$javafield(i, (char)0); //null terminate\n";
 	      print "    }\n\n";
-	    }
+
+	      if ($amax[0] != 0) {
+  	        print "    /**\n";
+ 	        print "     * Read the char array into a String  \n";
+	        print "     */\n";
+	        print "    public String get\u$javafield() { \n";
+                print "         char carr[] = new char[$$amax[0]];\n";
+	        print "         int i;\n";
+	        print "         for (i = 0; i < $$amax[0]; i++) {\n";
+	        print "             if (get\u$javafield(i) == 0) break;\n";
+	        print "             carr[i] = get\u$javafield(i);\n";
+                print "         }\n";
+                print "         return new String(carr,0,i-1);\n";
+	        print "    }\n\n";
+	      }
+	  }
+
+	} else {
+	  # For non-arrays
+  	  print "    /**\n";
+	  print "     * Return the size, in bits, of the field: $field\n";
+	  print "     */\n";
+	  print "    public static int size\u$javafield() {\n";
+	  print "        return $bitlength;\n";
+	  print "    }\n\n";
 	}
-
-
     }
 
     print "}\n";
