@@ -133,7 +133,7 @@ static void dump_layout(tag_declaration tdecl)
   deleteregion(r);
 }
 
-void dump_msg_layout(void)
+bool dump_msg_layout(void)
 {
   tag_declaration tdecl;
 
@@ -141,7 +141,7 @@ void dump_msg_layout(void)
      environment, and dump the layout in a perl-friendly format */
 
   if (!selected_type)
-    return;
+    return FALSE;
 
   tdecl = env_lookup(global_env->tag_env, selected_type, FALSE);
 
@@ -170,5 +170,7 @@ void dump_msg_layout(void)
     }
 
   dump_layout(tdecl);
+
+  return TRUE;
 }
 

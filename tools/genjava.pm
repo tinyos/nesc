@@ -47,7 +47,7 @@ sub gen() {
     print "        dataSet(packet);\n";
     print "    }\n\n";
 
-    print "    $java_classname(ByteArray packet) {\n";
+    print "    $java_classname(net.tinyos.message.ByteArray packet) {\n";
     print "        this();\n";
     print "        dataSet(packet);\n";
     print "    }\n\n";

@@ -95,12 +95,7 @@ else {
 
 unshift @new_args, map "-DBOARD_\U$_", @boards;
 unshift @new_args, "-DPLATFORM_\U$target";
-$tdspecs = "$NCDIR/tdspecs";
-if ($cygwin) {
-    $tdspecs = `cygpath -w $tdspecs`;
-    chop $tdspecs;
-}
-unshift @new_args, "-specs=$tdspecs";
+unshift @new_args, "-specs=$NCDIR/tdspecs";
 unshift @new_args, $gcc;
 
 if (!$nostdinc) {
@@ -110,7 +105,49 @@ if (!$nostdinc) {
     push @new_args, "-I$TOSDIR/interfaces";
     push @new_args, "-I$TOSDIR/system";
     push @new_args, "-I$TOSDIR/lib";
-    push @new_args, "-I$TOSDIR/raw-C";
+}
+
+if ($gcc eq "avr-gcc" && $cygwin) {
+    # Yuck. Convert unix paths to windows paths
+    @ARGV = @new_args;
+    @new_args = ();
+    for ($i = 0; $i <= $#ARGV; $i++) {
+	$_ = $ARGV[$i];
+	if (/^-/) {
+	    if (/^-[oIL]/) {
+		# convert argument filename which may be in same arg
+		$opt = substr $_, 1, 1;
+		($i, $file) = &extractarg($i);
+		$file = &winpath($file);
+		push @new_args, "-$opt$file";
+	    }
+	    elsif (/^-[xubV]/) {
+		# pass option and arg through unchanged
+		$opt = substr $_, 1, 1;
+		($i, $arg) = &extractarg($i);
+		push @new_args, "-$opt$arg";
+	    }
+	    elsif ($i < $#ARGV &&
+		(/^-idirafter$/ || /^-include$/ || /^-imacros$/ ||
+		 /^-iprefix$/ || /^-iwithprefix$/ || /^-iwithprefixbefore$/ ||
+		 /^-isystem$/ || /^-Xlinker$/)) {
+		# convert argument filename which is in next arg
+		push @new_args, $_;
+		push @new_args, &winpath($ARGV[++$i]);
+	    }
+	    elsif (/^-specs=(.*)$/) {
+		# convert argument filename
+		$path = &winpath($1);
+		push @new_args, "-specs=$path";
+	    }
+	    else {
+		push @new_args, $_;
+	    }
+	}
+	else {
+	    push @new_args, &winpath($_);
+	}
+    }
 }
 
 #print STDERR join(' ', @new_args), "\n";
@@ -133,4 +170,12 @@ sub extractarg {
 sub fail {
     print STDERR "$_[0]\n";
     exit 2;
+}
+
+sub winpath {
+    my ($path) = @_;
+    $path = `cygpath -w $path`;
+    chop $path;
+
+    return $path;
 }

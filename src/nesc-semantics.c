@@ -44,7 +44,7 @@ char *basename(const char *path)
 
   end = path + strlen(path);
   while (end > path)
-    if (*--end == '/')
+    if (*--end == '/' || *end == '\\')
       return end + 1;
 
   return path;

@@ -56,7 +56,7 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 &usage("no message format file specified") if !defined($cfile);
 &usage("no message specified") if !defined($message_type);
 
-unshift @args, "-c";
+unshift @args, "-fsyntax-only";
 unshift @args, "ncc";
 push @args, "-fnesc-msg=$message_type";
 push @args, "-target=mica" if !$targetset;
@@ -65,7 +65,7 @@ push @args, "nesc";
 push @args, $cfile;
 
 #print STDERR join(" ", @args), "\n";
-open(NESC, '-|', join(" ", @args)) or die "nesc1 not found";
+open(NESC, '-|', join(" ", @args)) or die "ncc not found";
 @spec = <NESC>;
 close NESC;
 

@@ -314,6 +314,7 @@ dispatch:
 	DISPATCH_INTERFACE interface { }
 	| DISPATCH_COMPONENT component { }
 	| DISPATCH_C extdefs { cdecls = declaration_reverse($2); }
+	| DISPATCH_C { cdecls = NULL; }
 	;
 
 includes_list: includes_list includes 

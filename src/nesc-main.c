@@ -124,9 +124,12 @@ void nesc_compile(const char *filename, const char *target_name)
 	    cgraph cg;
 	    dd_list modules, components;
 
-	    connect_graphs(parse_region, program, &cg, &modules, &components);
-	    generate_c_code(program, target_name, cg, modules);
-            generate_docs(cg);
+	    if (!dump_msg_layout())
+	      {
+		connect_graphs(parse_region, program, &cg, &modules, &components);
+		generate_c_code(program, target_name, cg, modules);
+		generate_docs(cg);
+	      }
 	  }
 	break;
       }
@@ -134,6 +137,7 @@ void nesc_compile(const char *filename, const char *target_name)
       /* just does syntax/semantic checking */
       load_interface(&toplevel, filename, TRUE);
       generate_docs(NULL);
+      dump_msg_layout();
       break;
     case l_c:
       /* load C file and extract any requested message formats */
