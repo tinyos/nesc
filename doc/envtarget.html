@@ -1,0 +1,49 @@
+<html>
+<head>
+<title>env target and nesc1</title>
+</head>
+<body>
+
+The <tt>env</tt> target allows the nesC compiler to be configured for a new
+platform without requiring source code changes. It allows specification of
+a target's data layout rules and the name of it's gcc compiler. It cannot
+be passed directly to <tt>ncc</tt>.
+
+<blockquote>If <tt>env</tt> is specified as the target to <tt>nesc1</tt>, 
+the compilation uses
+a machine specification described in the environment variable
+<tt>NESC_MACHINE</tt>, such as <blockquote><tt>export
+NESC_MACHINE="long_double=8,4 gcc=some-other-gcc"</tt></blockquote> A
+particular order to the keynames in <tt>NESC_MACHINE</tt> is not necessary.
+The table below is a complete list of possible key names for
+<tt>NESC_MACHINE</tt>, a short description of their values, and their
+default if unspecified: <blockquote>
+
+<table border=1 cellpadding=2 cellspacing=0>
+<tr><th>Keyname                   <th>Value      <th>Default
+<tr><td>pcc_bitfield_type_matters <td>bool       <td>false
+<tr><td>pointer                   <td>size,align <td>2,1
+<tr><td>float                     <td>size,align <td>4,1
+<tr><td>double                    <td>size,align <td>4,1
+<tr><td>long_double               <td>size,align <td>4,1
+<tr><td>short                     <td>size,align <td>2,1
+<tr><td>int                       <td>size,align <td>2,1
+<tr><td>long                      <td>size,align <td>4,1
+<tr><td>long_long                 <td>size,align <td>8,1
+<tr><td>int1248_align             <td>align,align,align,align <td>1,1,1,1
+<tr><td>wchar_size_size           <td>size,size  <td>2,2
+<tr><td>char_wchar_signed         <td>bool,bool  <td>true,true
+<tr><td>gcc                       <td>string (no spaces) <td>gcc
+</table>
+
+</blockquote>
+
+For reference and easy cut+paste, here is the full default specification for
+<tt>NESC_MACHINE</tt>: <blockquote><tt>export
+NESC_MACHINE="pcc_bitfield_type_matters=false pointer=2,1 float=4,1
+double=4,1 long_double=4,1 short=2,1 int=2,1 long=4,1 long_long=8,1
+int1248_align=1,1,1,1 wchar_size_size=2,2 char_wchar_signed=true,true
+gcc=gcc"</tt></blockquote>
+
+</body>
+</html>

@@ -121,6 +121,20 @@ static FILE *exec_gcc(char *gcc_output_template, bool redirect_errors,
   const char **argv;
   static int tmpfd1 = -1, tmpfd2 = -1;
 
+  argv = alloca((nargs + 2) * sizeof *argv);
+  argv[0] = target->gcc_compiler;
+  setargs(data, argv + 1);
+
+  /* It's really spammy with this on */
+  if (flag_verbose >= 2)
+    {
+      int i;
+
+      for (i = 0; argv[i]; i++)
+	fprintf(stderr, "%s ", argv[i]);
+      fprintf(stderr, "\n");
+    }
+
   if (tmpfd1 < 0 || tmpfd2 < 0)
     {
       tmpfd1 = open("/dev/null", O_RDONLY);
@@ -150,20 +164,6 @@ static FILE *exec_gcc(char *gcc_output_template, bool redirect_errors,
       }
 
   close(destfd);
-
-  argv = alloca((nargs + 2) * sizeof *argv);
-  argv[0] = target->gcc_compiler;
-  setargs(data, argv + 1);
-
-  /* It's really spammy with this on */
-  if (flag_verbose >= 2)
-    {
-      int i;
-
-      for (i = 0; argv[i]; i++)
-	fprintf(stderr, "%s ", argv[i]);
-      fprintf(stderr, "\n");
-    }
 
   gcc_stat = spawnvp(_P_WAIT, target->gcc_compiler, argv);
   if (WIFEXITED(gcc_stat))
@@ -372,10 +372,7 @@ static void preprocess_setargs(void *data, const char **argv)
       argv[arg++] = "-x";
       argv[arg++] = "c";
     }
-#ifdef __APPLE_CC__
-  /* The default preprocessor is amazingly broken */
-  argv[arg++] = "-traditional-cpp";
-#endif
+
   argv[arg++] = "-imacros";
   argv[arg++] = fix_filename(filename_region, cpp_macros);
   argv[arg++] = fix_filename(filename_region, closure->filename);

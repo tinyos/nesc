@@ -22,11 +22,15 @@ Boston, MA 02111-1307, USA.  */
 #include "machine/avr.c"
 #include "machine/self.c"
 #include "machine/keil.c"
+#include "machine/msp430.c"
+#include "machine/env_machine.c"
 
 static machine_spec *machines[] = {
   &avr_machine,
   &self_machine,
   &keil_machine,
+  &msp430_machine,
+  &env_machine,
   NULL
 };
 
@@ -39,6 +43,12 @@ bool select_target(const char *targetname)
   for (scan = machines; *scan; scan++)
     if (!strcmp(targetname, (*scan)->machine_name))
       {
+	if (*scan == &env_machine &&
+	    scan_env_machine(&env_machine, "NESC_MACHINE") == FALSE)
+	  {
+	    error("invalid target described in env NESC_MACHINE");
+	    return FALSE;
+	  }
 	target = *scan;
 	return TRUE;
       }

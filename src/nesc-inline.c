@@ -311,7 +311,7 @@ static void inline_function(gnode n, struct inline_node *in)
 {
   gedge call_edge, called_edge, next_edge;
 
-  if (in->uninlinable)
+  if (in->uninlinable || in->fn->noinline) 
     return;
 
   in->fn->makeinline = TRUE;

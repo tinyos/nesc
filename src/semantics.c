@@ -108,6 +108,7 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->in_system_header = ast->location->in_system_header;
   dd->ftype = 0;
   dd->isinline = FALSE;
+  dd->noinline = FALSE;
   dd->isexterninline = FALSE;
   dd->oldstyle_args = NULL;
   dd->vtype = 0;
@@ -1522,6 +1523,11 @@ int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
     olddecl->isinline = TRUE;
   newdecl->isinline = olddecl->isinline;
 
+  /* If either of the decls says noinline, make sure that none of the
+     declerations are made inline. */
+  if (newdecl->noinline || olddecl->noinline) 
+    newdecl->noinline = olddecl->noinline = TRUE;
+
   if (different_binding_level)
     {
       /* newdecl must be a reference to something at file scope */
@@ -2334,6 +2340,26 @@ dd_list check_parameter(data_declaration dd,
   return extra_attr;
 }
 
+static bool error_signature(type fntype)
+/* Returns: TRUE if fntype is the "error in function declaration"
+     type signature (varargs with one argument of type error_type)
+*/
+{
+  typelist tl;
+  typelist_scanner stl;
+
+  if (!type_function_varargs(fntype))
+    return FALSE;
+
+  tl = type_function_arguments(fntype);
+
+  if (!tl || empty_typelist(tl))
+    return FALSE;
+
+  typelist_scan(tl, &stl);
+  return typelist_next(&stl) == error_type && !typelist_next(&stl);
+}
+
 /* Start definition of variable 'elements d' with attributes attributes, 
    asm specification astmt.
    If initialised is true, the variable has an initialiser.
@@ -2521,7 +2547,7 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
 	    }
 
 	  if ((type_command(var_type) || type_event(var_type)) &&
-	      type_function_varargs(var_type))
+	      type_function_varargs(var_type) && !error_signature(var_type))
 	    error("varargs commands and events are not supported");
 
 	  check_function(&tempdecl, CAST(declaration, vd), class, scf,
@@ -2657,6 +2683,34 @@ declaration finish_decl(declaration decl, expression init)
 	     (this is set correctly for both strings and init_lists) */
 	  if (!type_array_size(dd->type))
 	    dd->type = init->type;
+	}
+    }
+  /* Check for a size */
+  if (type_array(dd->type))
+    {
+      /* Don't you love gcc code? */
+      int do_default
+	= (dd->needsmemory
+	   /* Even if pedantic, an external linkage array
+	      may have incomplete type at first.  */
+	   ? pedantic && !dd->isexternalscope
+	   : !dd->isfilescoperef);
+
+      if (!type_array_size(dd->type))
+	{
+	  if (do_default)
+	    error_with_decl(decl, "array size missing in `%s'",
+			    decl_printname(dd));
+	  /* This is what gcc has to say about the next line
+	     (see comment/question above):
+	     If a `static' var's size isn't known,
+	     make it extern as well as static, so it does not get
+	     allocated.
+	     If it is not `static', then do not mark extern;
+	     finish_incomplete_decl will give it a default size
+	     and it will get allocated.  */
+	  else if (!pedantic && dd->needsmemory && !dd->isexternalscope)
+	    dd->isfilescoperef = 1;
 	}
     }
 
@@ -3177,291 +3231,6 @@ type_element finish_struct(type_element t, declaration fields,
 
   return t;
 }
-
-#if 0
-/* Finish definition of struct/union furnishing the fields and attribs.
-   Computes size and alignment of struct/union (see ASSUME: comments).
-   Returns t */
-type_element finish_struct(type_element t, declaration fields,
-			   attribute attribs)
-{
-  tag_ref s = CAST(tag_ref, t);
-  tag_declaration tdecl = s->tdecl;
-  bool hasmembers = FALSE;
-  field_declaration *nextfield = &tdecl->fieldlist;
-  declaration fdecl;
-  size_t offset = 0, alignment = BITSPERBYTE, size = 0;
-  bool size_cc = TRUE;
-  bool isunion = tdecl->kind == kind_union_ref;
-
-  s->fields = fields;
-  s->attributes = attribs;
-  handle_tag_attributes(attribs, tdecl);
-  tdecl->fields = new_env(parse_region, NULL);
-
-  scan_declaration (fdecl, fields)
-    {
-      data_decl flist;
-      field_decl field = NULL;
-      largest_int bitwidth;
-      size_t falign, fsize;
-      bool anon_member = FALSE;
-
-      /* Get real list of fields */
-      flist = CAST(data_decl, ignore_extensions(fdecl));
-
-      if (!flist->decls) /* possibly a struct/union we should merge in */
-	{
-	  tag_declaration anon_tdecl = get_unnamed_tag_decl(flist);
-	  field_declaration anon_field;
-	  location floc = flist->location;
-
-	  if (!anon_tdecl)
-	    {
-	      error_with_location(floc,
-	        "unnamed fields of type other than struct or union are not allowed");
-	      continue;
-	    }
-	  if (!anon_tdecl->defined)
-	    {
-	      error_with_location(floc, "anonymous field has incomplete type");
-	      continue;
-	    }
-	  if (anon_tdecl->name)
-	    {
-	      warning_with_location(floc, "declaration does not declare anything");
-	      continue;
-	    }
-
-	  /* Process alignment to this struct/union in "main" loop below */
-	  anon_tdecl->collapsed = TRUE;
-	  anon_member = TRUE;
-	  if (anon_tdecl->size_cc)
-	    fsize = anon_tdecl->size * BITSPERBYTE;
-	  else
-	    {
-	      size_cc = FALSE;
-	      fsize = BITSPERBYTE;
-	    }
-	  falign = anon_tdecl->alignment * BITSPERBYTE;
-	  offset = align_to(offset, falign);
-
-	  /* Copy fields */
-	  for (anon_field = anon_tdecl->fieldlist; anon_field;
-	       anon_field = anon_field->next)
-	    {
-	      field_declaration fdecl = ralloc(parse_region, struct field_declaration);
-
-	      *fdecl = *anon_field;
-	      fdecl->offset += offset;
-	      fdecl->offset_cc = fdecl->offset_cc && (size_cc || isunion);
-
-	      nextfield = declare_field(tdecl, fdecl, floc, nextfield);
-	      if (fdecl->name)
-		hasmembers = TRUE;
-	    }
-	}
-      else
-	field = CAST(field_decl, flist->decls);
-
-      while (field || anon_member)
-	{
-	  field_declaration fdecl = NULL;
-
-	  if (anon_member)
-	    anon_member = FALSE;
-	  else
-	    {
-	      /* decode field_decl field */
-	      type field_type;
-	      const char *name;
-	      int class;
-	      scflags scf;
-	      const char *printname;
-	      bool defaulted_int;
-	      type tmpft;
-	      location floc = field->location;
-	      dd_list extra_attr;
-
-	      fdecl = ralloc(parse_region, struct field_declaration);
-
-	      parse_declarator(flist->modifiers, field->declarator,
-			       field->arg1 != NULL, FALSE,
-			       &class, &scf, NULL, &name, &tmpft,
-			       &defaulted_int, NULL, &extra_attr);
-	      field_type = tmpft;
-
-	      /* Grammar doesn't allow scspec: */
-	      assert(scf == 0 && class == 0);
-
-	      printname = nice_field_name(name);
-
-	      /* Support "flexible arrays" (y[] as field member) --
-	         simply make the size 0 which we already handle below */
-	      if (type_array(field_type) && !type_array_size(field_type))
-		field_type = make_array_type(type_array_of(field_type),
-					     build_zero(parse_region, dummy_location));
-
-	      if (type_function(field_type))
-		{
-		  error_with_location(floc, "field `%s' declared as a function", printname);
-		  field_type = make_pointer_type(field_type);
-		}
-	      else if (type_void(field_type))
-		{
-		  error_with_location(floc, "field `%s' declared void", printname);
-		  field_type = error_type;
-		}
-	      else if (type_incomplete(field_type)) 
-		{
-		  error_with_location(floc, "field `%s' has incomplete type", printname);
-		  field_type = error_type;
-		}
-
-	      fdecl->type = field_type;
-	      handle_field_attributes(field->attributes, fdecl);
-	      handle_field_dd_attributes(extra_attr, fdecl);
-	      field_type = fdecl->type; /* attributes might change type */
-
-	      bitwidth = -1;
-	      if (field->arg1)
-		{
-		  known_cst cwidth;
-
-		  if (!type_integer(field_type))
-		    error_with_location(floc, "bit-field `%s' has invalid type", printname);
-		  else if (!(type_integer(field->arg1->type) &&
-			     (cwidth = field->arg1->cst) &&
-			     constant_integral(cwidth)))
-		    error_with_location(floc, "bit-field `%s' width not an integer constant",
-					printname);
-		  else
-		    {
-		      largest_uint width = constant_uint_value(cwidth);
-
-		      if (pedantic)
-			constant_overflow_warning(cwidth);
-
-		      /* Detect and ignore out of range field width.  */
-		      if (!type_unsigned(cwidth->type) &&
-			  constant_sint_value(cwidth) < 0)
-			error_with_location(floc, "negative width in bit-field `%s'", printname);
-		      else if (width > type_size(field_type) * BITSPERBYTE)
-			/* Note that in this case the field gets handled as non-bitfield and
-			   compilation may be successful */
-			pedwarn_with_location(floc, "width of `%s' exceeds its type", printname);
-		      else if (width == 0 && name)
-			error_with_location(floc, "zero width for bit-field `%s'", name);
-		      else
-			bitwidth = width;
-		    }
-
-#if 0
-		  if (DECL_INITIAL (x) && pedantic
-		      && TYPE_MAIN_VARIANT (TREE_TYPE (x)) != integer_type_node
-		      && TYPE_MAIN_VARIANT (TREE_TYPE (x)) != unsigned_type_node
-		      /* Accept an enum that's equivalent to int or unsigned int.  */
-		      && !(TREE_CODE (TREE_TYPE (x)) == ENUMERAL_TYPE
-			   && (TYPE_PRECISION (TREE_TYPE (x))
-			       == TYPE_PRECISION (integer_type_node))))
-		    pedwarn_with_decl (x, "bit-field `%s' type invalid in ANSI C");
-
-
-#if 0
-		  if (TREE_CODE (TREE_TYPE (x)) == ENUMERAL_TYPE
-		      && (width < min_precision (TYPE_MIN_VALUE (TREE_TYPE (x)),
-						 TREE_UNSIGNED (TREE_TYPE (x)))
-			  || width < min_precision (TYPE_MAX_VALUE (TREE_TYPE (x)),
-						    TREE_UNSIGNED (TREE_TYPE (x)))))
-		    warning_with_decl (x, "`%s' is narrower than values of its type");
-#endif
-
-#endif
-		}
-
-	      fdecl->ast = field;
-	      fdecl->name = name;
-	      fdecl->bitwidth = bitwidth;
-	      fdecl->offset_cc = size_cc || isunion;
-
-	      nextfield = declare_field(tdecl, fdecl, floc, nextfield);
-
-	      if (name)
-		hasmembers = TRUE;
-
-	      /* ASSUME: for bitfields we're assuming that:
-		 - alignment of record is forced to be at least that of the base
-		 (except for width 0 which just forces alignment of the current offset
-		 with the base type's alignment)
-		 - bit fields cannot span more units of alignment of their type
-		 than the type itself
-		 This is gcc's behaviour when PCC_BITFIELD_TYPE_MATTERS is defined */
-
-	      if (type_size_cc(field_type))
-		fsize = type_size(field_type) * BITSPERBYTE;
-	      else
-		{
-		  size_cc = FALSE;
-		  fsize = BITSPERBYTE; /* actual value is unimportant */
-		}
-	      /* don't care about alignment if no size (type_incomplete(field_type)
-		 is true, so we got an error above */
-	      falign = (type_has_size(field_type) ? type_alignment(field_type) : 1)
-		* BITSPERBYTE;
-
-	      field = CAST(field_decl, field->next);
-	    }
-
-	  if (bitwidth == 0)
-	    {
-	      offset = align_to(offset, falign);
-	      falign = 1; /* No structure alignment implications */
-	    }
-	  else if (bitwidth > 0)
-	    {
-	      if (target->pcc_bitfield_type_matters)
-		if (((offset + bitwidth + falign - 1) / falign - offset / falign)
-		    > fsize / falign)
-		  offset = align_to(offset, falign);
-	    }
-	  else /* regular field */
-	    {
-	      offset = align_to(offset, falign); 
-	      bitwidth = fsize;
-	    }
-
-	  if (fdecl)
-	    fdecl->offset = offset;
-
-	  if (!isunion)
-	    {
-	      offset += bitwidth;
-	      size = offset;
-	    }
-	  else
-	    size = bitwidth > size ? bitwidth : size;
-
-	  alignment = lcm(alignment, falign); /* Note: GCC uses max. Must be hoping for powers of 2 */
-
-	}
-    }
-
-  if (pedantic && !hasmembers)
-    pedwarn("%s has no %smembers",
-	    (s->kind == kind_union_ref ? "union" : "structure"),
-	    (fields ? "named " : ""));
-
-  tdecl->defined = TRUE;
-  tdecl->being_defined = FALSE;
-
-  /* ASSUME: see previous assume */
-  tdecl->size = align_to(size, alignment) / BITSPERBYTE;
-  tdecl->alignment = alignment / BITSPERBYTE;
-  tdecl->size_cc = size_cc;
-
-  return t;
-}
-#endif
 
 /* Return a reference to struct/union/enum (indicated by skind) type tag */
 type_element xref_tag(location l, AST_kind skind, word tag)

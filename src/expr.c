@@ -1048,6 +1048,11 @@ type check_binary(int binop, expression e1, expression e2)
   return rtype;
 }
 
+static bool unsafe_comparison(expression e)
+{
+  return !e->parens && is_comparison(e);
+}
+
 expression make_binary(location loc, int binop, expression e1, expression e2)
 {
   expression result = CAST(expression, newkind_binary(parse_region, binop, loc, e1, e2));
@@ -1058,7 +1063,66 @@ expression make_binary(location loc, int binop, expression e1, expression e2)
       result->cst = fold_binary(result->type, result);
     }
 
-  /* XXX: The warn_parentheses stuff (and a <= b <= c) */
+  /* Check for cases such as x+y<<z which users are likely
+     to misinterpret.  If parens are used, C_EXP_ORIGINAL_CODE
+     is cleared to prevent these warnings.  */
+  if (warn_parentheses)
+    {
+      int code1 = e1->parens ? 0 : e1->kind, code2 = e2->parens ? 0 : e2->kind;
+
+      if (binop == kind_lshift || binop == kind_rshift)
+	{
+	  if (code1 == kind_plus || code1 == kind_minus
+	      || code2 == kind_plus || code2 == kind_minus)
+	    warning("suggest parentheses around + or - inside shift");
+	}
+
+      if (binop == kind_oror)
+	{
+	  if (code1 == kind_andand || code2 == kind_andand)
+	    warning("suggest parentheses around && within ||");
+	}
+
+      if (binop == kind_bitor)
+	{
+	  if (code1 == kind_bitand || code1 == kind_bitxor
+	      || code1 == kind_plus || code1 == kind_minus
+	      || code2 == kind_bitand || code2 == kind_bitxor
+	      || code2 == kind_plus || code2 == kind_minus)
+	    warning("suggest parentheses around arithmetic in operand of |");
+	  /* Check cases like x|y==z */
+	  if (unsafe_comparison(e1) || unsafe_comparison(e2))
+	    warning("suggest parentheses around comparison in operand of |");
+	}
+
+      if (binop == kind_bitxor)
+	{
+	  if (code1 == kind_bitand
+	      || code1 == kind_plus || code1 == kind_minus
+	      || code2 == kind_bitand
+	      || code2 == kind_plus || code2 == kind_minus)
+	    warning ("suggest parentheses around arithmetic in operand of ^");
+	  /* Check cases like x^y==z */
+	  if (unsafe_comparison(e1) || unsafe_comparison(e2))
+	    warning("suggest parentheses around comparison in operand of ^");
+	}
+
+      if (binop == kind_bitand)
+	{
+	  if (code1 == kind_plus || code1 == kind_minus
+	      || code2 == kind_plus || code2 == kind_minus)
+	    warning ("suggest parentheses around + or - in operand of &");
+	  /* Check cases like x&y==z */
+	  if (unsafe_comparison(e1) || unsafe_comparison(e2))
+	    warning("suggest parentheses around comparison in operand of &");
+	}
+    }
+
+  /* Similarly, check for cases like 1<=i<=10 that are probably errors.  */
+  if (unsafe_comparison(result) && extra_warnings
+      && (unsafe_comparison(e1) || unsafe_comparison(e2)))
+    warning("comparisons like X<=Y<=Z do not have their mathematical meaning");
+
 #if 0
   unsigned_conversion_warning (result, arg1);
   unsigned_conversion_warning (result, arg2);
@@ -1569,7 +1633,7 @@ expression make_field_ref(location loc, expression object, cstring field)
   return CAST(expression, result);
 }
 
-static expression increment(unary result, char *name)
+static expression finish_increment(unary result, char *name)
 {
   expression e = result->arg1;
   type etype = e->type;
@@ -1595,26 +1659,26 @@ static expression increment(unary result, char *name)
 
 expression make_postincrement(location loc, expression e)
 {
-  return increment(CAST(unary, new_postincrement(parse_region, loc, e)),
-		   "increment");
+  return finish_increment(CAST(unary, new_postincrement(parse_region, loc, e)),
+			  "increment");
 }
 
 expression make_preincrement(location loc, expression e)
 {
-  return increment(CAST(unary, new_preincrement(parse_region, loc, e)),
-			"increment");
+  return finish_increment(CAST(unary, new_preincrement(parse_region, loc, e)),
+			  "increment");
 }
 
 expression make_postdecrement(location loc, expression e)
 {
-  return increment(CAST(unary, new_postdecrement(parse_region, loc, e)),
-		   "decrement");
+  return finish_increment(CAST(unary, new_postdecrement(parse_region, loc, e)),
+			  "decrement");
 }
 
 expression make_predecrement(location loc, expression e)
 {
-  return increment(CAST(unary, new_predecrement(parse_region, loc, e)),
-		   "decrement");
+  return finish_increment(CAST(unary, new_predecrement(parse_region, loc, e)),
+			  "decrement");
 }
 
 static size_t extract_strings(expression string_components,

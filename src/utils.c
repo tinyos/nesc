@@ -113,7 +113,7 @@ char *fix_filename(region r, const char *unix_filename)
   char winpath[MAX_PATH];
 
   cygwin_conv_to_win32_path(unix_filename, winpath);
-  return rstrdup(r, winpath);
+  return rstrdup(r, winpath[0] ? winpath : ".");
 }
 #else
 char *fix_filename(region r, const char *unix_filename)

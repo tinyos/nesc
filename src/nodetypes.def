@@ -123,6 +123,7 @@
 (deffield cst_checked bool ())
 (deffield instantiation node ())
 (deffield spelling "const char *" ())
+(deffield parens bool ())
 
 ;; nesc fields
 (deffield call_kind nesc_call_kind (init))
@@ -170,7 +171,7 @@ dangling node as we drop these nested statements from the AST)")
 
 (deftype expression node (lvalue side_effects cst bitfield isregister
 			  type static_address converted_to_pointer
-			  cst_checked spelling)
+			  cst_checked spelling parens)
   "Expression nodes are subtypes of this type.
 LVALUE is true if this expression can be used in a context requiring an lvalue.
 BITFIELD is true if this lvalue is a bitfield.
@@ -186,7 +187,8 @@ CST_CHECKED is set to true once we've successfully checked this expression's
 constantness, and associated constant value (used to avoid duplicate error
 messages in repeated constant folding passes)
 SPELLING saves the `spelling' (a user-friendly name) of expressions used
-in initialisers.")
+in initialisers.
+PARENS is TRUE if the expression is in parentheses")
 
 (deftype type_element node ()
   "A common super-type for all type-building elements (qualifiers, etc)")
@@ -437,12 +439,15 @@ The field_declaration is saved in FDECL")
 (defnode unary_minus unary "-ARG1")
 (defnode unary_plus unary "+ARG1")
 (defnode conjugate unary "~ARG1 on complex arguments")
-(defnode preincrement unary "++ARG1")
-(defnode predecrement unary "--ARG1")
-(defnode postincrement unary "ARG1++")
-(defnode postdecrement unary "ARG1--")
 (defnode bitnot unary "~ARG1")
 (defnode not unary "!ARG1")
+
+(deftype increment unary ()
+  "parent for increment nodes")
+(defnode preincrement increment "++ARG1")
+(defnode predecrement increment "--ARG1")
+(defnode postincrement increment "ARG1++")
+(defnode postdecrement increment "ARG1--")
 
 (defnode plus binary "ARG1 + ARG2")
 (defnode minus binary "ARG1 - ARG2")
@@ -451,28 +456,33 @@ The field_declaration is saved in FDECL")
 (defnode modulo binary "ARG1 % ARG2")
 (defnode lshift binary "ARG1 << ARG2")
 (defnode rshift binary "ARG1 >> ARG2")
-(defnode leq binary "ARG1 <= ARG2")
-(defnode geq binary "ARG1 >= ARG2")
-(defnode lt binary "ARG1 < ARG2")
-(defnode gt binary "ARG1 > ARG2")
-(defnode eq binary "ARG1 == ARG2")
-(defnode ne binary "ARG1 != ARG2")
+
+(deftype comparison binary () "binary comparison ops")
+(defnode leq comparison "ARG1 <= ARG2")
+(defnode geq comparison "ARG1 >= ARG2")
+(defnode lt comparison "ARG1 < ARG2")
+(defnode gt comparison "ARG1 > ARG2")
+(defnode eq comparison "ARG1 == ARG2")
+(defnode ne comparison "ARG1 != ARG2")
+
 (defnode bitand binary "ARG1 & ARG2")
 (defnode bitor binary "ARG1 | ARG2")
 (defnode bitxor binary "ARG1 ^ ARG2")
 (defnode andand binary "ARG1 && ARG2")
 (defnode oror binary "ARG1 || ARG2")
-(defnode assign binary "ARG1 = ARG2")
-(defnode plus_assign binary "ARG1 += ARG2")
-(defnode minus_assign binary "ARG1 -= ARG2")
-(defnode times_assign binary "ARG1 *= ARG2")
-(defnode divide_assign binary "ARG1 /= ARG2")
-(defnode modulo_assign binary "ARG1 %= ARG2")
-(defnode lshift_assign binary "ARG1 <<= ARG2")
-(defnode rshift_assign binary "ARG1 >>= ARG2")
-(defnode bitand_assign binary "ARG1 &= ARG2")
-(defnode bitor_assign binary "ARG1 |= ARG2")
-(defnode bitxor_assign binary "ARG1 ^= ARG2")
+
+(deftype assignment binary () "ARG1 <assignop> ARG2")
+(defnode assign assignment "ARG1 = ARG2")
+(defnode plus_assign assignment "ARG1 += ARG2")
+(defnode minus_assign assignment "ARG1 -= ARG2")
+(defnode times_assign assignment "ARG1 *= ARG2")
+(defnode divide_assign assignment "ARG1 /= ARG2")
+(defnode modulo_assign assignment "ARG1 %= ARG2")
+(defnode lshift_assign assignment "ARG1 <<= ARG2")
+(defnode rshift_assign assignment "ARG1 >>= ARG2")
+(defnode bitand_assign assignment "ARG1 &= ARG2")
+(defnode bitor_assign assignment "ARG1 |= ARG2")
+(defnode bitxor_assign assignment "ARG1 ^= ARG2")
 
 ;; Initialiser expressions (not allowed in most contexts)
 

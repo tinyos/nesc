@@ -68,8 +68,11 @@ bool nesc_attribute(attribute a)
 {
   const char *name = a->word1->cstring.data;
 
-  return !strcmp(name, "C") || !strcmp(name, "spontaneous") ||
-    !strcmp(name, "combine");
+  return !strcmp(name, "C") || 
+    !strcmp(name, "spontaneous") ||
+    !strcmp(name, "combine") ||
+    !strcmp(name, "hwevent") ||
+    !strcmp(name, "atomic_hwevent");
 }
 
 type get_actual_function_type(type t)
@@ -165,14 +168,16 @@ const char *language_name(source_language l)
     }
 }
 
-void compile(location loc, source_language l,
-	     const char *name, bool name_is_path,
-	     nesc_declaration container, environment parent_env)
+nesc_decl compile(location loc, source_language l,
+		  const char *name, bool name_is_path,
+		  nesc_declaration container, environment parent_env)
 {
   const char *path =
     name_is_path ? name : find_nesc_file(parse_region, l, name);
   FILE *f = NULL;
   struct semantic_state old_semantic_state = current;
+  environment env;
+  nesc_decl nd = NULL;
 
   if (!path)
     error_with_location(loc, "%s %s not found", language_name(l), name);
@@ -184,24 +189,40 @@ void compile(location loc, source_language l,
 
       if (!f)
 	error_with_location(loc, "failed to preprocess %s", path);
-      else
-	{
-	  set_input(f, path);
-	  start_lex(l);
-	  start_semantics(l, container, parent_env);
-	  current.fileregion = newregion();
-	  parse();
-	  deleteregion_ptr(&current.fileregion);
-	  end_input();
-
-	  preprocess_file_end();
-	}
     }
 
+  if (!f)
+    {
+      env = new_environment(parse_region, global_env, TRUE, FALSE);
+      if (container)
+	container->env = env;
+    }
+  else
+    {	
+      set_input(f, path);
+
+      start_lex(l);
+      start_semantics(l, container, parent_env);
+      current.fileregion = newregion();
+      env = current.env;
+      if (container)
+	container->env = env;
+      nd = parse();
+      deleteregion_ptr(&current.fileregion);
+      end_input();
+
+      preprocess_file_end();
+    }
+  if (!nd && l != l_c)
+    nd = dummy_nesc_decl(l, new_location(path ? path : name, 0),
+			 container->name);
+
   current = old_semantic_state;
+
+  return nd;
 }
 
-nesc_decl dummy_nesc_decl(source_language sl, const char *name)
+nesc_decl dummy_nesc_decl(source_language sl, location loc, const char *name)
 {
   word wname = build_word(parse_region, name);
   nesc_decl nd;
@@ -210,14 +231,14 @@ nesc_decl dummy_nesc_decl(source_language sl, const char *name)
     {
     case l_component: {
       implementation impl = CAST(implementation,
-	new_module(parse_region, dummy_location, NULL, NULL));
+	new_module(parse_region, loc, NULL, NULL));
       nd = CAST(nesc_decl,
 	new_component(parse_region, dummy_location, wname, NULL, FALSE, NULL, NULL, impl));
       break;
     }
     case l_interface:
       nd = CAST(nesc_decl,
-	new_interface(parse_region, dummy_location, wname, NULL, NULL));
+	new_interface(parse_region, loc, wname, NULL, NULL));
       break;
     default:
       assert(0);
@@ -259,32 +280,25 @@ nesc_declaration load(source_language sl, location l,
   const char *element = name_is_path ? element_name(parse_region, name) : name;
   const char *actual_name;
   nesc_declaration decl;
+  nesc_decl ast;
 
   decl = new_nesc_declaration(parse_region, sl, element);
     
   /* We don't get duplicates as we only load on demand */
   nesc_declare(decl);
 
-  parsed_nesc_decl = NULL;
-  compile(l, sl, name, name_is_path, decl, global_env);
+  ast = compile(l, sl, name, name_is_path, decl, global_env);
 
-  /* If things went badly wrong give the decl a dummy environment */
-  if (!decl->env)
-    decl->env = new_environment(parse_region, global_env, TRUE, FALSE);
-
-  if (!parsed_nesc_decl)
-    parsed_nesc_decl = dummy_nesc_decl(sl, element);
-
-  actual_name = parsed_nesc_decl->word1->cstring.data;
+  actual_name = ast->word1->cstring.data;
   if (strcmp(element, actual_name))
-    error_with_location(parsed_nesc_decl->location,
+    error_with_location(ast->location,
 			"expected %s `%s', but got %s '%s'",
 			language_name(decl->kind),
 			element,
 			language_name(decl->kind),
 			actual_name);
 
-  build(decl, parsed_nesc_decl);
+  build(decl, ast);
 
   return decl;
 }

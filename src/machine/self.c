@@ -8,7 +8,7 @@ typedef int __attribute__ ((mode(__HI__))) myint2;
 typedef int __attribute__ ((mode(__SI__))) myint4;
 typedef int __attribute__ ((mode(__DI__))) myint8;
 
-machine_spec self_machine = {
+static machine_spec self_machine = {
   "pc",
   TRUE				/* PCC_BITFIELD_TYPE_MATTERS */,
 				/* (should come from configure) */
@@ -24,5 +24,7 @@ machine_spec self_machine = {
   __alignof__(myint4), __alignof__(myint8),	     /* int1/2/4/8 align */
   sizeof(wchar_t), sizeof(size_t),		     /* wchar_t, size_t size */
   (char)-1 < 0, (wchar_t)-1 < 0,		     /* char, wchar_t signed */
-  "gcc"
+  "gcc",
+
+  NULL, NULL, NULL, NULL	/* No special attributes */
 };

@@ -101,6 +101,7 @@ push @gcc_args, "-o";
 push @gcc_args, $objtarget;
 push @gcc_args, "-S" if $asmonly;
 push @gcc_args, "-c" unless $asmonly;
+push @gcc_args, "-fdollars-in-identifiers";
 push @gcc_args, $ctarget;
 unshift @gcc_args, "-B$ENV{NCDIR}";
 unshift @gcc_args, $ENV{NESC_GCC};

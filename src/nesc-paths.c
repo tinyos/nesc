@@ -30,6 +30,7 @@ struct path
 static struct path *searchpath;
 static int maxdirlen;
 static region pathregion;
+static bool include_current_dir;
 
 char **path_argv;
 int path_argv_count;
@@ -95,7 +96,10 @@ static void add_dir(region r, const char *path, int len)
 
 void add_nesc_dir(const char *path)
 {
-  add_dir(pathregion, path, strlen(path));
+  if (!strcmp(path, "-"))
+    include_current_dir = FALSE;
+  else
+    add_dir(pathregion, path, strlen(path));
 }
 
 static void reverse_searchpath(void)
@@ -148,9 +152,9 @@ static void build_search_path(region r, const char *pathlist)
 
 void init_nesc_paths_start(region r)
 {
+  include_current_dir = TRUE;
   maxdirlen = 0;
   pathregion = r;
-  add_dir(r, "", 0);
 }
 
 void add_nesc_path(const char *path)
@@ -162,6 +166,8 @@ void init_nesc_paths_end(void)
 {
   build_search_path(pathregion, getenv("NESCPATH"));
   reverse_searchpath();
+  if (include_current_dir)
+    add_dir(pathregion, "", 0);
 
   build_include_argv();
 }

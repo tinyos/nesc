@@ -1,5 +1,24 @@
+static bool avr_decl_attribute(attribute attr, data_declaration ddecl)
+{
+  const char *name = attr->word1->cstring.data;
+
+  if (!strcmp(name, "signal"))
+    {
+      ddecl->async = TRUE;
+      ddecl->spontaneous = c_call_atomic;
+      return TRUE;
+    }
+  else if (!strcmp(name, "interrupt"))
+    {
+      ddecl->async = TRUE;
+      ddecl->spontaneous = c_call_nonatomic;
+      return TRUE;
+    }
+  return FALSE;
+}
+
 /* Basic pointer sizes and alignments for the AVR */
-machine_spec avr_machine = {
+static machine_spec avr_machine = {
   "avr",
   FALSE				/* PCC_BITFIELD_TYPE_MATTERS */,
   { 2, 1 },			/* pointer type */
@@ -13,5 +32,9 @@ machine_spec avr_machine = {
   1, 1, 1, 1,			/* int1/2/4/8 align */
   2, 2,				/* wchar_t, size_t size */
   TRUE, TRUE,			/* char, wchar_t signed */
-  "avr-gcc"
+  "avr-gcc",
+
+  avr_decl_attribute,		/* Attribute handling: declarations */
+  NULL, NULL, NULL		/* Attribute handling: tag, field, type */
 };
+

@@ -16,6 +16,12 @@ typedef struct {
   bool char_signed, wchar_t_signed;
 
   const char *gcc_compiler;
+
+  bool (*decl_attribute)(attribute attr, data_declaration ddecl);
+  bool (*tag_attribute)(attribute attr, tag_declaration tdecl);
+  bool (*field_attribute)(attribute attr, field_declaration fdecl);
+  bool (*type_attribute)(attribute attr, type *t);
+  
 } machine_spec;
 
 extern machine_spec *target;

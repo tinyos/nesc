@@ -20,13 +20,29 @@ AUTOMAKE_OPTIONS = foreign
 SUBDIRS = avr-as
 
 ncclibdir=$(libdir)/ncc
+editordir=$(ncclibdir)/editor-modes
+emacsdir=$(editordir)/emacs
+vimdir=$(editordir)/vim
+kdedir=$(editordir)/kde
 
 bin_SCRIPTS = mig ncg ncc nescc nesdoc
 
-ncclib_DATA = genjava.pm gencstjava.pm gencsharp.pm migdecode.pm
+ncclib_DATA = genjava.pm gencstjava.pm genchsarp.pm gencstc.pm migdecode.pm
+emacs_DATA =					\
+	editor-modes/emacs/nesc.el 		\
+	editor-modes/emacs/new-nesc.el		\
+	editor-modes/emacs/old-nesc.el		\
+	editor-modes/emacs/readme.txt
+vim_DATA =					\
+	editor-modes/vim/nesc.vim		\
+	editor-modes/vim/filetype.vim		\
+        editor-modes/emacs/readme.txt
+kde_DATA = 					\
+	editor-modes/kde/nesc.xml		\
+	editor-modes/kde/readme.txt
 
 EXTRA_DIST =					\
-	genjava.pm				\
-	gencstjava.pm				\
-	gencsharp.pm				\
-	migdecode.pm
+	$(ncclib_DATA)				\
+	$(emacs_DATA)				\
+	$(vim_DATA)				\
+	$(kde_DATA)

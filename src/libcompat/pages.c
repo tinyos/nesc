@@ -284,8 +284,9 @@ struct page *region_get_mem(size_t s)
 /* Page to region map management */
 /* ----------------------------- */
 
+#ifndef LARGE_ADDRESSES
+/* 32-bit platforms */
 region __rcregionmap[MAXPAGE];
-
 
 static void set_page_region(pageid pagenb, region r)
 {
@@ -293,6 +294,53 @@ static void set_page_region(pageid pagenb, region r)
 }
 
 #define page_region(pagenb) (__rcregionmap[(pagenb)])
+
+#else
+/* 64-bit platforms */
+
+/* This is a page table implemented as a table of indirect tables. */
+region *__regiontable[1 << MEMSLICE2];
+
+void set_page_region(pageid pagenb, region r)
+{
+  __rcintptr offset2 = (pagenb >> MEMSLICE3) & ((1 << MEMSLICE2) - 1);
+  __rcintptr offset3 = pagenb & ((1 << MEMSLICE3) - 1);
+  region *rmap;
+
+  rmap = __regiontable[offset2];
+  if (!rmap)
+    {
+      int i;
+
+      rmap = (region *)malloc(sizeof(region) * (1 << MEMSLICE3));
+      if (!rmap)
+	{
+	  if (nomem_h)
+	    nomem_h();
+	  abort();
+	}
+      __regiontable[offset2] = rmap;
+      for (i = 0; i < (1 << MEMSLICE3); i++) {
+	rmap[i] = NULL;
+      }
+    }
+  rmap[offset3] = r;
+}
+
+region page_region(pageid pnb)
+{
+  __rcintptr offset2 = (pnb >> MEMSLICE3) & ((1 << MEMSLICE2) - 1);
+  __rcintptr offset3 = pnb & ((1 << MEMSLICE3) - 1);
+
+  /* Check if indirect table is present */
+  if (__regiontable[offset2])
+    return __regiontable[offset2][offset3];
+  else
+    /* If the indirect table is not there, the value is assumed to be ... */
+    return NULL;
+}
+
+#endif
 
 void set_region(struct page *p, int npages, region r)
 {

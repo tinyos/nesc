@@ -44,9 +44,20 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef LARGE_ADDRESSES
+#define MAXMEMBITS 64
+#define MEMSLICE1 15
+#define MEMSLICE2 18
+#define MEMSLICE3 (MAXMEMBITS - RPAGELOG - MEMSLICE2 - MEMSLICE2)
+#else
+#define MAXMEMBITS 32
+#endif
+
+
+
 #define RPAGESIZE (1 << RPAGELOG)
 #define K 2
-#define MAXPAGE (1 << (32 - RPAGELOG))
+#define MAXPAGE (1 << (MAXMEMBITS - RPAGELOG))
 
 #define PAGENB(x) ((__rcintptr)(x) >> RPAGELOG)
 
@@ -321,7 +332,7 @@ void deleteregion_array(int n, region *regions)
 
 region regionof(void *ptr)
 {
-  return __rcregionmap[(unsigned long)ptr >> RPAGELOG];
+  return page_region(PAGENB(ptr));
 }
 
 void region_init(void)
@@ -331,6 +342,9 @@ void region_init(void)
   permanent = newregion();
   if (getenv("REGIONSTATS"))
     benchmark_init();
+#ifdef DEBUG_RALLOC
+  atexit(memusage);
+#endif
 }
 
 nomem_handler set_nomem_handler(nomem_handler newhandler)
@@ -359,13 +373,9 @@ static FILE *out;
 
 static void printref(void *x)
 {
+#ifndef LARGE_ADDRESSES
   if (x >= (void *)__rcregionmap && x < (void *)&__rcregionmap[MAXPAGE])
     return;
-
-#ifdef RCPAIRS
-  if (x >= (void *)__rcregions && x < (void *)&__rcregions[MAXREGIONS])
-    return;
-
 #endif
 
   fprintf(out, "info symbol 0x%p\n", x);

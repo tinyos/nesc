@@ -1015,6 +1015,75 @@ void prt_nesc_typedefs(nesc_declaration comp)
     prt_nesc_interface_typedefs(comp);
 }
 
+static void prt_nido_resolver(variable_decl vd)
+{
+  data_declaration ddecl = vd->ddecl;
+  expression init;
+
+  if (!ddecl || !ddecl->isused || ddecl->kind != decl_variable)
+    return; /* Don't print if not referenced */
+
+  init = vd->arg1;
+
+  output("if (!strcmp(varname, \"");
+  prt_plain_ddecl(ddecl, 0);
+  outputln("\"))");
+  outputln("{");
+  indent();
+  output("*addr = (uintptr_t)&");
+  prt_ddecl_for_init(ddecl);
+  outputln(";");
+  output("*size = sizeof(");
+  prt_ddecl_for_init(ddecl);
+  outputln(");");
+  outputln("return 0;");
+  unindent();
+  outputln("}");
+}
+
+static void prt_nido_resolvers(nesc_declaration mod) 
+{
+  declaration dlist = CAST(module, mod->impl)->decls;
+  declaration d;
+
+  outputln("/* Module %s */", mod->name);
+
+  /* Static variables */
+  scan_declaration (d, dlist)
+    {
+      declaration reald = ignore_extensions(d);
+      variable_decl vd;
+
+      if (reald->kind != kind_data_decl)
+	continue;
+      
+      scan_variable_decl (vd, CAST(variable_decl, CAST(data_decl, d)->decls))
+	prt_nido_resolver(vd);
+    }
+
+  newline();
+}
+
+static void prt_nido_resolver_function(dd_list modules)
+{
+  dd_list_pos mod;
+
+  outputln("/* Nido variable resolver function */\n");
+  outputln("static int __nesc_nido_resolve(int __nesc_mote,");
+  outputln("                               char* varname,");
+  outputln("                               uintptr_t* addr, size_t* size)");
+  outputln("{");
+  indent();
+  
+  dd_scan (mod, modules) 
+    prt_nido_resolvers(DD_GET(nesc_declaration, mod));
+
+  outputln("return -1;");
+  
+  unindent();
+  outputln("}");
+}
+
 void generate_c_code(nesc_declaration program, const char *target_name,
 		     cgraph cg, dd_list modules, dd_list components)
 {
@@ -1092,6 +1161,7 @@ void generate_c_code(nesc_declaration program, const char *target_name,
 
   if (use_nido)
     {
+      prt_nido_resolver_function(modules);
       disable_line_directives();
       prt_nido_initialize(modules); 
     }

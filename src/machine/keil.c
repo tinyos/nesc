@@ -1,6 +1,6 @@
 /* Thanks to David Patnode (dpatnode@bradley.edu) for this file. */
 /* Basic pointer sizes and alignments for the 8051's compiled w/ Keil C51 */
-machine_spec keil_machine = {
+static machine_spec keil_machine = {
   "keil",
   FALSE				/* PCC_BITFIELD_TYPE_MATTERS */,
   { 2, 1 },			/* pointer type */

@@ -36,7 +36,6 @@ AC_CANONICAL_HOST
 AC_MSG_CHECKING(for darwin)
 case $host in
   *-*-darwin*)
-    CPPFLAGS=-traditional-cpp
     CFLAGS="$CFLAGS -Wno-long-double"
     AC_MSG_RESULT(yes)
     ;;

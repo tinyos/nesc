@@ -47,6 +47,8 @@ void check_condition(const char *context, expression e)
 
   if (etype != error_type && !type_scalar(etype))
     error("%s condition must be scalar", context);
+  if (warn_parentheses && is_assignment(e) && !e->parens)
+    warning("suggest parentheses around assignment used as truth value");
 }
 
 void check_switch(expression e)

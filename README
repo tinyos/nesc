@@ -1,21 +1,59 @@
-This is the 1.1 (alpha test) release of nesC. 
+This is the 1.1.1 release of nesC. 
 
-Installation instructions are in INSTALL, and are essentially unchanged
-since 1.0. Note that this release of nesC includes a patched GNU assembler
-for the AVR (to support debugging).  An appopriate version of the assembler
-is installed in ncc's support directory (usually /usr/local/lib/ncc) based
-on your installed version of avr-gcc (2.11.2 for avr-gcc up to 3.1.1, 
-2.13.2.1 for later avr-gcc's).
+Installation instructions are in INSTALL. Note that nesC includes a patched
+GNU assembler for the AVR (to support debugging).  An appopriate version of
+the assembler is installed in ncc's support directory (usually
+/usr/local/lib/ncc) based on your installed version of avr-gcc (2.11.2 for
+avr-gcc up to 3.1.1, 2.13.2.1 for later avr-gcc's).
 
-The following is a summary of the changes in nesC 1.1:
+Changes in nesC 1.1.2
+=====================
+- Misc bug fixes (in particular, work around latest-cygwin weirdness which
+  causes file corruption)
+- Recognise the gcc noinline attribute and don't automatically inline such
+  functions (patch contributed by Klaus Madsen, nesc@hjernemadsen.org)
+- Mac OS X support; avr-gcc not needed when compiling nesC
+- Support gcc's -I- idiom to prevent searching current dir for components,
+  interfaces, etc.
+- 64-bit platform support: compile with -DLARGE_ADDRESSES, and 
+  edit the MEMSLICE1 constant in src/libcompat.regions.c to be the number
+  of unused high-order bits on your platform
+- ncg supports C (note that there's no C mig support yet)
+
+Changes in nesC 1.1.1
+=====================
+- Support for platforms and sensorboards in directories other than 
+  tos/platforms and tos/sensorboards: a platform or sensorboard 
+  can be used if its directory is specified with an explicit -I directive
+  (see doc/ncc.html for details).
+- support for Tython
+- support -Wparentheses (warnings on statements like 'if (var = value) ...',
+  and other similar C pitfalls)
+- nesC editing modes for emacs, vim and kde (kate, kwrite, kdevelop):
+  these are in tools/editor-modes, and get installed to 
+  <installdir>/lib/ncc/editor-modes. Read the appropriate readme.txt file
+  for installation directions
+- msp430 and env targets (env gets the machine specification from an
+  environment variable and is intended to ease implementation of new
+  platforms, see doc/envtarget.html for details)
+- new hwevent, atomic_hwevent attributes to tell nesC which functions
+  are interrupt entry points (hwevent: interrupt entry point, invoked
+  with interrupts enabled; atomic_hwevent: interrupt entry point, invoked
+  with interrupts disabled) - these should ease porting to new platforms
+- new keywords (future use): abstract, component, extends, generic, new
+- A few small bug fixes
+
+Changes in nesC 1.1
+===================
 - Support for new language features:
   o atomic sections
   o compile-time data race detection
   o explicit marking of asynchronous (aka interrupt) code (async keyword on
     commands and events)
   o automatic combining of results of multiply-wired functions
-  These are enabled with the new -Wnesc-all option. These changes will be
-  fully described in an updated nesC reference manual.
+  o initialisers now supported on module variables
+  o uniqueCount(<string>) function to complement unique(<string>), returning
+    the number of uses of the latter (useful for dimensioning arrays...)
 
 - new nesC warning flags/changes:
   o -W[no-]unexpected-docstring is now -Wnesc-docstring, and defaults to off
@@ -57,14 +95,3 @@ The following is a summary of the changes in nesC 1.1:
 
 - Some improved error messages, miscellaneous bug fixes
 
-
-
-Scheduled changes before the final release:
-- documentation updates for new tools and features
-- gdb patches to fix a number of debugging problems with nesC
-- support initialisers on module variables
-- 8051 platform support (with Keil C) from David Patnode
-- a few bugs that need tracking down
-- clean up combining function association with types
-- uniqueMax(<string>) function to complement unique(<string>), returning
-  the number of uses of the latter (useful for dimensioning arrays...)

@@ -787,8 +787,11 @@ bool prt_simple_declarator(declarator d, data_declaration ddecl,
 		*/
 		expression dsize = type_array_size(ddecl->type);
 
-		output("[%lu]",
-		       (unsigned long)constant_uint_value(dsize->cst));
+		if (dsize)
+		  output("[%lu]",
+			 (unsigned long)constant_uint_value(dsize->cst));
+		else /* we never found the size */
+		  output("[]");
 	      }
 	    else
 	      output("[]");
@@ -1401,7 +1404,7 @@ void prt_unary(unary e, int context_priority)
   char *op = NULL, *postop = NULL;
   int pri = 0;
 
-  /* Yuck. Evil hack because gcc is broken (breaks the a[i] === *(a+i)
+  /* Yuck. Evil hack because gcc is broken (breaks the a[i] == *(a+i)
      rule when a is a non-lvalue array). So we undo our earlier rewrite
      (from fix.c) of a[i] as *(a+i). Note that gcc doesn't allow i[a] in
      this case (bozos at work?) */

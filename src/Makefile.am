@@ -178,6 +178,8 @@ EXTRA_DIST = 					\
 	AST_walk_children.c			\
 	machine/self.c				\
 	machine/avr.c				\
+	machine/env_machine.c			\
+	machine/msp430.c			\
 	machine/keil.c				\
 	tdspecs					\
 	nesc-compile				\

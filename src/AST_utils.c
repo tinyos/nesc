@@ -109,28 +109,6 @@ function_decl parent_function(node n)
   return CAST(function_decl, n);
 }
 
-bool is_assignment(void *e)
-{
-  int kind = ((node)e)->kind;
-
-  /* XXX: Yuck */
-  return kind == kind_assign || kind == kind_plus_assign ||
-    kind == kind_minus_assign || kind == kind_times_assign ||
-    kind == kind_divide_assign || kind == kind_modulo_assign ||
-    kind == kind_lshift_assign || kind == kind_rshift_assign ||
-    kind == kind_bitand_assign || kind == kind_bitor_assign ||
-    kind == kind_bitxor_assign;
-}
-
-bool is_increment(void *e)
-{
-  int kind = ((node)e)->kind;
-
-  /* XXX: Yuck */
-  return kind == kind_preincrement || kind == kind_predecrement ||
-    kind == kind_postincrement || kind == kind_postdecrement;
-}
-
 expression ignore_fields(expression e)
 {
   while (e->kind == kind_field_ref)

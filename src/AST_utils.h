@@ -34,8 +34,6 @@ function_decl parent_function(node n);
 expression expression_of_stmt(compound_expr ce); /* Return expression which is value of compound statement expression, or NULL of node ("void" compound expression) */
 bool expression_used(expression e);
 
-bool is_assignment(void *e);
-bool is_increment(void *e);
 data_declaration base_identifier(data_declaration d);
 bool same_function(data_declaration d1, data_declaration d2);
 bool call_to(data_declaration fnd, function_call fce);

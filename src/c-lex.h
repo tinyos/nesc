@@ -39,6 +39,8 @@ typedef struct location
 
 extern location last_location, dummy_location, toplevel_location;
 
+location new_location(const char *filename, int lineno);
+
 enum rid
 {
   RID_UNUSED,

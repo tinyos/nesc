@@ -75,7 +75,7 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 &usage("no message specified") if !defined($message_type);
 
 unshift @args, "-fsyntax-only";
-unshift @args, "ncc";
+unshift @args, "$exec_prefix/bin/ncc";
 push @args, "-fnesc-msg=$message_type";
 push @args, "-x";
 push @args, "nesc";

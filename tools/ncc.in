@@ -128,7 +128,7 @@ unshift @new_args, "-topdir=$tosparent";
 unshift @new_args, "-fnesc-include=tos";
 unshift @new_args, map "-DBOARD_\U$_", @boards;
 unshift @new_args, "-DPLATFORM_\U$target";
-unshift @new_args, "nescc";
+unshift @new_args, "$exec_prefix/bin/nescc";
 
 # Execute .sensor file in selected sensor board directories if it exists
 $i = 0;

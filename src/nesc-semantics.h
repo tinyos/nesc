@@ -22,7 +22,6 @@ struct environment;
 
 #include "nesc-decls.h"
 
-extern nesc_decl parsed_nesc_decl;
 extern declaration cdecls;
 
 bool nesc_filename(const char *name);
@@ -33,9 +32,9 @@ const char *element_name(region r, const char *path);
      The returned string is allocated in region r.
 */
 
-void compile(location loc, source_language l,
-	     const char *name, bool name_is_path,
-	     nesc_declaration container, struct environment *parent_env);
+nesc_decl compile(location loc, source_language l,
+		  const char *name, bool name_is_path,
+		  nesc_declaration container, struct environment *parent_env);
 
 nesc_declaration load(source_language sl, location l,
 		      const char *name, bool name_is_path);
@@ -63,7 +62,7 @@ bool nesc_attribute(attribute a);
 
 const char *language_name(source_language l);
 
-nesc_decl dummy_nesc_decl(source_language sl, const char *name);
+nesc_decl dummy_nesc_decl(source_language sl, location loc, const char *name);
 void build(nesc_declaration decl, nesc_decl ast);
 
 bool is_module_variable(data_declaration ddecl);

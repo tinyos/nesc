@@ -74,6 +74,17 @@ location make_location(struct location l)
   return last_allocated_location;
 }
 
+location new_location(const char *filename, int lineno)
+{
+  location l = ralloc(parse_region, struct location);
+
+  l->filename = filename;
+  l->lineno = lineno;
+  l->in_system_header = FALSE;
+
+  return l;
+}
+
 static size_t int_type_size;
 
 /* Cause the `yydebug' variable to be defined.  */

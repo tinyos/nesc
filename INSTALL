@@ -6,3 +6,6 @@ make
 
 To install:
 make install
+
+To install a nesC editor mode (currently, emacs, vim, kde):
+Read <installdir>/lib/ncc/editor-modes/<your-editor-name>/readme.txt

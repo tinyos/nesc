@@ -81,7 +81,7 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 
 unshift @args, "-fsyntax-only";
 unshift @args, "-fnesc-csts";
-unshift @args, "ncc";
+unshift @args, "$exec_prefix/bin/ncc";
 push @args, "-x";
 push @args, "nesc";
 push @args, $cfile;

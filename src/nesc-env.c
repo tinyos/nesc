@@ -85,7 +85,7 @@ nesc_declaration require(source_language sl, location l, const char *name)
       /* Make a dummy declaration to make everyone happy */
       d = new_nesc_declaration(parse_region, sl, name);
       d->env = new_environment(parse_region, global_env, TRUE, FALSE);
-      build(d, dummy_nesc_decl(sl, name));
+      build(d, dummy_nesc_decl(sl, d->ast->location, name));
     }
 
   return d;

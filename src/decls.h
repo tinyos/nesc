@@ -149,6 +149,7 @@ struct data_declaration {
          function_event, function_command }
     ftype;
   bool isinline;
+  bool noinline;
   bool isexterninline;
   bool defined;			/* nesC: true if defined, false if used */
   bool suppress_definition;	/* Prevent code generation */

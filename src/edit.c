@@ -27,8 +27,6 @@ Boston, MA 02111-1307, USA. */
 #include "AST_utils.h"
 #include "unparse.h"
 
-nesc_decl parsed_nesc_decl;
-
 /* Declare a new temporary that can be assigned a value of type t.
    Place the declaration at the start of block. 
    XXX: See discussion in types.c:tag2ast about the (lack of) correctness of
