@@ -172,8 +172,8 @@ static void combine_warning(struct connections *c)
       else
 	warning("uncombined call to %s.%s",
 		c->called->container->name, c->called->name);
-    }
 #endif
+    }
 }
 
 void prt_ncf_direct_call(struct connections *c,
