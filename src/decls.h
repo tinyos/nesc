@@ -132,6 +132,7 @@ struct data_declaration {
 			     to the argument type (type_argument node) */
 
   bool printed;			/* symbol info already printed */
+  bool dumped;			/* TRUE if already added to dump list */
   bool islimbo; /* TRUE if comes from an extern declaration in an inner scope
 		   (also true for implicit function declarations) */
   bool isexternalscope; /* == TREE_PUBLIC   */

@@ -20,6 +20,8 @@ Boston, MA 02111-1307, USA.  */
 #include "parser.h"
 #include "nesc-xml.h"
 
+typedef struct xml_list *xml_list;
+
 /* Low-level text output functions */
 void xindent(void);
 void xunindent(void);
@@ -45,6 +47,8 @@ void xml_attr_ptr(const char *name, void *val);
 void xml_attr_noval(const char *name);
 void xml_attr_bool(const char *name, bool val);
 void xml_attr_cval(const char *name, cval val);
+
+void xml_start_dummy(void);
 void xml_start(FILE *f);
 void xml_end(void);
 
@@ -54,11 +58,23 @@ void indentedtag(const char *name);
 void indentedtag_pop(void);
 
 /* Standard nesC xml elements */
+
+/* Lists to which nxml_[dtn]decl_ref arguments should be added.
+   (could be a call to some function in nesc-dump.c, but doesn't
+   seem worth the bother) */
+extern xml_list xl_variables, xl_constants, xl_functions, xl_typedefs,
+  xl_interfaces, xl_icomponents, xl_interfacedefs, xl_components, xl_tags;
+
 void nxml_ddecl_ref(data_declaration ddecl);
 void nxml_tdecl_ref(tag_declaration tdecl);
-void nxml_ndefinition_ref(nesc_declaration ndecl, dhash_table defs,
-			  dhash_table tags);
+void nxml_ndefinition_ref(nesc_declaration ndecl);
 void nxml_ninstance_ref(nesc_declaration ndecl);
-void nxml_value(ivalue value, dhash_table tags);
+void nxml_value(ivalue value);
+
+/* Incremental list creation support */
+xml_list new_xml_list(region r, bool *changed, bool (*addfilter)(void *entry));
+void xml_list_add(xml_list l, void *entry);
+dd_list xml_list_latest(xml_list l);
+void xml_list_reset(xml_list l);
 
 #endif

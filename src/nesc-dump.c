@@ -30,84 +30,73 @@ region dump_region;
 
 /* What to output */
 enum { wiring_none, wiring_user, wiring_functions } wiring = wiring_none;
-dhash_table components;
-dhash_table componentdefs;
-dhash_table interfaces;
-dhash_table interfacedefs;
-dhash_table tags;
+xml_list components, interfaces, interfacedefs, tags;
 
-/* What to implicitly output */
-bool reachable_tags, reachable_componentdefs, reachable_interfacedefs;
-
-static void create_components(void)
+static bool tdecl_addfilter(void *entry)
 {
-  if (!components)
-    components = new_dhash_ptr_table(dump_region, 256);
+  tag_declaration decl = entry;
+
+  if (decl->dumped)
+    return FALSE;
+  decl->dumped = TRUE;
+  return TRUE;
 }
 
-static void create_componentdefs(void)
+static bool ndecl_addfilter(void *entry)
 {
-  if (!componentdefs)
-    componentdefs = new_dhash_ptr_table(dump_region, 256);
+  nesc_declaration decl = entry;
+
+  if (decl->dumped)
+    return FALSE;
+  decl->dumped = TRUE;
+  return TRUE;
 }
 
-static void create_interfacedefs(void)
+static bool ddecl_addfilter(void *entry)
 {
-  if (!interfacedefs)
-    interfacedefs = new_dhash_ptr_table(dump_region, 256);
+  data_declaration decl = entry;
+
+  if (decl->dumped)
+    return FALSE;
+  decl->dumped = TRUE;
+  return TRUE;
 }
 
-static void create_interfaces(void)
+static void dump_parameter(declaration parm)
 {
-  if (!interfaces)
-    interfaces = new_dhash_ptr_table(dump_region, 256);
-}
-
-static void create_tags(void)
-{
-  if (!tags)
-    tags = new_dhash_ptr_table(dump_region, 256);
-}
-
-static dhash_table get_tags(void)
-{
-  if (reachable_tags)
+  if (is_type_parm_decl(parm))
     {
-      if (!tags)
-	create_tags();
-      return tags;
+      data_declaration pdecl = CAST(type_parm_decl, parm)->ddecl;
+
+      xml_tag_start("type-parameter");
+      xml_attr_ptr("ref", pdecl);
+      xml_tag_end_pop();
+      xnewline();
+    }
+  else if (is_data_decl(parm)) /* regular parameter */
+    {
+      data_decl data = CAST(data_decl, parm);
+      variable_decl vdecl = CAST(variable_decl, data->decls);
+
+      if (vdecl->ddecl) /* ignore (void) parameter */
+	nxml_type(vdecl->ddecl->type);
     }
   else
-    return NULL;
-}
-
-static dhash_table get_componentdefs(void)
-{
-  if (reachable_componentdefs)
     {
-      if (!componentdefs)
-	create_componentdefs();
-      return componentdefs;
+      assert(is_ellipsis_decl(parm));
+      xml_qtag("varargs");
+      xnewline();
     }
-  else
-    return NULL;
 }
 
-static dhash_table get_interfacedefs(void)
+static void dump_parameters(const char *name, declaration parms)
 {
-  if (reachable_interfacedefs)
-    {
-      if (!interfacedefs)
-	create_interfacedefs();
-      return interfacedefs;
-    }
-  else
-    return NULL;
-}
+  declaration parm;
 
-static void dump_type(type t)
-{
-  nxml_type(t, get_tags());
+  indentedtag(name);
+  scan_declaration (parm, parms)
+    dump_parameter(parm);
+  indentedtag_pop();
 }
 
 static void dump_endp(const char *tag, endp ep)
@@ -152,12 +141,19 @@ static void dump_component(void *entry)
   else
     indentedtag_start("module");
   xml_attr("name", comp->instance_name);
-  if (comp->original && !comp->abstract)
-    xml_attr_int("instance", comp->instance_number);
   xml_tag_end();
+  xnewline();
 
-  nxml_ndefinition_ref(comp, get_componentdefs(), get_tags());
-
+  if (comp->original && !comp->abstract)
+    {
+      indentedtag_start("instance");
+      xml_attr_int("number", comp->instance_number);
+      xml_tag_end();
+      nxml_ndefinition_ref(comp);
+      indentedtag_pop();
+    }
+  if (comp->abstract)
+    dump_parameters("parameters", comp->parameters);
   indentedtag_pop();
 }
 
@@ -175,12 +171,12 @@ static void dump_attributes(dd_list/*nesc_attribute*/ attributes)
       indentedtag_start("attribute");
       xml_attr("name", attr->word1->cstring.data);
       xml_tag_end();
-      nxml_value(attr->arg1->ivalue, get_tags());
+      nxml_value(attr->arg1->ivalue);
       indentedtag_pop();
     }
 }
 
-static void dump_typelist(const char *name, typelist types)
+static void nxml_typelist(const char *name, typelist types)
 {
   typelist_scanner scantypes;
   type t;
@@ -188,44 +184,7 @@ static void dump_typelist(const char *name, typelist types)
   indentedtag(name);
   typelist_scan(types, &scantypes);
   while ((t = typelist_next(&scantypes)))
-    dump_type(t);
-  indentedtag_pop();
-}
-
-static void dump_parameter(declaration parm)
-{
-  if (is_type_parm_decl(parm))
-    {
-      data_declaration pdecl = CAST(type_parm_decl, parm)->ddecl;
-
-      xml_tag_start("type-parameter");
-      xml_attr_ptr("ref", pdecl);
-      xml_tag_end_pop();
-      xnewline();
-    }
-  else if (is_data_decl(parm)) /* regular parameter */
-    {
-      data_decl data = CAST(data_decl, parm);
-      variable_decl vdecl = CAST(variable_decl, data->decls);
-
-      if (vdecl->ddecl) /* ignore (void) parameter */
-	dump_type(vdecl->ddecl->type);
-    }
-  else
-    {
-      assert(is_ellipsis_decl(parm));
-      xml_qtag("varargs");
-      xnewline();
-    }
-}
-
-static void dump_parameters(const char *name, declaration parms)
-{
-  declaration parm;
-
-  indentedtag(name);
-  scan_declaration (parm, parms)
-    dump_parameter(parm);
+    nxml_type(t);
   indentedtag_pop();
 }
 
@@ -237,31 +196,15 @@ static void dump_interface(void *entry)
 
   indentedtag_start("interface");
   xml_attr("name", iref->name);
+  xml_attr_ptr("ref", iref);
   xml_attr_int("provided", !iref->required);
   xml_tag_end();
 
   xstartline(); nxml_ninstance_ref(iref->container);
-  nxml_ndefinition_ref(iref->itype, get_interfacedefs(), get_tags());
+  nxml_ndefinition_ref(iref->itype);
   dump_attributes(iref->attributes);
   if (iref->gparms)
-    dump_typelist("parameters", iref->gparms);
-
-  indentedtag_pop();
-}
-
-static void dump_componentdef(void *entry)
-{
-  nesc_declaration comp = entry;
-
-  if (comp->configuration)
-    indentedtag_start("configurationdef");
-  else
-    indentedtag_start("moduledef");
-  xml_attr("name", comp->name);
-  xml_tag_end();
-
-  if (comp->abstract)
-    dump_parameters("parameters", comp->parameters);
+    nxml_typelist("parameters", iref->gparms);
 
   indentedtag_pop();
 }
@@ -296,7 +239,7 @@ static void dump_field(field_declaration field)
   else
     xml_attr_cval("bit-size", field->bitwidth);
   xml_tag_end();
-  dump_type(field->type);
+  nxml_type(field->type);
   dump_attributes(field->attributes);
   indentedtag_pop();
 }
@@ -333,7 +276,7 @@ static void dump_tag(void *entry)
   if (tdecl->kind == kind_enum_ref)
     {
       indentedtag("reptype");
-      dump_type(tdecl->reptype);
+      nxml_type(tdecl->reptype);
       indentedtag_pop();
     }
   else
@@ -348,40 +291,25 @@ static void dump_tag(void *entry)
   indentedtag_pop();
 }
 
-static void dump_list(const char *name, dhash_table *plist,
+static void dump_list(const char *name, xml_list l,
 		      void (*dump)(void *entry))
 {
-  bool first = TRUE;
+  dd_list latest = xml_list_latest(l);
+  dd_list_pos elem;
 
-  for (;;)
-    {
-      dhash_table list;
-      dhash_scan scanner;
-      void *entry;
+  if (!latest)
+    return;
 
-      if (!*plist)
-	break;
-
-      if (first)
-	indentedtag(name);
-      first = FALSE;
-
-      list= *plist;
-      scanner = dhscan(list);
-      *plist = NULL;
-
-      while ((entry = dhnext(&scanner)))
-	dump(entry);
-    }
-  if (!first)
-    indentedtag_pop();
+  indentedtag(name);
+  dd_scan (elem, latest)
+    dump(DD_GET(void *, elem));
+  indentedtag_pop();
 }
 
 /* The toplevel requests supported -fnesc-dump */
 /* ------------------------------------------- */
 
-void process_components(nd_option opt, nesc_declaration program, cgraph cg,
-			dd_list modules, dd_list comps)
+void process_components(nd_option opt, dd_list comps)
 {
   dd_list_pos scan_components;
 
@@ -391,13 +319,12 @@ void process_components(nd_option opt, nesc_declaration program, cgraph cg,
       return;
     }
 
-  create_components();
   dd_scan (scan_components, comps)
     {
       nesc_declaration comp = DD_GET(nesc_declaration, scan_components);
 
       if (dump_filter_ndecl(comp))
-	dhaddif(components, comp);
+	xml_list_add(components, comp);
     }
 }
 
@@ -412,14 +339,12 @@ static void process_component_interfaces(nesc_declaration comp)
     {
       data_declaration ddecl = decl;
 
-      if (ddecl->kind == decl_interface_ref &&
-	  dump_filter_ddecl(ddecl))
-	dhaddif(interfaces, ddecl);
+      if (ddecl->kind == decl_interface_ref && dump_filter_ddecl(ddecl))
+	xml_list_add(interfaces, ddecl);
     }
 }
 
-void process_interfaces(nd_option opt, nesc_declaration program, cgraph cg,
-			dd_list modules, dd_list comps)
+void process_interfaces(nd_option opt, dd_list comps)
 {
   dd_list_pos scan_components;
 
@@ -429,7 +354,6 @@ void process_interfaces(nd_option opt, nesc_declaration program, cgraph cg,
       return;
     }
 
-  create_interfaces();
   dd_scan (scan_components, comps)
     {
       nesc_declaration comp = DD_GET(nesc_declaration, scan_components);
@@ -438,7 +362,7 @@ void process_interfaces(nd_option opt, nesc_declaration program, cgraph cg,
     }
 }
 
-static void add_defs(int kind, dhash_table table)
+static void add_defs(int kind, xml_list l)
 {
   env_scanner scanenv;
   const char *name;
@@ -449,48 +373,33 @@ static void add_defs(int kind, dhash_table table)
     {
       nesc_declaration ndecl = val;
 
-      if (!ndecl->dumped && ndecl->kind == kind && dump_filter_ndecl(ndecl))
-	{
-	  ndecl->dumped = TRUE;
-	  dhaddif(table, ndecl);
-	}
+      if (ndecl->kind == kind && dump_filter_ndecl(ndecl))
+	xml_list_add(l, ndecl);
     }
 }
 
-void process_componentdefs(nd_option opt, nesc_declaration program, cgraph cg,
-			   dd_list modules, dd_list comps)
+void process_interfacedefs(nd_option opt)
 {
-  create_componentdefs();
-  add_defs(l_component, componentdefs);
-}
-
-void process_interfacedefs(nd_option opt, nesc_declaration program, cgraph cg,
-			   dd_list modules, dd_list comps)
-{
-  create_interfacedefs();
   add_defs(l_interface, interfacedefs);
 }
 
-void process_tags(nd_option opt, nesc_declaration program, cgraph cg,
-		  dd_list modules, dd_list comps)
+void process_tags(nd_option opt)
 {
   env_scanner scan;
   const char *name;
   void *decl;
 
-  create_tags();
   env_scan(global_env->tag_env, &scan);
   while (env_next(&scan, &name, &decl))
     {
       tag_declaration tdecl = decl;
 
       if (dump_filter_tdecl(tdecl))
-	dhaddif(tags, tdecl);
+	xml_list_add(tags, tdecl);
     }
 }
 
-void process_wiring(nd_option opt, nesc_declaration program, cgraph cg,
-		 dd_list modules, dd_list comps)
+void process_wiring(nd_option opt, dd_list comps)
 {
   nd_arg arg;
 
@@ -515,8 +424,7 @@ void process_wiring(nd_option opt, nesc_declaration program, cgraph cg,
       error("bad argument to wiring");
 }
 
-void process_referenced(nd_option opt, nesc_declaration program, cgraph cg,
-		     dd_list modules, dd_list comps)
+void process_referenced(nd_option opt)
 {
   nd_arg arg;
 
@@ -526,20 +434,13 @@ void process_referenced(nd_option opt, nesc_declaration program, cgraph cg,
 	const char *req = nd_tokenval(arg);
 
 	if (!strcmp(req, "tags"))
-	  {
-	    reachable_tags = TRUE;
-	    create_tags();
-	  }
-	else if (!strcmp(req, "componentdefs"))
-	  {
-	    reachable_componentdefs = TRUE;
-	    create_componentdefs();
-	  }
+	  xl_tags = tags;
+	else if (!strcmp(req, "components"))
+	  xl_components = components;
+	else if (!strcmp(req, "interfaces"))
+	  xl_interfaces = interfaces;
 	else if (!strcmp(req, "interfacedefs"))
-	  {
-	    reachable_interfacedefs = TRUE;
-	    create_interfacedefs();
-	  }
+	  xl_interfacedefs = interfacedefs;
 	else
 	  error("unknown referenced request for `%s'", req);
       }
@@ -583,10 +484,32 @@ bool dump_selected(void)
   return opts != NULL;
 }
 
+static void do_wiring(cgraph cg, cgraph userg)
+{
+  if (wiring == wiring_functions)
+    dump_wiring(cg);
+  if (wiring == wiring_user)
+    dump_wiring(userg);
+}
+
+static void do_lists(void)
+{
+  dump_list("interfaces", interfaces, dump_interface);
+  dump_list("components", components, dump_component);
+  dump_list("interfacedefs", interfacedefs, dump_interfacedef);
+  dump_list("tags", tags, dump_tag);
+}
+
 void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
 	       dd_list modules, dd_list comps)
 {
   dd_list_pos scan_opts;
+  bool list_change = FALSE;
+
+  components = new_xml_list(dump_region, &list_change, ndecl_addfilter);
+  interfaces = new_xml_list(dump_region, &list_change, ddecl_addfilter);
+  interfacedefs = new_xml_list(dump_region, &list_change, ndecl_addfilter);
+  tags = new_xml_list(dump_region, &list_change, tdecl_addfilter);
 
   dd_scan (scan_opts, opts)
     {
@@ -595,36 +518,42 @@ void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
       dump_set_filter(opt);
 
       if (!strcmp(opt->name, "components"))
-	process_components(opt, program, cg, modules, comps);
+	process_components(opt, comps);
       else if (!strcmp(opt->name, "interfaces"))
-	process_interfaces(opt, program, cg, modules, comps);
-      else if (!strcmp(opt->name, "componentdefs"))
-	process_componentdefs(opt, program, cg, modules, comps);
+	process_interfaces(opt, comps);
       else if (!strcmp(opt->name, "interfacedefs"))
-	process_interfacedefs(opt, program, cg, modules, comps);
+	process_interfacedefs(opt);
       else if (!strcmp(opt->name, "tags"))
-	process_tags(opt, program, cg, modules, comps);
+	process_tags(opt);
       else if (!strcmp(opt->name, "wiring"))
-	process_wiring(opt, program, cg, modules, comps);
+	process_wiring(opt, comps);
       else if (!strcmp(opt->name, "referenced"))
-	process_referenced(opt, program, cg, modules, comps);
+	process_referenced(opt);
       else
 	error("unknown dump request `%s'", opt->name);
     }
 
+  xml_start_dummy();
+  do_wiring(cg, userg);
+  for (;;)
+    {
+      do_lists();
+      if (!list_change)
+	break;
+      list_change = FALSE;
+    }
+
+  xml_list_reset(components);
+  xml_list_reset(interfaces);
+  xml_list_reset(interfacedefs);
+  xml_list_reset(tags);
+
   xml_start(stdout);
   indentedtag("nesc");
-
-  if (wiring == wiring_functions)
-    dump_wiring(cg);
-  if (wiring == wiring_user)
-    dump_wiring(userg);
-  dump_list("components", &components, dump_component);
-  dump_list("interfaces", &interfaces, dump_interface);
-  dump_list("componentdefs", &componentdefs, dump_componentdef);
-  dump_list("interfacedefs", &interfacedefs, dump_interfacedef);
-  dump_list("tags", &tags, dump_tag);
-
+  do_wiring(cg, userg);
+  do_lists();
   indentedtag_pop();
   xml_end();
+
+  assert(!list_change);
 }

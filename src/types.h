@@ -270,10 +270,8 @@ bool type_contains(type parent, type child);
 bool type_charstar(type t);
 bool type_chararray(type t, bool no_size_allowed);
  
-void nxml_type(type t, dhash_table tags);
+void nxml_type(type t);
 /* Effects: Outputs XML representation of type t.
-     Appends any tags (tag_declaration) used in t to the `tags' set 
-       (if non-null)
 */
 
 #endif

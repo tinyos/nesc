@@ -42,11 +42,18 @@ void xunindent(void)
   indent_level -= INDENT;
 }
 
+void xputc(char c)
+{
+  if (xml_file)
+    putc(c, xml_file);
+}
+
 static void output_indentation(void)
 {
   int i;
 
-  for (i = 0; i < indent_level; i++) putc(' ', xml_file);
+  if (xml_file)
+    for (i = 0; i < indent_level; i++) putc(' ', xml_file);
 }
 
 static void output_indent_if_needed(void)
@@ -60,7 +67,7 @@ static void output_indent_if_needed(void)
 
 void xnewline(void)
 {
-  putc('\n', xml_file);
+  xputc('\n');
   at_line_start = TRUE;
 }
 
@@ -77,8 +84,11 @@ void xstartline_noindent(void)
 
 void xvprintf(char *format, va_list args)
 {
-  output_indent_if_needed();
-  vfprintf(xml_file, format, args);
+  if (xml_file)
+    {
+      output_indent_if_needed();
+      vfprintf(xml_file, format, args);
+    }
 }
 
 void xprintf(char *format, ...)
@@ -92,6 +102,9 @@ void xprintf(char *format, ...)
 
 void xqputs(const char *s)
 {
+  if (!xml_file)
+    return;
+
   /* Output a string quoted to match XML AttValue rules */
   while (*s)
     {
@@ -110,6 +123,9 @@ void xqputs(const char *s)
 
 void xwqputs(const wchar_t *s)
 {
+  if (!xml_file)
+    return;
+
   /* Output a wide-char string quoted to match XML AttValue rules */
   while (*s)
     {
@@ -125,6 +141,9 @@ void xwqputs(const wchar_t *s)
 
 void xputs(const char *s)
 {
+  if (!xml_file)
+    return;
+
   output_indent_if_needed();
   fputs(s, xml_file);
 }
@@ -133,14 +152,20 @@ void xputs(const char *s)
 /* Leaks until xml_end. */
 static void push_tag(const char *tag)
 {
-  dd_add_first(xml_region, tags, (char *)tag);
+  if (tags)
+    dd_add_first(xml_region, tags, (char *)tag);
 }
 
 static const char *pop_tag(void)
 {
-  dd_list_pos top = dd_first(tags);
-  const char *tag = DD_GET(const char *, top);
+  dd_list_pos top;
+  const char *tag;
 
+  if (!tags)
+    return NULL;
+
+  top = dd_first(tags);
+  tag = DD_GET(const char *, top);
   dd_remove(top);
 
   return tag;
@@ -242,9 +267,17 @@ void xml_attr_cval(const char *name, cval val)
 
   if (unknown)
     xputs("U:");
-  putc('"', xml_file);
+  xputc('"');
 }
 
+
+void xml_start_dummy(void)
+{
+  xml_file = NULL;
+  indent_level = 0;
+  at_line_start = TRUE;
+  tags = NULL;
+}
 
 void xml_start(FILE *f)
 {
@@ -259,6 +292,7 @@ void xml_end(void)
 {
   deleteregion_ptr(&xml_region);
   xml_file = NULL;
+  tags = NULL;
 }
 
 /* Convenient shortcuts */
@@ -287,18 +321,24 @@ void indentedtag_pop(void)
 }
 
 /* Standard nesC xml elements */
+xml_list xl_variables, xl_constants, xl_functions, xl_typedefs,
+  xl_interfaces, xl_icomponents, xl_interfacedefs, xl_components, xl_tags;
+
 void nxml_ddecl_ref(data_declaration ddecl)
 {
+  xml_list l = NULL;
+
   switch (ddecl->kind)
     {
-    case decl_variable: xml_tag_start("variable-ref"); break;
-    case decl_constant: xml_tag_start("constant-ref"); break;
-    case decl_function: xml_tag_start("function-ref"); break;
-    case decl_typedef: xml_tag_start("typedef-ref"); break;
-    case decl_interface_ref: xml_tag_start("interface-ref"); break;
-    case decl_component_ref: xml_tag_start("component-ref"); break;
+    case decl_variable: xml_tag_start("variable-ref"); l = xl_variables; break;
+    case decl_constant: xml_tag_start("constant-ref"); l = xl_constants; break;
+    case decl_function: xml_tag_start("function-ref"); l = xl_functions; break;
+    case decl_typedef: xml_tag_start("typedef-ref"); l = xl_typedefs; break;
+    case decl_interface_ref: xml_tag_start("interface-ref"); l = xl_interfaces; break;
+    case decl_component_ref: xml_tag_start("internal-component-ref"); l = xl_icomponents; break;
     default: assert(0);
     }
+  xml_list_add(l, ddecl);
   xml_attr("name", ddecl->name);
   if (ddecl->container || ddecl->container_function)
     xml_attr_noval("scoped");
@@ -306,16 +346,31 @@ void nxml_ddecl_ref(data_declaration ddecl)
   xml_tag_end_pop();
 }
 
+static void nxml_ndecl_start(nesc_declaration ndecl)
+{
+  if (ndecl->kind == l_interface)
+    {
+      xml_tag_start("interfacedef-ref");
+      xml_list_add(xl_interfacedefs, ndecl);
+    }
+  else
+    {
+      xml_list_add(xl_components, ndecl);
+      xml_tag_start("component-ref");
+    }
+}
+
 void nxml_ninstance_ref(nesc_declaration ndecl)
 {
   assert (ndecl->kind == l_component);
-  xml_tag_start("component-ref");
+
+  nxml_ndecl_start(ndecl);
   xml_attr("name", ndecl->instance_name);
   //xml_attr_ptr("ref", ndecl);
   xml_tag_end_pop();
 }
 
-static void dump_arguments(expression arguments, dhash_table tags)
+static void dump_arguments(expression arguments)
 {
   expression arg;
 
@@ -323,7 +378,7 @@ static void dump_arguments(expression arguments, dhash_table tags)
   scan_expression (arg, arguments)
     {
       if (is_type_argument(arg))
-	nxml_type(CAST(type_argument, arg)->asttype->type, tags);
+	nxml_type(CAST(type_argument, arg)->asttype->type);
       else if (arg->cst)
 	{
 	  xml_tag_start("constant");
@@ -340,22 +395,12 @@ static void dump_arguments(expression arguments, dhash_table tags)
   indentedtag_pop();
 }
 
-void nxml_ndefinition_ref(nesc_declaration ndecl, dhash_table defs,
-			  dhash_table tags)
+void nxml_ndefinition_ref(nesc_declaration ndecl)
 {
   nesc_declaration orig = original_component(ndecl);
 
-  if (defs && !orig->dumped)
-    {
-      dhadd(defs, orig);
-      orig->dumped = TRUE;
-    }
-
   xstartline();
-  if (orig->kind == l_interface)
-    xml_tag_start("interfacedef-ref");
-  else
-    xml_tag_start("componentdef-ref");
+  nxml_ndecl_start(orig);
   xml_attr("name", orig->name);
   if (!ndecl->arguments)
     xml_tag_end_pop();
@@ -363,7 +408,7 @@ void nxml_ndefinition_ref(nesc_declaration ndecl, dhash_table defs,
     {
       xml_tag_end();
       xindent();
-      dump_arguments(ndecl->arguments, tags);
+      dump_arguments(ndecl->arguments);
       xunindent(); xstartline(); xml_pop();
     }
   xnewline();
@@ -373,6 +418,7 @@ void nxml_tdecl_ref(tag_declaration tdecl)
 {
   char tag[20];
 
+  xml_list_add(xl_tags, tdecl);
   sprintf(tag, "%s-ref", tagkind_name(tdecl->kind));
   xml_tag_start(tag);
   if (tdecl->name)
@@ -383,58 +429,109 @@ void nxml_tdecl_ref(tag_declaration tdecl)
   xml_tag_end_pop();
 }
 
-static void nxml_value_base(ivalue value, dhash_table tags)
+static void nxml_value_base(ivalue value)
 {
   indentedtag_start("value-base");
   xml_attr_cval("value", value->u.base.value);
   xml_tag_end();
-  nxml_type(value->type, tags);
+  nxml_type(value->type);
   indentedtag_pop();
 }
 
-static void nxml_value_array(ivalue value, dhash_table tags)
+static void nxml_value_array(ivalue value)
 {
   ivalue_array elem;
 
   indentedtag("value-array");
-  nxml_type(value->type, tags);
+  nxml_type(value->type);
   for (elem = value->u.array; elem; elem = elem->next)
     {
       indentedtag_start("array-element");
       xml_attr_int("from", elem->from);
       xml_attr_int("to", elem->to);
       xml_tag_end();
-      nxml_value(elem->value, tags);
+      nxml_value(elem->value);
       indentedtag_pop();
     }
   indentedtag_pop();
 }
 
-static void nxml_value_structured(ivalue value, dhash_table tags)
+static void nxml_value_structured(ivalue value)
 {
   ivalue_field field;
 
   indentedtag("value-structured");
-  nxml_type(value->type, tags);
+  nxml_type(value->type);
   for (field = value->u.structured; field; field = field->next)
     {
       indentedtag_start("structured-element");
       xml_attr("field", field->field->name);
       xml_attr_ptr("ref", field->field);
       xml_tag_end();
-      nxml_value(field->value, tags);
+      nxml_value(field->value);
       indentedtag_pop();
     }
   indentedtag_pop();
 }
 
-void nxml_value(ivalue value, dhash_table tags)
+void nxml_value(ivalue value)
 {
   switch (value->kind)
     {
-    case iv_base: nxml_value_base(value, tags); break;
-    case iv_array: nxml_value_array(value, tags); break;
-    case iv_structured: nxml_value_structured(value, tags); break;
+    case iv_base: nxml_value_base(value); break;
+    case iv_array: nxml_value_array(value); break;
+    case iv_structured: nxml_value_structured(value); break;
     default: assert(0);
     }
 }
+
+/* Incremental list creation support */
+
+struct xml_list
+{
+  region r;
+  dd_list all;
+  dd_list latest;
+  bool *changed;
+  bool (*addfilter)(void *entry);
+};
+
+xml_list new_xml_list(region r, bool *changed, bool (*addfilter)(void *entry))
+{
+  xml_list l = ralloc(r, struct xml_list);
+
+  l->r = r;
+  l->all = dd_new_list(l->r);
+  l->changed = changed;
+  l->addfilter = addfilter;
+
+  return l;
+}
+
+void xml_list_add(xml_list l, void *entry)
+{
+  if (!l || !l->addfilter(entry))
+    return;
+
+  if (!l->latest)
+    l->latest = dd_new_list(l->r);
+  dd_add_last(l->r, l->latest, entry);
+  dd_add_last(l->r, l->all, entry);
+  *l->changed = TRUE;
+}
+
+dd_list xml_list_latest(xml_list l)
+{
+  dd_list latest = l->latest;
+  l->latest = NULL;
+  return latest;
+}
+
+void xml_list_reset(xml_list l)
+{
+  l->latest = l->all;
+}
+
+
+
+

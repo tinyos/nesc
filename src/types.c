@@ -2182,7 +2182,7 @@ const char *type_name(region r, type t)
     return prefix;
 }
 
-void nxml_type(type t, dhash_table tags)
+void nxml_type(type t)
 {
   type_quals quals = type_qualifiers(t) & (const_qualifier | volatile_qualifier | restrict_qualifier);
 
@@ -2233,11 +2233,6 @@ void nxml_type(type t, dhash_table tags)
 	xml_attr_noval("varargs");
       break;
     case tk_tagged:
-      if (tags && !t->u.tag->dumped)
-	{
-	  dhadd(tags, t->u.tag);
-	  t->u.tag->dumped = TRUE;
-	}
       xml_tag_start("type-tag");
       break;
     case tk_iref:
@@ -2268,13 +2263,13 @@ void nxml_type(type t, dhash_table tags)
     case tk_pointer: 
       xml_tag_end();
       xnewline(); xindent();
-      nxml_type(t->u.pointsto, tags);
+      nxml_type(t->u.pointsto);
       xunindent(); xml_pop();
       break;
     case tk_array:
       xml_tag_end();
       xnewline(); xindent();
-      nxml_type(t->u.array.arrayof, tags);
+      nxml_type(t->u.array.arrayof);
       xunindent(); xml_pop();
       break;
     case tk_function:
@@ -2287,11 +2282,11 @@ void nxml_type(type t, dhash_table tags)
 
 	  typelist_scan(t->u.fn.argtypes, &scanargs);
 	  while ((argt = typelist_next(&scanargs)))
-	    nxml_type(argt, tags);
+	    nxml_type(argt);
 	}
       xml_tag("returns");
       xnewline(); xindent();
-      nxml_type(t->u.fn.returns, tags);
+      nxml_type(t->u.fn.returns);
       xunindent(); xml_pop();
       xnewline();
       xunindent(); xml_pop();

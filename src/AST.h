@@ -27,7 +27,6 @@ typedef struct typelist *typelist;
 typedef struct type *type;
 typedef struct known_cst *known_cst;
 typedef struct ivalue *ivalue;
-
 typedef struct edge *edge;
 
 #ifdef NODEREFINT
