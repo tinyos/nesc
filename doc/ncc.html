@@ -1,27 +1,29 @@
 <html>
 <head>
-<title>ncc - nesC compiler</title>
+<title>ncc Manual Page</title>
 </head>
 <body>
 <h3>NAME</h3>
 
 <blockquote>
-ncc - nesC compiler
+ncc - nesC compiler for TinyOS
 </blockquote>
 
 <h3>SYNOPSIS</h3>
 
 <blockquote>
-ncc [<b>-target=pc|mica|rene2</b>]
+ncc [<b>-target=pc|mica|mica2|mica2dot|...</b>]
 [<b>-tosdir=</b><u>dir</u>]
 [<b>-print-tosdir</b>]
 [<b>-nostdinc</b>]
-[<b>-board=micasb|basicsb|micawb</b>]
-[<b>-fnesc-tossim-tosnodes=</b><u>n</u>]
-[<b>-fnesc-cfile=</b><u>file</u>]
+[<b>-board=micasb|basicsb|micawb|...</b>]
 [<b>-docdir=</b><u>dir</u>]
 [<b>-topdir=</b><u>dir</u>]
 [<b>-graphviz=y|n</b>]
+[<b>-fnesc-nido-tosnodes=</b><u>n</u>]
+[<b>-fnesc-cfile=</b><u>file</u>]
+[<b>-fnesc-no-inline</b>
+[<b>-Wnesc-</b><u>xxx</u>]
 [any gcc option]
 <u>files</u>...
 </blockquote>
@@ -31,8 +33,8 @@ ncc [<b>-target=pc|mica|rene2</b>]
 <blockquote>
 ncc is an extension to gcc that knows how to compile nesC applications. If
 invoked on regular C files, it behaves exactly like gcc. When invoked on a
-nesC component (.td extension) or interface (.ti extension) file it
-compiles and links (except if the usual <b>-c</b>, <b>-S</b>, <b>-E</b> or
+nesC component or interface (.nc extension) file it compiles and links
+(except if the usual <b>-c</b>, <b>-S</b>, <b>-E</b> or
 <b>-fsyntax-only</b> options are used) that component with the other files
 specified on the command line.
 
@@ -40,10 +42,11 @@ specified on the command line.
 The additional options recognized by ncc over gcc are:
 
 <p>
-<b>-target=pc|mica|rene2</b> <blockquote> specify the target mote architecture
+<b>-target=X</b> <blockquote> specify the target architecture
 for this compilation. If pc is specified, the compilation uses the tossim
 environment and produces a locally executable file. The default target is
-mica.</blockquote>
+mica, the possible targets are set by the TinyOS distribution (see the 
+tos/platforms directory).</blockquote>
 
 <b>-tosdir=</b><u>dir</u><blockquote> specify the location of TinyOS. This
 location can also be specified with the `TOSDIR' environment variable. If the
@@ -59,18 +62,10 @@ variable. No compilation occurs when -print-tosdir is used.</blockquote>
 directories in the search path. See the discussion of search paths below
 for more details.</blockquote>
 
-<b>-board=micasb|basicsb|micawb</b><blockquote> specify one (or more)
-sensor boards. This effects the search path and preprocessor
-symbols.</blockquote>
-
-<b>-fnesc-tossim-tosnodes=</b><u>n</u><blockquote> specify the maximum
-number of nodes that can be simulated in the tossim
-environment.</blockquote>
-
-<b>-fnesc-cfile=file</b><blockquote> specify a file in which to save the C
-code generated when compiling a component. Note: if you specify two
-components on the command line, then the C code from the second one will
-overwrite the C code from the first.</blockquote>
+<b>-board=Y</b><blockquote> specify one (or more) sensor boards. This
+effects the search path and preprocessor symbols. The set of boards is set
+by the TinyOS distribution (see the tos/sensorboards
+directory).</blockquote>
 
 <b>-docdir=</b><u>dir</u><blockquote> generate documentation for the
 compiled component in directory <u>dir</u>.</blockquote>
@@ -89,6 +84,36 @@ graphviz requires `dot'.  The documentation generation tool checks the
 version of `dot', and enables client-side image maps, if supported.
 </blockquote>
 
+<b>-fnesc-tossim-tosnodes=</b><u>n</u><blockquote> specify the maximum
+number of nodes that can be simulated in the tossim
+environment.</blockquote>
+
+<b>-fnesc-cfile=file</b><blockquote> specify a file in which to save the C
+code generated when compiling a component. Note: if you specify two
+components on the command line, then the C code from the second one will
+overwrite the C code from the first.</blockquote>
+
+There are a number of warnings specific to nesC, specified with 
+<b>-Wnesc-X</b>, where X is (all these warnings are off by default):
+<blockquote>
+<li><b>fnptr</b>: Warn when function pointers are used (use of function
+pointers is deprecated in nesC and leads to inaccurate data race
+detection).
+
+<li><b>async</b>: Warn when interrupt handlers call commands or events not
+annotated with <b>async</b>.
+
+<li><b>data-race</b>: Warn about potential data races.
+
+<li><b>combine</b>: Warn when configuration wiring leads to "fan-out" and
+the function return type does not have a combining function defined.
+
+<li><b>docstring</b>: Warn when unexpected documentation strings (starting
+with /**) are seen.
+
+<li><b>all</b>: Turns on <b>fnptr</b>, <b>async</b>, <b>combine</b> and
+<b>data-race</b>.
+</blockquote>
 
 <p>
 When compiling a nesC component, the nesC compiler recognizes the gcc C
@@ -98,11 +123,11 @@ language (<b>-f...</b>) and warning (<b>-W...</b>) options. The <b>-S</b>,
 (see the search path discussion below).
 
 <p>
-If you wish to compile a component Bar.td to a C file, you can do:
+If you wish to compile a component Bar.nc to a C file, you can do:
 
 <p>
 <blockquote>
-ncc -c -o /dev/null -fnesc-cfile=Bar.c Bar.td
+ncc -c -o /dev/null -fnesc-cfile=Bar.c Bar.nc
 </blockquote>
 
 </blockquote>
@@ -111,21 +136,28 @@ ncc -c -o /dev/null -fnesc-cfile=Bar.c Bar.td
 <h3>SEARCH PATH</h3>
 
 <blockquote>
-Except when -nostdinc is specified, the search path for nesC components is
+ncc performs the following substitutions on the directories specified with
+the <b>-I</b> option: <b>%T</b> is replaced by the TinyOS directory,
+<b>%p</b> is replaced by the selected target, <b>%%</b> is replaced by
+<b>%</b>.
+
+<p>Except when -nostdinc is specified, the search path for nesC components is
 as follows, where <u>tosdir</u> is the TinyOS directory requested and
 <u>target</u> is the selected target:
 
 <ol>
 <li>./
 <li><b>-I</b> directives (in option order)
-<li><u>tosdir</u>/sensorboards/<u>boardname</u>, for each
+<li>%T/sensorboards/<u>boardname</u>, for each
 <b>-board=</b><u>boardname</u> option specified (in option order)
-<li><u>tosdir</u>/platform/<u>target</u>
-<li><u>tosdir</u>/platform/avrmote for the mica, rene2 targets
-<li><u>tosdir</u>/interfaces
-<li><u>tosdir</u>/system
-<li><u>tosdir</u>/lib
-<li>`NESCPATH' environment variable directories
+<li>%T/platform/%p
+<li>Additional directories requested by the selected target (e.g.,
+%T/platform/avrmote for the mica target)
+<li>%T/interfaces
+<li>%T/system
+<li>%T/lib
+<li>`NESCPATH' environment variable directories (note that %T and %p
+subsitution is not performed on these directories).
 </ol>
 
 When <b>-nostdinc</b> is specified, the search path is simply:
@@ -169,6 +201,13 @@ nesC components.
 <blockquote>
 gcc(1), avr-gcc(1)
 </blockquote>
+
+<h3>NOTE</h3>
+
+ncc is built over nescc, which handles the non-TinyOS-specific
+functionality of ncc. Users of nesC in a non-TinyOS context may
+prefer to use nescc (see the source code of ncc and nescc for
+details).
 
 </body>
 </html>

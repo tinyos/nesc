@@ -215,6 +215,12 @@ static size_t statement_size(statement stmt)
       sum += statement_size(ls->stmt);
       break;
     }
+    case kind_atomic_stmt: {
+      atomic_stmt ls = CAST(atomic_stmt, stmt);
+
+      sum += statement_size(ls->stmt);
+      break;
+    }
     case kind_expression_stmt: {
       expression_stmt es = CAST(expression_stmt, stmt);
 
