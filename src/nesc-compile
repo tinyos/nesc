@@ -36,6 +36,9 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	elsif (/^-o/) {
 	    ($i, $objtarget) = &extractarg($i);
 	}
+	elsif (/^-S/) {
+	    $asmonly = 1;
+	}
 	elsif (/^-fnesc-/) {
 	    if (/^-fnesc-cfile=(.*)$/) {
 		$ctarget = $1;
@@ -75,7 +78,8 @@ if ($ctarget eq "") {
 
 if ($objtarget eq "") {
     $objtarget = $source;
-    $objtarget =~ s/\.td$/.o/;
+    $objtarget =~ s/\.td$/.o/ unless $asmonly;
+    $objtarget =~ s/\.td$/.s/ if $asmonly;
 }
 
 push @nesc_args, "-fnesc-no-debug" if $target eq "avr";
@@ -100,7 +104,7 @@ if ($target eq "avr") {
     $asmtarget1 =~ s/\.c$/.s/;
 
     $asmtarget2 = $objtarget;
-    $asmtarget2 =~ s/\.o$/.s/;
+    $asmtarget2 =~ s/\.o$/.s/ unless $asmonly;
 
     push @gcc_args, "-o";
     push @gcc_args, $asmtarget1;
@@ -123,13 +127,16 @@ if ($target eq "avr") {
     close SED;
     close OSED;
     unlink $asmtarget1;
-    &vsystem("avr-as", "-o", $objtarget, $asmtarget2);
-    unlink $asmtarget2;
+    unless ($asmonly) {
+	&vsystem("avr-as", "-o", $objtarget, $asmtarget2);
+	unlink $asmtarget2;
+    }
 }
 else {
     push @gcc_args, "-o";
     push @gcc_args, $objtarget;
-    push @gcc_args, "-c";
+    push @gcc_args, "-S" if $asmonly;
+    push @gcc_args, "-c" unless $asmonly;
     push @gcc_args, $ctarget;
     unshift @gcc_args, "gcc";
     &vsystem(@gcc_args);

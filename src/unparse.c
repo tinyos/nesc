@@ -362,15 +362,15 @@ void prt_ellipsis_decl(ellipsis_decl d)
   output("...");
 }
 
-static bool interesting_elements(type_element elems)
+static type_element interesting_element(type_element elems)
 {
   type_element elem;
 
   scan_type_element (elem, elems)
     if (is_tag_ref(elem))
-      return TRUE;
+      return elem;
 
-  return FALSE;
+  return NULL;
 }
 
 static void static_hack(data_declaration ddecl)
@@ -390,6 +390,7 @@ void prt_data_decl(data_decl d)
 {
   declaration vd;
   bool first = TRUE;
+  type_element interesting;
 
   scan_declaration (vd, d->decls)
     {
@@ -413,10 +414,9 @@ void prt_data_decl(data_decl d)
       outputln(";");
     }
 
-  if (first && interesting_elements(d->modifiers))
+  if (first && (interesting = interesting_element(d->modifiers)))
     {
-      prt_type_elements(d->modifiers, FALSE);
-      prt_type_elements(CAST(type_element, d->attributes), FALSE);
+      prt_type_element(interesting, FALSE);
       outputln(";");
     }
 }
