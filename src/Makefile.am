@@ -161,6 +161,8 @@ EXTRA_DIST = 					\
 	machine/avr.c				\
 	tdspecs					\
 	nesc-compile				\
+	COPYING					\
+	COPYRIGHT				\
 	.gdbinit
 
 BISON = bison
