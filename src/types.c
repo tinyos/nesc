@@ -2118,14 +2118,6 @@ type instantiate_type(type t)
 
 static char *primname[] = {
   NULL,
-  "nw_int8_t",
-  "nw_int16_t",
-  "nw_int32_t",
-  "nw_int64_t",
-  "nw_uint8_t",
-  "nw_uint16_t",
-  "nw_uint32_t",
-  "nw_uint64_t",
   "int16_t",
   "uint16_t",
   "int32_t",

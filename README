@@ -9,6 +9,10 @@ avr-gcc up to 3.1.1, 2.13.2.1 for later avr-gcc's).
 Changes in nesC 1.2
 ===================
 - generic components and interfaces. See doc/user/generics-1.2.txt
+- attributes. See doc/users/attributes.txt
+- binary components. See doc/users/binary-components.txt
+- external types, a revamp of nesC 1.1.3's network types. See 
+  doc/users/network-types.txt
 
 Changes in nesC 1.1.3
 =====================

@@ -3657,14 +3657,6 @@ static char *rid_name_int(int id)
     case RID_FLOAT: return "float";
     case RID_DOUBLE: return "double";
     case RID_VOID: return "void";
-    case RID_NINT1: return "nw_int8_t";
-    case RID_NINT2: return "nw_int16_t";
-    case RID_NINT4: return "nw_int32_t";
-    case RID_NINT8: return "nw_int64_t";
-    case RID_NUINT1: return "nw_uint8_t";
-    case RID_NUINT2: return "nw_uint16_t";
-    case RID_NUINT4: return "nw_uint32_t";
-    case RID_NUINT8: return "nw_uint64_t";
     case RID_UNSIGNED: return "unsigned";
     case RID_SHORT: return "short";
     case RID_LONG: return "long";

@@ -72,9 +72,6 @@ typedef struct tag_declaration {
   struct tag_declaration *shadowed; /* Any struct with the same tag defined in enclosing scope */
   bool defined, being_defined;
   bool fields_const, fields_volatile;
-#ifdef NETWORK
-  bool network_struct;
-#endif
   bool transparent_union;	/* transparent_union attribute is present */
   bool collapsed;		/* TRUE if this struct/union was collapsed
 				   into its parent. */

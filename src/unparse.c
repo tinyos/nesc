@@ -1348,7 +1348,6 @@ void prt_label_address(label_address e, int context_priority)
 
 void prt_asttype_cast(asttype t)
 {
-#ifdef NETWORK
   /* Casts to a network base type are replaced by casts to the 
      correspondingly sized base type */
   if (type_network_base_type(t->type))
@@ -1361,7 +1360,6 @@ void prt_asttype_cast(asttype t)
 
       t = new_asttype(unparse_region, t->location, d, qualifiers);
     }
-#endif
   prt_asttype(t);
 }
 
