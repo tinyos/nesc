@@ -1,6 +1,7 @@
 #!@pathperl@
 $prefix = "@prefix@";
 $datadir = "@datadir@";
+$debugger = "avr-gdb";
 
 @argcmds = ( "-b", "--cd", "--command", "--core", "--pid", "--directory",
 	     "--exec", "--interpreter", "--se", "--symbols", "--tty",
@@ -12,12 +13,17 @@ for ($i = 0; $i <= $#ARGV; $i++) {
     if (grep $_ eq $arg, @argcmds) {
 	$i++;
     }
+    elsif ($arg eq "--debugger" && $i < $#ARGV) {
+	$debugger = $ARGV[$i + 1];
+	splice @ARGV, $i, 2;
+	$i--;
+    }
     elsif ($arg eq "--capture") {
 	$ENV{AVARICE_ARGS} = "$ENV{AVARICE_ARGS} --capture";
 	splice @ARGV, $i, 1;
 	# Don't load an executable
 	$exe = "";
-	break;
+	$i--;
     }
     elsif (!($arg =~ /^-/)) {
 	$exe = $arg;
@@ -26,5 +32,5 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 }
 
 system "start-avarice $exe";
-unshift @ARGV, ("avr-gdb", "-x", "$datadir/avarice/gdb-avarice-script" );
+unshift @ARGV, ($debugger, "-x", "$datadir/avarice/gdb-avarice-script" );
 exec @ARGV;

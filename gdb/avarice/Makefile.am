@@ -21,7 +21,7 @@ AUTOMAKE_OPTIONS = foreign
 
 bin_PROGRAMS = avarice
 
-bin_SCRIPTS = start-avarice ice-gdb
+bin_SCRIPTS = start-avarice kill-avarice ice-gdb ice-insight
 
 pkgdata_DATA = gdb-avarice-script
 
@@ -42,4 +42,6 @@ avarice_SOURCES =	\
 EXTRA_DIST =		\
 	COPYING		\
 	gdb-avarice-script \
-	start-avarice
+	start-avarice	\
+	kill-avarice	\
+	ice-insight
