@@ -1924,12 +1924,14 @@ yylex(struct yystype *lvalp)
 		  data_declaration fdecl = env_lookup(cref->ctype->env->id_env, token_l2.idtoken.id.data, TRUE);
 
 		  if (fdecl->kind == decl_typedef)
-		    token_l2.idtoken.decl = fdecl;
-		  else
-		    /* Not the special case, treat as regular identifier */
-		    token = IDENTIFIER;
+		    {
+		      token_l2.idtoken.decl = fdecl;
+		      return token;
+		    }
 		}
 	    }
+	  /* Not the special case, treat as regular identifier */
+	  token = IDENTIFIER;
 	}
     }
 
