@@ -1,0 +1,16 @@
+rm -rf .output
+OUT=/tmp/test.$$.1
+ERR=/tmp/test.$$.2
+mkdir .output
+for i in *.nc; do
+  echo $i
+  ./run1 $i >$OUT 2>$ERR
+  sed -e 's/arg_0x[0-9a-f]*/arg_hex/g' $OUT >.output/$i.1 
+  sed -e 's/arg_0x[0-9a-f]*/arg_hex/g' $ERR >.output/$i.2 
+done
+echo
+diff --recur -u .ok .output
+if [ $? = 0 ]; then
+  echo All tests passed
+fi
+rm -f $OUT $ERR

@@ -1,0 +1,106 @@
+#define nx_struct struct
+#define nx_union union
+# 60 "/usr/local/avr/sys-include/inttypes.h"
+typedef signed char int8_t;
+
+
+
+
+typedef unsigned char uint8_t;
+# 83 "/usr/local/avr/sys-include/inttypes.h" 3
+typedef int int16_t;
+
+
+
+
+typedef unsigned int uint16_t;
+
+
+
+
+
+
+
+
+
+
+typedef long int32_t;
+
+
+
+
+typedef unsigned long uint32_t;
+#line 117
+typedef long long int64_t;
+
+
+
+
+typedef unsigned long long uint64_t;
+#line 134
+typedef int16_t intptr_t;
+
+
+
+
+typedef uint16_t uintptr_t;
+# 53 "/usr/local/lib/ncc/nesc_nx.h"
+static __inline uint16_t __nesc_hton_uint16(void *target, uint16_t value);
+#line 84
+static __inline int16_t __nesc_hton_int16(void *target, int16_t value);
+#line 187
+typedef struct { char data[1]; } __attribute__((packed)) nx_int8_t;
+typedef struct { char data[2]; } __attribute__((packed)) nx_int16_t;
+typedef struct { char data[4]; } __attribute__((packed)) nx_int32_t;
+typedef struct { char data[8]; } __attribute__((packed)) nx_int64_t;
+typedef struct { char data[1]; } __attribute__((packed)) nx_uint8_t;
+typedef struct { char data[2]; } __attribute__((packed)) nx_uint16_t;
+typedef struct { char data[4]; } __attribute__((packed)) nx_uint32_t;
+typedef struct { char data[8]; } __attribute__((packed)) nx_uint64_t;
+
+
+typedef struct { char data[1]; } __attribute__((packed)) nxle_int8_t;
+typedef struct { char data[2]; } __attribute__((packed)) nxle_int16_t;
+typedef struct { char data[4]; } __attribute__((packed)) nxle_int32_t;
+typedef struct { char data[8]; } __attribute__((packed)) nxle_int64_t;
+typedef struct { char data[1]; } __attribute__((packed)) nxle_uint8_t;
+typedef struct { char data[2]; } __attribute__((packed)) nxle_uint16_t;
+typedef struct { char data[4]; } __attribute__((packed)) nxle_uint32_t;
+typedef struct { char data[8]; } __attribute__((packed)) nxle_uint64_t;
+# 3 "t4.nc"
+nx_struct t4$fun {
+  nx_int8_t x;
+  nx_int16_t y;
+} __attribute__((packed)) t4$a;
+
+int   main(void);
+# 53 "/usr/local/lib/ncc/nesc_nx.h"
+static __inline uint16_t __nesc_hton_uint16(void *target, uint16_t value)
+#line 53
+{
+  uint8_t *base = target;
+
+#line 55
+  base[1] = value;
+  base[0] = value >> 8;
+  return value;
+}
+
+#line 84
+static __inline int16_t __nesc_hton_int16(void *target, int16_t value)
+#line 84
+{
+  __nesc_hton_uint16(target, value);
+  return value;
+}
+
+# 8 "t4.nc"
+int   main(void)
+#line 8
+{
+  nx_int16_t *z = & t4$a.y;
+
+  __nesc_hton_int16(&*z, 2);
+  return 0;
+}
+
