@@ -39,7 +39,9 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %doc
 
 %changelog
-* Fri Sep 26 2003 root <kwright@cs.utah.edu> 1.1
+* Fri Sep 26 2003 root <kwright@cs.berkeley.edu> 1.1.1
+- Resurrect because we cannot have noarch for binaries
+* Fri Sep 26 2003 root <kwright@cs.berkeley.edu> 1.1
 - New source
-* Fri Aug 26 2003 root <kwright@cs.utah.edu> 1.1pre3-1p
+* Fri Aug 26 2003 root <kwright@cs.berkeley.edu> 1.1pre3-1p
 - Initial build.
