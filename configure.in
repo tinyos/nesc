@@ -24,7 +24,7 @@ dnl -*- m4 -*-
 # force autoconf 2.5 on Debian systems
 AC_PREREQ(2.50)
 
-AC_INIT(nesc, 1.0)
+AC_INIT(nesc, 1.0.1)
 AC_CONFIG_AUX_DIR(config-aux)
 AC_CANONICAL_HOST
 
@@ -39,9 +39,9 @@ case $host in
 esac
 AC_SUBST(CYGWINHACKS)
 
-AM_INIT_AUTOMAKE(nesc, 1.0)
+AM_INIT_AUTOMAKE(nesc, 1.0.1)
 
-AC_CONFIG_SUBDIRS(src)
+AC_CONFIG_SUBDIRS(src gdb/avarice)
 
 AC_PATH_PROG(pathperl, perl)
 if test -z "$pathperl" ; then
@@ -65,6 +65,7 @@ AC_SUBST(TOSDIR)
 AC_OUTPUT(
 	Makefile
 	doc/Makefile
+	gdb/Makefile
 	tools/Makefile
 	tools/mig
 	tools/ncc

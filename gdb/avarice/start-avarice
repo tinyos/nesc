@@ -3,9 +3,9 @@ killall -q avarice
 echo $1
 if [ "$1" != "" ] ; then
   avr-objcopy -O binary $1 /tmp/av$$.bin
-  avarice --jtag /dev/ttyS0 -f /tmp/av$$.bin localhost 6423 --detach
+  avarice $AVARICE_ARGS -f /tmp/av$$.bin localhost 6423 --detach
   rm -f /tmp/av$$.bin
 else
-  avarice --jtag /dev/ttyS0 localhost 6423 --detach
+  avarice $AVARICE_ARGS localhost 6423 --detach
 fi
 

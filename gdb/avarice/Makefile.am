@@ -41,4 +41,5 @@ avarice_SOURCES =	\
 
 EXTRA_DIST =		\
 	COPYING		\
-	gdb-avarice-script
+	gdb-avarice-script \
+	start-avarice

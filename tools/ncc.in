@@ -80,6 +80,9 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	    $print_version = 1;
 	    $strip = 1;
 	}
+	elsif (/^-g$/) {
+	    $debugging = 1;
+	}
     } 
 
     push @new_args, $_ if !$strip;
@@ -105,6 +108,10 @@ if ($target eq "pc") {
 elsif ($target eq "mica") {
     $gcc = "avr-gcc";
     push @new_args, ("-mmcu=atmega103", "-fnesc-target=avr");
+    # work around JTAG ICE bug (data in 0xdc->0xff range is
+    # read as random contents by JTAG ICE board)
+    # Note: this loses 160 bytes of RAM when debugging...
+    push @new_args, "-Wl,-Tdata=0x800100" if $debugging;
     @commonplatforms = ("avrmote");
 }
 elsif ($target eq "mica128") {
