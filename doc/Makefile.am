@@ -5,3 +5,5 @@ EXTRA_DIST =					\
 	ncc.html                                \
 	ref.pdf
 
+ref.pdf: ref.tex
+	pdflatex ref.tex
