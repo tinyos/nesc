@@ -176,4 +176,9 @@ largest_int cval_intcompare(cval c1, cval c2);
    Returns: x, x<0 if c1 < c2, x = 0 if c1 = c2 and x > 0 if c1 > c2
 */
 
+void cval_print(FILE *f, cval c);
+/* Requires: cval_knownvalue(c)
+   Effects: prints a parsable representable of c to f
+ */
+
 #endif

@@ -91,8 +91,8 @@ static dd_list find_async_variables(region r, cgraph callgraph)
   gnode n;
   dd_list avars = dd_new_list(r);
 
-  /* Set async_access in all global or static variables that are 
-     accessed (r, w) in an async function */
+  /* Set async_access in all global or static variables that are accessed
+     (r, w) in an async function. Return list of all such variables */
 
   /* XXX: aliasing issues ignored for now. */
 

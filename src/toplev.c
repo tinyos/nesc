@@ -60,6 +60,7 @@ static char *lang_options[] =
   "-fnesc-no-inline",
   "-fnesc-save-macros",
   "-fnesc-msg=",
+  "-fnesc-csts",
   "-fnesc-target=",
   "-fnesc-docdir=",
   "-fnesc-topdir=",

@@ -131,6 +131,10 @@ bool nesc_option(char *p)
     {
       select_nesc_msg(p + strlen("-fnesc-msg="));
     }
+  else if (!strcmp (p, "-fnesc-csts"))
+    {
+      select_nesc_csts();
+    }
   else if (!strncmp (p, "-fnesc-target=", strlen("-fnesc-target=")))
     {
       char *target = p + strlen("-fnesc-target=");

@@ -19,10 +19,11 @@ AUTOMAKE_OPTIONS = foreign
 
 ncclibdir=$(libdir)/ncc
 
-bin_SCRIPTS = mig ncc nescc set-mote-id
+bin_SCRIPTS = mig ncg ncc nescc set-mote-id
 
-ncclib_DATA = genjava.pm migdecode.pm
+ncclib_DATA = genjava.pm gencstjava.pm migdecode.pm
 
 EXTRA_DIST =					\
 	genjava.pm				\
+	gencstjava.pm				\
 	migdecode.pm

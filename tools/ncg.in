@@ -1,0 +1,149 @@
+#!@pathperl@
+
+# This file is part of the nesC compiler.
+#    Copyright (C) 2002 Intel Corporation
+# 
+# The attached "nesC" software is provided to you under the terms and
+# conditions of the GNU General Public License Version 2 as published by the
+# Free Software Foundation.
+# 
+# nesC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with nesC; see the file COPYING.  If not, write to
+# the Free Software Foundation, 59 Temple Place - Suite 330,
+# Boston, MA 02111-1307, USA.
+
+$prefix = "@prefix@";
+$exec_prefix = "@exec_prefix@";
+$NCDIR = "@libdir@/ncc";
+
+push @INC, "$NCDIR";
+
+for ($i = 0; $i <= $#ARGV; $i++) {
+    $_ = $ARGV[$i];
+
+    if (/^-/) {
+	if (/^-java-classname=(.*)$/) {
+	    $java_classname = $1;
+	}
+	elsif (/^-java-extends=(.*)$/) {
+	    $java_extends = $1;
+	}
+	elsif (/^-o/) {
+	    ($i, $ofile) = &extractarg($i);
+	}
+	# pass ncc options on through
+	# (yes, -o was captured above. This is "generic" code)
+	elsif (/^-[oILxubV]/) {
+	    # pass option and arg through unchanged
+	    $opt = substr $_, 1, 1;
+	    ($i, $arg) = &extractarg($i);
+	    push @args, "-$opt$arg";
+	}
+	elsif ($i < $#ARGV &&
+	       (/^-idirafter$/ || /^-include$/ || /^-imacros$/ ||
+		/^-iprefix$/ || /^-iwithprefix$/ || /^-iwithprefixbefore$/ ||
+		/^-isystem$/ || /^-Xlinker$/)) {
+	    # convert argument filename which is in next arg
+	    push @args, $_;
+	    push @args, $ARGV[++$i];
+	}
+	else {
+	    push @args, $_;
+	    $verbose = 1 if /^-v$/;
+	}
+    }
+    else {
+	if (!defined($target)) {
+	    $target = $_;
+	}
+	elsif (!defined($cfile)) {
+	    $cfile = $_;
+	}
+	else {
+	    $csts = 1;
+	    if (/^\w+$/) {
+		$cst_names{$_} = 1;
+	    }
+	    else {
+		$cst_files{$_} = 1;
+	    }
+	}
+    }
+}
+&usage("no target specified") if !defined($target);
+&usage("no nesC file specified") if !defined($cfile);
+&usage("no constants requested") if !$csts;
+
+unshift @args, "-fsyntax-only";
+unshift @args, "-fnesc-csts";
+unshift @args, "ncc";
+push @args, "-x";
+push @args, "nesc";
+push @args, $cfile;
+
+print STDERR join(" ", @args), "\n" if $verbose;
+open(NESC, '-|', join(" ", @args)) or die "ncc not found";
+@allcsts = <NESC>;
+close NESC;
+
+foreach (@allcsts) {
+    die "invalid nesC output" if !/(\w+) "(.*)" (\w+) (.*)/;
+    $name = $1;
+    $path = $2;
+    $val = $4;
+    $path =~ /([^\/]+)$/;
+    $file = $1;
+    $csts{$name} = $val if ($cst_names{$name} || $cst_files{$file});
+}
+
+if ($?) {
+    print STDERR "failed to parse nesC file $cfile\n";
+    exit 1;
+}
+
+if ($ofile) {
+    close STDOUT;
+    if (!open STDOUT, ">$ofile") {
+	print STDERR "failed to create $ofile\n";
+	exit 1;
+    }
+}
+
+require "gencst$target.pm";
+&gen($classname, %csts);
+
+sub usage()
+{
+    my ($error) = @_;
+
+    print STDERR "$error\n\n" if $error;
+
+    print STDERR "Usage: $0 [options] tool nesC-file filenames-or-constant-names...\n";
+    print STDERR "  general options are\n";
+    print STDERR "    -I dir                            Add include directory\n\n";
+    print STDERR "    -target=NCC-TARGET                Select mote architecture\n";
+    print STDERR "                                      (default is ncc's, use pc with tossim)\n";
+    print STDERR "  target specific options are\n";
+    print STDERR "    java:\n";
+    print STDERR "      -java-classname=FULL-CLASS-NAME Select class name (required)\n";
+    print STDERR "      -java-extends=CLASS-NAME        Select class to extend\n";
+    print STDERR "                                      (default net.tinyos.message.Message)\n";
+    exit 2;
+}
+
+sub extractarg {
+    local ($i) = @_;
+
+    if (length($ARGV[$i]) == 2) {
+	$arg = $ARGV[++$i];
+    }
+    else {
+	$arg = substr($ARGV[$i], 2);
+    }
+    return ($i, $arg);
+}

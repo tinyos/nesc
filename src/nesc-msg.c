@@ -21,12 +21,19 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-msg.h"
 #include "semantics.h"
 #include "constants.h"
+#include "c-parse.h"
 
-const char *selected_type;
+static const char *selected_type;
+static bool print_csts;
 
 void select_nesc_msg(const char *name)
 {
   selected_type = name;
+}
+
+void select_nesc_csts(void)
+{
+  print_csts = TRUE;
 }
 
 static void dump_type(type t)
@@ -98,24 +105,33 @@ static void dump_fields(region r, const char *prefix, field_declaration fields)
     }
 }
 
+static known_cst constant_value(const char *name)
+{
+  data_declaration decl;
+  static struct known_cst bad_value;
+
+  decl = lookup_global_id(name);
+
+  if (decl && decl->kind == decl_constant)
+    return decl->value;
+
+  bad_value.type = error_type;
+  return &bad_value;
+}
+
 static int am_type(region r, tag_declaration tdecl)
 {
   char *am_name = rarrayalloc(r, strlen(tdecl->name) + 4, char), *s;
-  data_declaration am_decl;
+  known_cst am_val;
 
   sprintf(am_name, "AM_%s", tdecl->name);
   for (s = am_name; *s; s++)
     *s = toupper(*s);
 
-  am_decl = lookup_global_id(am_name);
+  am_val = constant_value(am_name);
 
-  if (am_decl && am_decl->kind == decl_constant)
-    {
-      known_cst am_val = am_decl->value;
-
-      if (type_integer(am_val->type) && cval_knownvalue(am_val->cval))
-	return constant_sint_value(am_val);
-    }
+  if (type_integer(am_val->type) && cval_knownvalue(am_val->cval))
+    return constant_sint_value(am_val);
   
   fprintf(stderr, "warning: Cannot determine AM type for %s\n", selected_type);
   fprintf(stderr, "         (Looking for definition of %s)\n", am_name);
@@ -143,38 +159,70 @@ bool dump_msg_layout(void)
   tag_declaration tdecl;
 
   /* We look for a tagged type with name selected_type in the global
-     environment, and dump the layout in a perl-friendly format */
+     environment, and dump the layout in a perl-friendly format.
+     We also dump any requested constants. */
 
-  if (!selected_type)
+  if (!(selected_type || print_csts))
     return FALSE;
 
-  tdecl = env_lookup(global_env->tag_env, selected_type, FALSE);
-
-  if (!tdecl)
+  if (selected_type)
     {
-      fprintf(stderr, "error: tag %s not found\n", selected_type);
-      exit(1);
+      tdecl = env_lookup(global_env->tag_env, selected_type, FALSE);
+
+      if (!tdecl)
+	{
+	  fprintf(stderr, "error: tag %s not found\n", selected_type);
+	  exit(1);
+	}
+
+      if (tdecl->kind == kind_enum_ref)
+	{
+	  fprintf(stderr, "error: %s is an enum\n", selected_type);
+	  exit(1);
+	}
+
+      if (!tdecl->size_cc)
+	{
+	  fprintf(stderr, "error: %s is variable size\n", selected_type);
+	  exit(1);
+	}
+
+      if (type_contains_pointers(make_tagged_type(tdecl)))
+	{
+	  fprintf(stderr, "warning: %s contains pointers\n", selected_type);
+	}
+
+      dump_layout(tdecl);
+
     }
 
-  if (tdecl->kind == kind_enum_ref)
+  if (print_csts)
     {
-      fprintf(stderr, "error: %s is an enum\n", selected_type);
-      exit(1);
+      env_scanner scan_global;
+      const char *name;
+      void *vdecl;
+
+      env_scan(global_env->id_env, &scan_global);
+      while (env_next(&scan_global, &name, &vdecl))
+	{
+	  data_declaration ddecl = vdecl;
+
+	  if (ddecl->kind == decl_constant)
+	    {
+	      known_cst val = ddecl->value;
+
+	      printf("%s \"%s\" ", name, ddecl->definition->location->filename);
+	      dump_type(val->type);
+	      putchar(' ');
+
+	      if (cval_knownvalue(val->cval))
+		cval_print(stdout, val->cval);
+	      else
+		puts(" UNKNOWN");
+	      putchar('\n');
+	    }
+	}
     }
-
-  if (!tdecl->size_cc)
-    {
-      fprintf(stderr, "error: %s is variable size\n", selected_type);
-      exit(1);
-    }
-
-  if (type_contains_pointers(make_tagged_type(tdecl)))
-    {
-      fprintf(stderr, "warning: %s contains pointers\n", selected_type);
-    }
-
-  dump_layout(tdecl);
-
   return TRUE;
 }
 

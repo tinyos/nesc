@@ -68,6 +68,7 @@ AC_OUTPUT(
 	gdb/Makefile
 	tools/Makefile
 	tools/mig
+	tools/ncg
 	tools/ncc
 	tools/nescc
 	tools/set-mote-id
