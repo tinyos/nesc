@@ -1,0 +1,73 @@
+typedef int /*test.mod1*/mod$0$t;
+typedef float */*test.mod2*/mod$1$t;
+static  void /*test.mod1*/mod$0$sc$init(void);
+static  void /*test.mod2*/mod$1$sc$init(void);
+static  
+# 2 "sc.nc"
+void main$sc$init(void);
+# 5 "main.nc"
+void  main$entry(void);
+# 5 "mod.nc"
+struct mod$0$oops {
+  mod$0$t x;
+} /*test.mod1*/mod$0$a;
+static inline 
+mod$0$t /*test.mod1*/mod$0$f(mod$0$t x);
+static inline  
+
+
+void /*test.mod1*/mod$0$sc$init(void);
+#line 5
+struct mod$1$oops {
+  mod$1$t x;
+} /*test.mod2*/mod$1$a;
+static inline 
+mod$1$t /*test.mod2*/mod$1$f(mod$1$t x);
+static inline  
+
+
+void /*test.mod2*/mod$1$sc$init(void);
+static inline 
+#line 9
+mod$1$t /*test.mod2*/mod$1$f(mod$1$t x)
+#line 9
+{
+  return x;
+}
+
+static inline  void /*test.mod2*/mod$1$sc$init(void)
+#line 13
+{
+  /*test.mod2*/mod$1$a.x = /*test.mod2*/mod$1$f(/*test.mod2*/mod$1$a.x);
+}
+
+static inline 
+#line 9
+mod$0$t /*test.mod1*/mod$0$f(mod$0$t x)
+#line 9
+{
+  return x;
+}
+
+static inline  void /*test.mod1*/mod$0$sc$init(void)
+#line 13
+{
+  /*test.mod1*/mod$0$a.x = /*test.mod1*/mod$0$f(/*test.mod1*/mod$0$a.x);
+}
+
+# 2 "sc.nc"
+inline static  void main$sc$init(void){
+#line 2
+  /*test.mod1*/mod$0$sc$init();
+#line 2
+  /*test.mod2*/mod$1$sc$init();
+#line 2
+}
+#line 2
+# 5 "main.nc"
+void  main$entry(void)
+#line 5
+{
+  main$sc$init();
+}
+
