@@ -270,6 +270,12 @@ bool resetProgram(void);
 /** Interrupt AVR. Return true iff successful **/
 bool interruptProgram(void);
 
+/** Resume program execution. Return true iff successful.
+    Note: the gdb 'continue' command is handled by jtagContinue,
+    this is just the low level command to resume after interruptProgram
+**/
+bool resumeProgram(void);
+
 /** Issue a "single step" command to the JTAG box. 
     Return true iff successful **/
 bool jtagSingleStep(void);

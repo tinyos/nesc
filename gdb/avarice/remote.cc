@@ -130,6 +130,7 @@ int getDebugChar(void)
     if (result == 0) // gdb exited
     {
 	statusOut("gdb exited.\n");
+	resumeProgram();
 	exit(0);
     }
 
@@ -636,8 +637,13 @@ void talkToGdb(void)
 	}
 	break;
 
-    case 'D':	// Detach, does nothing useful
-	ok();
+    case 'D':
+        // Detach, resumes target. Can get control back with step
+	// or continue
+      if (resumeProgram())
+	    ok();
+	else
+	    error(1);
 	break;
 
     case 'Z':

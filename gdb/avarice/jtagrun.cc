@@ -88,6 +88,10 @@ bool interruptProgram(void)
     return doSimpleJtagCommand('F', 4);
 }
 
+bool resumeProgram(void)
+{
+    return doSimpleJtagCommand('G', 0);
+}
 
 bool jtagSingleStep(void)
 {
