@@ -24,6 +24,17 @@ Boston, MA 02111-1307, USA.  */
   source code.  The basic format for documentation is similar to
   Javadoc.  For specifics, look 
 
+
+  
+  Modified: 8/14/2002 by Phil Levis
+
+  - Changed symlink code to unlink symlink before linking (else
+    EEXIST occurs when repeating).
+  - Removed color map elements -- default graphviz doesn't include
+    language cmap.
+  
+
+  
   FIXME: need to document the doc system...  ;-)
 
 */
