@@ -66,3 +66,5 @@ Scheduled changes before the final release:
 - 8051 platform support (with Keil C) from David Patnode
 - a few bugs that need tracking down
 - clean up combining function association with types
+- uniqueMax(<string>) function to complement unique(<string>), returning
+  the number of uses of the latter (useful for dimensioning arrays...)
