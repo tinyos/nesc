@@ -1,0 +1,102 @@
+NAME
+
+mig - message interface generator for nesC
+
+SYNOPSIS
+
+mig [-I dir] [-target=pc|mica|rene2]
+[-o output-file]
+[-java-classname=full-class-name]
+[-java-extends=class-name]
+tool msg-format-file message-type
+
+DESCRIPTION    
+
+mig is a tool to generate code that processes TinyOS messages.  The tool
+argument specifies what tool should be generated, the msg-format-file
+specifies your application's top-level nesC file, and the message-type
+specifies the C type of the message you wish to process. The C type must be
+defined with `struct message-type' or `union message-type' in a .h file
+which your nesC application `includes'. If your .h file defining the
+message type does not depend on any other files, then you can specify the
+.h file directly as the msg-format-file.
+
+If an enum constant named AM_message_type (with message_type capitalized)
+is found, then the value of that constant is assumed to be the active
+message type for message-type.
+
+Currently there is only one tool, `java', which generates a java class that
+encodes and decodes messages. The -java-* options are specific to this
+tool. It is described below.
+
+-o output-file: specify the file in which to output the generated code.
+
+-I dir: specify an additional search directory for nesC components.
+
+-target=pc|mica|rene2: specify the target architecture of your TinyOS
+application which is generating or receiving messages. So, if compiling
+your application for tossim, generate mig tools with -target=pc. The
+default target is ncc's default target.
+
+JAVA TOOL
+
+This tool generates a java class to encode or decode a TinyOS packet, basing
+itself on the net.tinyos.message infrastructure. For each field fname of
+structure message-type, there are the following methods (fname is capitalised
+in the method names):
+
+getFname: get field's value
+setFname: set field's value
+offsetFname: return bit offset of field in message-type
+sizeFname: return size in bits of field
+
+Embedded structures on message-type are expanded, using _ to separate the
+structure name and its fields.
+
+If a field is an array then the get, set and offset methods take one
+argument per array dimension. These methods report errors if the array
+index is out of bounds. If an array has a maximum size of 0, mig assumes
+it represents a variable-size array and does not check the corresponding
+array index.
+
+The generated class has constructors that:
+
+- create an unitialised message, with optional explicit packet size
+argument
+
+- create a message initialised from an argument byte array, with optional
+explicit packet size argument
+
+- create a message initialised from an argument
+net.tinyos.message.ByteArray interface, with optional explicit
+packet size argument
+
+The optional packet size argument overrides the default size of
+sizeof(message-type); this is useful for variable-size messages.
+
+The generated class also has an amType() method which returns the message's
+active message type, or -1 if no AM_message_type constant was found.
+
+The java tool accepts the following options:
+
+-java-classname=full-class-name: this option is required and specifies
+the package and name of the generated class.
+
+-java-extends=class-name: specify the class the generated class will extend.
+The default is net.tinyos.message.Message.
+
+EXAMPLE
+
+        APPDIR=`ncc -print-tosdir`/../apps/Ident
+	mig java -I $APPDIR  -java-classname=net.tinyos.ident.IdentMsg $APPDIR/App.td IdentMsg -o IdentMsg.java
+
+
+ERRORS
+
+mig reports an error if ncc cannot compile msg-format-file, if
+message-type isn't found or if it contains pointers.
+
+SEE ALSO
+
+ncc(1)
+

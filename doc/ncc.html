@@ -1,0 +1,126 @@
+NAME
+
+ncc - nesC compiler
+
+SYNOPSIS
+
+ncc [-target=pc|mica|rene2]
+[-tosdir=dir]
+[-print-tosdir]
+[-nostdinc]
+[-board=micasb|basicsb|micawb]
+[-fnesc-tossim-tosnodes=n]
+[-fnesc-cfile=file]
+[-docdir=dir]
+[-topdir=dir]
+[-graphviz=y|n]
+[any gcc option]
+files...
+
+DESCRIPTION
+
+ncc is an extension to gcc that knows how to compile nesC applications. If
+invoked on regular C files, it behaves exactly like gcc. When invoked on a
+nesC component (.td extension) or interface (.ti extension) file it
+compiles and links (except if the usual -c, -S, -E or -fsyntax-only options
+are used) that component with the other files specified on the command
+line.
+
+The additional options recognized by ncc over gcc are:
+
+-target=pc|mica|rene2: specify the target mote architecture for this
+compilation. If pc is specified, the compilation uses the tossim
+environment and produces a locally executable file. The default target
+is mica.
+
+-tosdir=dir: specify the location of TinyOS. This location can also be
+specified with the TOSDIR environment variable. If the variable and the
+option are both given, ncc uses the value specified with the option. If
+neither the environment variable or option are specified, ncc uses its
+compiled-in TinyOS directory.
+
+-print-tosdir: print the TinyOS directory to be used and exit, taking into
+account the -tosdir option and TOSDIR environment variable. No compilation
+occurs when -print-tosdir is used.
+
+-nostdinc: do not automatically include	the TinyOS directories in the
+search path. See the discussion of search paths below for more details.
+
+-board=micasb|basicsb|micawb: specify one (or more) sensor boards. This
+effects the search path and preprocessor symbols.
+
+-fnesc-tossim-tosnodes=n: specify the maximum number of nodes that can be
+simulated in the tossim environment.
+
+-fnesc-cfile=file: specify a file in which to save the C code generated
+when compiling a component. Note: if you specify two components on the
+command line, then the C code from the second one will overwrite the C 
+code from the first.
+
+-docdir=dir: generate documentation for the compiled component in
+directory dir.
+
+-topdir=dir: [Rob, can you fell this in?]
+
+-graphviz=y|n: explicitly enable or disable the use of the graphviz
+tool in the generated documentation. Without this option, graphviz is
+enabled iff the `dot' program is found in the current path. Use of
+graphviz requires `dot'.
+
+
+When compiling a nesC component, the nesC compiler recognizes the gcc C
+language (-f...) and warning (-W...) options. The -S, -c and -o options
+work as usual, the -x option accepts nesc. Directories can be added to
+nesC's search path with -I (see the search path discussion below).
+
+If you wish to compile a component Bar.td to a C file, you can do:
+
+ncc -c -o /dev/null -fnesc-cfile=Bar.c Bar.td
+
+
+SEARCH PATH
+
+Except when -nostdinc is specified, the search path for nesC components is
+as follows, where TOSDIR is the TinyOS directory requested and TARGET
+is the selected target:
+
+.
+-I directives (in option order)
+TOSDIR/sensorboards/boardname, for each -board= specified (in option order)
+TOSDIR/platform/TARGET
+TOSDIR/platform/avrmote for the mica, rene2 targets
+TOSDIR/interfaces
+TOSDIR/system
+TOSDIR/lib
+NESCPATH environment variable directories
+
+When -nostdinc is specified, the search path is simply:
+
+.
+-I directives
+NESCPATH environment variable directories
+
+PREPROCESSOR SYMBOLS
+
+ncc defines the following preprocessor symbols:
+
+PLATFORM_TARGET (where target is the selected target name, converted to
+upper case)
+
+BOARD_BOARDNAME for each -board=BOARDNAME option (the boardname is
+converted to upper case)
+
+ENVIRONMENT VARIABLES
+
+TOSDIR If the -tosdir=dir option is not used, this environment variable
+specifies the location of TinyOS.
+
+NESCPATH A colon separated list of additional search directories for nesC
+components.
+
+SEE ALSO
+
+gcc(1), avr-gcc(1)
+
+
+
