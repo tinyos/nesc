@@ -1,0 +1,16 @@
+NESC1=$PWD/../../../src/nesc1
+rm -rf .output
+mkdir .output
+for i in *; do
+  if [ -d $i ]; then
+    echo $i
+    cd $i
+    $NESC1 test.nc >../.output/$i.1 2>../.output/$i.2
+    cd ..
+  fi
+done
+echo
+diff --recur -u .ok .output
+if [ $? = 0 ]; then
+  echo All tests passed
+fi
