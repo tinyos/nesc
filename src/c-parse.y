@@ -49,6 +49,7 @@ Boston, MA 02111-1307, USA. */
 #include "nesc-component.h"
 #include "nesc-module.h"
 #include "nesc-env.h"
+#include "nesc-c.h"
 
 int yyparse(void) deletes;
 
@@ -210,7 +211,8 @@ void yyerror();
 %type <u.decl> datadef_list parameter_list parameter
 %type <u.decl> parameters parameters1
 %type <u.telement> parameter_type
-%type <u.rplist> requires provides requires_or_provides requires_or_provides_list
+%type <u.decl> requires provides requires_or_provides requires_or_provides_list
+%type <u.decl> requires_or_provides_list_
 %type <u.decl> parameterised_interface_list parameterised_interface
 %type <u.decl> parameterised_interfaces 
 %type <u.decl> interface_parms interface_parm_list interface_parm
@@ -373,6 +375,9 @@ declaration make_data_decl(type_element modifiers, declaration decls)
   data_decl dd = new_data_decl(parse_region, l, modifiers, decls);
 
   pop_declspec_stack();
+
+  if (decls == NULL && current.spec_section != spec_normal)
+    error("provides/uses must be followed by a command, event or interface");
 
   return CAST(declaration, dd);
 }
@@ -548,7 +553,7 @@ module:
 	  component_parms '{' requires_or_provides_list '}'
 	  imodule
 		{ 
-		  set_nesc_parse_tree(new_component(pr, $2.location, $3, $1, $5, rp_interface_reverse($7), $9));
+		  set_nesc_parse_tree(new_component(pr, $2.location, $3, $1, $5, declaration_reverse($7), $9));
 	        }
 	;
 
@@ -561,7 +566,7 @@ configuration:
 	  component_parms '{' requires_or_provides_list '}'
 	  iconfiguration
 		{ 
-		  set_nesc_parse_tree(new_component(pr, $2.location, $3, $1, $5, rp_interface_reverse($7), $9));
+		  set_nesc_parse_tree(new_component(pr, $2.location, $3, $1, $5, declaration_reverse($7), $9));
 	        }
         ;
 
@@ -622,26 +627,31 @@ template_parm:
 	;
 
 requires_or_provides_list: 
-	  requires_or_provides_list requires_or_provides
-		{ $$ = rp_interface_chain($2, $1); }
+	  requires_or_provides_list_
+		{ current.spec_section = spec_normal; }
+	;
+
+requires_or_provides_list_: 
+	  requires_or_provides_list_ requires_or_provides
+		{ $$ = declaration_chain($2, $1); }
 	| /* empty */ { $$ = NULL; }
 	;
 
 requires_or_provides: 
 	  requires 
 	| provides 
-	/*| just_datadef { $$ = 0; }*/
+	| { current.spec_section = spec_normal; } just_datadef { $$ = $2; }
 	;
 
 requires: 
-	  USES { current.component_requires = TRUE; } 
+	  USES { current.spec_section = spec_uses; } 
 	  parameterised_interface_list 
-		{ $$ = new_rp_interface(pr, $1.location, TRUE, declaration_reverse($3)); } ;
+		{ $$ = CAST(declaration, new_rp_interface(pr, $1.location, TRUE, declaration_reverse($3))); } ;
 
 provides: 
-	  PROVIDES { current.component_requires = FALSE; } 
+	  PROVIDES { current.spec_section = spec_provides; } 
 	  parameterised_interface_list 
-		{ $$ = new_rp_interface(pr, $1.location, FALSE, declaration_reverse($3)); } ;
+		{ $$ = CAST(declaration, new_rp_interface(pr, $1.location, FALSE, declaration_reverse($3))); } ;
 
 parameterised_interface_list:
 	  parameterised_interface

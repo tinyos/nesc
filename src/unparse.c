@@ -524,6 +524,7 @@ void prt_toplevel_declaration(declaration d)
       PRTCASE(data_decl, d);
       PRTCASE(function_decl, d);
       PRTCASE(extension_decl, d);
+    case kind_rp_interface: return;
     default: assert(0); break;
     }
 }

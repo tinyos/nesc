@@ -1010,6 +1010,10 @@ void prt_nesc_typedefs(nesc_declaration comp)
   assert(!comp->abstract);
   if (comp->original)
     prt_typedefs(comp);
+
+  /* Print declarations in specification */
+  prt_toplevel_declarations(CAST(component, comp->ast)->decls);
+
   /* Only module interface type arguments are used in output */
   if (is_module(comp->impl))
     prt_nesc_interface_typedefs(comp);

@@ -127,7 +127,6 @@
 
 ;; nesc fields
 (deffield call_kind nesc_call_kind (init))
-(deffield rplist rp_interface (init tree))
 (deffield components component_ref (init tree))
 (deffield connections connection (init tree))
 (deffield implementation implementation (init tree))
@@ -561,8 +560,8 @@ CDECL is the declaration for this interface/component")
 (deftype interface nesc_decl (decls)
   "interface WORD1 { DECLS }")
 
-(deftype component nesc_decl (abstract parms rplist implementation)
-  "ABSTRACT configuration/module WORD1 PARMS { RPLIST } IMPLEMENTATION
+(deftype component nesc_decl (abstract parms decls implementation)
+  "ABSTRACT configuration/module WORD1 PARMS { DECLS } IMPLEMENTATION
 If ABSTRACT is true, this is a generic component, and PARMS is its
 parameters.")
 
@@ -581,7 +580,7 @@ CDECL is the declaration for this component")
 ;; component definition types
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftype rp_interface node (required decls)
+(deftype rp_interface declaration (required decls)
   "a required or provided function or interface declaration (DECL is
 either a data_decl or an interface_ref). REQUIRED is true for 'requires',
 false for 'provides' clauses")

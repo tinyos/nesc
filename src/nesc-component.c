@@ -56,6 +56,10 @@ void component_spec_iterate(nesc_declaration c,
     {
       data_declaration idecl = ifentry;
 
+      if (!(idecl->kind == decl_interface_ref ||
+	    idecl->kind == decl_function))
+	continue;
+
       if (idecl->kind != decl_interface_ref || interfaces)
 	iterator(idecl, data);
 
@@ -142,7 +146,7 @@ void declare_interface_ref(interface_ref iref, declaration gparms,
   tempdecl.type = NULL;
   tempdecl.itype = idecl;
   tempdecl.container = current.container;
-  tempdecl.required = current.component_requires;
+  tempdecl.required = current.spec_section == spec_uses;
   tempdecl.gparms = gparms ? make_gparm_typelist(gparms) : NULL;
 
   old_decl = lookup_id(iname, TRUE);

@@ -804,13 +804,15 @@ static void check_cg(cgraph connections)
 static bool fold_components(nesc_declaration cdecl, int pass)
 {
   bool done;
+  declaration spec;
 
   if (cdecl->folded == pass)
     return TRUE;
-
   cdecl->folded = pass;
 
-  done = fold_constants_list(CAST(node, cdecl->impl), pass);
+  spec = CAST(component, cdecl->ast)->decls;
+  done = fold_constants_list(CAST(node, spec), pass);
+  done = fold_constants_list(CAST(node, cdecl->impl), pass) && done;
 
   if (is_module(cdecl->impl))
     ;
@@ -856,9 +858,8 @@ void check_abstract_arguments(const char *kind, data_declaration ddecl,
   while (parms && arglist)
     {
       if (arglist->type == error_type)
-	continue;
-
-      if (is_data_decl(parms))
+	;
+      else if (is_data_decl(parms))
 	{
 	  variable_decl vparm = CAST(variable_decl, CAST(data_decl, parms)->decls);
 	  type parmtype = vparm->ddecl->type;
@@ -981,8 +982,8 @@ nesc_declaration specification_copy(region r, component_ref cref,
 
   /* Copy the specification into the copy's env */
   spec = CAST(component, copy->ast);
-  spec->rplist = CAST(rp_interface,
-		      instantiate_ast_list(r, CAST(node, spec->rplist)));
+  spec->decls = CAST(declaration,
+		     instantiate_ast_list(r, CAST(node, spec->decls)));
   current = old;
 
   /* Give the copy an "empty" specification graph */

@@ -693,41 +693,41 @@ static char *ic_make_iface_key(const char *interface_name)
 static void ic_scan_rplist(nesc_declaration cdecl, char *name) 
 {
   component comp = CAST(component, cdecl->ast);
-  rp_interface rp;
-  declaration decl;
+  declaration dlist, decl;
 
   interface_ref iref;
   ic_entry *entry;
   implementor_list *list;
   char *ifname;
   
-  if( !comp->rplist )
-    return;
+  scan_declaration(dlist, comp->decls) {
+    if (is_rp_interface(dlist)) {
+      rp_interface rp = CAST(rp_interface, dlist);
 
-  scan_rp_interface(rp, comp->rplist) {
-    scan_declaration(decl,rp->decls) {
-      if( is_interface_ref(decl) ) {
-        iref = CAST(interface_ref,decl);
-        ifname = ic_make_iface_key(iref->word1->cstring.data);
-      } else {
-        continue;
-      }
+      scan_declaration(decl, rp->decls) {
+	if( is_interface_ref(decl) ) {
+	  iref = CAST(interface_ref,decl);
+	  ifname = ic_make_iface_key(iref->word1->cstring.data);
+	} else {
+	  continue;
+	}
 
-      entry = ic_get_entry( ifname );
-      if(entry == NULL) {
-        entry = ralloc(doc_region, ic_entry);
-        bzero(entry, sizeof(ic_entry));
-        env_add(ic_env, ifname, entry);
-      }
+	entry = ic_get_entry( ifname );
+	if(entry == NULL) {
+	  entry = ralloc(doc_region, ic_entry);
+	  bzero(entry, sizeof(ic_entry));
+	  env_add(ic_env, ifname, entry);
+	}
         
-      // pick the list
-      if( rp->required )
-        list = &(entry->r_list);
-      else 
-        list = &(entry->p_list);
+	// pick the list
+	if( rp->required )
+	  list = &(entry->r_list);
+	else 
+	  list = &(entry->p_list);
       
-      // add to the list
-      ilist_add(list, name);
+	// add to the list
+	ilist_add(list, name);
+      }
     }
   }
 }
@@ -1922,17 +1922,18 @@ static void generate_component_html(nesc_declaration cdecl)
 
 
   // module declaration (requires / provides stuff)
-  if( comp->rplist ) 
+  if( comp->decls ) 
   {
     rp_interface rp;
-    declaration decl;
+    declaration dlist, decl;
     interface_ref iref;
     bool header_printed = FALSE;
 
 
     // requires
-    scan_rp_interface(rp, comp->rplist) {
-      if( rp->required ) {
+    scan_declaration(dlist, comp->decls) {
+      if(is_rp_interface(dlist) &&
+	 (rp = CAST(rp_interface, dlist))->required ) {
 
         scan_declaration(decl,rp->decls) {
           // commands / events
@@ -1967,8 +1968,9 @@ static void generate_component_html(nesc_declaration cdecl)
 
     // provides
     header_printed = FALSE;
-    scan_rp_interface(rp, comp->rplist) {
-      if( !rp->required ) {
+    scan_declaration(dlist, comp->decls) {
+      if(is_rp_interface(dlist) &&
+	 !(rp = CAST(rp_interface, dlist))->required ) {
         scan_declaration(decl,rp->decls) {
           // commands / events
           if( is_data_decl(decl) ) {

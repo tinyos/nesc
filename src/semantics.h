@@ -198,7 +198,11 @@ struct semantic_state
   nesc_declaration container;	/* The nesC entity being compiled (NULL for C) */
   function_decl function_decl;	/* The function currently being defined */
   tag_ref pending_invalid_xref;	/* Internal use */
-  bool component_requires;	/* FALSE if in provides section, TRUE in requires */
+  enum {			/* Within a component specification, are we: */
+    spec_normal,		/*   - neither in provides or in uses */
+    spec_provides,		/*   - in a provides section */
+    spec_uses			/*   - in a uses section */
+  } spec_section;	
 
   atomic_stmt in_atomic;		/* The lexically containing atomic statement
 				   (NULL for none) */

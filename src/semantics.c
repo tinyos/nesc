@@ -2451,17 +2451,32 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
       vd->declared_type = var_type;
       printname = name ? name : "type name";
 
-      if (current.language == l_interface || current.language == l_component)
+      if (current.language == l_interface)
 	{
 	  if (!(type_command(var_type) || type_event(var_type)))
 	    {
-	      if (current.language == l_interface)
-		error("only commands and events can be defined in interfaces");
-	      else
-		error("only commands, events and interfaces can be defined in component specifications");
+	      error("only commands and events can be defined in interfaces");
 	      class = RID_COMMAND;
 	      var_type = dummy_function_type;
 	      fdeclarator = dummy_function_declarator;
+	    }
+	}
+      else if (current.language == l_component)
+	{
+	  if (type_command(var_type) || type_event(var_type))
+	    {
+	      if (current.spec_section == spec_normal)
+		error("commands/events must be provided or used");
+	    }
+	  else if (class == RID_TYPEDEF)
+	    {
+	      if (current.spec_section != spec_normal)
+		error("typedefs cannot be provided or used");
+	    }
+	  else
+	    {
+	      error("variables and functions cannot be declared in component specifications");
+	      var_type = error_type;
 	    }
 	}
       else if (class == RID_COMMAND || class == RID_EVENT)
@@ -2653,7 +2668,7 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
       else
 	ddecl = declare(current.env, &tempdecl, FALSE);
 
-      ddecl->defined = !current.component_requires;
+      ddecl->defined = current.spec_section == spec_provides;
     }
   assert(ddecl);
   vd->ddecl = ddecl;

@@ -47,7 +47,6 @@ struct yystype {
     asttype type;
     word word;
     designator designator;
-    rp_interface rplist;
     interface_ref iref;
     component_ref cref;
     connection conn;
