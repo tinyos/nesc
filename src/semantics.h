@@ -198,6 +198,8 @@ struct semantic_state
   tag_ref pending_invalid_xref;	/* Internal use */
   bool interface_defines;	/* TRUE if in defines section, FALSE in uses */
   bool component_requires;	/* TRUE if in provides section, FALSE in requires */
+
+  char *preprocessed_file;	/* Temp file holding preprocessor output */
 };
 
 extern struct semantic_state current;

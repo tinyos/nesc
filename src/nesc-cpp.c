@@ -26,6 +26,8 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-paths.h"
 #include "machine.h"
 #include "flags.h"
+#include "semantics.h"
+#include "c-parse.h"
 
 static region opt_region;
 
@@ -51,8 +53,8 @@ void save_option(const char *option)
   saved_options_count++;
 }
 
-static char tmpfile1[] = "/tmp/nesccpp2XXXXXX";
-static char tmpfile2[] = "/tmp/nesccpp1XXXXXX";
+static char kwd_macros[] = "/tmp/nesccppkXXXXXX";
+static char cpp_macros[] = "/tmp/nesccppmXXXXXX";
 
 static char *nesc_keywords[] = {
 #define K(name, token, rid) #name,
@@ -60,7 +62,6 @@ static char *nesc_keywords[] = {
 NULL
 };
 
-static char *cpp_macros, *cpp_dest;
 static FILE *macros_file;
 
 static void mktempfile(char *name)
@@ -78,8 +79,8 @@ static void mktempfile(char *name)
 
 void preprocess_cleanup(void)
 {
-  unlink(tmpfile1);
-  unlink(tmpfile2);
+  unlink(cpp_macros);
+  unlink(kwd_macros);
 }
 
 void create_nesc_keyword_macros(const char *macro_filename)
@@ -110,27 +111,24 @@ void preprocess_init(void)
 {
   atexit(preprocess_cleanup);
 
-  mktempfile(tmpfile1);
-  mktempfile(tmpfile2);
+  mktempfile(cpp_macros);
+  mktempfile(kwd_macros);
 
-  cpp_macros = tmpfile1;
-  cpp_dest = tmpfile2;
-
-  /* For now, I'm just predefining the nesc-keyword-renaming macros.
-     If we want to preprocess components, we'll have to put these
-     macros in a special file used only for preprocessing .h files.
-  */
-  create_nesc_keyword_macros(cpp_macros);
+  create_nesc_keyword_macros(kwd_macros);
 }
 
-FILE *preprocess(const char *filename)
+FILE *preprocess(const char *filename, source_language l)
 {
   int cpp_pid, cpp_stat, res;
+  char *cpp_dest = rstrdup(parse_region, "/tmp/nesccppsXXXXXX");
+
+  current.preprocessed_file = cpp_dest;
+  mktempfile(cpp_dest);
 
   if ((cpp_pid = fork()) == 0)
     {
       char **argv;
-      int nargs = 8 + path_argv_count + saved_options_count, arg = 0, i;
+      int nargs = 10 + path_argv_count + saved_options_count, arg = 0, i;
       struct cpp_option *saved;
       int destfd = creat(cpp_dest, 0666);
       region filename_region = newregion();
@@ -153,7 +151,20 @@ FILE *preprocess(const char *filename)
       arg += saved_options_count;
 
       argv[arg++] = "-E";
-      argv[arg++] = "-dD";
+
+      /* For C files, we define keywords away (kwd_macros) and ask cpp
+	 to output macros */
+      if (l == l_c)
+	{
+	  argv[arg++] = "-dD";
+	  argv[arg++] = "-imacros";
+	  argv[arg++] = fix_filename(filename_region, kwd_macros);
+	}
+      else
+	{
+	  argv[arg++] = "-x";
+	  argv[arg++] = "c";
+	}
       argv[arg++] = "-imacros";
       argv[arg++] = fix_filename(filename_region, cpp_macros);
       argv[arg++] = fix_filename(filename_region, filename);
@@ -200,9 +211,15 @@ FILE *preprocess(const char *filename)
     {
       FILE *output = fopen(cpp_dest, "r");
 
-      macros_file = fopen(cpp_macros, "w");
-      if (!macros_file)
-	error("failed to create temporary file");
+      /* Save the macros for C */
+      /* (note: this only works with a global macros file because we
+	 don't reenter the parser when parsing a C file) */
+      if (l == l_c)
+	{
+	  macros_file = fopen(cpp_macros, "w");
+	  if (!macros_file)
+	    error("failed to create temporary file");
+	}
 
       return output;
     }
@@ -212,15 +229,21 @@ FILE *preprocess(const char *filename)
 
 void handle_directive(const char *directive, const char *args)
 {
-  if (strcmp(directive, "define"))
+  const char *arg2;
+
+  if (!(strcmp(directive, "define") == 0 || strcmp(directive, "undef") == 0))
     return;
 
   if (strncmp(args, "__STDC__ ", 9) == 0 ||
       strncmp(args, "__STDC_HOSTED__ ", 16) == 0)
     return;
 
+  arg2 = strchr(args, ' ');
+  if (arg2 && strncmp(arg2 + 1, "__nesc_keyword_", 15) == 0)
+    return;
+
   if (macros_file)
-    fprintf(macros_file, "#define %s\n", args);
+    fprintf(macros_file, "#%s %s\n", directive, args);
 }
 
 void preprocess_file_end(void)
@@ -230,5 +253,6 @@ void preprocess_file_end(void)
       fclose(macros_file);
       macros_file = NULL;
     }
+  unlink(current.preprocessed_file);
 }
 

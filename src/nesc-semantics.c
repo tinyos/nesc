@@ -185,35 +185,35 @@ environment compile(location loc, source_language l,
   struct semantic_state old_semantic_state;
   environment env;
 
+  old_semantic_state = current;
+
   if (!path)
     error_with_location(loc, "%s %s not found", language_name(l), name);
   else
     {
-      if (l == l_c)
-	{
-	  fprintf(stderr, "DBG> preprocessing %s\n", path);
-	  f = preprocess(path);
-	}
-      else
-	{
-	  fprintf(stderr, "DBG> loading %s\n", path);
-	  f = fopen(path, "r");
-	}
+      fprintf(stderr, "DBG> preprocessing %s\n", path);
+      f = preprocess(path, l);
+
       if (!f)
 	error_with_location(loc, "cannot open %s: %s",
 			    path, strerror(errno));
     }
-  if (!f)
-    return new_environment(parse_region, global_env, TRUE, FALSE);
-	
-  set_input(f, path);
 
-  old_semantic_state = current;
-  start_lex(l);
-  start_semantics(l, container, parent_env);
-  env = current.env;
-  parse();
-  end_input();
+  if (!f)
+    env = new_environment(parse_region, global_env, TRUE, FALSE);
+  else
+    {	
+      set_input(f, path);
+
+      start_lex(l);
+      start_semantics(l, container, parent_env);
+      env = current.env;
+      parse();
+      end_input();
+
+      preprocess_file_end();
+    }
+
   current = old_semantic_state;
 
   return env;

@@ -26,7 +26,7 @@ Boston, MA 02111-1307, USA.  */
 #include <unistd.h>
 
 void preprocess_init(void);
-FILE *preprocess(const char *filename);
+FILE *preprocess(const char *filename, source_language l);
 void preprocess_file_end(void);
 
 void handle_directive(const char *directive, const char *args);
