@@ -300,7 +300,7 @@ void get_latest_docstring(char **short_s, char **long_s, struct location **loc)
 
 void separate_short_docstring(char *str, char **short_s, char **long_s)
 {
-  char *dot;
+  char *dot, *at;
   assert(short_s != NULL);
   assert(long_s != NULL);
   
@@ -310,13 +310,24 @@ void separate_short_docstring(char *str, char **short_s, char **long_s)
     return;
   }
 
-  /* find the first period, followed by whitespace */
+  /* find the first period, followed by whitespace, or the first '@', preceded by whitespace */
   dot = str;
   do {
     dot = strchr(dot,'.');
     if(dot == NULL) break;
     dot++;
   } while(*dot != '\0'  &&  *dot != ' '   &&  *dot != '\t'   &&  *dot != '\r'   &&  *dot != '\n');
+
+  at = str-2;
+  do {
+    at = strchr(at+2,'@');
+    if(at == NULL) break;
+    at--;
+    if(at < str) at++;
+  } while(*at != ' '   &&  *at != '\t'   &&  *at != '\r'   &&  *at != '\n');
+
+  if(at && at < dot) 
+    dot = at;
 
 
   /* check for the beginning of the next sentance */

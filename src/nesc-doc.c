@@ -471,6 +471,8 @@ static void output_docstring(char *docstring, location loc)
     // output the rest, if there are no more @ directives
     if(at == NULL) {
       output(pos);
+      if(context == in_param)
+        output("</menu></menu>\n");
       if(context != in_main) 
         output("</dl>\n");
       return;
@@ -489,6 +491,8 @@ static void output_docstring(char *docstring, location loc)
       
       if( len==strlen("return") && !strncasecmp("return",pos,len) ) {
         pos += len;
+        if(context == in_param)
+          output("</menu></menu>\n");
         if(context == in_main)
           output("<p><dl>\n");
         if(context != in_return)
@@ -503,7 +507,7 @@ static void output_docstring(char *docstring, location loc)
         if(context == in_main)
           output("<p><dl>\n");
         if(context != in_param)
-          output("<dt><b>Parameters:</b>\n");
+          output("<dt><b>Parameters:</b>\n<menu><menu>\n");
         context = in_param;
 
         // print out the parameter name, plus a separator
@@ -512,7 +516,9 @@ static void output_docstring(char *docstring, location loc)
         len = strcspn(pos, whitespace);
         // Null terminate the name
         *(pos + len) = '\0';
-        output("%*s",len,pos);
+
+        output("<p STYLE=\"text-indent: -1cm\">");
+        output("<b>%*s</b>",len,pos);
         output(" - ");
         // Restore to spaced text.
         *(pos + len) = ' ';
@@ -521,6 +527,9 @@ static void output_docstring(char *docstring, location loc)
 
       else if( len==strlen("author") && !strncasecmp("author",pos,len) ) {
         pos += len;
+        if(context == in_param)
+          output("</menu></menu>\n");
+
         if(context == in_main)
           output("<p><dl>\n");
         if(context != in_author)
@@ -694,7 +703,7 @@ static void print_func_return(function_decl fd, data_decl dd, variable_decl vd)
   if(fd) {
     prt_declarator(NULL, fd->modifiers, fd->attributes, fd->ddecl, psd_skip_container);
   } else {
-    prt_type_elements(dd->modifiers, FALSE); 
+    prt_type_elements(dd->modifiers, pte_skip_command_event); 
   }
 }
 
@@ -1102,9 +1111,6 @@ static void print_cg_html(const char *component_name, const char *component_file
   char *text_only_name;
   FILE *text_file;
 
-  int num_if_edges = 0;
-  int num_func_edges = 0;
-
   static bool graphviz_supports_cmap = FALSE;
   static bool checked_graphviz_version = FALSE;
   bool do_func_graph = FALSE;  // FIXME: disable the function graph for now
@@ -1183,8 +1189,8 @@ DOC WARNING: your version of `dot' does not support client-side
     ranksep=0.0005; 
     nodesep=0.1; 
     node [shape=ellipse style=filled fillcolor=\"#e0e0e0\"];
-    node [fontname=Times fontsize=16];
-    edge [fontname=Times fontsize=14];
+    node [fontsize=10 height=.1 width=.1];
+    edge [fontsize=9 arrowsize=.8];
 ";
 
     iface_file = fopen(iface_dot, "w");  assert(iface_file);
@@ -1223,8 +1229,6 @@ DOC WARNING: your version of `dot' does not support client-side
 
       // out edges
       graph_scan_out(e,n) {
-        num_func_edges++;
-
         ep2 = NODE_GET(endp, graph_edge_to(e));
         // assertions already done above
 
@@ -1261,9 +1265,6 @@ DOC WARNING: your version of `dot' does not support client-side
  
           if( !connection_already_printed(table, ep1, ep2, &req, &prov) ) 
           {
-            // count the edges
-            num_if_edges++;
-
             // graphviz stuff
             if( use_graphviz )
             {
@@ -1348,27 +1349,13 @@ DOC WARNING: your version of `dot' does not support client-side
 
   // finish up the graphviz output
   if( use_graphviz ) {
-    int if_width, func_width;
-
-    // compute widths
-    if_width = num_if_edges / 6 + 1;
-    if(if_width < 4) if_width = 4;
-    if(app_graph  &&  if_width < 8) if_width = 8;
-
-    func_width = num_func_edges / 6 + 1;
-    if(func_width < 4) func_width = 4;
-    if(app_graph  &&  func_width < 8) func_width = 8;
-    
-
     // finish if file
-    fprintf(iface_file, "\n    size=\"%d,100\"\n", if_width);
     fprintf(iface_file, "}\n");  
     fclose(iface_file);
 
 
     // finish func file
     if( do_func_graph ) {
-      fprintf(func_file, "\n    size=\"%d,100\"\n", func_width);
       fprintf(func_file, "}\n");  
       fclose(func_file);
     }
@@ -1689,13 +1676,20 @@ static void generate_intf_function_list(const char *heading,
     scan_variable_decl(vd, CAST(variable_decl,dd->decls)) {
       if( vd->ddecl->ftype == kind ) {
         if( flags & short_desc  ||  has_long_desc(NULL,dd,vd) ) {
-          if(!printed_heading) {print_html_banner(heading); output("<ul>\n"); printed_heading=TRUE;}
+          if(!printed_heading) {
+            print_html_banner(heading); 
+            if(flags & short_desc) output("<ul>\n"); 
+            printed_heading=TRUE;
+          } else {
+            if( !(flags & short_desc) ) 
+              output("<hr>\n");
+          }
           print_function_html(NULL,dd,vd,in_interface|flags);
         }
       }
     }
   }
-  if(printed_heading) output("</ul>\n");
+  if(printed_heading && flags & short_desc) output("</ul>\n");
 }
 
 //////////////////////////////////////////////////
@@ -1737,15 +1731,15 @@ static void generate_interface_html(nesc_declaration idecl)
   }
   
   // summary
-  generate_intf_function_list("<h3>Defined Functions</h3>",
+  generate_intf_function_list("<h3>Commands</h3>",
 			      idecl, function_command, short_desc);
-  generate_intf_function_list("<h3>Used Functions</h3>",
+  generate_intf_function_list("<h3>Events</h3>",
 			      idecl, function_event, short_desc);
 
   // detailed descriptions
-  generate_intf_function_list("<h3>Defined Functions - Details</h3>",
+  generate_intf_function_list("<h3>Commands - Details</h3>",
 			      idecl, function_command, long_desc);
-  generate_intf_function_list("<h3>Used Functions - Details</h3>",
+  generate_intf_function_list("<h3>Events - Details</h3>",
 			      idecl, function_event, long_desc);
 
   close_outfile(outfile);
