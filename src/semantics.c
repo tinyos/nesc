@@ -2850,7 +2850,9 @@ cval check_bitfield_width(field_declaration fdecl)
 
   printmsg = check_constant_once(w);
 
-  if (!(cwidth && constant_integral(cwidth)))
+  if (cwidth && constant_unknown(cwidth))
+    bitwidth = cval_unknown;
+  else if (!(cwidth && constant_integral(cwidth)))
     errormsg = "bit-field `%s' width not an integer constant";
   else
     {
@@ -2986,6 +2988,7 @@ void layout_struct(tag_declaration tdecl)
 	    {
 	      offset = cval_align_to(offset, falign);
 	      falign = make_type_cval(1); /* No structure alignment implications */
+	      fsize = bitwidth;
 	    }
 	  else
 	    {
@@ -3008,6 +3011,7 @@ void layout_struct(tag_declaration tdecl)
 		    offset = val2;
 		  else if (cval_intcompare(val2, cval_divide(fsize, falign)) > 0)
 		    offset = cval_align_to(offset, falign);
+		  fsize = bitwidth;
 		}
 	    }
 
