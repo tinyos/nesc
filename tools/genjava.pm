@@ -408,7 +408,7 @@ sub gen() {
 	      print "             if ((char)getElement_$javafield(i) == (char)0) break;\n";
 	      print "             carr[i] = (char)getElement_$javafield(i);\n";
               print "         }\n";
-              print "         return new String(carr,0,i-1);\n";
+              print "         return new String(carr,0,i);\n";
 	      print "    }\n\n";
 	  }
 	}
