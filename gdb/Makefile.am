@@ -17,4 +17,4 @@
 
 AUTOMAKE_OPTIONS = foreign
 
-SUBDIRS = avarice
+SUBDIRS = 
