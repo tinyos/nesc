@@ -1,6 +1,8 @@
 % ponder: should I define a minimum reachable fn defn ?
 % (this def affects what ``missing connection'' errors you get)
 
+% talk more about load order (affects behaviour because of includes)
+
 \documentclass[11pt]{article}
 
 \usepackage{fullpage}
@@ -595,21 +597,55 @@ for parameterised. default handler not required.
 \section{C}
 \label{sec:c}
 
-C namespace is populated by:
-- loading tos.h 
-- loading .h files specified by includes directives at start of
-interfaces, modules and configurations
+The C global scope is populated by including C \file{.h} files. All
+macro and C declarations and definitions in these files are placed in the
+global C scope and are available to all subsequently loaded components,
+interfaces and C files. Similarly, if a \kw{\#define} macros is undefined,
+then it will remain undefined for subsequently loaded files.
 
-All declarations and macros in these .h files are placed in the C name
-space and are therefore known to all subsequently loaded components,
-interfaces and C files.
+A C file called \file{tos.h} is automatically
+included before any components. Subsequent C files are loaded according
+to the \kw{includes} directives found at the start of component and
+interface files:
+\emph{\begin{tabbing}
+\hspace*{2cm}\= \\ \kill
+nesC-file: \\
+\>	includes-list\opt interface\\
+\>	includes-list\opt module\\
+\>	includes-list\opt configuration\\
+\\
+includes-list:\\
+\>	includes\\
+\>	includes-list includes\\
+\\
+includes:\\
+\>	\kw{includes} identifier-list \kw{;}\\
+\end{tabbing}}
 
-Once foo.h has been loaded by `includes foo', subsequent `includes foo'
-directives are ignored.
+An \code{includes X} directive tells \nesc to load C file \file{X.h}. Once
+\file{X.h} has been loaded, all subsequent \code{includes X} directives
+are ignored.
 
-Example of use: includes fooTypes at start of interface foo will load
-fooTypes.h. All components that use or provide foo will then automatically
-see the types defined in fooTypes.h.
+As an example, interface type \code{Bar} might include C file
+\file{BarTypes.h} which defines types used in the interface:
+
+\begin{minipage}[t]{3in}
+\begin{verbatim}
+Bar.nc:
+includes BarTypes;
+interface Bar {
+  command result_t bar(BarType arg1);
+\end{verbatim}
+\end{minipage}
+\begin{minipage}[t]{3in}
+\begin{verbatim}
+BarTypes.h:
+typedef struct {
+  int x;
+  double y;
+} BarType;
+\end{verbatim}
+\end{minipage}
 
 \subsection{Functions with no arguments, old-style C declarations}
 
@@ -628,11 +664,19 @@ Note that neither of these changes apply to C files (so that existing
 \nesC supports the C preprocessor in all files (interfaces, components and
 C files). As an extension, C++-style // comments are also allowed.
 
-- \#define's in a module have per-module scope
+The effect of \kw{\#define} and \kw{\#undef} within components is
+limited to the component in which they occur (this is somewhat like
+having a per-component scope for preprocessor macros).
 
-- \#include in a module does pure textual inclusion (as it should), so for
-instance \#include <math.h> will declare, e.g., sin() as a function declared
-in this module. Use the includes directive instead (see Section foo).
+While \kw{\#include} directives are allowed in components and interfaces,
+they are unlikely to be useful. For instance, a \code{\#include <math.h>}
+directive will produce the following effects:
+\begin{itemize}
+\item In a configuration or interface type file: various compilation errors.
+\item In a module: this will declare a number of functions (e.g., \code{sin})
+in the module's per-component-implementation scope. This is obviously
+not very useful.
+\end{itemize}
 
 \section{Miscellaneous}
 \label{sec:misc}
@@ -645,8 +689,15 @@ if expected interface foo and found component foo.
 
 \subsection{Attributes}
 
-explain basic syntax (ref gcc)
+\nesc uses gcc's~\cite{gcc} \kw{\_\_attribute\_\_} syntax for
+declaring some properties of functions. These attributes can be placed
+either on function definitions or function declarations (after the
+parameter list).\footnote{gcc doesn't allow attributes after the
+parameter list in function definitions.} The attributes of a function
+$f$ are the union of all attributes on all declarations and
+definitions of $f$.
 
+The attribute syntax in \nesc is:
 \emph{\begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 init-declarator-list: \emph{also}\\
@@ -672,35 +723,71 @@ single-attribute:\\
 \>	identifier \kw{(} argument-expression-list \kw{)}\\
 \end{tabbing}}
 
-C
+\nesc supports two attributes:
+\begin{itemize}
+\item \code{C}: This attribute is used for a function $f$ declared in
+modules (it is ignored for all other declarations). It specifies that
+$f$'s should appear in the global C scope rather than in the module's
+per-component-implementation scope. This allows $f$ to be called from
+C code.
 
-spontaneous
+\item \code{spontaneous}: This attribute can be used on any function
+$f$ (in modules or C code). It indicates that there are calls $f$ that
+are not visible in the source code. Typically, functions that are
+called spontaneously are interrupt handlers, and the C \code{main}
+function. Section~\ref{sec:cmodel} discusses how the \nesc compiler
+uses the \code{spontaneous} attribute during compilation.
+\end{itemize}
+
+Example of attribute use: in module \file{RealMain.td}:
+\begin{verbatim}
+module RealMain { ... }
+implementation {
+  int main(int argc, char **argv) __attribute__((C, spontaneous)) {
+    ...
+  }
+}
+\end{verbatim}
+
+This example declares that function \code{main} should actually appear
+in the C global scope (\code{C}), so that the linker can find it. It
+also declares that \code{main} can be called even though there are no
+function calls to \code{main} anywhere in the program
+(\code{spontaneous}). 
 
 \subsection{Compile-time Constant Functions}
 
-extension to C (to easily add new kinds of constant expressions in a familiar
-syntax).
+\nesc has a new kind of constant expression: \emph{constant
+functions}. These are functions defined within the language which
+evaluate to a constant at compile-time.
 
-unique(``string'')
+\nesc currently has one constant function, \code{unique}. More are planned
+for the near future.
 
-am\_type()
+\code{unsigned int unique(char *identifier)} \\ Returns: if the program
+contains $n$ calls to \code{unique} with the same \code{identifier}
+string, each calls returns a different unsigned integer in the range
+$0 .. n-1$.
 
-\subsection{Files}
+The intended use of \code{unique} is for passing a unique integer
+to parameterised interface instances, so that a component providing
+a parameterised interface can uniquely identify the various components
+connected to that interface.
 
-components or interface foo is found in foo.nc
+\subsection{Files and Compilation Model}
+\label{sec:cmodel}
 
-C file foo is found in foo.h
+The \nesc compiler assumes that a component or interface $x$ is found
+in a file called \file{$x$.nc}, and that an included C file $y$ is
+found in a file called \file{$y$.h}. The current implementation of
+the \nesc uses a search path to locate these files (details can be
+found in the \file{ncc} manual).
 
-implementation of \nesc uses search path for these files, see man page for
-details
-
-\subsection{Compilation Model}
-
-compilation of component loads and checks all code specified directly
-and indirectly by a single component, then outputs a single C file
-containing all that code. May freely assume that only functions marked
-spontaneous are entry points to this code (typical use: main and 
-interrupt handlers are marked spontaneous).
+The \nesc compiler's input is a component $c$ to be compiled. The compiler
+locates $c$'s file, loads and compiles this file and the files for all
+components, interfaces and C files used (directly or indirectly) by $c$.
+The compiler may assume that the only entry points to this component
+are the functions marked with the \code{spontaneous} attribute.
 
 \section{Concurrency}
 \label{sec:concurrency}
