@@ -1,0 +1,28 @@
+<dsd xmlns="http://www.brics.dk/DSD/2.0"
+     xmlns:m="http://www.brics.dk/DSD/2.0/meta"
+     xmlns:nesc="http://www.tinyos.net/nesC">
+
+  <stringtype id="nesc:letter">
+    <union>
+      <char min="A" max="Z"/>
+      <char min="a" max="z"/>
+      <char set="_"/>
+    </union>
+  </stringtype>
+
+  <stringtype id="nesc:digit">
+    <char min="0" max="9"/>
+  </stringtype>
+
+  <stringtype id="nesc:identifier">
+    <sequence>
+      <stringtype ref="nesc:letter"/>
+      <repeat>
+        <union>
+          <stringtype ref="nesc:letter"/>
+          <stringtype ref="nesc:digit"/>
+        </union>
+      </repeat>
+    </sequence>
+  </stringtype>
+</dsd>
