@@ -12,6 +12,7 @@
 \newcommand{\code}[1]{{\tt #1}}
 \newcommand{\file}[1]{{\tt #1}}
 \newcommand{\nesc}{nesC\xspace}
+\newcommand{\tinyos}{TinyOS\xspace}
 \newcommand{\opt}{$_{\mbox{opt}}$\xspace}
 \newcommand{\FSE}{\mathcal{F}}
 \newcommand{\connect}{\mathcal{C}}
@@ -24,19 +25,20 @@
 
 \begin{document}
 
-\title{\nesc Language Reference Manual}
-\author{David Gay, David Culler, Philip Levis}
-\date{September 2002}
+\title{\nesc 1.1 Language Reference Manual}
+\author{David Gay, Philip Levis, David Culler, Eric Brewer}
+\date{May 2003}
 
 \maketitle
 
 \section{Introduction}
 
 \nesc is an extension to C~\cite{kandr} designed to embody the structuring
-concepts and execution model of TinyOS~\cite{tinyos}. TinyOS is an
+concepts and execution model of \tinyos~\cite{tinyos}. \tinyos is an
 event-driven operating system designed for sensor network nodes that have
 very limited resources (e.g., 8K bytes of program memory, 512 bytes of
-RAM). TinyOS has been reimplemented in \nesc.
+RAM). \tinyos has been reimplemented in \nesc. This manual describes v1.1 of
+\nesc, changes from v1.0 are summarised in Section~\ref{sec:changes}.
 
 The basic concepts behind \nesc are:
 \begin{itemize}
@@ -61,7 +63,7 @@ implemented by the interface's user (\emph{events}). This allows a single
 interface to represent a complex interaction between components (e.g.,
 registration of interest in some event, followed by a callback when
 that event happens). This is critical because all lengthy commands in
-TinyOS (e.g. send packet) are non-blocking; their completion is
+\tinyos (e.g. send packet) are non-blocking; their completion is
 signaled through an event (send done). By specifying interfaces, a
 component cannot call the \code{send} command unless it provides an
 implementation of the \code{sendDone} event.
@@ -76,25 +78,32 @@ This increases runtime efficiency, encourages rubust design, and allows for
 better static analysis of program's.
 
 \item \nesc is designed under the expectation that code will be generated
-by whole-program compilers. This should also allow for better code 
-generation and analysis.
+by whole-program compilers. This allows for better code generation and
+analysis. An example of this is nesC's compile-time data race detector.
+
+\item The concurrency model of \nesc is based on run-to-completion tasks,
+and interrupt handlers which may interrupt tasks and each other. The \nesc
+compiler signals the potential data races caused by the interrupt handlers.
 \end{itemize}
 
 This document is a reference manual for \nesc rather than a tutorial. The
-TinyOS tutorial\footnote{Available with the TinyOS distribution at
+\tinyos tutorial\footnote{Available with the \tinyos distribution at
 http://webs.cs.berkeley.edu} presents a gentler introduction to \nesc.
 
 The rest of this document is structured as follows:
 Section~\ref{sec:notation} presents the notation used in the reference
-manual. Sections~\ref{sec:interface},~\ref{sec:component},~\ref{sec:module},
+manual. Section~\ref{sec:changes} summarises the new features in \nesc
+1.1. Sections~\ref{sec:interface},~\ref{sec:component},~\ref{sec:module},
 and~\ref{sec:configuration} present \nesc interfaces and
-components. Section~\ref{sec:app} explains how C files, \nesc interfaces
-and components are assembled into an application. Section~\ref{sec:misc}
-covers the remaining miscellaneous features of \nesc. Finally,
-Appendix~\ref{sec:grammar} fully defines \nesc's grammar (as an extension to
-the C grammar from Appendix~A of Kernighan and Ritchie (K\&R)
-~\cite[pp234--239]{kandr}), and Appendix~\ref{sec:glossary} is a glossary
-of the terms used in this reference manual.
+components. Section~\ref{sec:concurrency} presents \nesc's concurrency
+model and data-race detection. Section~\ref{sec:app} explains how C files,
+\nesc interfaces and components are assembled into an
+application. Section~\ref{sec:misc} covers the remaining miscellaneous
+features of \nesc. Finally, Appendix~\ref{sec:grammar} fully defines
+\nesc's grammar (as an extension to the C grammar from Appendix~A of
+Kernighan and Ritchie (K\&R) ~\cite[pp234--239]{kandr}), and
+Appendix~\ref{sec:glossary} is a glossary of the terms used in this
+reference manual.
 
 \section{Notation}
 \label{sec:notation}
@@ -121,6 +130,34 @@ hand). Appendix~\ref{sec:grammar} presents the full \nesc grammar.
 
 Several examples use the \code{uint8\_t} and \code{uint16\_t} types from
 the C99 standard \file{inttypes.h} file.
+
+\section{Changes}
+\label{sec:changes}
+
+The changes from \nesc 1.0 to 1.1 are:
+\begin{enumerate}
+\item \kw{atomic} statements. These simplify implementation of concurrent
+data structures, and are understood by the new compile-time data-race
+detector.
+
+\item Compile-time data-race detection gives warnings for variables that
+are potentially accessed concurrently by two interrupt handlers, or an
+interrupt handler and a task.
+
+\item Commands and events which can safely be executed by interrupt
+handlers must be explicitly marked with the \kw{async} storage class
+specifier.
+
+\item The results of calls to commands or events with ``fan-out'' are
+automatically combined by new type-specific combiner functions.
+
+\item \kw{uniqueCount} is a new ``constant function'' which counts
+uses of \kw{unique}.
+
+\item The \kw{NESC} preprocessor symbol indicates the language version. It
+is 110 for \nesc 1.1.
+ 
+\end{enumerate}
 
 \section{Interfaces}
 \label{sec:interface}
@@ -151,7 +188,7 @@ interface:\\
 \>	\kw{interface} identifier \kw{\{} declaration-list \kw{\}}\\
 \\
 storage-class-specifier: \emph{also one of}\\
-\>	\kw{command} \kw{event}\\
+\>	\kw{command} \kw{event} \kw{async}\\
 \end{tabbing}
 \end{quote}
 This declares interface type \emph{identifier}. This identifier has global
@@ -163,7 +200,8 @@ regular C declarations.
 Each interface type has a separate scope for the declarations in
 \emph{declaration-list}. This \emph{declaration-list} must consist of
 function declarations with the \kw{command} or \kw{event} storage class (if
-not, a compile-time error occurs).
+not, a compile-time error occurs). The optional\kw{async} keyword indicates
+that the command or event can be executed in an interrupt handler.
 
 An interface can optionally include C files via the \emph{includes-list}
 (see Section~\ref{sec:app}).
@@ -298,10 +336,12 @@ specification-element:\\
 \>	\ldots\\
 \\
 storage-class-specifier: \emph{also one of}\\
-\>	\kw{command} \kw{event}\\
+\>	\kw{command} \kw{event} \kw{async}\\
 \end{tabbing} \end{quote}
 It is a compile-time error if the \emph{declaration} is not a function
-declaration with the \kw{command} or \kw{event} storage class. 
+declaration with the \kw{command} or \kw{event} storage class. As in
+interfaces, \kw{async} indicates that the command or event can be executed
+in an interrupt handler.
 
 As with interface instances, commands (events) are \emph{simple commands}
 (\emph{simple events}) if no interface parameters are specified, or
@@ -380,7 +420,7 @@ where \emph{translation-unit} is a list of C declarations and definitions
 The top-level declarations of the module's \emph{translation-unit} belong
 to the module's component-implementation scope. These declarations have
 indefinite extent and can be: any standard C declaration or definition, a
-TinyOS task declaration or definition, a commands or event
+task declaration or definition, a commands or event
 implementation.
 
 \subsection{Implementing the Module's Specification}
@@ -396,7 +436,7 @@ syntax extensions:
 \begin{quote} \grammarshift \em \begin{tabbing}
 \grammarindent
 storage-class-specifier: \emph{also one of}\\
-\>	\kw{command} \kw{event}\\
+\>	\kw{command} \kw{event} \kw{async}\\
 \\
 declaration-specifiers: \emph{also}\\
 \>	\kw{default} declaration-specifiers\\
@@ -405,11 +445,12 @@ direct-declarator: \emph{also}\\
 \>	identifier \kw{.} identifier \\
 \>	direct-declarator interface-parameters \kw{(} parameter-type-list \kw{)}\\
 \end{tabbing} \end{quote}
-The implementation of simple command or event $\alpha$ has the syntax of a C
-function definition for $\alpha$ (note the extension to
+The implementation of simple command or event $\alpha$ has the syntax of a
+C function definition for $\alpha$ (note the extension to
 \emph{direct-declarator} to allow \code{.} in function names) with storage
-class \kw{command} or \kw{event}. For example, in a module that provides
-interface \code{Send} of type \kw{SendMsg}:
+class \kw{command} or \kw{event}. Additionally, the \kw{async} keyword must
+be included iff it was included in $\alpha$'s declaration. For example, in
+a module that provides interface \code{Send} of type \kw{SendMsg}:
 \begin{quote} \begin{verbatim}
 command result_t Send.send(uint16_t address, uint8_t length, TOS_MsgPtr msg) {
   ...
@@ -437,8 +478,9 @@ command result_t Send.send[uint8_t id](uint16_t address, uint8_t length,
 Compile-time errors are reported when:
 \begin{itemize}
 \item There is no implementation for a provided command or event.
-\item The type signature (and optional interface parameters) of a command or
-event does not match that given in the module's specification.
+\item The type signature, optional interface parameters and presence or
+absence of the \kw{async} keyword of a command or event does not match that
+given in the module's specification.
 \end{itemize}
 
 \subsection{Calling Commands and Signaling Events}
@@ -511,7 +553,7 @@ implementations are actually executed and what result gets returned by
 
 \subsection{Tasks}
 
-A TinyOS task is an independent locus of control defined by a function of
+A task is an independent locus of control defined by a function of
 storage class \kw{task} returning \kw{void} and with no arguments:
 \code{task void myTask() \{ ... \}}.\footnote{\nesc functions with no
 arguments are declared with \code{()}, not \code{(void)}. See
@@ -530,6 +572,44 @@ storage-class-specifier: \emph{also one of}\\
 call-kind: \emph{also one of}\\
 \>	\kw{post}
 \end{tabbing} \end{quote}
+
+\nesc's concurrency model, including tasks, is presented in detail in
+Section~\ref{sec:concurrency}.
+
+\subsection{Atomic statements}
+
+Atomic statements:
+\begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
+atomic-stmt: \\
+\>	\kw{atomic} statement\\
+\end{tabbing} \end{quote}
+guarantee that the statement is executed ``as-if'' no other computation
+occured simultaneously. It is used to implement mutual exclusion, for
+updates to concurrent data structures, etc. A simple example is:
+\begin{verbatim}
+  bool busy; // global
+
+  void f() {
+    bool available;
+
+    atomic {
+      available = !busy;
+      busy = TRUE;
+    }
+    if (available) do_something;
+    atomic busy = FALSE;
+  }
+\end{verbatim}
+
+Atomic sections should be short; to help meet this requirement, \nesc
+forbids calling commands or signaling events inside atomic statements.  The
+following constructions are also forbidden inside atomic statements (but
+may be allowed in future versions of \nesc): \kw{goto}, \kw{return},
+\kw{break}, \kw{continue}, \kw{case}, \kw{default} and labels.
+
+Section~\ref{sec:concurrency} discusses the relation between \kw{atomic} and
+\nesc's concurrency model and data-race detector.
 
 \section{Configurations}
 \label{sec:configuration}
@@ -850,10 +930,23 @@ follows:
 \begin{itemize}
 \item The arguments $e_1, \ldots, e_n$ are evaluated, giving values $v_1,
 \ldots, v_n$.
+
 \item The intermediate function $I$ corresponding to $\alpha$ is called
 with arguments $v_1, \ldots, v_n$, with results list $L$.
-\item If $L$ has one or more elements, the result of the \code{call} is an
-arbitrary element chosen from $L$.
+
+\item If $L = (w)$ (a singleton list), the result of the \code{call}
+is $w$.
+
+\item If $L = (w_1, w_2, \ldots, w_m)$ (two or more elements), the result
+of the \code{call} depends on the result type $\tau$ of $\alpha$. If $\tau
+= \kw{void}$, then the result is \kw{void}. Otherwise, $\tau$ must have an
+associated \emph{combining function} $c$ (Section~\ref{sec:attributes}
+shows how combining functions are assocated with types), or a compile-time
+error occurs. The combining function takes two values of type $\tau$ and
+returns a result of type $\tau$. The result of the \kw{call} is $c(w_1,
+c(w_2, \ldots, c(w_{m-1}, w_m)))$ (note that the order of the elements of 
+$L$ was arbitrary).
+
 \item If $L$ is empty the default implementation for $\alpha$ is
 called with arguments $v_1, \ldots, v_n$, and its result is the result of
 the \code{call}. Section~\ref{sec:wiring-reqs} specifies that a
@@ -923,8 +1016,8 @@ $\alpha$ is called with arguments $v_1, \ldots, v_n$, with results list
 $L$.\footnote{This call typically involves a runtime selection between
 several command implementations - this is the only place where intermediate
 functions have a runtime cost.}
-\item If $L$ has one or more elements, the result of the \code{call} is an
-arbitrary element chosen from $L$.
+\item If $L$ has one or more elements, the result of the \code{call} is
+produced as in the non-parameterised case.
 \item If $L$ is empty the default implementation for $\alpha$ is called
 with interface parameter values $v'_1, \ldots, v'_m$ and arguments $v_1,
 \ldots, v_n$, and its result is the result of the
@@ -976,6 +1069,60 @@ interface parameter values at the call-site.
 \end{itemize}
 \end{itemize}
 
+\section{Concurrency in \nesc}
+\label{sec:concurrency}
+
+\nesc assumes an execution model that consists of run-to-completion
+\emph{tasks} (that typically represent the ongoing computation), and
+\emph{interrupt handlers} that are signaled asynchronously by hardware.  A
+scheduler for \nesc can execute tasks in any order, but must obey the
+run-to-completion rule (the standard \tinyos scheduler follows a FIFO
+policy). Because tasks are not preempted and run to completion, they are
+atomic with respect to each other, but are not atomic with respect to
+interrupt handlers.
+
+As this is a concurrent execution model, \nesc programs are susceptible to
+race conditions, in particular data races on the program's \emph{shared
+state}, i.e., its global and module variables (\nesc does not include
+dynamic memory allocation). Races are avoided either by accessing a
+shared state only in tasks, or only within atomic statements. The \nesc
+compiler reports potential data races to the programmer at compile-time.
+
+Formally, we divide the code of a \nesc program into two parts:
+\begin{quote}
+\textbf{Synchronous Code (SC):} code (functions, commands, events, tasks)
+that is only reachable from tasks.
+
+\textbf{Asynchronous Code (AC):} code that is reachable from at 
+least one interrupt handler.
+\end{quote}
+
+Although non-preemption eliminates data races among tasks, there are still
+potential races between SC and AC, as well as between AC and AC.  In
+general, any update to shared state that is {\em reachable from AC} is a
+potential data race.  The basic invariant \nesc enforces is:
+\begin{quote}
+{\sl {\bf Race-Free Invariant}: Any update to shared state is either
+SC-only or occurs in an atomic statement.} The body of a function $f$
+called from an atomic statement is considered to be ``in'' the atomic
+statement as long as all calls to $f$ are ``in'' atomic statements.
+\end{quote}
+
+It is possible to introduce a race condition that the compiler cannot
+detect, but it must span multiple atomic statements or tasks and use storage
+in intermediate variables.
+
+\nesc may report data races that cannot occur in practice, e.g., if all
+accesses are protected by guards on some other variable. To avoid redundant
+messages in this case, the programmer can annotate a variable $v$ with the
+\kw{norace} storage-class specifier to eliminate all data race warnings for
+$v$. The \kw{norace} keyword should be used with caution.
+
+\nesc reports a compile-time error for any command or event that is AC and
+that was not declared with \kw{async}. This ensures that code that was not
+written to execute safely in an interrupt handler is not called
+inadvertently.
+
 \section{\nesc Applications}
 \label{sec:app}
 
@@ -1023,6 +1170,11 @@ commands or events not marked with the \code{spontaneous} attribute
 ``invisible'' calls to non-\code{spontaneous} functions).\footnote{For
 instance, the current \nesc compiler uses this information to eliminate
 unreachable code.}
+
+During preprocessing of loaded files, \nesc defines the \kw{NESC} symbol to
+a number XYZ which identifies the version of the \nesc language and compiler.
+For \nesc 1.1, XYZ is at least 110.\footnote{The \kw{NESC} symbol was not
+defined in earlier versions of \nesc.}
 
 Part of the process of loading a C file, \nesc component or interface type
 involves locating the corresponding source file. The mechanism used to
@@ -1122,11 +1274,12 @@ Note that neither of these changes apply to C files (so that existing
 \label{sec:attributes}
 
 \nesc uses gcc's\footnote{http://gcc.gnu.org} \kw{\_\_attribute\_\_} syntax
-for declaring some properties of functions. These attributes can be placed
-either on function definitions or function declarations (after the
-parameter list).\footnote{gcc doesn't allow attributes after the parameter
-list in function definitions.} The attributes of a function $f$ are the
-union of all attributes on all declarations and definitions of $f$.
+for declaring some properties of functions, variables and typedefs. These
+attributes can be placed either on declarations (after the declarator) or
+function definitions (after the parameter list).\footnote{gcc doesn't
+allow attributes after the parameter list in function definitions.} The
+attributes of $x$ are the union of all attributes on all declarations and
+definitions of $x$.
 
 The attribute syntax in \nesc is:
 \begin{quote} \grammarshift \em \begin{tabbing}
@@ -1154,7 +1307,7 @@ single-attribute:\\
 \>	identifier \kw{(} argument-expression-list \kw{)}\\
 \end{tabbing} \end{quote}
 
-\nesc supports two attributes:
+\nesc supports three attributes:
 \begin{itemize}
 \item \code{C}: This attribute is used for a C declaration or definition
 $d$ at the top-level of a module (it is ignored for all other
@@ -1168,6 +1321,26 @@ are not visible in the source code. Typically, functions that are
 called spontaneously are interrupt handlers, and the C \code{main}
 function. Section~\ref{sec:app} discusses how the \nesc compiler
 uses the \code{spontaneous} attribute during compilation.
+
+\item \code{combine($fnname$)}: This attribute specifies the combining
+function for a type in a \kw{typedef} declaration. The combining function
+specifies how to combine the multiple results of a call to a command
+or event which has ``fan-out''. For example:
+\begin{verbatim}
+  typedef uint8_t result_t __attribute__((combine(rcombine)));
+
+  result_t rcombine(result_t r1, result_t r2)
+  {
+    return r1 == FAIL ? FAIL : r2;
+  }
+\end{verbatim}
+specifies logical-and-like behaviour when combining commands (or events)
+whose result type is \code{result\_t}. See
+Section~\ref{sec:wiring-semantics} for the detailed semantics.
+
+A compile-time error occurs if the combining function $c$ for a type $t$
+does not have the following type: \code{$t$ $c$($t$, $t$)}.
+
 \end{itemize}
 
 Example of attribute use: in file \file{RealMain.td}:
@@ -1192,9 +1365,9 @@ function calls to \code{main} anywhere in the program
 functions}. These are functions defined within the language which
 evaluate to a constant at compile-time.
 
-\nesc currently has one constant function, \code{unique}. More are planned
-for the near future.
-
+\nesc currently has two constant functions:
+\begin{itemize}
+\item 
 \code{unsigned int unique(char *identifier)} \\ Returns: if the program
 contains $n$ calls to \code{unique} with the same \code{identifier}
 string, each calls returns a different unsigned integer in the range
@@ -1204,6 +1377,19 @@ The intended use of \code{unique} is for passing a unique integer
 to parameterised interface instances, so that a component providing
 a parameterised interface can uniquely identify the various components
 connected to that interface.
+
+\item \code{unsigned int uniqueCount(char *identifier)} \\ Returns: if the
+program contains $n$ calls to \code{unique} with the same \code{identifier}
+string, then \code{uniqueCount} will return $n$.
+
+The intended use of \code{uniqueCount} is for dimensioning arrays (or other
+data structures) which will be indexed using the numbers returned by
+\kw{unique}. For instance, a \kw{Timer} service that identifies its clients
+(and hence each independent timer) via a parameterised interface and
+\kw{unique} can use \kw{uniqueCount} to allocate the correct number of
+timer data structures.
+
+\end{itemize}
 
 \appendix
 
@@ -1222,7 +1408,7 @@ prefixing them with \kw{\_\_nesc\_}\emph{keyword} (e.g.,
 \kw{\_\_nesc\_keyword\_as}).
 
 \nesc reserves all identifiers starting with \kw{\_\_nesc} for internal
-use. TinyOS reserves all identifiers starting with \kw{TOS\_} and
+use. \tinyos reserves all identifiers starting with \kw{TOS\_} and
 \kw{TOSH\_}.
 
 \nesc files follow the \emph{nesC-file} production; \file{.h} files included
@@ -1322,7 +1508,7 @@ Changed rules:
 \em \begin{tabbing}
 \grammarindent
 storage-class-specifier: \emph{also one of}\\
-\>	\kw{command} \kw{event} \kw{task}\\
+\>	\kw{command} \kw{event} \kw{async} \kw{task} \kw{norace}\\
 \\
 declaration-specifiers: \emph{also}\\
 \>	\kw{default} declaration-specifiers\\
@@ -1353,6 +1539,12 @@ single-attribute:\\
 \>	identifier\\
 \>	identifier \kw{(} argument-expression-list \kw{)}\\
 \\
+statement: \emph{also}\\
+\>	atomic-statement\\
+\\
+atomic-statement:\\
+\>	\kw{atomic} statement\\
+\\
 postfix-expression: \emph{replaced by}\\
 \>	primary-expression\\
 \>	postfix-expression \kw{[} argument-expression-list \kw{]}\\
@@ -1370,6 +1562,10 @@ call-kind: \emph{one of}\\
 \label{sec:glossary}
 
 \begin{itemize}
+
+\item \emph{combining function}: C function that combines the multiple
+results of command call (or event signal) in the presence of
+\emph{fan-out}.
 
 \item \emph{command}, \emph{event}: A function that is part of a
 component's \emph{specification}, either directly as a \emph{specification
@@ -1411,7 +1607,8 @@ element from $C$'s specification. See internal.
 than one place.
 
 \item \emph{fan-out}: Describes a used command or event connected to more
-than one command or event implementation.
+than one command or event implementation. A \emph{combining function}
+combines the results of calls to these used commands or events.
 
 \item \emph{interface}: When the context is unambiguous, we use interface
 to refer to either an \emph{interface type} or an \emph{interface instance}.
@@ -1490,7 +1687,7 @@ specifies the interaction of a component with other components.
 \emph{command} or \emph{event} in a specification that is either 
 \emph{provided} or \emph{used}.
 
-\item \emph{task}: A TinyOS task.
+\item \emph{task}: A \tinyos task.
 
 \emph{used, user}: A role for a specification element. Users of
 \emph{interface instances} must implement the \emph{events} in the
