@@ -55,9 +55,19 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	    push @boards, $1;
 	    $strip = 1;
 	}
+	elsif (/^-print-tosdir$/) {
+	    $print_tosdir = 1;
+	    $strip = 1;
+	}
     } 
 
     push @new_args, $_ if !$strip;
+}
+
+if ($print_tosdir)
+{
+    print $TOSDIR, "\n";
+    exit 0;
 }
 
 $target = "pc" if !defined($target);
