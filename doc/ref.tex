@@ -42,7 +42,7 @@ programs. Components define two scopes, one for their specification
 (containing the names of their \emph{interface instances}) and one for
 their implementation. Components have internal concurrency in the form of
 \emph{tasks}. Threads of control may pass into a component through its
-\emph{interfaces}. These threads are rooted either in a task or a hardware
+interfaces. These threads are rooted either in a task or a hardware
 interrupt.
 
 \item Specification of component behaviour in terms of set of
@@ -52,15 +52,15 @@ component provides to its user, the used interfaces represent the
 functionality the component needs to perform its job.
 
 \item Interfaces are bidirectional: they specify a set of functions to be
-implemented by the interface's provider (``commands'') and a set to be
-implemented by the interface's user (``events''). This allows a single
+implemented by the interface's provider (\emph{commands}) and a set to be
+implemented by the interface's user (\emph{events}). This allows a single
 interface to represent a complex interaction between components (e.g.,
 registration of interest in some event, followed by a callback when
 that event happens). This is critical because all lengthy commands in
 TinyOS (e.g. send packet) are non-blocking; their completion is
 signaled through an event (send done). By specifying interfaces, a
-component cannot call the {\tt send} command unless it provides an
-implementation of the {\tt sendDone} event.
+component cannot call the \code{send} command unless it provides an
+implementation of the \code{sendDone} event.
 
 Typically commands call downwards, i.e., from application components to
 those closer to the hardware, while events call upwards. Certain primitive
@@ -81,21 +81,23 @@ TinyOS tutorial~\cite{tinyos-tutorial} presents a gentler introduction
 to \nesc.
 
 The rest of this document is structured as follows:
-Sections~\ref{sec:notation} and~\ref{sec:terminology} present the notation
-and terminology used in the reference manual.
-Sections~\ref{sec:interface},~\ref{sec:component},~\ref{sec:module},
+Section~\ref{sec:notation} presents the notation used in the reference
+manual. Sections~\ref{sec:interface},~\ref{sec:component},~\ref{sec:module},
 and~\ref{sec:configuration} present \nesc interfaces and
 components. Section~\ref{sec:app} explains how C files, \nesc interfaces
 and components are assembled into an application. Section~\ref{sec:misc}
 covers the remaining miscellaneous features of \nesc. Finally,
-Section~\ref{sec:grammar} fully defines \nesc's grammar (as an extension to
+Appendix~\ref{sec:grammar} fully defines \nesc's grammar (as an extension to
 the C grammar from Appendix~A of Kernighan and Ritchie (K\&R)
-~\cite[pp234--239]{kandr}).
+~\cite[pp234--239]{kandr}), and Appendix~\ref{sec:glossary} is a glossary
+of the terms used in this reference manual.
 
 \section{Notation}
 \label{sec:notation}
 
-The \texttt{typewriter} font is used for \nesc code and for filenames.
+The \texttt{typewriter} font is used for \nesc code and for
+filenames. Single symbols in italics, with optional subscripts, are used to
+refer to \nesc entities, e.g., ``component $K$'' or ``value $v$''.
 
 The grammar of \nesc is an extension the ANSI C grammar. We chose to base
 our presentation on the ANSI C grammar from Appendix~A of Kernighan and
@@ -106,114 +108,34 @@ terminals. The subscript \emph{opt} indicates optional terminals or
 non-terminals. In some cases, we change some ANSI C grammar rules. We
 indicate this as follows: \emph{also} indicates additional productions for
 existing non-terminals, \emph{replaced by} indicates replacement of an
-existing non-terminal. In the piecemeal presentation of the grammar, we
-sometimes use \ldots to represent elided productions (not relevant to the
-construction being presented).
+existing non-terminal. 
+
+Explanations of \nesc constructs are presented along with the corresponding
+grammar fragments. In these fragments, we sometimes use \ldots to represent
+elided productions (irrelevant to the construct at
+hand). Appendix~\ref{sec:grammar} presents the full \nesc grammar.
 
 Several examples use the \code{uint8\_t} and \code{uint16\_t} types from
 the C99 standard \file{inttypes.h} file.
-
-\section{Concepts and Terminology}
-\label{sec:terminology}
-
-We use the following terminology in the rest of the reference manual:
-
-\begin{itemize}
-
-\item \emph{component}: The basic unit of \nesc programs. Components have a
-name and are of two kinds: \emph{modules} and \emph{configurations}. A
-component has a \emph{specification} and an implementation. 
-
-\item \emph{specification}: A list of \emph{specification elements}.
-
-\item \emph{specification element}: An \emph{interface instance},
-\emph{command} or \emph{event} in a specification that is either 
-\emph{provided} or \emph{used}.
-
-\item \emph{module}: A component whose implementation is provided by C code. 
-
-\item \emph{configuration}: A component whose implementation is provided
-by a composition of other components with a specific wiring.
-
-\item \emph{interface type}: An \emph{interface type} specifies the
-interaction between two components, \emph{the provider} and the
-\emph{user}. This specification takes the form of a set of \emph{commands}
-and \emph{events}. Each interface type has a distinct name. 
-
-Interfaces are bi-directional: the provider of an interface implements its
-commands, the user of an interface implements its events.
-
-\item \emph{command}, \emph{event}: A function that is part of a component's
-specification, either directly as a specification element or within one 
-of the component's interface instances.
-
-When used directly as specification elements, commands and events can have
-\emph{interface parameters}. As with interface instances, we distinguish
-between \emph{simple commands (events)} without interface parameters and
-\emph{parameterised commands (events)} with interface parameters. The
-interface parameters of a command or event are distinct from its regular
-function parameters.
-
-%\item \emph{interface function}: A command or event. When the context is
-%unambiguous, we will just say function.
-
-\item \emph{interface instance}: An instance of a particular interface type
-in the specification of a component. An interface instance has an instance
-name, a \emph{role} (provider or user), an interface type and, optionally,
-\emph{interface parameters}. An interface instance without parameters is a
-\emph{simple interface instance}, with parameters it is a
-\emph{parameterised interface instance}.
-
-\item \emph{interface parameter}: An interface parameter has an interface
-parameter name and must be of integral type. 
-
-There is (conceptually) a separate simple interface instance for each
-distinct list of parameter values of a parameterised interface instance
-(and, similarly, separate simple commands or events in the case of
-parameterised commands or events). Parameterised interface instances allow
-runtime selection based on parameter values between a set of commands (or
-between a set of events).
-
-\item \emph{interface}: When the context is unambiguous, we will say
-interface to refer to either an interface type or an interface instance.
-
-\item \emph{task}: A TinyOS task.
-
-\item \emph{scopes}: \nesc has the standard C global, function-parameter
-and block scopes. Additionally there are per-component-specification,
-per-component-implementation and per-interface-type scopes.
-
-\item \emph{namespaces}: \nesc has the standard C variable (also used for
-functions and \emph{typedefs}), tagged type (\code{struct}, \code{union}
-and \code{enum} tag names) and label namespaces. Additionally, \nesc has a
-component and interface type namespace for component and interface type
-names.
-
-\item \emph{extents}: \nesc has the standard C extents: indefinite,
-per-function, and per-block.
-
-\item \emph{compile-time error}: An error that the \nesc compiler must
-report at compile-time.
-
-\end{itemize}
 
 \section{Interfaces}
 \label{sec:interface}
 
 Interfaces in \nesc are bidirectional: they specify a multi-function
-interaction channel between two components. An interface has two ``sides'':
-the provider and the user. The interface specifies a set of functions,
-called commands, to be implemented by the interface's provider and a set of
-functions, called events, to be implemented by the interface's
-user. 
+interaction channel between two components, the \emph{provider} and the
+\emph{user}. The interface specifies a set of named functions, called
+\emph{commands}, to be implemented by the interface's provider and a set of
+named functions, called \emph{events}, to be implemented by the interface's
+user.
 
 This section explains how interfaces are specified,
 Section~\ref{sec:component} explains how components specify the interfaces
 they provide and use, Section~\ref{sec:module} explains how commands and
-events are called from C code and Section~\ref{sec:configuration} explains
-how components are linked together via their interfaces.
+events are called from and implemented in C code and
+Section~\ref{sec:configuration} explains how component interfaces are
+linked together.
 
-Interfaces are specified by interface types, as follows:
+Interfaces are specified by \emph{interface types}, as follows:
 \emph{\begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 nesC-file: \\
@@ -227,9 +149,10 @@ storage-class-specifier: \emph{also one of}\\
 \>	\kw{command} \kw{event}\\
 \end{tabbing}}
 This declares interface type \emph{identifier}. This identifier has global
-scope and belongs to the component and interface type namespace (so all
-interface types have names distinct from each other and from all
-components). 
+scope and belongs to a separate namespace, the \emph{component and
+interface type} namespace. So all interface types have names distinct from
+each other and from all components, but there can be no conflicts with
+regular C declarations.
 
 Each interface type has a separate scope for the declarations in
 \emph{declaration-list}. This \emph{declaration-list} must consist of
@@ -253,7 +176,8 @@ Provides of the \code{SendMsg} interface type must implement the
 \section{Component Specification}
 \label{sec:component}
 
-A \nesc component is either a module or a configuration:
+A \nesc component is either a \emph{module} (Section~\ref{sec:module}) or a
+\emph{configuration} (Section~\ref{sec:configuration}):
 \emph{\begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 nesC-file: \\
@@ -276,11 +200,18 @@ specification scope.
 A component can optionally include C files via the \emph{includes-list}
 (see Section~\ref{sec:app}).
 
-The \emph{specification} lists the specification elements (interface
-instances, commands or events) used or provided by this
-component. Typically, commands call down towards the hardware components
-and events call up towards application components. A thread of control
-crosses components only though its specification elements.
+The \emph{specification} lists the \emph{specification elements} (interface
+instances, commands or events) \emph{used} or \emph{provided} by this
+component. As we saw in Section~\ref{sec:interface}, a component must
+implement the commands of its provided interfaces and the events of its
+used interfaces. Additionally, it must implement its provided commands and
+events.
+
+Typically, commands ``call down'' towards the hardware components and
+events ``call up'' towards application components (this assumes a view of
+\nesc applications as a graph of components with application components on
+top). A thread of control crosses components only though its specification
+elements.
 
 Each specification element has a name (interface instance name, command
 name or event name). These names belong to the variable namespace of the
@@ -305,10 +236,10 @@ specification-elements:\\
 \>	specification-element\\
 \>	specification-elements specification-element\\
 \end{tabbing}}
-There can be multiple \kw{uses} and \kw{provides} directives. Multiple used
-or provided specification elements can be grouped in a single directive by
-surrounding them with \{ and \}. For instance, the following two
-specifications are identical:
+There can be multiple \kw{uses} and \kw{provides} directives in a component
+specification. Multiple used or provided specification elements can be
+grouped in a single directive by surrounding them with \{ and \}. For
+instance, the following two specifications are identical:
 
 \begin{minipage}[t]{3in}
 \begin{verbatim}
@@ -349,14 +280,14 @@ as Y}, explicitly specifying \code{Y} as the instance's name. The
 \code{interface X} syntax is a shorthand for \code{interface X as X}.
 
 If the \emph{interface-parameters} are omitted, then \code{interface X as
-Y} declares a simple interface instance, corresponding to a single
+Y} declares a \emph{simple interface instance}, corresponding to a single
 interface to this component. If the \emph{interface-parameters} are present
 (e.g., \code{interface SendMsg S[uint8\_t id]}) then this is a declaration
-of a parameterised interface instance, corresponding to multiple interfaces
-to this component, one for each distinct tuple of parameter values (so
-\code{interface SendMsg S[uint8\_t id]} declares 256 interfaces of type
-\code{SendMsg}). The types of the \emph{parameters} must be integral types
-(\kw{enum}s are not allowed at this time).
+of a \emph{parameterised interface instance}, corresponding to multiple
+interfaces to this component, one for each distinct tuple of parameter
+values (so \code{interface SendMsg S[uint8\_t id]} declares 256 interfaces
+of type \code{SendMsg}). The types of the \emph{parameters} must be
+integral types (\kw{enum}s are not allowed at this time).
 
 Commands or events can be included directly as specification elements by
 including a standard C function declaration with
@@ -373,12 +304,12 @@ storage-class-specifier: \emph{also one of}\\
 It is a compile-time error if the \emph{declaration} is not a function
 declaration with the \kw{command} or \kw{event} storage class. 
 
-As with interface instances, commands and events are simple commands or
-events if no interface parameters are specified, or parameterised commands
-or events if interface parameters are specified. The
-\emph{interface-parameters} are placed before the function's regular
-parameter list, e.g., \code{command void send[uint8\_t id](int x)}:
-\emph{\begin{tabbing}
+As with interface instances, commands (events) are \emph{simple commands}
+(\emph{simple events}) if no interface parameters are specified, or
+\emph{parameterised commands} (\emph{parameterised events}) if interface
+parameters are specified. The \emph{interface-parameters} are placed before
+the function's regular parameter list, e.g., \code{command void
+send[uint8\_t id](int x)}: \emph{\begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 direct-declarator: \emph{also}\\
 \>	direct-declarator interface-parameters \kw{(} parameter-type-list \kw{)}\\
@@ -448,14 +379,14 @@ where \emph{translation-unit} is a list of C declarations and definitions
 (see K\&R~\cite[pp234--239]{kandr}). 
 
 The top-level declarations of the module's \emph{translation-unit} belong
-to the module's per-component-implementation scope. These declarations have
+to the module's component-implementation scope. These declarations have
 indefinite extent and can be: any standard C declaration or definition, a
 TinyOS task declaration or definition, a commands or event
 implementation.
 
 \subsection{Implementing the Module's Specification}
 
-The \emph{translation-unit} must implement the all provided commands
+The \emph{translation-unit} must implement all provided commands
 (events) $\alpha$ of the module (i.e., all directly provided commands and
 events, all commands in provided interfaces and all events in used
 interfaces). A module can call any of its commands and signal any of its
@@ -532,13 +463,13 @@ instance, in a module that uses interface \code{Send} of type \kw{SendMsg}:
 \code{call Send.send(1, sizeof(Message), &msg1)}.
 
 A parameterised command $\alpha$ (respectively, an event) with $n$
-parameters of type $\tau_1, \ldots, \tau_n$ is called with interface parameters
-expressions $e_1, \ldots, e_n$ as follows: \code{call $\alpha$[$e_1, \ldots,
-e_n$](...)}  (respectively, \code{signal $\alpha$[$e_1, \ldots,
-e_n$](...)}). Interface parameter expression $e_i$ must be assignable to type
-$\tau_i$; the actual interface parameter value is $e_i$ cast to type
-$\tau_i$. For instance, in a module that uses interface \code{Send[uint8\_t
-id]} of type \kw{SendMsg}:
+interface parameters of type $\tau_1, \ldots, \tau_n$ is called with
+interface parameters expressions $e_1, \ldots, e_n$ as follows: \code{call
+$\alpha$[$e_1, \ldots, e_n$](...)}  (respectively, \code{signal
+$\alpha$[$e_1, \ldots, e_n$](...)}). Interface parameter expression $e_i$
+must be assignable to type $\tau_i$; the actual interface parameter value
+is $e_i$ cast to type $\tau_i$. For instance, in a module that uses
+interface \code{Send[uint8\_t id]} of type \kw{SendMsg}:
 
 \begin{verbatim}
   int x = ...;
@@ -576,8 +507,8 @@ default command result_t Send.send(uint16_t address, uint8_t length,
 \end{verbatim}
 
 Section~\ref{sec:wiring-semantics} specifies what command or event
-implementations are actually executed and what result gets returned in all
-cases.
+implementations are actually executed and what result gets returned by
+\code{call} and \code{signal} expressions.
 
 \subsection{Tasks}
 
@@ -592,8 +523,7 @@ Tasks are posted by prefixing a call to the task with \kw{post}, e.g.,
 \code{post myTask()}. Post returns immediately; its return value is 1 if
 the task was successfully posted for independent execution, 0
 otherwise. The type of a post expression is \code{unsigned char}.
-
-  \emph{\begin{tabbing}
+\emph{\begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 storage-class-specifier: \emph{also one of}\\
 \>	\kw{task}\\
@@ -696,6 +626,8 @@ the following is true:
 \begin{itemize}
 \item The parameter values are not all constant expressions.
 \item The endpoint's specification element is not parameterised.
+\item There are more (or less) parameter values than there are parameters
+on the specification element.
 \item The parameter values are not in range for the specification element's
 parameter types.
 \end{itemize}
@@ -782,7 +714,7 @@ implementations).
 \label{sec:implicit}
 
 It is possible to write \code{$K_1$ <- $K_2$.$X$} or \code{$K_1$.$X$ <-
-$K_2$}(and the same with \kw{=}, or \kw{->}). This syntax iterates through
+$K_2$} (and the same with \kw{=}, or \kw{->}). This syntax iterates through
 the specification elements of $K_1$ (resp. $K_2$) to find a specification
 element $Y$ such that \code{$K_1$.$Y$ <- $K_2$.$X$} (resp. \code{$K_1$.$X$
 <- $K_2$.$Y$}) forms a valid connection. If exactly one such $Y$ can
@@ -825,7 +757,7 @@ interface X {             module M {
 }                           provides command void h();
                           } implementation { ... }
 \end{verbatim}
-module M has intermediate functions \code{M.P.f, M.P.g, M.U.f, M.U.g, M.h}.
+module M has intermediate functions $I_\code{M.P.f}$, $I_\code{M.P.g}$, $I_\code{M.U.f}$, $I_\code{M.U.g}$, $I_\code{M.h}$.
 In examples in the rest of this section we name intermediate functions
 based on their component, optional interface instance name and function
 name.
@@ -871,8 +803,11 @@ implementation {
 \end{verbatim}
 we have the following intermediate function connections:\\
 \begin{tabular}{ccc}
-\code{C.X.f <-> M.P.f} & \code{M.U.f <-> M.P.f} & \code{C.h2 <-> M.h} \\
-\code{C.X.g <-> M.P.g} & \code{M.U.g <-> M.P.g}
+$I_\code{C.X.f}$ \code{<->} $I_\code{M.P.f}$ & 
+$I_\code{M.U.f}$ \code{<->} $I_\code{M.P.f}$ & 
+$I_\code{C.h2}$ \code{<->} $I_\code{M.h}$ \\
+$I_\code{C.X.g}$ \code{<->} $I_\code{M.P.g}$ & 
+$I_\code{M.U.g}$ \code{<->} $I_\code{M.P.g}$
 \end{tabular}
 
 In a connection \code{$I_1$ <-> $I_2$} from a configuration
@@ -993,12 +928,16 @@ satisfy, or a compile-time error occurs:
 \item At every \code{call $\alpha$} (or \code{signal $\alpha$}) expression
 in the application's modules:
 \begin{itemize}
-\item If the call is unparameterised: if the call returns no results there
-must be a default implementation of $\alpha$.
+\item If the call is unparameterised: if the call returns an empty result
+list there must be a default implementation of $\alpha$ (the number of
+elements in the result list depends only on the wiring).
 \item If the call is parameterised: if substituation of any values for the
-interface parameters of $\alpha$ returns no results there must be a default
-implementation of $\alpha$ (note that this condition does not consider the
-expressions used to specify interface parameter values at the call-site).
+interface parameters of $\alpha$ returns an empty result list there must be
+a default implementation of $\alpha$ (the number of elements in the result
+list for a given parameter value tuple depends only on the wiring).
+
+Note that this condition does not consider the expressions used to specify
+interface parameter values at the call-site.
 \end{itemize}
 \end{itemize}
 
@@ -1242,6 +1181,8 @@ to parameterised interface instances, so that a component providing
 a parameterised interface can uniquely identify the various components
 connected to that interface.
 
+\appendix
+
 \section{Grammar}
 \label{sec:grammar}
 
@@ -1400,6 +1341,147 @@ postfix-expression: \emph{replaced by}\\
 call-kind: \emph{one of}\\
 \>	\kw{call} \kw{signal} \kw{post}
 \end{tabbing}}
+
+\section{Glossary}
+\label{sec:glossary}
+
+\begin{itemize}
+
+\item \emph{command}, \emph{event}: A function that is part of a
+component's \emph{specification}, either directly as a \emph{specification
+element} or within one of the component's \emph{interface instances}.
+
+When used directly as specification elements, commands and events have
+roles (\emph{provider}, \emph{user}) and can have \emph{interface
+parameters}. As with interface instances, we distinguish between
+\emph{simple commands (events)} without interface parameters and
+\emph{parameterised commands (events)} with interface parameters. The
+interface parameters of a command or event are distinct from its regular
+function parameters.
+
+\item \emph{compile-time error}: An error that the \nesc compiler must
+report at compile-time.
+
+\item \emph{component}: The basic unit of \nesc programs. Components have a
+name and are of two kinds: \emph{modules} and \emph{configurations}. A
+component has a \emph{specification} and an implementation. 
+
+\item \emph{configuration}: A component whose implementation is provided
+by a composition of other components with a specific \emph{wiring}.
+
+\item \emph{endpoint}: A specification of a particular specification
+element, and optionally some interface parameter values, in a wiring
+statement of a configuration. A parameterised endpoint is an endpoint
+without parameter values that corresponds to a parameterised specification
+element.
+
+\item \emph{event}: See command.
+
+\item \emph{extent}: The lifetime of a variable. \nesc has the standard C
+extents: \emph{indefinite}, \emph{function}, and \emph{block}.
+
+\item \emph{external}: In a configuration $C$, describes a specification
+element from $C$'s specification. See internal.
+
+\item \emph{fan-in}: Describes a provided command or event called from more
+than one place.
+
+\item \emph{fan-out}: Describes a used command or event connected to more
+than one command or event implementation.
+
+\item \emph{interface}: When the context is unambiguous, we use interface
+to refer to either an \emph{interface type} or an \emph{interface instance}.
+
+\item \emph{interface instance}: An instance of a particular
+\emph{interface type} in the \emph{specification} of a component. An
+interface instance has an instance name, a role (\emph{provider} or
+\emph{user}), an \emph{interface type} and, optionally, \emph{interface
+parameters}. An interface instance without parameters is a \emph{simple
+interface instance}, with parameters it is a \emph{parameterised interface
+instance}.
+
+\item \emph{interface parameter}: An interface parameter has an interface
+parameter name and must be of integral type. 
+
+There is (conceptually) a separate \emph{simple interface instance} for
+each distinct list of parameter values of a \emph{parameterised interface
+instance} (and, similarly, separate simple commands or events in the case
+of parameterised commands or events). Parameterised interface instances
+allow runtime selection based on parameter values between a set of commands
+(or between a set of events).
+
+\item \emph{interface type}: An \emph{interface type} specifies the
+interaction between two components, \emph{the provider} and the
+\emph{user}. This specification takes the form of a set of \emph{commands}
+and \emph{events}. Each interface type has a distinct name. 
+
+Interfaces are bi-directional: the provider of an interface implements its
+commands, the user of an interface implements its events.
+
+\item \emph{intermediate function}: A pseudo-function that represents the
+behaviour of the commands and events of a component, as specified by the
+wiring statements of the whole application. See
+Section~\ref{sec:wiring-semantics}.
+
+\item \emph{internal}: In a configuration $C$, describes a specification
+element from one of the components specified in $C$'s component list. See
+external.
+
+\item \emph{module}: A component whose implementation is provided by C
+code. 
+
+\item \emph{namespace}: \nesc has the standard C \emph{variable} (also
+used for functions and \code{typedef}s), \emph{tagged type} (\code{struct},
+\code{union} and \code{enum} tag names) and \emph{label}
+namespaces. Additionally, \nesc has a \emph{component and interface type}
+namespace for component and interface type names.
+
+\emph{parameterised command, parameterised event, parameterised interface
+instance, endpoint}: See command, event, interface instance, endpoint.
+
+\emph{provided, provider}: A role for a specification element. Providers of
+\emph{interface instances} must implement the \emph{commands} in the
+interface; provided commands and events must be implemented.
+
+\emph{provided command of $K$}: A command that is either a
+provided specification element of $K$, or a command of a provided interface
+of $K$.
+
+\emph{provided event of $K$}: An event that is either a
+provided specification element of $K$, or an event of a used interface
+of $K$.
+
+\item \emph{scope}: \nesc has the standard C \emph{global},
+\emph{function-parameter} and \emph{block} scopes. Additionally there are
+\emph{specification} and \emph{implementation} scopes in components and a
+per-interface-type scope. Scopes are divided into namespaces.
+
+\emph{simple command, simple event, simple interface instance}: See
+command, event, interface instance.
+
+\item \emph{specification}: A list of \emph{specification elements} that
+specifies the interaction of a component with other components.
+
+\item \emph{specification element}: An \emph{interface instance},
+\emph{command} or \emph{event} in a specification that is either 
+\emph{provided} or \emph{used}.
+
+\item \emph{task}: A TinyOS task.
+
+\emph{used, user}: A role for a specification element. Users of
+\emph{interface instances} must implement the \emph{events} in the
+interface.
+
+\emph{used command of $K$}: A command that is either a used specification
+element of $K$, or a command of a used interface of $K$.
+
+\emph{used event of $K$}: An event that is either a used specification
+element of $K$, or an event of a provided interface of $K$.
+
+\item \emph{wiring}: The connections between component's specification
+elements specified by a configuration.
+
+\end{itemize}
 
 
 \end{document}
