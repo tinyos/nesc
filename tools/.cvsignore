@@ -1,10 +1,7 @@
-mig
-ncc
-ncg
+nescc-mig
+nescc-ncg
 nescc
-nesdoc
-set-mote-id
 Makefile
 Makefile.in
-nccdiff
+nescc-diff
 jnesc
