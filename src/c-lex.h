@@ -94,6 +94,8 @@ struct lex_state
  * place the documentation into the appropriate data_declaration.
  **/
 void get_latest_docstring(char **short_s, char **long_s);
+char *get_docstring();
+void separate_short_docstring(char *str, char **short_s, char **long_s);
 
 
 #endif

@@ -55,7 +55,8 @@ struct yystype {
     implementation impl;
     environment env;
     dd_list fields;
-
+    char *docstring;
+    
     struct {
       location location;
       int i;

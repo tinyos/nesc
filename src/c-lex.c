@@ -230,16 +230,18 @@ yyprint (file, yychar, yylval)
 /* flag to allow skipping of initial whitespace & * character */ 
 bool doc_skip_prefix;
 unsigned long prev_cpp_docstring_line = ULONG_MAX;
+struct location doc_location;
 
 /* initialize an accumulating documentation string */
 static void init_c_docstring() 
 {
   /* warn about doc strings that are never added to a data_declaration */
   if(char_array_length(docstring_array) != 0 )
-    warning("New docstring found, while previous was still unatached - error in formatting?  Old docstring discarded.");
+    warning("discarding unused docstring from %s:%ld.", doc_location.filename, doc_location.lineno);
 
   char_array_reset(docstring_array);
   doc_skip_prefix = FALSE;
+  doc_location = input_file_stack->l;
 }
 
 /* set up for a CPP style documentation string.  This allows for
@@ -250,6 +252,7 @@ static void init_cpp_docstring()
     char_array_reset(docstring_array);
   prev_cpp_docstring_line = input_file_stack->l.lineno;
   doc_skip_prefix = FALSE;
+  doc_location = input_file_stack->l;
 }
 
 
@@ -277,25 +280,23 @@ static void add_to_docstring(int c)
 /* copy out the current docstring, if any */
 void get_latest_docstring(char **short_s, char **long_s)
 {
-  size_t length = char_array_length(docstring_array);
-  char *str, *dot;
+  char *str;
+
+  str = get_docstring();
+  separate_short_docstring(str, short_s, long_s);
+}
+
+void separate_short_docstring(char *str, char **short_s, char **long_s)
+{
+  char *dot;
   assert(short_s != NULL);
   assert(long_s != NULL);
-
-  /* no doc string available */
-  if( length <= 0 ) {
+  
+  if(str == NULL) {
     *short_s = NULL;
     *long_s = NULL;
     return;
   }
-
-
-  /* copy out the text, and reset docstring_array */
-  str = rarrayalloc(parse_region, length + 1, char);
-  memcpy(str, char_array_data(docstring_array), length * sizeof(char));
-  str[length] = '\0';
-  prev_cpp_docstring_line = ULONG_MAX;
-  char_array_reset(docstring_array);
 
   /* find the short string, if any */
   dot = strchr(str,'.');
@@ -308,7 +309,28 @@ void get_latest_docstring(char **short_s, char **long_s)
     *dot = '.';
     *long_s = str;
   }
+}
 
+/**
+ * Return the latest docstring, as a string
+ **/
+char *get_docstring() {
+  size_t length = char_array_length(docstring_array);
+  char *str;
+
+  /* no doc string available */
+  if( length <= 0 )
+    return NULL;
+
+
+  /* copy out the text, and reset docstring_array */
+  str = rarrayalloc(parse_region, length + 1, char);
+  memcpy(str, char_array_data(docstring_array), length * sizeof(char));
+  str[length] = '\0';
+  prev_cpp_docstring_line = ULONG_MAX;
+  char_array_reset(docstring_array);
+
+  return str;
 }
 
 
@@ -322,12 +344,21 @@ void skip_c_comment(void)
 
   /* if the first char is '*', then this is a code documentation comment */
   c = lex_getc();
-  if(c == '*') {
+  if(c == '*') 
+  {
+    /* handle empty comments */
+    char c1 = lex_getc();
+    if(c1 == '/') return;
+    else lex_ungetc(c1);
+
     docstring = TRUE;
     init_c_docstring();
-  } else {
+  } 
+  else 
+  {
     lex_ungetc(c);
   }
+
 
   for (;;)
     {

@@ -25,6 +25,8 @@ typedef struct {
   const char *name;
   nesc_decl ast;
   struct environment *env;
+  char *short_docstring;  /* For documentation comments */
+  char *long_docstring;
 } *nesc_declaration;
 
 /* A particular interface declaration (.ti file) */
@@ -33,6 +35,8 @@ typedef struct interface_declaration {
   const char *name;
   nesc_decl ast;
   struct environment *env;
+  char *short_docstring;  /* For documentation comments */
+  char *long_docstring;
 } *interface_declaration;
 
 #define NDCAST(to, x) ((to)x)
@@ -43,6 +47,8 @@ typedef struct component_declaration {
   const char *name;
   nesc_decl ast;
   struct environment *env; /* The external interfaces of this component */
+  char *short_docstring;  /* For documentation comments */
+  char *long_docstring;
   implementation impl;
   struct cgraph *connections;
 } *component_declaration;

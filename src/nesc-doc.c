@@ -1067,6 +1067,12 @@ static void generate_component_html(component_declaration cdecl)
 ", cdecl->name, cdecl->name);
 
 
+  // print the overview documentation
+  if( cdecl->short_docstring ) {
+    output("<p>\n%s\n<p>\n\n", cdecl->long_docstring ? cdecl->long_docstring : cdecl->short_docstring);
+  }
+
+
   // module declaration (requires / provides stuff)
   if( comp->rplist ) 
   {
@@ -1634,11 +1640,10 @@ void generate_docs(const char *filename, cgraph cg)
     const char *name;
     component_declaration cdecl;
 
-    printf("\n    Generating component docs\n");
+    if (flag_verbose) printf("\n    Generating component docs\n");
     env_scan(get_component_env(), &scanner);
     while( env_next(&scanner, &name, (void **)&cdecl) ) {
-      // FIXME: remove printf
-      printf("        %s\n", cdecl->name);
+      if (flag_verbose) printf("        %s\n", cdecl->name);
       generate_component_html(cdecl);
     }
   }
@@ -1649,11 +1654,10 @@ void generate_docs(const char *filename, cgraph cg)
     const char *name;
     interface_declaration idecl;
 
-    printf("\n    Generating interface docs\n");
+    if (flag_verbose) printf("\n    Generating interface docs\n");
     env_scan(get_interface_env(), &scanner);
     while( env_next(&scanner, &name, (void **)&idecl) ) {
-      // FIXME: remove printf
-      printf("        %s\n", idecl->name);
+      if (flag_verbose) printf("        %s\n", idecl->name);
       generate_interface_html(idecl);
     }
   }

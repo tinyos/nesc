@@ -331,10 +331,16 @@ include_list:
 	;
 
 interface: 
-	includes_list
-	INTERFACE idword '{' uses_or_defines_list '}' 
+        includes_list
+	INTERFACE { $<u.docstring>$ = get_docstring(); } idword '{' uses_or_defines_list '}' 
 		{
-		  the_interface = new_interface(pr, $2.location, $3, interface_functions_reverse($5));
+		  the_interface = new_interface(pr, $2.location, $4, interface_functions_reverse($6));
+                  if( $<u.docstring>3 ) 
+                  {
+                    interface_declaration idecl = require_interface($2.location, $4->cstring.data);
+                    assert( idecl );
+                    separate_short_docstring($<u.docstring>3, &(idecl->short_docstring), &(idecl->long_docstring));
+                  }
 		}
 	;
 
@@ -387,13 +393,31 @@ component: includes_list module
 	| includes_list configuration
 	;
 
-module: MODULE idword '{' requires_or_provides_list '}' imodule
-	{ the_component = new_component(pr, $1.location, $2, rp_interface_reverse($4), $6); }
+module: MODULE { $<u.docstring>$ = get_docstring(); } idword '{' requires_or_provides_list '}' imodule
+	{ 
+          the_component = new_component(pr, $1.location, $3, rp_interface_reverse($5), $7); 
+          if( $<u.docstring>2 ) 
+          {
+            component_declaration cdecl = require_component($1.location, $3->cstring.data );
+            assert( cdecl );
+            separate_short_docstring($<u.docstring>2, &(cdecl->short_docstring), &(cdecl->long_docstring));
+          }
+        }
 	;
 
-configuration: CONFIGURATION idword '{' requires_or_provides_list '}' iconfiguration
-	{ the_component = new_component(pr, $1.location, $2, rp_interface_reverse($4), $6); }
-	;
+configuration: CONFIGURATION { $<u.docstring>$ = get_docstring(); } idword '{' requires_or_provides_list '}' iconfiguration
+        { 
+          the_component = new_component(pr, $1.location, $3, rp_interface_reverse($5), $7); 
+          if( $<u.docstring>2 ) 
+          {
+            component_declaration cdecl = require_component($1.location, $3->cstring.data );
+            assert( cdecl );
+            separate_short_docstring($<u.docstring>2, &(cdecl->short_docstring), &(cdecl->long_docstring));
+          }
+        }
+        ;
+
+
 
 requires_or_provides_list: 
 	requires_or_provides_list requires_or_provides
