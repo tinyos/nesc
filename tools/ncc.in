@@ -115,8 +115,15 @@ unshift @new_args, map "-DBOARD_\U$_", @boards;
 unshift @new_args, "-DPLATFORM_\U$target";
 unshift @new_args, "nescc";
 
+# Execute .sensor file in selected sensor board directories if it exists
+foreach $board (@boards) {
+    $bspec = &idir_subst("%T/sensorboards/$board/.sensor");
+    do $bspec if -f $bspec;
+}
+
 if (!$nostdinc) {
     push @includes, map "%T/sensorboards/$_", @boards;
+    push @includes, map "%T/sensorboards/$_", @commonboards;
     push @includes, "%T/platform/$target";
     push @includes, map "%T/platform/$_", @commonplatforms;
     push @includes, "%T/interfaces";
@@ -132,7 +139,7 @@ foreach $idir (@includes) {
 
 print STDERR join(' ', @new_args), "\n" if $verbose;
 exec @new_args;
-print STDERR "Couldn't execute ncc\n";
+print STDERR "Couldn't execute nescc\n";
 exit 2;
 
 sub extractarg {

@@ -160,6 +160,7 @@ EXTRA_DIST = 					\
 	build-parent.el				\
 	build-print.el				\
 	build-types.el				\
+	build-walk.el				\
 	c-parse.gperf				\
 	c-parse.y				\
 	cg_help.c				\
