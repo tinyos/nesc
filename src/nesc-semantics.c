@@ -502,3 +502,12 @@ nesc_declaration original_component(nesc_declaration c)
 
   return c;
 }
+
+data_declaration original_declaration(data_declaration d)
+{
+  while (d->shadowed)
+    d = d->shadowed;
+
+  return d;
+}
+

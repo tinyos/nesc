@@ -47,6 +47,7 @@ static void prt_nesc_function_hdr(data_declaration fn_decl,
   prt_declarator(ifn_vd->declarator, NULL, ifn_vd->attributes, fn_decl, 
 		 psd_rename_parameters | options);
 }
+
 void prt_nesc_function_declaration(data_declaration fndecl, void *data)
 {
   if (fndecl->definition && fndecl->isused && !fndecl->suppress_definition)
@@ -1048,7 +1049,9 @@ void generate_c_code(nesc_declaration program, const char *target_name,
   prt_toplevel_declarations(all_cdecls);
   disable_line_directives();
 
-  /* Typedefs for abstract module type arguments */
+  /* Typedefs for abstract module type arguments. This relies on the fact
+     that abstract configurations are present in the components list ahead
+     of the abstract modules that they instantiate */
   dd_scan (mod, components)
     prt_nesc_typedefs(DD_GET(nesc_declaration, mod));
 

@@ -46,4 +46,10 @@ nesc_declaration specification_copy(region r, component_ref cref,
    Returns: The shallow copy
 */
 
+struct cgraph *build_external_graph(region r, nesc_declaration cdecl);
+
+void copy_interface_functions(region r, nesc_declaration container,
+			      data_declaration iref, environment fns);
+
+
 #endif

@@ -1067,7 +1067,7 @@ bool type_compatible_unqualified(type t1, type t2)
 	array_sizes_match(t1, t2);
 
     case tk_iref:
-      return t1->u.iref->itype == t2->u.iref->itype;
+      return 1 || t1->u.iref->itype == t2->u.iref->itype;
 
     case tk_variable:
       return t1->u.tdecl == t2->u.tdecl;

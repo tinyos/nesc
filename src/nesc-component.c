@@ -29,6 +29,7 @@ Boston, MA 02111-1307, USA.  */
 #include "c-parse.h"
 #include "input.h"
 #include "edit.h"
+#include "nesc-abstract.h"
 
 void interface_scan(data_declaration iref, env_scanner *scan)
 {
@@ -86,9 +87,8 @@ static typelist make_gparm_typelist(declaration gparms)
   return gtypes;
 }
 
-static void copy_interface_functions(region r, nesc_declaration container,
-				     data_declaration iref,
-				     environment fns)
+void copy_interface_functions(region r, nesc_declaration container,
+			      data_declaration iref, environment fns)
 {
   environment icopy = new_environment(r, NULL, TRUE, FALSE);
   env_scanner scanif;
@@ -118,78 +118,6 @@ static void copy_interface_functions(region r, nesc_declaration container,
   iref->functions = icopy;
 }
 
-static cgraph build_external_graph(region r, nesc_declaration cdecl);
-
-nesc_declaration specification_copy(region r, component_ref cref,
-				    bool copy_is_abstract)
-/* Effects: Make a "shallow" copy of `component' (in region r), i.e., make
-     a copy of the environment with copies of the original interfaces as
-     in copy_interface_functions.
-   Returns: The shallow copy
-*/
-{
-  nesc_declaration component = cref->cdecl;
-  nesc_declaration copy;
-  environment envcopy;
-  env_scanner scanenv;
-  const char *specname;
-  void *specentry;
-
-  assert(component->kind == l_component);
-
-  copy = new_nesc_declaration(r, l_component, component->name);
-  copy->parameters = component->parameters;
-  copy->ast = component->ast;
-  copy->short_docstring = component->short_docstring;
-  copy->long_docstring = component->long_docstring;
-  copy->impl = component->impl;
-  copy->abstract = copy_is_abstract;
-  copy->instance_name = cref->word2->cstring.data;
-  if (!copy_is_abstract)
-    {
-      /* Give it a new name */
-      /* component may itself be a copy of the real original abstract
-	 component */
-      nesc_declaration abs_component =
-	component->original ? component->original : component;
-      char *newname = rstralloc(r, strlen(copy->name) + 20);
-
-      sprintf(newname, "%s$%d", copy->name, abs_component->instance_count++);
-      copy->name = newname;
-    }
-
-  /* Copy all the specification elements */
-  envcopy = new_environment(r, component->env->parent, TRUE, FALSE);
-  copy->env = envcopy;
-  env_scan(component->env->id_env, &scanenv);
-  while (env_next(&scanenv, &specname, &specentry))
-    {
-      data_declaration specdecl = specentry, speccopy;
-
-      speccopy = declare(envcopy, specdecl, TRUE);
-      speccopy->shadowed = specdecl;
-      speccopy->container = copy;
-
-      if (speccopy->kind == decl_function)
-	{
-	  speccopy->fn_uses = NULL;
-	  speccopy->nuses = NULL;
-	}
-      else
-	{
-	  assert(speccopy->kind == decl_interface_ref);
-	  copy_interface_functions(r, copy, speccopy, speccopy->functions);
-	}
-    }
-
-  /* Give the copy an "empty" specification graph */
-  copy->connections = build_external_graph(r, copy);
-
-  copy->original = component;
-
-  return copy;
-}
-
 void declare_interface_ref(interface_ref iref, declaration gparms,
 			   environment genv)
 {
@@ -203,6 +131,7 @@ void declare_interface_ref(interface_ref iref, declaration gparms,
   tempdecl.kind = decl_interface_ref;
   tempdecl.type = NULL;
   tempdecl.itype = idecl;
+  tempdecl.container = current.container;
   tempdecl.required = current.component_requires;
   tempdecl.gparms = gparms ? make_gparm_typelist(gparms) : NULL;
 
@@ -210,6 +139,18 @@ void declare_interface_ref(interface_ref iref, declaration gparms,
   if (old_decl)
     error("redefinition of `%s'", iname);
   ddecl = declare(current.env, &tempdecl, FALSE);
+  iref->ddecl = ddecl;
+
+  if (idecl->abstract)
+    {
+      if (check_abstract_arguments("interface", ddecl,
+				   idecl->parameters, iref->args))
+	{
+	  ddecl->itype = interface_copy(parse_region, iref,
+					current.container->abstract);
+	}
+    }
+
   /* We don't make the interface type generic. Instead, we push the generic
      type into each function in copy_interface_functions.  This is because
      the syntax for invoking or defining a function on a generic interface
@@ -246,7 +187,7 @@ void beg_iterator(data_declaration fndecl, void *data)
   endpoint_lookup(d->cg, &node);
 }
 
-static cgraph build_external_graph(region r, nesc_declaration cdecl)
+cgraph build_external_graph(region r, nesc_declaration cdecl)
 {
   cgraph cg = new_cgraph(r);
   struct beg_data d;

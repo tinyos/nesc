@@ -32,7 +32,7 @@ typedef struct nesc_declaration {
   const char *instance_name;
   nesc_decl ast;
   struct environment *env;
-  char *short_docstring;  /* For documentation comments */
+  char *short_docstring;	/* For documentation comments */
   char *long_docstring;
   bool abstract;		/* true for abstract components and
 				   generic interfaces */

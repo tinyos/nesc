@@ -45,4 +45,19 @@ void pop_instance(void);
 
 void init_abstract(void);
 
+bool check_abstract_arguments(const char *kind, data_declaration ddecl,
+			      declaration parms, expression arglist);
+
+nesc_declaration interface_copy(region r, interface_ref iref,
+				bool copy_is_abstract);
+/* Returns: A copy of abstract interface intf, instantiated with arguments
+     in arglist.
+*/
+
+nesc_declaration specification_copy(region r, component_ref cref,
+				    bool copy_is_abstract);
+/* Returns: A copy of the parameters and specification of the
+     component specified by cref, with arguments specified by cref
+*/
+
 #endif

@@ -256,6 +256,7 @@ tag_declaration declare_tag_env(environment env, tag_ref t)
   tdecl->kind = t->kind;
   tdecl->name = name;
 #if 0
+  /* ralloc guarantees 0 / NULL */
   tdecl->fields = NULL;
   tdecl->fieldlist = NULL;
   tdecl->defined = tdecl->being_defined = FALSE;

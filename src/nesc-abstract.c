@@ -28,6 +28,8 @@ Boston, MA 02111-1307, USA.  */
 #include "constants.h"
 #include "nesc-constants.h"
 #include "c-lex.h"
+#include "expr.h"
+#include "nesc-env.h"
 
 static AST_walker clone_walker;
 
@@ -98,7 +100,7 @@ static void forward(data_declaration *dd)
 static void instantiate_ddecl_types(data_declaration ddecl)
 {
   ddecl->type = instantiate_type(ddecl->type);
-  if (ddecl->kind == decl_interface_ref)
+  if (ddecl->kind == decl_interface_ref && ddecl->gparms)
     ddecl->gparms = instantiate_typelist(ddecl->gparms);
 }
 
@@ -111,12 +113,11 @@ static void clone_ddecl(data_declaration ddecl)
       ddecl->instantiation->container == current.container)
     return;
 
-  assert(!ddecl_is_command_or_event(ddecl));
-
   /* Copy module functions (incl. tasks) and variables */
 
   if (!(ddecl->kind == decl_variable || ddecl->kind == decl_function ||
-	ddecl->kind == decl_constant || ddecl->kind == decl_typedef))
+	ddecl->kind == decl_constant || ddecl->kind == decl_typedef ||
+	ddecl->kind == decl_interface_ref))
     return;
 
   /* Ignore non-module variables */
@@ -475,6 +476,25 @@ static AST_walker_result clone_component_ref(AST_walker spec, void *data,
   return aw_walk;
 }
 
+static AST_walker_result clone_interface_ref(AST_walker spec, void *data,
+					     interface_ref *n)
+{
+  interface_ref new = clone(data, n);
+
+  AST_walk_children(spec, data, CAST(node, new));
+
+  clone_ddecl(new->ddecl);
+  new->ddecl = new->ddecl->instantiation;
+
+  if (new->ddecl->itype->abstract)
+    new->ddecl->itype = interface_copy(data, new, current.container->abstract);
+
+  copy_interface_functions(data, current.container, 
+			   new->ddecl, new->ddecl->functions);
+
+  return aw_done;
+}
+
 static AST_walker_result clone_configuration(AST_walker spec, void *data,
 					     configuration *n)
 {
@@ -515,10 +535,11 @@ static void init_clone(void)
   AST_walker_handle(clone_walker, kind_enumerator, clone_enumerator);
   AST_walker_handle(clone_walker, kind_configuration, clone_configuration);
   AST_walker_handle(clone_walker, kind_component_ref, clone_component_ref);
+  AST_walker_handle(clone_walker, kind_interface_ref, clone_interface_ref);
   AST_walker_handle(clone_walker, kind_tag_ref, clone_tag_ref);
 }
 
-static void set_parameter_values(nesc_declaration cdecl, expression args)
+void set_parameter_values(nesc_declaration cdecl, expression args)
 {
   declaration parm;
 
@@ -529,7 +550,7 @@ static void set_parameter_values(nesc_declaration cdecl, expression args)
 	{
 	  variable_decl vd = CAST(variable_decl, CAST(data_decl, parm)->decls);
 
-	  if (check_constant_once(args))
+	  if (!is_type_argument(args) && check_constant_once(args))
 	    {
 	      location l = args->location;
 
@@ -567,6 +588,34 @@ static void set_parameter_values(nesc_declaration cdecl, expression args)
     }
 }
 
+static void set_parameter_instantiations(nesc_declaration cdecl)
+{
+  declaration parm;
+
+  /* We know args is the same length as parameters (earlier error if not) */
+  scan_declaration (parm, cdecl->parameters)
+    {
+      data_declaration ddecl, orig;
+
+      if (is_data_decl(parm))
+	ddecl = CAST(variable_decl, CAST(data_decl, parm)->decls)->ddecl;
+      else
+	ddecl = CAST(type_parm_decl, parm)->ddecl;
+
+      orig = original_declaration(ddecl);
+      assert(ddecl != orig);
+      orig->instantiation = ddecl;
+    }
+}
+
+node instantiate_ast_list(region r, node n)
+{
+  AST_walk_list(clone_walker, r, &n);
+  AST_set_parents(n);
+
+  return n;
+}
+
 void instantiate(nesc_declaration component, expression arglist)
 /* Effects: Actually instantiate an abstract component
      For modules: temp noop
@@ -584,14 +633,17 @@ void instantiate(nesc_declaration component, expression arglist)
      specially (not copied). So we just copy the parameters and the
      implementation. */
 
+#if 0
   component->parameters = instantiate_parameters(r, component->parameters);
   set_parameter_values(component, arglist);
+#endif
+  set_parameter_instantiations(component);
   set_specification_instantiations(component);
 
   /* A new dummy env for all instantiations in the implementation */
   current.env = new_environment(r, NULL, TRUE, FALSE);
-  AST_walk(clone_walker, r, CASTPTR(node, &component->impl));
-  AST_set_parents(CAST(node, component->impl));
+  component->impl = CAST(implementation,
+			 instantiate_ast_list(r, CAST(node, component->impl)));
 }
 
 /* Component stack handling, for error message and loop detection */
@@ -758,6 +810,144 @@ void fold_program(nesc_declaration program)
   while (!done);
 
   current.container = NULL;
+}
+
+bool check_abstract_arguments(const char *kind, data_declaration ddecl,
+			      declaration parms, expression arglist)
+{
+  location loc = ddecl->ast->location;
+  int parmnum = 1;
+  int oldcount = errorcount;
+
+  while (parms && arglist)
+    {
+      if (is_data_decl(parms))
+	{
+	  variable_decl vparm = CAST(variable_decl, CAST(data_decl, parms)->decls);
+	  type parmtype = vparm->ddecl->type;
+
+	  if (type_incomplete(parmtype))
+	    error_with_location(loc, "type of formal parameter %d is incomplete", parmnum);
+	  else if (is_type_argument(arglist))
+	    error_with_location(loc, "formal parameter %d must be a value", parmnum);
+	  else 
+	    {
+	      set_error_location(arglist->location);
+	      check_assignment(parmtype, default_conversion_for_assignment(arglist),
+			       arglist, NULL, ddecl, parmnum);
+	    }
+	}
+      else /* type argument */
+	{
+	  if (!is_type_argument(arglist))
+	    error_with_location(loc, "formal parameter %d must be a type", parmnum);
+	  else if (type_array(arglist->type))
+	    error_with_location(loc, "type parameter cannot be an array type (parameter %d)",
+		  parmnum);
+	  else if (type_function(arglist->type))
+	    error_with_location(loc, "type parameter cannot be a function type (parameter %d)",
+		  parmnum);
+	  else if (type_incomplete(arglist->type))
+	    error_with_location(loc, "type parameter %d is an incomplete type", parmnum);
+	}
+      parmnum++;
+      arglist = CAST(expression, arglist->next);
+      parms = CAST(declaration, parms->next);
+    }
+  clear_error_location();
+
+  if (parms)
+    error_with_location(loc, "too few arguments to %s `%s'",
+			kind, ddecl->name);
+  else if (arglist)
+    error_with_location(loc, "too many arguments to component `%s'",
+			kind, ddecl->name);
+
+  return oldcount == errorcount;
+}
+
+static nesc_declaration 
+nesc_declaration_copy(region r, nesc_declaration old, expression args,
+		      bool copy_is_abstract)
+{
+  nesc_declaration copy;
+
+  copy = new_nesc_declaration(r, old->kind, old->name);
+  copy->env = new_environment(r, old->env->parent, TRUE, FALSE);
+  copy->short_docstring = old->short_docstring;
+  copy->long_docstring = old->long_docstring;
+  copy->abstract = copy_is_abstract;
+  copy->original = old;
+
+  /* Copy the parameters, storing the new decls in a dummy env */
+  current.env = new_environment(r, NULL, TRUE, FALSE);
+  current.container = copy;
+  copy->parameters = instantiate_parameters(r, old->parameters);
+  set_parameter_values(copy, args);
+
+  return copy;
+}
+
+nesc_declaration interface_copy(region r, interface_ref iref,
+				bool copy_is_abstract)
+/* Returns: A copy of abstract interface intf, instantiated with arguments
+     in arglist.
+*/
+{
+  nesc_declaration intf = iref->ddecl->itype, copy;
+  struct semantic_state old = current;
+
+  assert(intf->kind == l_interface);
+
+  copy = nesc_declaration_copy(r, intf, iref->args, copy_is_abstract);
+  current.env = copy->env;
+  copy->ast = CAST(nesc_decl, instantiate_ast_list(r, CAST(node, intf->ast)));
+  current = old;
+  
+  return copy;
+}
+
+nesc_declaration specification_copy(region r, component_ref cref,
+				    bool copy_is_abstract)
+/* Returns: A copy of the parameters and specification of the
+     component specified by cref, with arguments specified by cref
+*/
+{
+  component spec;
+  nesc_declaration comp = cref->cdecl, copy;
+  struct semantic_state old = current;
+
+  assert(comp->kind == l_component);
+
+  copy = nesc_declaration_copy(r, comp, cref->args, copy_is_abstract);
+  copy->instance_name = cref->word2->cstring.data;
+  if (!copy_is_abstract)
+    {
+      /* Give it a new name */
+      /* component may itself be a copy of the real original abstract
+	 component */
+      nesc_declaration abs_comp = comp->original ? comp->original : comp;
+      char *newname = rstralloc(r, strlen(copy->name) + 20);
+
+      sprintf(newname, "%s$%d", copy->name, abs_comp->instance_count++);
+      copy->name = newname;
+    }
+
+  copy->ast = comp->ast;
+  clone(r, &copy->ast);
+  copy->impl = comp->impl;
+
+  /* Copy the specification into the copy's env */
+  current.env = copy->env;
+  spec = CAST(component, copy->ast);
+  spec->rplist = CAST(rp_interface,
+		      instantiate_ast_list(r, CAST(node, spec->rplist)));
+  current = old;
+
+  /* Give the copy an "empty" specification graph */
+  copy->connections = build_external_graph(r, copy);
+
+  return copy;
 }
 
 void init_abstract(void)

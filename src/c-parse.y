@@ -149,6 +149,7 @@ void yyerror();
 %type <u.expr> STRING string_list nonnull_exprlist_ initval
 %type <u.designator> designator_list designator
 %type <u.expr> unary_expr xexpr function_call
+%type <u.expr> generic_type typelist
 %type <u.id_label> id_label maybe_label_decls label_decls label_decl
 %type <u.id_label> identifiers_or_typenames
 %type <idtoken> identifier IDENTIFIER TYPENAME MAGIC_STRING type_parm
@@ -645,14 +646,14 @@ interface_ref:
 
 interface_type:
 	  INTERFACE idword
-		{ $$ = new_interface_ref(pr, $1.location, $2, NULL, NULL); }
+		{ $$ = new_interface_ref(pr, $1.location, $2, NULL, NULL, NULL, NULL); }
 	| INTERFACE idword '(' typelist ')'
-		{ $$ = new_interface_ref(pr, $1.location, $2, NULL, NULL); }
+		{ $$ = new_interface_ref(pr, $1.location, $2, $4, NULL, NULL, NULL); }
 	;
 
 typelist:
-	  typename { }
-	| typelist ',' typename { }
+	  generic_type
+	| typelist ',' generic_type { $$ = expression_chain($1, $3); }
 	;
 
 iconfiguration:
@@ -701,7 +702,11 @@ generic_arglist:
 generic_arg:
 	  expr_no_commas 
 		{ if (!$1->cst) error("argument to component not constant"); }
-	| typename { $$ = make_type_argument($1); }
+	| generic_type
+	;
+
+generic_type:
+	  typename { $$ = make_type_argument($1); }
 	;
 
 connection_list: 

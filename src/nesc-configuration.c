@@ -24,6 +24,7 @@ Boston, MA 02111-1307, USA.  */
 #include "constants.h"
 #include "c-parse.h"
 #include "expr.h"
+#include "nesc-abstract.h"
 
 /* define this to forbid linking a single function from an interface
    independently of the whole interface */
@@ -562,57 +563,6 @@ static void process_connections(configuration c)
       }
 }
 
-void check_component_arguments(data_declaration ddecl,
-			       declaration parms, expression arglist)
-{
-  location loc = ddecl->ast->location;
-  int parmnum = 1;
-
-  while (parms && arglist)
-    {
-      if (is_data_decl(parms))
-	{
-	  variable_decl vparm = CAST(variable_decl, CAST(data_decl, parms)->decls);
-	  type parmtype = vparm->ddecl->type;
-
-	  if (type_incomplete(parmtype))
-	    error("type of formal parameter %d is incomplete", parmnum);
-	  else if (is_type_argument(arglist))
-	    error("formal parameter %d must be a value", parmnum);
-	  else 
-	    {
-	      set_error_location(arglist->location);
-	      check_assignment(parmtype, default_conversion_for_assignment(arglist),
-			       arglist, NULL, ddecl, parmnum);
-	    }
-	}
-      else /* type argument */
-	{
-	  if (!is_type_argument(arglist))
-	    error("formal parameter %d must be a type", parmnum);
-	  else if (type_array(arglist->type))
-	    error("type parameter cannot be an array type (parameter %d)",
-		  parmnum);
-	  else if (type_function(arglist->type))
-	    error("type parameter cannot be a function type (parameter %d)",
-		  parmnum);
-	  else if (type_incomplete(arglist->type))
-	    error("type parameter %d is an incomplete type", parmnum);
-	}
-      parmnum++;
-      arglist = CAST(expression, arglist->next);
-      parms = CAST(declaration, parms->next);
-    }
-  clear_error_location();
-
-  if (parms)
-    error_with_location(loc, "too few arguments to component `%s'",
-			ddecl->name);
-  else if (arglist)
-    error_with_location(loc, "too many arguments to component `%s'",
-			ddecl->name);
-}
-
 static void require_components(region r, configuration c)
 {
   component_ref comp;
@@ -653,7 +603,7 @@ static void require_components(region r, configuration c)
 	  if (!comp->abstract)
 	    error_with_location(comp->location, "abstract component `%s' requires instantiation arguments", cname);
 	  else
-	    check_component_arguments(ddecl, comp->cdecl->parameters, comp->args);
+	    check_abstract_arguments("component", ddecl, comp->cdecl->parameters, comp->args);
 	}
       else
 	{
