@@ -53,7 +53,6 @@ known_cst fold_label_address(expression e);
 known_cst fold_sizeof(expression e, type stype);
 known_cst fold_alignof(expression e, type atype);
 known_cst fold_cast(expression e);
-known_cst fold_address_of(expression e);
 known_cst fold_unary(expression e);
 known_cst fold_binary(type restype, expression e);
 known_cst fold_conditional(expression e);
@@ -64,7 +63,7 @@ known_cst fold_add(type restype, known_cst c1, known_cst c2);
 
 known_cst foldaddress_identifier(expression e, data_declaration decl);
 known_cst foldaddress_string(string s);
-known_cst foldaddress_field_ref(known_cst object, field_declaration fdecl);
+known_cst foldaddress_field_ref(expression e);
 
 bool definite_null(expression e);
 bool definite_zero(expression e);

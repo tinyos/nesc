@@ -159,10 +159,15 @@ type default_conversion(expression e)
       return error_type;
     }
 
+  /* Note that the (future) type variables cannot represent function or
+     array types, so we need not worry about what default_conversion
+     does to them for the function and array type cases. */
+
   if (type_function(from))
     {
       assert(!e->cst);
       e->cst = e->static_address;
+      e->converted_to_pointer = TRUE;
       return make_pointer_type(from);
     }
 
@@ -175,6 +180,7 @@ type default_conversion(expression e)
 	}
       assert(!e->cst);
       e->cst = e->static_address;
+      e->converted_to_pointer = TRUE;
       /* It's being used as a pointer, so is not an lvalue */
       e->lvalue = FALSE;
       return make_pointer_type(type_array_of(from));
@@ -1527,12 +1533,12 @@ expression make_array_ref(location loc, expression array, expression index)
 expression make_field_ref(location loc, expression object, cstring field)
 {
   type otype = object->type;
-  expression result;
+  field_ref result;
 
   if (type_interface(otype))
     return make_interface_deref(loc, object, field);
 
-  result = CAST(expression, new_field_ref(parse_region, loc, object, field));
+  result = new_field_ref(parse_region, loc, object, field);
   result->type = error_type;
 
   if (type_aggregate(otype))
@@ -1550,10 +1556,10 @@ expression make_field_ref(location loc, expression object, cstring field)
 		  : "union has no member named `%s'", field.data);
 	  else
 	    {
+	      result->fdecl = fdecl;
 	      result->type = qualify_type2(fdecl->type, fdecl->type, object->type);
 	      result->bitfield = fdecl->bitwidth >= 0;
-	      result->static_address = foldaddress_field_ref(object->static_address, fdecl);
-
+	      result->static_address = foldaddress_field_ref(CAST(expression, result));
 	    }
 	}
     }
@@ -1563,7 +1569,7 @@ expression make_field_ref(location loc, expression object, cstring field)
 
   result->lvalue = object->lvalue;
 
-  return result;
+  return CAST(expression, result);
 }
 
 static expression increment(unary result, char *name)

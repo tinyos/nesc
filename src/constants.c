@@ -370,8 +370,12 @@ known_cst foldaddress_string(string s)
   return make_address_cst(s->ddecl, NULL, 0, s->type);
 }
 
-known_cst foldaddress_field_ref(known_cst object, field_declaration fdecl)
+known_cst foldaddress_field_ref(expression e)
 {
+  field_ref fref = CAST(field_ref, e);
+  field_declaration fdecl = fref->fdecl;
+  known_cst object = fref->arg1->static_address;
+
   if (!object || !fdecl->offset_cc || fdecl->bitwidth >= 0)
     return NULL;
 

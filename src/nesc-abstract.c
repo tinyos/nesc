@@ -23,8 +23,9 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-semantics.h"
 #include "AST_walk.h"
 #include "semantics.h"
+#include "constants.h"
 
-static AST_walker clone_walker;
+static AST_walker clone_walker, folder_walker;
 
 /* ddecls in:
    oldidentifier_decl: ignored as illegal in modules
@@ -179,31 +180,14 @@ static AST_walker_result clone_enumerator(AST_walker spec, void *data,
   return aw_walk;
 }
 
-static AST_walker_result clone_ast(AST_walker spec, void *data, node *n)
-{
-  *n = AST_clone(data, *n);
-
-  return aw_walk;
-}
-
-static void init_clone(void)
-{
-  clone_walker = new_AST_walker(permanent);
-  AST_walker_handle(clone_walker, kind_node, clone_ast);
-  AST_walker_handle(clone_walker, kind_function_decl, clone_function_decl);
-  AST_walker_handle(clone_walker, kind_identifier, clone_identifier);
-  AST_walker_handle(clone_walker, kind_interface_deref, clone_interface_deref);
-  AST_walker_handle(clone_walker, kind_variable_decl, clone_variable_decl);
-  AST_walker_handle(clone_walker, kind_typename, clone_typename);
-  AST_walker_handle(clone_walker, kind_enumerator, clone_enumerator);
-}
-
-void set_ddecl_instantiation(data_declaration fndecl, void *data)
+void set_ddecl_instantiation1(data_declaration fndecl, void *data)
 {
   data_declaration orig = fndecl;
 
-  /* May be 1 or 2 deep, see below. The last shadowed entry points to the
-     declaration in the interface type, we want the one above that... */
+  /* Here we make the copy of the fndecl created during parsing
+     (the copy from the actual interface type) point to fndecl.
+     Note that the last shadowed pointer points to the entries in
+     the interface type */
   while (orig->shadowed->shadowed)
     orig = orig->shadowed;
 
@@ -223,37 +207,40 @@ void set_specification_instantiations(nesc_declaration component)
      abstract configurations)...
 */
 {
-  component_functions_iterate(component, set_ddecl_instantiation, NULL);
+  component_functions_iterate(component, set_ddecl_instantiation1, NULL);
 }
 
-static declaration instantiate_parameters(declaration orig_parms)
+void set_ddecl_instantiation2(data_declaration fndecl, void *data)
+{
+  /* We just make the decl fndecl is a copy of point back to fndecl */
+  fndecl->shadowed->instantiation = fndecl;
+}
+
+void set_specification_instantiations_shallow(nesc_declaration component)
+/* Effects: Set the instantiation pointers in the data_declarations of
+     the original abstract component from which component is derived to
+     the copies in component (in preparation for cloning component's
+     AST and pointing to component's decls)
+
+     The original data_declarations can be found by following the
+     shadowed fields. We may have to follow these one deep (abstract
+     modules in configurations) or two deep (abstract modules in
+     abstract configurations)...
+*/
+{
+  component_functions_iterate(component, set_ddecl_instantiation2, NULL);
+}
+
+static declaration instantiate_parameters(region r, declaration orig_parms)
 /* Effects: Makes a new list of declarations for an abstract componnent
 */
 {
-  region r = parse_region;
-
   /* A new dummy env for the instantiated parameters */
   current.env = new_environment(r, NULL, TRUE, FALSE);
   AST_walk_list(clone_walker, r, CASTPTR(node, &orig_parms));
   AST_set_parents(CAST(node, orig_parms));
 
   return CAST(declaration, orig_parms);
-}
-
-void instantiate_module(nesc_declaration component, module mod)
-{
-  region r = parse_region;
-
-  current.container = component;
-  component->parameters = instantiate_parameters(component->parameters);
-
-  set_specification_instantiations(component);
-
-  /* A new dummy env for all instantiations in the module */
-  current.env = new_environment(r, NULL, TRUE, FALSE);
-  AST_walk(clone_walker, r, CASTPTR(node, &mod));
-  AST_set_parents(CAST(node, mod));
-  component->impl = CAST(implementation, mod);
 }
 
 static void instantiate_endp(endp ep)
@@ -299,32 +286,64 @@ static void instantiate_cg(cgraph copy, cgraph original)
     }
 }
 
-void instantiate_configuration(nesc_declaration component, configuration conf)
+static AST_walker_result clone_component_ref(AST_walker spec, void *data,
+					     component_ref *n)
 {
-  /* Make a new implementation for the abstract configuration */
-  component_ref comp, newcomp = NULL;
-  region r = parse_region; /* XXX: mem */
-  configuration newconf;
+  component_ref new = CAST(component_ref, AST_clone(data, CAST(node, *n)));
 
-  scan_component_ref (comp, conf->components)
+  *n = new;
+
+  /* Instantiate any further abstract components inside this abstract
+     configuration. */
+  if (new->cdecl->abstract)
     {
-      nesc_declaration compdecl = comp->cdecl;
-      component_ref nextcomp =
-	new_component_ref(r, dummy_location, NULL, NULL, FALSE, NULL);
-
-      /* We only need a correct component decl in our component_ref */
-      if (compdecl->abstract)
-	compdecl = specification_copy(r, compdecl, FALSE);
-      nextcomp->cdecl = compdecl;
-      newcomp = component_ref_chain(nextcomp, newcomp);
+      new->cdecl = specification_copy(data, new->cdecl, FALSE);
+      set_specification_instantiations_shallow(new->cdecl);
     }
 
-  newconf = new_configuration(r, dummy_location, NULL,
-			      component_ref_reverse(newcomp), NULL);
-  AST_set_parents(CAST(node, newconf));
-  component->impl = CAST(implementation, newconf);
+  return aw_walk;
+}
 
-  instantiate_cg(component->connections, component->original->connections);
+static AST_walker_result clone_configuration(AST_walker spec, void *data,
+					     configuration *n)
+{
+  configuration new = CAST(configuration, AST_clone(data, CAST(node, *n)));
+  nesc_declaration comp = current.container, original;
+
+  *n = new;
+
+  /* Copy the components, further instantiating any abstract ones */
+  AST_walk_list(spec, data, CASTPTR(node, &new->components));
+
+  /* We don't copy the connections, instead we copy the connection graph
+     (note that comp->connections was initialised to an "empty" graph */
+  original = comp;
+  while (original->original)
+    original = original->original;
+  instantiate_cg(comp->connections, original->connections);
+
+  return aw_done;
+}
+
+static AST_walker_result clone_ast(AST_walker spec, void *data, node *n)
+{
+  *n = AST_clone(data, *n);
+
+  return aw_walk;
+}
+
+static void init_clone(void)
+{
+  clone_walker = new_AST_walker(permanent);
+  AST_walker_handle(clone_walker, kind_node, clone_ast);
+  AST_walker_handle(clone_walker, kind_function_decl, clone_function_decl);
+  AST_walker_handle(clone_walker, kind_identifier, clone_identifier);
+  AST_walker_handle(clone_walker, kind_interface_deref, clone_interface_deref);
+  AST_walker_handle(clone_walker, kind_variable_decl, clone_variable_decl);
+  AST_walker_handle(clone_walker, kind_typename, clone_typename);
+  AST_walker_handle(clone_walker, kind_enumerator, clone_enumerator);
+  AST_walker_handle(clone_walker, kind_configuration, clone_configuration);
+  AST_walker_handle(clone_walker, kind_component_ref, clone_component_ref);
 }
 
 void instantiate(nesc_declaration component)
@@ -335,80 +354,134 @@ void instantiate(nesc_declaration component)
        copies) 
 */
 {
-  assert(component->kind == l_component && component->original);
+  region r = parse_region;
 
-  if (is_module(component->impl))
-    instantiate_module(component, CAST(module, component->impl));
-  else
-    instantiate_configuration(component,
-			      CAST(configuration, component->impl));
+  assert(component->kind == l_component && component->original);
+  current.container = component;
+
+  /* We don't copy the component itself as we're handling the specification
+     specially (not copied). So we just copy the parameters and the
+     implementation. */
+
+  component->parameters = instantiate_parameters(r, component->parameters);
+  set_specification_instantiations(component);
+
+  /* A new dummy env for all instantiations in the implementation */
+  current.env = new_environment(r, NULL, TRUE, FALSE);
+  AST_walk(clone_walker, r, CASTPTR(node, &component->impl));
+  AST_set_parents(CAST(node, component->impl));
 }
 
-#if 0
-/* Recursively evaluate the given expression, setting expr->cst to the
- * appropriate constant value.
- */
-static void eval_const_expr(declaration parent_aparms, expression expr) {
-  fprintf(stderr, "MDW: eval_const_expr expr 0x%lx kind %d %s\n",
-      (unsigned long)expr, expr->kind, expr->cst?"CONST":"");
+static AST_walker_result folder_expression(AST_walker spec, void *data,
+					   expression *n)
+{
+  expression e = *n;
+  known_cst c = NULL, sa = NULL;
+  
+  /* Constant-fold children first */
+  AST_walk_children(spec, data, CAST(node, e));
 
-  // Note that 'expr' is shared across all instances of is associated
-  // component_ref. Rather than copy 'component_ref->args' for each
-  // instance, we just clear out any initializers and overwrite for
-  // each instance of 'expr' processed. 
-  if (is_lexical_cst(expr)) return;
-  expr->cst = NULL; 
+  /* XXX: default_conversion */
 
-  if (is_binary(expr)) {
-    binary bin = CAST(binary, expr);
-    eval_const_expr(parent_aparms, bin->arg1);
-    eval_const_expr(parent_aparms, bin->arg2);
-    bin->cst = fold_binary(bin->type, CAST(expression, bin));
+  switch (e->kind)
+    {
+    case kind_lexical_cst: case kind_string: case kind_extension_expr:
+      /* We preserve the constants in lexical_cst's and strings */
+      /* XXX: should we allow string arguments to components to 
+	 be merged into strings (e.g. "aa" foo "bb", where foo
+	 is a `char *' component arg)? 
+	 (If so: the ddecl for the args should be classified as
+         a decl_magic_string, and make_string and this function must be
+	 modified accordingly) */
+      c = e->cst;
+      sa = e->static_address;
+      break;
+    case kind_label_address:
+      c = fold_label_address(e);
+      break;
+    case kind_sizeof_expr: 
+      c = fold_sizeof(e, CAST(sizeof_expr, e)->arg1->type);
+      break;
+    case kind_sizeof_type:
+      c = fold_sizeof(e, CAST(sizeof_type, e)->asttype->type);
+      break;
+    case kind_alignof_expr: 
+      c = fold_alignof(e, CAST(alignof_expr, e)->arg1->type);
+      break;
+    case kind_alignof_type:
+      c = fold_alignof(e, CAST(alignof_type, e)->asttype->type);
+      break;
+    case kind_cast:
+      c = fold_cast(e);
+      sa = CAST(cast, e)->arg1->static_address;
+      break;
+    case kind_conditional:
+      c = fold_conditional(e);
+      break;
+    case kind_function_call:
+      c = fold_function_call(e);
+      break;
+    case kind_identifier:
+      c = fold_identifier(e, CAST(identifier, e)->ddecl);
+      sa = foldaddress_identifier(e, CAST(identifier, e)->ddecl);
+      break;
+    case kind_field_ref:
+      sa = foldaddress_field_ref(e);
+      break;
+    case kind_dereference:
+      sa = CAST(dereference, e)->arg1->cst;
+      break;
+    case kind_address_of:
+      c = CAST(address_of, e)->arg1->static_address;
+      break;
+    case kind_array_ref: {
+      array_ref aref = CAST(array_ref, e);
+      type atype;
 
-  } else if (is_identifier(expr)) {
-    /* Only allowed identifiers are in parent_aparms or global */
-    identifier id = CAST(identifier, expr);
-    declaration d;
-    variable_decl found_vd = NULL;
-    scan_declaration(d, parent_aparms) {
-      data_decl dd; 
-      variable_decl vd;
-      assert(d->kind == kind_data_decl);
-      dd = CAST(data_decl, d);
-      assert(dd->decls->kind == kind_variable_decl);
-      vd = CAST(variable_decl, dd->decls);
-      if (!strcmp(vd->ddecl->name, id->cstring.data)) {
-	found_vd = vd;
-	break;
-      }
+      /* Find the array type */
+      if (type_integer(aref->arg1->type))
+	atype = aref->arg2->type;
+      else
+	atype = aref->arg1->type;
+
+      sa = fold_binary(type_default_conversion(atype), e);
+      break;
     }
+    case kind_comma: {
+      expression sub;;
 
-    if (found_vd) {
-      fprintf(stderr,"MDW: eval_const_expr: identifier assigned from vd 0x%lx ('%s')\n", (unsigned long)found_vd, found_vd->ddecl->name);
-      expr->cst = found_vd->arg1->cst; 
-
-    } else {
-      // Look in global level
-      data_declaration ddecl = lookup_global_id(id->cstring.data);
-      if (ddecl == NULL) {
-	error("cannot find `%s' in abstract parameters");
-	return;
-      }
-      if (!ddecl->value) {
-	error("cannot use non-constant variable `%s' in abstract initializer");
-	return;
-      }
-      expr->cst = ddecl->value;
+      scan_expression (sub, CAST(comma, e)->arg1)
+	if (!sub->cst)
+	  break;
+	else if (!sub->next)
+	  {
+	    /* (e1, ..., en) is a constant expression if all ei are constant
+	       expressions. Weird? (see cst10.c) */
+	    c = sub->cst;
+	  }
+      break;
     }
+    default:
+      if (is_binary(e))
+	c = fold_binary(e->type, e);
+      else if (is_unary(e))
+	c = fold_unary(e);
+      break;
+    }
+  e->cst = c;
+  e->static_address = sa;
 
-  } else {
-    error_with_location(expr->location, "XXX MDW XXX: eval_const_expr: Cannot handle expr kind %d\n", expr->kind);
-    return;
-  }
+  /* Handle default conversions to pointers */
+  if (e->converted_to_pointer)
+    e->cst = sa;
 
-  if (!expr->cst) {
-    error("cannot resolve abstract parameter initialization to constant value");
-  }
+  return aw_done;
+}
+
+static void init_folder(void)
+{
+  folder_walker = new_AST_walker(permanent);
+  AST_walker_handle(folder_walker, kind_expression, folder_expression);
 }
 
 static void set_parameter_values(nesc_declaration cdecl, expression args)
@@ -420,7 +493,7 @@ static void set_parameter_values(nesc_declaration cdecl, expression args)
     {
       variable_decl vd = CAST(variable_decl, parm->decls);
 
-      vd->ddecl->instantiation->value = args->cst;
+      vd->ddecl->value = args->cst;
       if (!args->cst)
 	error("arguments to component not constant");
     }
@@ -431,7 +504,11 @@ void fold_constants(region r, nesc_declaration cdecl, expression args)
   if (cdecl->folded)
     return;
 
+  cdecl->folded = TRUE;
+
   set_parameter_values(cdecl, args);
+
+  AST_walk(folder_walker, NULL, CASTPTR(node, &cdecl->impl));
 
   if (is_module(cdecl->impl))
     ;
@@ -446,9 +523,9 @@ void fold_constants(region r, nesc_declaration cdecl, expression args)
 	}
     }
 }
-#endif
 
 void init_abstract(void)
 {
   init_clone();
+  init_folder();
 }

@@ -214,7 +214,7 @@ nesc_decl dummy_nesc_decl(source_language sl, const char *name)
       implementation impl = CAST(implementation,
 	new_module(parse_region, dummy_location, NULL, NULL));
       nd = CAST(nesc_decl,
-	new_component(parse_region, dummy_location, wname, NULL, FALSE, NULL, impl));
+	new_component(parse_region, dummy_location, wname, NULL, FALSE, NULL, NULL, impl));
       break;
     }
     case l_interface:

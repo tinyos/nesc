@@ -118,6 +118,8 @@
 (deffield break_dest node ())
 (deffield continue_dest node ())
 (deffield forward bool ())
+(deffield converted_to_pointer bool ())
+(deffield fdecl field_declaration ())
 
 ;; nesc fields
 (deffield call_kind nesc_call_kind (init))
@@ -158,7 +160,7 @@ BREAK_DEST and CONTINUE_DEST: for for/while/do-while/switch statements
 the CFG node to which break or continue should go to")
 
 (deftype expression node (lvalue side_effects cst bitfield isregister
-			  type static_address)
+			  type static_address converted_to_pointer)
   "Expression nodes are subtypes of this type.
 LVALUE is true if this expression can be used in a context requiring an lvalue.
 BITFIELD is true if this lvalue is a bitfield.
@@ -166,7 +168,10 @@ ISREGISTER is true if this lvalue is (declared to be) in a register.
 SIDE_EFFECTS is true if the expression has side effects.
 CST is non-null (and points to an appropriate constant) if this expression is
 constant.
-STATIC_ADDRESS is true for lvalues whose address is a constant expression")
+STATIC_ADDRESS is true for lvalues whose address is a constant expression
+CONVERTED_TO_POINTER is true for expressions which default_conversion
+indicates need converting to pointer type (note that these nodes did not have
+their type changed)")
 
 (deftype type_element node ()
   "A common super-type for all type-building elements (qualifiers, etc)")
@@ -403,8 +408,9 @@ CALL_KIND is one of c_call, post_task, command_call or event_signal.")
 
 (defnode array_ref binary "ARG1[ARG2]")
 
-(deftype field_ref unary (cstring)
-  "ARG1.CSTRING")
+(deftype field_ref unary (cstring fdecl)
+  "ARG1.CSTRING
+The field_declaration is saved in FDECL")
 
 (defnode dereference unary "*ARG1")
 (defnode extension_expr unary "__extension__ ARG1 (GCC)")
@@ -531,9 +537,10 @@ documentation string DOCSTRING")
 (deftype interface nesc_decl (decls)
   "interface WORD1 { DECLS }")
 
-(deftype component nesc_decl (abstract rplist implementation)
-  "ABSTRACT configuration/module WORD1 { RPLIST } IMPLEMENTATION
-If ABSTRACT is true, this is an abstract component.")
+(deftype component nesc_decl (abstract parms rplist implementation)
+  "ABSTRACT configuration/module WORD1 PARMS { RPLIST } IMPLEMENTATION
+If ABSTRACT is true, this is an abstract component, and PARMS is its
+parameters.")
 
 (deftype implementation node (ienv cdecl)
   "a base type for module and configuration implementations

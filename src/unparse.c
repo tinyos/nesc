@@ -1180,7 +1180,7 @@ void prt_identifier(identifier e, int context_priority)
     error_with_location(e->location, "%s not connected", e->cstring.data);
 
   set_location(e->location);
-#if 0
+#if 1
   if (decl->kind == decl_constant)
     {
       output_indent_if_needed();

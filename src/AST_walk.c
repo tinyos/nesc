@@ -21,7 +21,7 @@ Boston, MA 02111-1307, USA. */
 
 struct AST_walker
 {
-  AST_walker_fn walkers[postkind_node - kind_node];
+  AST_walker_fn walkers[postkind_node + 1 - kind_node];
 };
 
 static AST_walker_result default_walker(AST_walker spec, void *data,
@@ -48,7 +48,7 @@ void AST_walker_handle(AST_walker spec, AST_kind kind, AST_walker_fn fn)
 {
   AST_kind k;
 
-  assert(kind >= 0 && kind < postkind_node);
+  assert(kind >= kind_node && kind <= postkind_node);
   for (k = kind; k <= AST_post_kind[kind - kind_node]; k++)
     spec->walkers[k - kind_node] = fn;
 }
@@ -56,7 +56,7 @@ void AST_walker_handle(AST_walker spec, AST_kind kind, AST_walker_fn fn)
 /* Just execute the walker function for node-type 'kind' */
 AST_walker_result AST_walker_call(AST_walker spec, AST_kind kind, void *data, node *n)
 {
-  assert(kind >= 0 && kind < postkind_node && IS_A(*n, kind));
+  assert(kind >= kind_node && kind <= postkind_node && IS_A(*n, kind));
   return spec->walkers[kind - kind_node](spec, data, n);
 }
 

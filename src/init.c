@@ -1077,6 +1077,7 @@ void process_init_element(expression value)
 	  else if (constructor_count == 1) /* Only warn once */
 	    pedwarn_init("excess elements in scalar initializer");
 	  break;
+	default: assert(0); break;
 	}
 
       /* Accept a string constant to initialize a subarray.  */
@@ -1137,6 +1138,7 @@ void process_init_element(expression value)
       if (constructor_index > constructor_array_size)
 	constructor_array_size = constructor_index;
       break;
+    default: assert(0); break;
     }
 
   /* Pop back to the level before the designator */

@@ -516,7 +516,7 @@ module:
 		} 
 	  idword component_parms '{' requires_or_provides_list '}' imodule
 		{ 
-		  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $2.location, $4, $<u.docstring>3, $1, rp_interface_reverse($7), $9));
+		  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $2.location, $4, $<u.docstring>3, $1, $5, rp_interface_reverse($7), $9));
 	        }
 	;
 
@@ -530,7 +530,7 @@ configuration:
 	       } 
 	  idword component_parms '{' requires_or_provides_list '}' iconfiguration
 	        { 
-		  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $2.location, $4, $<u.docstring>3, $1, rp_interface_reverse($7), $9));
+		  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $2.location, $4, $<u.docstring>3, $1, $5, rp_interface_reverse($7), $9));
 	        }
         ;
 
@@ -696,7 +696,7 @@ generic_arg:
 
 connection_list: 
 	  connection_list connection { $$ = connection_chain($2, $1); }
-	| connection
+	| /* empty */ { $$ = NULL; }
 	;
 
 connection:

@@ -26,6 +26,8 @@ void instantiate(nesc_declaration component);
        copies) 
 */
 
+void fold_constants(region r, nesc_declaration cdecl, expression args);
+
 void init_abstract(void);
 
 #endif

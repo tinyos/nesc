@@ -166,7 +166,6 @@ nesc_declaration specification_copy(region r, nesc_declaration component,
 
       speccopy = declare(envcopy, specdecl, TRUE);
       speccopy->shadowed = specdecl;
-      specdecl->instantiation = speccopy;
       speccopy->container = copy;
 
       if (speccopy->kind == decl_function)
