@@ -153,6 +153,8 @@ EXTRA_DIST = 					\
 	build-types.el				\
 	c-parse.gperf				\
 	c-parse.y				\
+	cg_help.c				\
+	cg_help.fig				\
 	nodetypes.def				\
 	AST_defs.c				\
 	AST_parent.c				\
