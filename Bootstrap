@@ -4,6 +4,31 @@ set -e
 
 srcdir=src
 
+if [ -x /usr/bin/aclocal-1.5 ]; then
+  ACLOCAL="/usr/bin/aclocal-1.5"
+else
+  ACLOCAL="aclocal"
+fi
+
+if [ -x /usr/bin/automake-1.5 ]; then
+  AUTOMAKE="/usr/bin/automake-1.5"
+else
+  AUTOMAKE="automake"
+fi
+
+if [ -x /usr/bin/autoconf-2.53 ]; then
+  AUTOCONF="/usr/bin/autoconf-2.53"
+else
+  AUTOCONF="autoconf"
+fi
+
+if [ -x /usr/bin/autoheader-2.53 ]; then
+  AUTOHEADER="/usr/bin/autoheader-2.53"
+else
+  AUTOHEADER="autoheader"
+fi
+
+
 if [ \
        -r $srcdir/config.h.in \
     -a -r $srcdir/Makefile.in \
@@ -38,17 +63,17 @@ fi
 
 set -x
 (
-    aclocal
-    autoconf
+    $ACLOCAL
+    $AUTOCONF
     [ -d config-aux ] || mkdir config-aux
-    automake -a -c
+    $AUTOMAKE -a -c
 
     cd $srcdir
-    aclocal
-    autoheader
-    autoconf
+    $ACLOCAL
+    $AUTOHEADER
+    $AUTOCONF
     [ -d config-aux ] || mkdir config-aux
-    automake -a -c
+    $AUTOMAKE -a -c
     cd ..
 )
 rm -f config.cache $srcdir/config.cache
