@@ -213,4 +213,7 @@ extern int flag_parse_only;
    varargs functions */
 extern int flag_no_debug;
 
+/* Nonzero for -v */
+extern int flag_verbose;
+
 #endif

@@ -716,39 +716,15 @@ linenum:
       input_file_stack->l.filename = new_filename;
       input_file_stack->l.lineno = l;
 
-      /* If we have handled a `1' or a `2',
-	 see if there is another number to read.  */
-      if (used_up)
-	{
-	  /* Is this the last nonwhite stuff on the line?  */
-	  c = GETC();
-	  while (c == ' ' || c == '\t')
-	    c = GETC();
-	  if (c == '\n')
-	    return c;
-	  UNGETC (c);
-
-	  token = yylex (&lval);
-	  used_up = 0;
-	}
-
-      /* `3' after file name means this is a system header file.  */
+      /* `3' after file name or 1, 2 means this is a system header file.  */
 
       if (token_isint(token, &lval) && token_intvalue(&lval) == 3)
-	input_file_stack->l.in_system_header = 1, used_up = 1;
+	input_file_stack->l.in_system_header = 1;
 
-      if (used_up)
-	{
-	  /* Is this the last nonwhite stuff on the line?  */
-	  c = GETC();
-	  while (c == ' ' || c == '\t')
-	    c = GETC();
-	  if (c == '\n')
-	    return c;
-	  UNGETC (c);
-	}
-
-      warning ("unrecognized text at end of #line");
+      /* We just ignore the rest of the line.
+	 (we could complain about extra stuff, but, e.g., gcc 3.2 adds an
+	 extra flag after 3 (if 4 means "needs to be extern "C" protected -
+	 I'm ignoring this as it shouldn't be relevant to C stuff)) */
     }
   else
     error ("invalid #-line");

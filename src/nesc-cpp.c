@@ -153,11 +153,12 @@ FILE *preprocess(const char *filename)
       argv[arg++] = NULL;
       assert(arg <= nargs);
 
-#if 0
-      for (i = 0; i < arg - 1; i++)
-	fprintf(stderr, "%s ", argv[i]);
-      fprintf(stderr, "\n");
-#endif
+      if (flag_verbose)
+	{
+	  for (i = 0; i < arg - 1; i++)
+	    fprintf(stderr, "%s ", argv[i]);
+	  fprintf(stderr, "\n");
+	}
 
       execvp(target->gcc_compiler, argv);
       exit(2);

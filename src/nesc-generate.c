@@ -677,10 +677,10 @@ void generate_c_code(component_declaration program, const char *target_name,
   dd_scan (mod, modules)
     prt_nesc_function_declarations(DD_GET(component_declaration, mod));
 
+  enable_line_directives();
+
   dd_scan (mod, modules)
     prt_nesc_module(cg, DD_GET(component_declaration, mod));
-
-  enable_line_directives();
 
   prt_functions_topologically(callgraph);
 

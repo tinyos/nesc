@@ -217,3 +217,6 @@ char *cmdline_nesc_path;
    varargs functions */
 int flag_no_debug;
 
+/* Nonzero for -v */
+int flag_verbose;
+
