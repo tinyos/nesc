@@ -38,8 +38,8 @@ environment compile(location loc, source_language l,
 		    const char *name, bool name_is_path,
 		    nesc_declaration container, struct environment *parent_env);
 
-void check_nesc_declaration(nesc_declaration nd, struct environment *env,
-			    nesc_decl ast);
+void check_nesc_declaration(source_language l, nesc_declaration nd,
+			    struct environment *env, nesc_decl ast);
 
 type get_actual_function_type(type t);
 /* Returns: The actual function type for a (possibly generic) type t

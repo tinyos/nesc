@@ -3314,6 +3314,9 @@ int save_directive(char *directive)
 	  c = '\0';
 	}
 
+      if (c == '\n')
+	input_file_stack->l.lineno++;
+
       *p++ = c;
 
       if (c == 0)
@@ -3336,7 +3339,7 @@ int save_directive(char *directive)
 
   handle_directive(directive, directive_buffer);
 
-  return '\n';
+  return ' ';
 }
 
 /* Returns name of r */

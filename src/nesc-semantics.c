@@ -159,13 +159,15 @@ const char *language_name(source_language l)
     }
 }
 
-void check_nesc_declaration(nesc_declaration nd, environment env, nesc_decl ast)
+void check_nesc_declaration(source_language l, nesc_declaration nd,
+			    environment env, nesc_decl ast)
 {
   const char *actual_name = ast->word1->cstring.data;
 
   if (strcmp(nd->name, actual_name))
     error_with_location(ast->location,
-			"expected interface `%s', got '%s'",
+			"expected %s `%s', got '%s'",
+			language_name(l),
 			nd->name, actual_name);
 
   /* Fill in the declaration */

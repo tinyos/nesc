@@ -242,7 +242,7 @@ component_declaration load_component(location l, const char *name,
       the_component = new_component(parse_region, dummy_location, cname, NULL, impl);
     }
 
-  check_nesc_declaration((nesc_declaration)cdecl, component_env,
+  check_nesc_declaration(l_component, (nesc_declaration)cdecl, component_env,
 			 CAST(nesc_decl, the_component));
   the_component->implementation->cdecl = cdecl;
   cdecl->impl = the_component->implementation;

@@ -64,7 +64,7 @@ interface_declaration load_interface(location l, const char *name,
       the_interface = new_interface(parse_region, dummy_location, ifname, NULL);
     }
 
-  check_nesc_declaration((nesc_declaration)idecl, interface_env,
+  check_nesc_declaration(l_interface, (nesc_declaration)idecl, interface_env,
 			 CAST(nesc_decl, the_interface));
 
   build_interface(idecl);
