@@ -888,7 +888,7 @@ static void prt_nido_initialize(dd_list modules)
 
   nido_mote_number = "__nesc_mote";
   outputln("/* Invoke static initialisers for mote '__nesc_mote' */\n");
-  outputln("static void Nido$nido_initialize(int __nesc_mote)");
+  outputln("static void __nesc_nido_initialize(int __nesc_mote)");
   outputln("{");
   indent();
 
