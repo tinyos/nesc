@@ -53,6 +53,8 @@ static void dump_type(type t)
     printf("AU");
   else if (type_struct(t))
     printf("AS");
+  else if (type_pointer(t))
+    printf("U");
   else
     assert(0);
 }
@@ -165,8 +167,7 @@ bool dump_msg_layout(void)
 
   if (type_contains_pointers(make_tagged_type(tdecl)))
     {
-      fprintf(stderr, "error: %s contains pointers\n", selected_type);
-      exit(1);
+      fprintf(stderr, "warning: %s contains pointers\n", selected_type);
     }
 
   dump_layout(tdecl);
