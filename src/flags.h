@@ -256,4 +256,8 @@ extern int nesc_error;
    (diff_input is NULL for orignal program, non-NULL to reduce diff size) */\
 extern char *diff_input, *diff_output;
 
+/* If true, rewrite post/task to use interfaces+wiring rather than calls to
+   a TOS_post function. */
+extern int flag_use_scheduler;
+
 #endif

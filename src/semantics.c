@@ -38,6 +38,7 @@ Boston, MA 02111-1307, USA. */
 #include "nesc-cpp.h"
 #include "machine.h"
 #include "attributes.h"
+#include "nesc-task.h"
 
 /* Predefined __builtin_va_list type */
 type builtin_va_list_type;
@@ -2109,6 +2110,10 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   else
     ddecl = declare(current.env, &tempdecl, FALSE);
 
+  /* If requested, replace post/task by references to an interface */
+  if (type_task(ddecl->type) && flag_use_scheduler)
+    handle_task_definition(fdecl);
+
   fdecl->base_labels = fdecl->scoped_labels =
     new_env(parse_region,
 	    current.function_decl ? current.function_decl->scoped_labels : NULL);
@@ -2676,6 +2681,10 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
 	ddecl = old_decl;
       else
 	ddecl = declare(current.env, &tempdecl, FALSE);
+
+      /* If requested, replace post/task by references to an interface */
+      if (type_task(ddecl->type) && flag_use_scheduler)
+	handle_task_declaration(vd);
 
       ddecl->defined = current.spec_section == spec_provides;
     }

@@ -147,6 +147,8 @@ libparser_a_SOURCES =				\
 	nesc-paths.h				\
 	nesc-semantics.c			\
 	nesc-semantics.h			\
+	nesc-task.c				\
+	nesc-task.h				\
 	nesc-uses.c				\
 	nesc-uses.h				\
 	nesc-xml.c				\

@@ -146,7 +146,7 @@ void set_interface_functions_gparms(environment fns, typelist gparms)
 }
 
 void declare_interface_ref(interface_ref iref, declaration gparms,
-			   environment genv, attribute attribs)
+			   environment env, attribute attribs)
 {
   const char *iname = (iref->word2 ? iref->word2 : iref->word1)->cstring.data;
   nesc_declaration idecl = 
@@ -164,10 +164,10 @@ void declare_interface_ref(interface_ref iref, declaration gparms,
 
   handle_decl_attributes(attribs, &tempdecl);
 
-  old_decl = lookup_id(iname, TRUE);
+  old_decl = env_lookup(env->id_env, iname, TRUE);
   if (old_decl)
     error("redefinition of `%s'", iname);
-  ddecl = declare(current.env, &tempdecl, FALSE);
+  ddecl = declare(env, &tempdecl, FALSE);
   iref->attributes = attribs;
   iref->ddecl = ddecl;
 

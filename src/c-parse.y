@@ -53,6 +53,7 @@ Boston, MA 02111-1307, USA. */
 #include "nesc-env.h"
 #include "nesc-c.h"
 #include "nesc-attributes.h"
+#include "nesc-task.h"
 
 int yyparse(void) deletes;
 
@@ -697,13 +698,14 @@ parameterised_interface:
 	  just_datadef
 	| interface_ref nesc_attributes ';' 
 		{
-		  declare_interface_ref($1, NULL, NULL, $2);
+		  declare_interface_ref($1, NULL, current.env, $2);
 		  $$ = CAST(declaration, $1);
 		}
 	| interface_ref parameters nesc_attributes ';'
 		{ 
 		  $1->gparms = $2;
-		  declare_interface_ref($1, $2, poplevel(), $3);
+		  poplevel();
+		  declare_interface_ref($1, $2, current.env, $3);
 		  $$ = CAST(declaration, $1);
 		}
 	;
@@ -964,7 +966,7 @@ unary_expr:
 		  bool noerror = fc->type != error_type;
 		  
 		  $$ = $2;
-		  CAST(function_call, $$)->call_kind = $1.i;
+		  fc->call_kind = $1.i;
 		  switch ($1.i)
 		    {
 		    case command_call:
@@ -976,9 +978,13 @@ unary_expr:
 			error("only events can be signaled");
 		      break;
 		    case post_task:
+		      fc->type = unsigned_char_type;
 		      if (noerror && !type_task(calltype))
 			error("only tasks can be posted");
-		      fc->type = unsigned_char_type;
+		      else if (flag_use_scheduler)
+			/* If requested, replace post/task by references to
+			   an interface */
+			handle_post(fc);
 		      break;
 		    }
 		}

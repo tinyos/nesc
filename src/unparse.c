@@ -2020,7 +2020,10 @@ void prt_continue_stmt(continue_stmt s)
 
 void prt_return_stmt(return_stmt s)
 {
-  if (s->containing_atomic)
+  bool inatomic = FALSE;
+
+  if (s->containing_atomic &&
+      current.function_decl->ddecl->call_contexts != c_call_atomic)
     {
       /* We rewrote return statemnts within atomic to return a local
 	 variable in stmt.c. So we can just end the atomic section now. */
@@ -2028,6 +2031,7 @@ void prt_return_stmt(return_stmt s)
       indent();
       set_location(s->location);
       outputln("__nesc_atomic_end(__nesc_atomic); ");
+      inatomic = TRUE;
     }
 
   set_location(s->location);
@@ -2040,7 +2044,7 @@ void prt_return_stmt(return_stmt s)
   else
     outputln("return;");
 
-  if (s->containing_atomic)
+  if (inatomic)
     {
       unindent();
       outputln("}");

@@ -1575,6 +1575,21 @@ static type_element tag2ast(region r, location loc, tag_declaration tag,
   return CAST(type_element, tr);
 }
 
+static type_element typevar2ast(region r, location loc, data_declaration tvar,
+				type_element rest)
+{
+  type_element tname;
+
+  /* Unlike with tags, we don't need to worry about whether the type variable
+     is shadowed, as type variables are always replaced by their value in
+     generated code...
+     If we were to re-output nesC code, we could run into problems. */
+  tname = CAST(type_element, new_typename(r, loc, tvar));
+  tname->next = CAST(node, rest);
+
+  return tname;
+}
+
 static declaration parameter2ast(region r, location loc, type t)
 {
   variable_decl vd;
@@ -1680,6 +1695,10 @@ void type2ast(region r, location loc, type t, declarator inside,
       type2ast(r, loc, t->u.fn.returns, inside, d, modifiers);
       break;
     }
+    case tk_variable:
+      *modifiers = typevar2ast(r, loc, t->u.tdecl, qualifiers);
+      *d = inside;
+      break;
     default: assert(0); break;
     }
 }
