@@ -27,19 +27,18 @@ Boston, MA 02111-1307, USA.  */
 
   
   Modified: 8/14/2002 by Phil Levis
-
   - Changed symlink code to unlink symlink before linking (else
     EEXIST occurs when repeating).
   - Removed color map elements -- default graphviz doesn't include
     language cmap.
 
   Modified 8/15/2002 by Phil Levis
-
   - Chase down pointer_declarators for functions properly now.
 
-  
-  FIXME: need to document the doc system...  ;-)
+  Modified 8/21/2002 by Rob von Behren
+  - add back cmap - requires newer graphviz, but makes for prettier HTML output
 
+  
 */
 #include <unistd.h>
 #include <sys/stat.h>
@@ -85,6 +84,9 @@ static char dirsep_string[2] = "/";
 
 // "package name" to prepend to files in the current directory
 static const char *currdir_prefix = NULL;
+
+// full name of original working directory
+static char original_wd[1024];
 
 // directory info to strip from the generated docs file names
 #define MAX_TOPDIRS 100
@@ -142,7 +144,7 @@ void doc_set_dirsep(const char c)
 /**
  * Initialize directory info.
  **/
-static void find_currdir_prefix(char *cwd)
+static void find_currdir_prefix(const char *cwd)
 {
   int i;
 
@@ -220,6 +222,13 @@ static char *doc_filename_with_ext(const char *src_filename, const char *ext)
     }
   }
 
+  // file is an absolute path, but not under a top dir
+  if( *src_filename == dirsep ) {
+    while(*src_filename == dirsep) 
+      src_filename++;
+    need_prefix = FALSE;
+  }
+
   // file is in the current directory, so prepend dir info
   if( need_prefix) {
     strcat(ret,currdir_prefix);
@@ -277,6 +286,27 @@ static char *component_docfile_name(const char *component_name) {
   assert(comp->location != dummy_location);
 
   return doc_filename(comp->location->filename);
+}
+
+
+static void add_source_symlink(const char *srcfile, const char *linkname) 
+{
+  char *src;
+
+  // prepend current directory info for relative filenames
+  if( *srcfile != dirsep ) {
+    src = rstralloc( doc_region, strlen(original_wd) + 1 + strlen(srcfile) + 1 );
+    assert( src != NULL );
+    src[0] = '\0';
+    strcat(src,original_wd);
+    strcat(src,dirsep_string);
+    strcat(src,srcfile);
+    srcfile = src;
+  }
+
+
+  unlink(linkname);
+  assert(symlink(srcfile, linkname) == 0);
 }
 
 
@@ -498,7 +528,7 @@ static void print_func_args(function_decl fd, data_decl dd, variable_decl vd)
   prt_parameters(fdr->gparms ? fdr->gparms :
                  ddecl ? ddecl_get_gparms(ddecl) : NULL,
                  fdr->parms,
-                 psd_skip_container | psd_rename_parameters);
+                 psd_skip_container);
   
 }
 
@@ -726,7 +756,7 @@ static bool connection_already_printed(dhash_table table,
     //        ep1->function->defined,   ep2->function->defined, 
     //        ep1->interface->required, ep2->interface->required);
 
-    // figure out which is on the left, and which is on the righ
+    // figure out which is on the left, and which is on the right
     if( ep1->component && ep2->component ) {
       left=ep1; right=ep2;
     } else{
@@ -801,11 +831,27 @@ static void print_cg_html(const char *component_name, const char *component_file
 
   char *text_only_name;
   FILE *text_file;
+  static bool graphviz_supports_cmap = FALSE;
+  static bool checked_graphviz_version = FALSE;
 
   // FIXME: disable the function graph for now
   bool do_func_graph = FALSE;
 
+  // check the version of graphviz, to see if we can use the cmap stuff
+  if( use_graphviz  &&  !checked_graphviz_version ) {
+    int ret;
+    checked_graphviz_version = TRUE;
 
+    ret = system("dot -Tnosuchlanguage </dev/null 2>&1 | grep cmap > /dev/null");
+    if(ret == 0)
+      graphviz_supports_cmap = TRUE;
+    else 
+      warning("\
+DOC WARNING: your version of `dot' does not support client-side 
+             image maps.  Upgrade to graphviz >= 1.8.8 to enable 
+             clickable wiring diagrams.\n");
+  }
+  
   // create filenames
   iface_dot = doc_filename_with_ext(component_file_name,".if.dot");
   iface_gif = doc_filename_with_ext(component_file_name,".if.gif");
@@ -839,7 +885,10 @@ static void print_cg_html(const char *component_name, const char *component_file
 
   // start the dot output
   if( use_graphviz ) {
-    char *graphviz_opts = "
+    char *graphviz_opts;
+
+    if( graphviz_supports_cmap ) {
+      graphviz_opts = "
     rankdir=LR;
     ratio=compress;
     margin=\"0,0\";
@@ -849,6 +898,18 @@ static void print_cg_html(const char *component_name, const char *component_file
     node [fontcolor=blue fontname=Times fontsize=16];
     edge [fontcolor=blue fontname=Times fontsize=14];
 ";
+    } else {
+      graphviz_opts = "
+    rankdir=LR;
+    ratio=compress;
+    margin=\"0,0\";
+    ranksep=0.0005; 
+    nodesep=0.1; 
+    node [shape=ellipse style=filled fillcolor=\"#e0e0e0\"];
+    node [fontcolor=black fontname=Times fontsize=16];
+    edge [fontcolor=black fontname=Times fontsize=14];
+";
+    }
 
     iface_file = fopen(iface_dot, "w");  assert(iface_file);
     fprintf(iface_file, "digraph \"%s_if\" {%s\n    %s\n", component_name, graphviz_opts,
@@ -924,7 +985,7 @@ static void print_cg_html(const char *component_name, const char *component_file
                         iface_node_name( req ),
                         iface_node_name( prov ));
               if(req->interface) {
-                if(!req->component || !prov->component) 
+                if(prov->interface && req->interface->required == prov->interface->required) 
                   fprintf(iface_file, " style=dashed"); 
                 fprintf(iface_file, " label=\"%s\" URL=\"%s\"", 
                         prov->interface->itype->name,
@@ -957,7 +1018,7 @@ static void print_cg_html(const char *component_name, const char *component_file
               fprintf(text_file, "</td>\n");
 
               // arrow
-              if( req->component && prov->component )
+              if(prov->interface && req->interface->required == prov->interface->required) 
                 fprintf(text_file, "    <td align=\"center\">&nbsp;->&nbsp;</td>\n");
               else 
                 fprintf(text_file, "    <td align=\"center\">&nbsp;=&nbsp;</td>\n");
@@ -1021,20 +1082,24 @@ static void print_cg_html(const char *component_name, const char *component_file
     ret = system(cmd); 
     if(ret == -1)
       fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
-    //ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tcmap -o%s %s", iface_cmap, iface_dot); assert(ret > 0);
-    //ret = system(cmd); assert(ret != -1);
-    //if(ret == -1)
-    // fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
+    if( graphviz_supports_cmap ) {
+      ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tcmap -o%s %s", iface_cmap, iface_dot); assert(ret > 0);
+      ret = system(cmd); assert(ret != -1);
+      if(ret == -1)
+        fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
+    }
 
     if( do_func_graph ) {
       ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tgif -o%s %s", func_gif, func_dot); assert(ret > 0);
       ret = system(cmd); assert(ret != -1);
       if(ret == -1)
         fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
-      ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tcmap -o%s %s", func_cmap, func_dot); assert(ret > 0);
-      ret = system(cmd); assert(ret != -1);
-      if(ret == -1)
-        fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
+      if( graphviz_supports_cmap ) {
+        ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tcmap -o%s %s", func_cmap, func_dot); assert(ret > 0);
+        ret = system(cmd); assert(ret != -1);
+        if(ret == -1)
+          fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
+      }
     }
   }
 
@@ -1047,10 +1112,14 @@ static void print_cg_html(const char *component_name, const char *component_file
     // FIXME: add a link to the function graph page here.
     output("<br>\n");
 
-    //output("<map name=\"comp\">\n");
-    //copy_file_to_output(iface_cmap);
-    //output("</map>\n");
-    output("<center><image src=\"%s\" usemap=\"#comp\" border=0></center>\n", iface_gif);
+    if( graphviz_supports_cmap ) {
+      output("<map name=\"comp\">\n");
+      copy_file_to_output(iface_cmap);
+      output("</map>\n");
+      output("<center><image src=\"%s\" usemap=\"#comp\" border=0></center>\n", iface_gif);
+    } else {
+      output("<center><image src=\"%s\" border=0></center>\n", iface_gif);
+    }
   }
   else {
     // just copy in the text output, if we aren't generating graphs
@@ -1064,10 +1133,15 @@ static void print_cg_html(const char *component_name, const char *component_file
   if( do_func_graph ) {
     // FIXME: this stuff should all go to a seperate function graph HTML page
     print_html_banner("<h3>Component Function Graph</h3>");
-    output("<map name=\"func\">\n");
-    copy_file_to_output(func_cmap);
-    output("</map>\n");
-    output("<center><image src=\"%s\" usemap=\"#func\" border=0></center>\n", func_gif);
+
+    if( graphviz_supports_cmap ) {
+      output("<map name=\"func\">\n");
+      copy_file_to_output(func_cmap);
+      output("</map>\n");
+      output("<center><image src=\"%s\" usemap=\"#func\" border=0></center>\n", func_gif);
+    } else {
+      output("<center><image src=\"%s\" border=0></center>\n", func_gif);
+    }
   }
 
   // remove temp files
@@ -1105,8 +1179,8 @@ static void generate_component_html(nesc_declaration cdecl)
     char *sourcelink = doc_filename_with_ext(cdecl->ast->location->filename, ".source");
     char *sourcefile = doc_filename_with_ext(cdecl->ast->location->filename, "");
 
-    unlink(sourcelink);
-    assert(symlink(cdecl->ast->location->filename, sourcelink) == 0);
+    add_source_symlink(cdecl->ast->location->filename, sourcelink);
+
     output("
 <html>
 <head>
@@ -1337,8 +1411,7 @@ static void generate_interface_html(nesc_declaration idecl)
     char *sourcelink = doc_filename_with_ext(idecl->ast->location->filename, ".source");
     char *sourcefile = doc_filename_with_ext(idecl->ast->location->filename, "");
 
-    unlink(sourcelink);
-    assert(symlink(idecl->ast->location->filename, sourcelink) == 0);
+    add_source_symlink(idecl->ast->location->filename, sourcelink);
 
     output("
 <html>
@@ -1639,8 +1712,26 @@ static void generate_app_page(const char *filename, cgraph cg)
 
   fprintf(f, "<html>\n");
   fprintf(f, "<head><title>App: %s</title></head>\n", appname);
-  fprintf(f, "<body>\n");
+  fprintf(f, "<body>
+<font size=\"-1\">
+<table BORDER=\"0\" CELLPADDING=\"3\" CELLSPACING=\"0\" width=\"100%%\">
+<tr ><td>
+<b><a href=\"apps.html\">Apps</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"components.html\">Components</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"interfaces.html\">Interfaces</a></b>&nbsp;&nbsp;&nbsp;
+</td>
+<td align=\"right\">
+&nbsp;
+</td>
+</tr></table>
+</font>
+<hr>
+");
+
   fprintf(f, "<h1 align=\"center\">App: %s</h1>\n", appname);
+
+
+
 
   print_cg_html(appname, basename, cg, TRUE);
 
@@ -1658,8 +1749,6 @@ static void generate_app_page(const char *filename, cgraph cg)
 //////////////////////////////////////////////////
 void generate_docs(const char *filename, cgraph cg)
 {
-  char old_wd[1024];
-
   // if no docdir is specified, then the user didn't request doc generation
   if( !docdir ) 
     return;
@@ -1671,10 +1760,10 @@ void generate_docs(const char *filename, cgraph cg)
     doc_region = newregion();
 
     // get the current working directory
-    assert(getcwd(old_wd, sizeof(old_wd)));
+    assert(getcwd(original_wd, sizeof(original_wd)));
 
     // set up dir info
-    find_currdir_prefix(old_wd);
+    find_currdir_prefix(original_wd);
 
     // cd to the docdir 
     mkdir(docdir, 0755);
@@ -1728,7 +1817,7 @@ void generate_docs(const char *filename, cgraph cg)
     // NOTE: using the region this way makes this module non-reentrant
     deleteregion(doc_region);
 
-    assert(chdir(old_wd) == 0);
+    assert(chdir(original_wd) == 0);
   }
 }
 
