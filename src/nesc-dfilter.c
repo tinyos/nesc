@@ -23,14 +23,9 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-dspec.h"
 #include "nesc-dspec-int.h"
 
-static const char *tokenval(nd_arg arg)
-{
-  return CAST(nd_token, arg)->str;
-}
-
 static bool filter_file(ndf_op filter, location loc)
 {
-  return !fnmatch(tokenval(filter->args), loc->filename, 0);
+  return !fnmatch(nd_tokenval(filter->args), loc->filename, 0);
 }
 
 static bool filter_name(ndf_op filter, const char *name)
@@ -50,7 +45,7 @@ static bool filter_attribute(ndf_op filter, dd_list/*nesc_attribute*/ attrs)
      non-empty */
   scan_nd_arg (reqattr, filter->args)
     {
-      const char *reqname = tokenval(reqattr);
+      const char *reqname = nd_tokenval(reqattr);
 
       dd_scan (actualattr, attrs)
 	{
@@ -63,10 +58,27 @@ static bool filter_attribute(ndf_op filter, dd_list/*nesc_attribute*/ attrs)
   return FALSE;
 }
 
+static bool filter_component(ndf_op filter, nesc_declaration container)
+{
+  return container &&
+    !strcmp(nd_tokenval(filter->args), container->instance_name);
+}
+
+
 
 static bool fddecl_file(ndf_op op, data_declaration ddecl)
 {
   return filter_file(op, ddecl->definition ? ddecl->definition->location : ddecl->ast->location);
+}
+
+static bool fndecl_file(ndf_op op, nesc_declaration ndecl)
+{
+  return filter_file(op, ndecl->ast->location);
+}
+
+static bool ftdecl_file(ndf_op op, tag_declaration tdecl)
+{
+  return tdecl->definition && filter_file(op, tdecl->definition->location);
 }
 
 static bool fddecl_attribute(ndf_op op, data_declaration ddecl)
@@ -74,12 +86,22 @@ static bool fddecl_attribute(ndf_op op, data_declaration ddecl)
   return filter_attribute(op, ddecl->attributes);
 }
 
+static bool fndecl_attribute(ndf_op op, nesc_declaration ndecl)
+{
+  return FALSE;//filter_attribute(op, ndecl->attributes);
+}
+
+static bool ftdecl_attribute(ndf_op op, tag_declaration tdecl)
+{
+  return filter_attribute(op, tdecl->attributes);
+}
+
 static void fcompile_name(ndf_op op)
 {
   int err;
 
-  op->info = ralloc(permanent, regex_t);
-  err = regcomp(op->info, tokenval(op->args), REG_EXTENDED);
+  op->info = ralloc(dump_region, regex_t);
+  err = regcomp(op->info, nd_tokenval(op->args), REG_EXTENDED);
   if (err)
     {
       char errmsg[200];
@@ -94,15 +116,62 @@ static bool fddecl_name(ndf_op op, data_declaration ddecl)
   return filter_name(op, ddecl->name);
 }
 
-static struct {
+static bool fndecl_name(ndf_op op, nesc_declaration ndecl)
+{
+  return filter_name(op, ndecl->instance_name);
+}
+
+static bool ftdecl_name(ndf_op op, tag_declaration tdecl)
+{
+  return filter_name(op, tdecl->name);
+}
+
+static bool fddecl_component(ndf_op op, data_declaration ddecl)
+{
+  return filter_component(op, ddecl->container);
+}
+
+static bool fndecl_component(ndf_op op, nesc_declaration ndecl)
+{
+  /* XXX: should this do something obvious w/ instantiated
+     abstract components? */
+  return FALSE;
+}
+
+static bool ftdecl_component(ndf_op op, tag_declaration tdecl)
+{
+  return filter_component(op, tdecl->container);
+}
+
+static bool fddecl_global(ndf_op op, data_declaration ddecl)
+{
+  return !ddecl->container && !ddecl->container_function;
+}
+
+static bool fndecl_global(ndf_op op, nesc_declaration ndecl)
+{
+  /* XXX: see fndecl_component comment */
+  return TRUE;
+}
+
+static bool ftdecl_global(ndf_op op, tag_declaration tdecl)
+{
+  return !tdecl->container /* && !tdecl->container_function*/;
+}
+
+static struct filter_op {
   const char *name;
   const char *args;
   void (*compile)(ndf_op op);
   bool (*execute_ddecl)(ndf_op op, data_declaration ddecl);
+  bool (*execute_ndecl)(ndf_op op, nesc_declaration ndecl);
+  bool (*execute_tdecl)(ndf_op op, tag_declaration tdecl);
 } ops[] = {
-  { "file", "t", NULL, fddecl_file },
-  { "name", "t", fcompile_name, fddecl_name },
-  { "attribute", "*t", NULL, fddecl_attribute }
+  { "file", "t", NULL, fddecl_file, fndecl_file, ftdecl_file },
+  { "name", "t", fcompile_name, fddecl_name, fndecl_name, ftdecl_name },
+  { "component", "t", NULL, fddecl_component, fndecl_component, ftdecl_component },
+  { "global", "", NULL, fddecl_global, fndecl_global, ftdecl_global },
+  { "attribute", "*t", NULL, fddecl_attribute, fndecl_attribute, ftdecl_attribute }
 };
 
 static void check_arg(nd_arg arg, int kind)
@@ -163,36 +232,54 @@ nd_filter make_ndf_op(region r, const char *name, nd_arg args)
 
 static nd_filter current_filter;
 
-static bool dofilter_ddecl(nd_filter f, data_declaration ddecl)
+enum { filter_ddecl, filter_ndecl, filter_tdecl };
+
+static bool dofilter(int op, nd_filter f, void *decl)
 {
   switch (f->kind)
     {
     case kind_ndf_and: {
       ndf_and f1 = CAST(ndf_and, f);
-      return dofilter_ddecl(f1->filter1, ddecl) &&
-	dofilter_ddecl(f1->filter2, ddecl);
+      return dofilter(op, f1->filter1, decl) && dofilter(op, f1->filter2, decl);
     }
     case kind_ndf_or: {
       ndf_or f1 = CAST(ndf_or, f);
-      return dofilter_ddecl(f1->filter1, ddecl) ||
-	dofilter_ddecl(f1->filter2, ddecl);
+      return dofilter(op, f1->filter1, decl) || dofilter(op, f1->filter2, decl);
     }
     case kind_ndf_not: {
       ndf_not f1 = CAST(ndf_not, f);
-      return !dofilter_ddecl(f1->filter1, ddecl);
+      return !dofilter(op, f1->filter1, decl);
     }
     case kind_ndf_op: {
       ndf_op f1 = CAST(ndf_op, f);
-      return ops[f1->filter_index].execute_ddecl(f1, ddecl);
+      struct filter_op *fop = &ops[f1->filter_index];
+
+      switch (op)
+	{
+	case filter_ddecl: return fop->execute_ddecl(f1, decl);
+	case filter_ndecl: return fop->execute_ndecl(f1, decl);
+	case filter_tdecl: return fop->execute_tdecl(f1, decl);
+	default: assert(0); return FALSE;
+	}
     }
-    default:
+    default: 
       assert(0); return FALSE;
     }
 }
 
 bool dump_filter_ddecl(data_declaration ddecl)
 {
-  return !current_filter || dofilter_ddecl(current_filter, ddecl);
+  return !current_filter || dofilter(filter_ddecl, current_filter, ddecl);
+}
+
+bool dump_filter_ndecl(nesc_declaration ndecl)
+{
+  return !current_filter || dofilter(filter_ndecl, current_filter, ndecl);
+}
+
+bool dump_filter_tdecl(tag_declaration tdecl)
+{
+  return !current_filter || dofilter(filter_tdecl, current_filter, tdecl);
 }
 
 void dump_set_filter(nd_option opt)
@@ -212,7 +299,7 @@ void dump_set_filter(nd_option opt)
 
 	if (extracted)
 	  {
-	    ndf_and x = new_ndf_and(permanent, extracted, f);
+	    ndf_and x = new_ndf_and(dump_region, extracted, f);
 	    extracted = CAST(nd_filter, x);
 	  }
 	else

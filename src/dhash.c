@@ -161,6 +161,18 @@ void dhadd(dhash_table h, void *x)
     }
 }
 
+void *dhaddif(dhash_table h, void *entry)
+{
+  void *existing = dhlookup(h, entry);
+
+  if (existing)
+    return existing;
+
+  dhadd(h, entry);
+  return NULL;
+}
+
+
 dhash_scan dhscan(dhash_table h)
 {
   dhash_scan iterator;
@@ -185,4 +197,19 @@ void *dhnext(dhash_scan *iterator)
       if (x)
 	return x;
     }
+}
+
+static int ptr_compare(void *key, void *y)
+{
+  return key == y;
+}
+
+static unsigned long ptr_hash(void *x)
+{
+  return (unsigned long)x >> 3;
+}
+
+dhash_table new_dhash_ptr_table(region r, unsigned long initial_size)
+{
+  return new_dhash_table(r, initial_size, ptr_compare, ptr_hash);
 }

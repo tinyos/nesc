@@ -20,6 +20,8 @@ Boston, MA 02111-1307, USA.  */
 
 #include "nesc-cg.h"
 
+extern region dump_region;
+
 void select_dump(char *what);
 bool dump_selected(void);
 void dump_info(nesc_declaration program, cgraph cg,

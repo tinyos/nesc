@@ -26,6 +26,7 @@ Boston, MA 02111-1307, USA. */
 #include "c-parse.h"
 #include "machine.h"
 #include "nesc-semantics.h"
+#include "nesc-xml.h"
 #include <stddef.h>
 
 struct type
@@ -2179,6 +2180,153 @@ const char *type_name(region r, type t)
     return rconcat(r, prefix, rconcat(r, " ", decls));
   else
     return prefix;
+}
+
+static void xtype_attr(const char *name, cval c)
+{
+  if (cval_isinteger(c))
+    /* XXX: in theory, should deal with issues related to whether the
+       value is signed or unsigned. In practice, won't arise. */
+    xml_attr_int(name, cval_sint_value(c));
+}
+
+void nxml_type(type t, dd_list tags)
+{
+  type_quals quals = type_qualifiers(t) & (const_qualifier | volatile_qualifier | restrict_qualifier);
+
+  if (quals)
+    {
+      xml_tag_start("type-qualified");
+#define Q(name, kind, tq, val) \
+      if (quals & val) xml_attr_noval(# name);
+#include "qualifiers.h"
+#undef Q
+      xml_tag_end();
+      xindent();
+    }
+    
+  switch (t->kind)
+    {
+    case tk_primitive:
+      if (t->u.primitive < tp_first_floating)
+	xml_tag_start("type-int");
+      else
+	xml_tag_start("type-float");
+      xml_attr("cname", primname[t->u.primitive]);
+      break;
+    case tk_complex:
+      if (t->u.primitive < tp_first_floating)
+	xml_tag_start("type-complex-int");
+      else
+	xml_tag_start("type-complex-float");
+      xml_attr("cname", primname[t->u.primitive]);
+      break;
+    case tk_void:
+      xml_tag_start("type-void");
+      break;
+    case tk_pointer: 
+      xml_tag_start("type-pointer");
+      break;
+    case tk_array:
+      xml_tag_start("type-array");
+      xtype_attr("elements", type_array_size_cval(t));
+      break;
+    case tk_function: 
+      xml_tag_start("type-function");
+      if (t->u.fn.oldstyle)
+	xml_attr_noval("oldstyle");
+      if (t->u.fn.varargs)
+	xml_attr_noval("varargs");
+      break;
+    case tk_tagged:
+      if (tags)
+	dd_add_last(regionof(tags), tags, t->u.tag);
+      xml_tag_start("type-tag");
+      break;
+    case tk_iref:
+      xml_tag_start("type-interface");
+      break;
+    case tk_cref:
+      xml_tag_start("type-component");
+      break;
+    case tk_variable:
+      xml_tag_start("type-var");
+      break;
+    default: /* for bugs */
+      xml_tag_start("type-error");
+      break;
+    }
+
+  if (type_size_cc(t))
+    xtype_attr("size", type_size(t));
+  if (type_has_size(t))
+    xtype_attr("alignment", type_alignment(t));
+
+  switch (t->kind)
+    {
+    default:
+      xml_tag_end_pop();
+      break;
+
+    case tk_pointer: 
+      xml_tag_end();
+      xnewline(); xindent();
+      nxml_type(t->u.pointsto, tags);
+      xunindent(); xml_pop();
+      break;
+    case tk_array:
+      xml_tag_end();
+      xnewline(); xindent();
+      nxml_type(t->u.array.arrayof, tags);
+      xunindent(); xml_pop();
+      break;
+    case tk_function:
+      xml_tag_end();
+      xnewline(); xindent();
+      if (!t->u.fn.oldstyle)
+	{
+	  typelist_scanner scanargs;
+	  type argt;
+
+	  typelist_scan(t->u.fn.argtypes, &scanargs);
+	  while ((argt = typelist_next(&scanargs)))
+	    nxml_type(argt, tags);
+	}
+      xml_tag("returns");
+      xnewline(); xindent();
+      nxml_type(t->u.fn.returns, tags);
+      xunindent(); xml_pop();
+      xnewline();
+      xunindent(); xml_pop();
+      break;
+    case tk_tagged:
+      xml_tag_end();
+      nxml_tdecl_ref(t->u.tag);
+      xml_pop();
+      break;
+    case tk_iref:
+      xml_tag_end();
+      nxml_ddecl_ref(t->u.iref);
+      xml_pop();
+      break;
+    case tk_cref:
+      xml_tag_end();
+      nxml_ddecl_ref(t->u.cref);
+      xml_pop();
+      break;
+    case tk_variable:
+      xml_tag_end();
+      nxml_ddecl_ref(t->u.tdecl);
+      xml_pop();
+      break;
+    }
+  xnewline();
+
+  if (quals)
+    {
+      xunindent(); xml_pop();
+      xnewline();   
+    }
 }
 
 

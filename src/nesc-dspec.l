@@ -20,6 +20,7 @@ Boston, MA 02111-1307, USA.  */
 #include <stdlib.h>
 #include <errno.h>
 #include "parser.h"
+#include "nesc-dump.h"
 #include "nesc-dspec.h"
 #include "nesc-dspec-int.h"
 
@@ -52,7 +53,7 @@ HEXDIGIT	[0-9a-fA-F]
             	  return ND_INTEGER; 
 		}
 [^, \t()|&!]+	{
-  		  ndlval.token = rstrdup(permanent, ndtext);
+  		  ndlval.token = rstrdup(dump_region, ndtext);
 		  return ND_TOKEN;
 		}
 

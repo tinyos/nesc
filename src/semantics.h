@@ -234,5 +234,6 @@ void layout_enum_start(tag_declaration tdecl);
 void layout_enum_end(tag_declaration tdecl);
 known_cst layout_enum_value(enumerator e);
 void layout_struct(tag_declaration tdecl);
+const char *tagkind_name(int tagkind);
 
 #endif

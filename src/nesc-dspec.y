@@ -17,6 +17,7 @@ Boston, MA 02111-1307, USA.  */
 
 %{
 #include "parser.h"
+#include "nesc-dump.h"
 #include "nesc-dspec.h"
 #include "nesc-dspec-int.h"
 #include "nesc-dfilter.h"
@@ -27,7 +28,7 @@ static nd_option opt;
 %token <token> ND_TOKEN
 %token <integer> ND_INTEGER
 %type <token> name
-%type <nd_arg> args arg
+%type <nd_arg> args args1 arg
 %type <nd_filter> filter
 
 %left '|'
@@ -37,30 +38,35 @@ static nd_option opt;
 %%
 
 option: 
-    name { opt = new_nd_option(permanent, $1, NULL, 0); }
-  | name '(' args ')' { opt = new_nd_option(permanent, $1, $3, nd_arg_length($3)); }
+    name { opt = new_nd_option(dump_region, $1, NULL, 0); }
+  | name '(' args ')' { opt = new_nd_option(dump_region, $1, $3, nd_arg_length($3)); }
   ;
 
 name: ND_TOKEN ;
 
-args: 
+args:
+    /* empty */ { $$ = NULL; }
+  | args1
+  ;
+
+args1: 
     args ',' arg { $$ = nd_arg_chain($1, $3); }
   | arg
   ;
 
 arg:
-    ND_TOKEN  { $$ = CAST(nd_arg, new_nd_token(permanent, $1)); }
-  | ND_INTEGER { $$ = CAST(nd_arg, new_nd_int(permanent, $1)); }
+    ND_TOKEN  { $$ = CAST(nd_arg, new_nd_token(dump_region, $1)); }
+  | ND_INTEGER { $$ = CAST(nd_arg, new_nd_int(dump_region, $1)); }
   | filter { $$ = CAST(nd_arg, $1); }
   ;
 
 filter:
-    filter '|' filter { $$ = CAST(nd_filter, new_ndf_or(permanent, $1, $3)); }
-  | filter '&' filter { $$ = CAST(nd_filter, new_ndf_and(permanent, $1, $3)); }
-  | '!' filter  { $$ = CAST(nd_filter, new_ndf_not(permanent, $2)); }
+    filter '|' filter { $$ = CAST(nd_filter, new_ndf_or(dump_region, $1, $3)); }
+  | filter '&' filter { $$ = CAST(nd_filter, new_ndf_and(dump_region, $1, $3)); }
+  | '!' filter  { $$ = CAST(nd_filter, new_ndf_not(dump_region, $2)); }
   | '(' filter ')' { $$ = $2; }
   | ND_TOKEN '(' args ')' {
-      $$ = make_ndf_op(permanent, $1, $3);
+      $$ = make_ndf_op(dump_region, $1, $3);
     }
   ;
 
@@ -77,4 +83,9 @@ nd_option nd_parse(const char *what)
 
 #include "ND_types.c"
 #include "ND_list_nd_arg.c"
+
+const char *nd_tokenval(nd_arg arg)
+{
+  return CAST(nd_token, arg)->str;
+}
 

@@ -17,6 +17,7 @@ Boston, MA 02111-1307, USA.  */
 
 #include "parser.h"
 #include "nesc-xml.h"
+#include "semantics.h"
 
 /* Pick an indentation amount */
 #define INDENT 2
@@ -143,7 +144,12 @@ void xml_tag_end(void)
   xputs(">");
 }
 
-void xml_qtag_end(void)
+void xml_qtag(const char *tag)
+{
+  xprintf("<%s/>", tag);
+}
+
+void xml_tag_end_pop(void)
 {
   pop_tag();
   xputs("/>");
@@ -166,6 +172,16 @@ void xml_attr_int(const char *name, largest_int val)
   xprintf(" %s=\"%lld\"", name, val);
 }
 
+void xml_attr_ptr(const char *name, void *val)
+{
+  xprintf(" %s=\"%p\"", name, val);
+}
+
+void xml_attr_noval(const char *name)
+{
+  xprintf(" %s=\"\"", name);
+}
+
 void xml_start(FILE *f)
 {
   xml_region = newregion();
@@ -179,4 +195,48 @@ void xml_end(void)
 {
   deleteregion_ptr(&xml_region);
   xml_file = NULL;
+}
+
+/* Standard nesC xml elements */
+void nxml_ddecl_ref(data_declaration ddecl)
+{
+  switch (ddecl->kind)
+    {
+    case decl_variable: xml_tag_start("variable-ref"); break;
+    case decl_constant: xml_tag_start("constant-ref"); break;
+    case decl_function: xml_tag_start("function-ref"); break;
+    case decl_typedef: xml_tag_start("typedef-ref"); break;
+    case decl_interface_ref: xml_tag_start("interface-ref"); break;
+    case decl_component_ref: xml_tag_start("component-ref"); break;
+    default: assert(0);
+    }
+  xml_attr("name", ddecl->name);
+  if (ddecl->container || ddecl->container_function)
+    xml_attr_noval("scoped");
+  xml_attr_ptr("ref", ddecl);
+  xml_tag_end_pop();
+}
+
+void nxml_ndecl_ref(nesc_declaration ndecl)
+{
+  if (ndecl->kind == l_interface)
+    xml_tag_start("interfacedef-ref");
+  else
+    xml_tag_start("component-ref");
+  xml_attr("name", ndecl->instance_name);
+  //xml_attr_ptr("ref", ndecl);
+  xml_tag_end_pop();
+}
+
+void nxml_tdecl_ref(tag_declaration tdecl)
+{
+  char tag[20];
+
+  sprintf(tag, "%s-ref", tagkind_name(tdecl->kind));
+  if (tdecl->name)
+    xml_attr("name", tdecl->name);
+  if (tdecl->container/* || tdecl->container_function*/)
+    xml_attr_noval("scoped");
+  xml_attr_ptr("ref", tdecl);
+  xml_tag_end_pop();
 }

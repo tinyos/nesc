@@ -41,9 +41,31 @@ typedef struct dhash_table *dhash_table;
 dhash_table new_dhash_table(region r, unsigned long initial_size,
 			    int (*compare)(void *entry1, void *entry2),
 			    unsigned long (*hash)(void *entry));
+/* Returns: new hash table created in region r, with specified initial size,
+     comparison and hashing functions
+*/
+
 void *dhlookup(dhash_table h, void *entry);
+/* Returns: An entry x in hash table h such that compare(x, entry) is true,
+     or NULL if no entry found.
+*/
+
 void dhadd(dhash_table h, void *entry);
+/* Effects: Unconditionally adds entry to hash table h (may create
+     duplicates)
+   Modifies: h
+*/
+
+void *dhaddif(dhash_table h, void *entry);
+/* Effects: Adds entry to hash table h if it's not already there
+     (as determined by dhlookup)
+   Returns: dhlookup's result if entry not added, NULL otherwise
+   Modifies: h
+*/
+
 unsigned long dhash_used(dhash_table h);
+/* Returns: number of elements in hash table h
+ */
 
 typedef struct
 {
@@ -52,6 +74,20 @@ typedef struct
 } dhash_scan;
 
 dhash_scan dhscan(dhash_table h);
+/* Returns: new iterator for hash table h
+ */
 void *dhnext(dhash_scan *iterator);
+/* Requires: no changes to hash table have been made since dhscan returned
+    *iterator
+   Effects: Returns next element of hash table iterated by *iterator, or
+     NULL if no elements remain
+   Modifies: iterator
+*/
+
+/* Some predefined hash tables */
+
+dhash_table new_dhash_ptr_table(region r, unsigned long initial_size);
+/* Returns: A new hash table which hashes pointers, with specified initial size
+ */
 
 #endif

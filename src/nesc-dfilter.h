@@ -20,6 +20,8 @@ Boston, MA 02111-1307, USA.  */
 
 nd_filter make_ndf_op(region r, const char *name, nd_arg args);
 bool dump_filter_ddecl(data_declaration ddecl);
+bool dump_filter_ndecl(nesc_declaration ndecl);
+bool dump_filter_tdecl(tag_declaration tdecl);
 void dump_set_filter(nd_option opt);
 
 #endif

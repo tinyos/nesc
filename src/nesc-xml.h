@@ -20,6 +20,7 @@ Boston, MA 02111-1307, USA.  */
 #include "parser.h"
 #include "nesc-xml.h"
 
+/* Low-level text output functions */
 void xindent(void);
 void xunindent(void);
 void xnewline(void);
@@ -30,14 +31,23 @@ void xprintf(char *format, ...);
 void xqputs(const char *s);
 void xputs(const char *s);
 
+/* Tag/attribute handling */
 void xml_tag_start(const char *tag);
 void xml_tag(const char *tag);
 void xml_tag_end(void);
-void xml_qtag_end(void);
+void xml_qtag(const char *tag);
+void xml_tag_end_pop(void);
 void xml_pop(void);
 void xml_attr(const char *name, const char *val);
 void xml_attr_int(const char *name, largest_int val);
+void xml_attr_ptr(const char *name, void *val);
+void xml_attr_noval(const char *name);
 void xml_start(FILE *f);
 void xml_end(void);
+
+/* Standard nesC xml elements */
+void nxml_ddecl_ref(data_declaration ddecl);
+void nxml_ndecl_ref(nesc_declaration ndecl);
+void nxml_tdecl_ref(tag_declaration tdecl);
 
 #endif

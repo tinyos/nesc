@@ -23,5 +23,6 @@ Boston, MA 02111-1307, USA.  */
 #include "ND_defs.h"
 
 nd_option nd_parse(const char *what);
+const char *nd_tokenval(nd_arg arg);
 
 #endif
