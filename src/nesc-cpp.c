@@ -22,6 +22,7 @@ Boston, MA 02111-1307, USA.  */
 #include <sys/wait.h>
 #include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
 #include "nesc-paths.h"
 
 static region opt_region;
@@ -48,8 +49,13 @@ void save_option(const char *option)
   saved_options_count++;
 }
 
+#ifdef __CYGWIN32__
+static char tmpfile1[] = "nesccpp2XXXXXX";
+static char tmpfile2[] = "nesccpp1XXXXXX";
+#else
 static char tmpfile1[] = "/tmp/nesccpp2XXXXXX";
 static char tmpfile2[] = "/tmp/nesccpp1XXXXXX";
+#endif
 
 static char *cpp_macros, *cpp_dest;
 static FILE *macros_file;
@@ -91,8 +97,14 @@ FILE *preprocess(const char *filename)
   if ((cpp_pid = fork()) == 0)
     {
       char **argv;
-      int nargs = 10 + path_argv_count + saved_options_count, arg = 0, i;
+      int nargs = 8 + path_argv_count + saved_options_count, arg = 0, i;
       struct cpp_option *saved;
+      int destfd = creat(cpp_dest, 0666);
+
+      if (destfd < 0 || dup2(destfd, 1) < 0)
+	exit(2);
+
+      close(destfd);
 
       argv = alloca(nargs * sizeof *argv);
       argv[arg++] = TARGET_GCC;
@@ -110,8 +122,6 @@ FILE *preprocess(const char *filename)
       argv[arg++] = "-dD";
       argv[arg++] = "-imacros";
       argv[arg++] = cpp_macros;
-      argv[arg++] = "-o";
-      argv[arg++] = cpp_dest;
       argv[arg++] = (char *)filename;
       argv[arg++] = NULL;
       assert(arg <= nargs);
