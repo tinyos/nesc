@@ -391,22 +391,22 @@ static void add_source_symlink(const char *srcfile, const char *linkname)
 //  output functions
 //
 //////////////////////////////////////////////////////////////////////
+static FILE *current_doc_outfile;
 
 static FILE *open_outfile(const char *outfile) {
-  FILE *doc_outfile;
 
   unlink(outfile);
   
-  doc_outfile = fopen(outfile,"w");
-  assert(doc_outfile);
+  current_doc_outfile = fopen(outfile,"w");
+  assert(current_doc_outfile);
 
   // set up unparse routines
-  unparse_start(doc_outfile);
+  unparse_start(current_doc_outfile);
   disable_line_directives();
   set_function_separator(".");
   enable_documentation_mode();
 
-  return doc_outfile;
+  return current_doc_outfile;
 } 
 
 static void close_outfile(FILE *doc_outfile) {
@@ -502,6 +502,61 @@ static void output_docstring(char *docstring)
 // HTML generation functions
 //
 //////////////////////////////////////////////////////////////////////
+
+typedef enum {
+  NAV_APP,
+  NAV_COMP,
+  NAV_INT,
+  NAV_ALL,
+  NAV_TREE,
+  NAV_OTHER
+} navbar_mode;
+
+static void print_navbar(FILE *f, navbar_mode mode, const char *srcfile, const char *srctext) 
+{
+  char *spaces = "&nbsp;&nbsp;&nbsp;";
+
+
+  if(srcfile) {
+    fprintf(f, "<table BORDER=\"0\" CELLPADDING=\"3\" CELLSPACING=\"0\" width=\"100%%\">\n");
+    fprintf(f, "<tr><td>\n");
+  }
+
+  fprintf(f,"<font size=\"-1\">\n");
+
+  if(mode == NAV_APP) fprintf(f,"Apps\n");
+  else fprintf(f,"<b><a href=\"apps_p.html\">Apps</a></b>\n");
+  fprintf(f, "%s\n", spaces);
+
+  if(mode == NAV_COMP) fprintf(f,"Components\n");
+  else fprintf(f, "<b><a href=\"components_p.html\">Components</a></b>\n");
+  fprintf(f, "%s\n", spaces);
+
+  if(mode == NAV_INT) fprintf(f,"Interfaces\n");
+  else fprintf(f, "<b><a href=\"interfaces_p.html\">Interfaces</a></b>\n");
+  fprintf(f, "%s\n", spaces);
+
+  if(mode == NAV_ALL) fprintf(f,"All Files\n");
+  else fprintf(f, "<b><a href=\"allfiles_p.html\">All Files</a></b>\n");
+  fprintf(f, "%s\n", spaces);
+
+  if(mode == NAV_COMP) fprintf(f,"Source Tree\n");
+  else fprintf(f, "<b><a href=\"index.html\">Source Tree</a></b>\n");
+  fprintf(f, "%s\n", spaces);
+
+  fprintf(f, "</font>\n");
+
+  if(srcfile) {
+    fprintf(f,"</td>\n");
+    fprintf(f,"<td align=\"right\">\n");
+    fprintf(f,"<font size=\"-1\">\n");
+    fprintf(f,"source: <b><a href=\"%s\">%s</a></b>\n", srcfile, srctext);
+    fprintf(f, "</font>\n");
+    fprintf(f,"</td></tr></table>\n");
+  }
+  
+  fprintf(f, "<hr>\n");
+}
 
 
 static void print_short_variable_html(data_decl ddecl, variable_decl vd) {
@@ -1369,7 +1424,7 @@ static void generate_component_html(nesc_declaration cdecl)
   // start the HTML
   {
     char *sourcelink = doc_filename_with_ext(cdecl->ast->location->filename, ".source");
-    char *sourcefile = doc_filename_with_ext(cdecl->ast->location->filename, "");
+    char *sourcetext = doc_filename_with_ext(cdecl->ast->location->filename, "");
 
     add_source_symlink(cdecl->ast->location->filename, sourcelink);
 
@@ -1381,23 +1436,7 @@ static void generate_component_html(nesc_declaration cdecl)
 <body>
 ", cdecl->name);
 
-    output("
-<font size=\"-1\">
-<table BORDER=\"0\" CELLPADDING=\"3\" CELLSPACING=\"0\" width=\"100%%\">
-<tr ><td>
-<b><a href=\"apps_p.html\">Apps</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"components_p.html\">Components</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"interfaces_p.html\">Interfaces</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"allfiles_p.html\">All Files</a></b>&nbsp;&nbsp;&nbsp;
-</td>
-<td align=\"right\">
-source: <a href=\"%s\">%s</a>
-</td>
-</tr></table>
-</font>
-<hr>
-", sourcelink, sourcefile);
-
+    print_navbar(outfile, NAV_OTHER, sourcelink, sourcetext);
 
     output("
 <h1 align=\"center\">Component: %s</h1>
@@ -1602,7 +1641,7 @@ static void generate_interface_html(nesc_declaration idecl)
   // start the HTML
   {
     char *sourcelink = doc_filename_with_ext(idecl->ast->location->filename, ".source");
-    char *sourcefile = doc_filename_with_ext(idecl->ast->location->filename, "");
+    char *sourcetext = doc_filename_with_ext(idecl->ast->location->filename, "");
 
     add_source_symlink(idecl->ast->location->filename, sourcelink);
 
@@ -1614,23 +1653,7 @@ static void generate_interface_html(nesc_declaration idecl)
 <body>
 ", idecl->name);
 
-    output("
-<font size=\"-1\">
-<table BORDER=\"0\" CELLPADDING=\"3\" CELLSPACING=\"0\" width=\"100%%\">
-<tr ><td>
-<b><a href=\"apps_p.html\">Apps</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"components_p.html\">Components</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"interfaces_p.html\">Interfaces</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"allfiles_p.html\">All Files</a></b>&nbsp;&nbsp;&nbsp;
-</td>
-<td align=\"right\">
-source: <a href=\"%s\">%s</a>
-</td>
-</tr></table>
-</font>
-<hr>
-", sourcelink, sourcefile);
-
+    print_navbar(outfile, NAV_OTHER, sourcelink, sourcetext);
 
     output("
 <h1 align=\"center\">Interface: %s</h1>
@@ -1651,6 +1674,8 @@ source: <a href=\"%s\">%s</a>
 			      idecl, function_command, long_desc);
   generate_intf_function_list("<h3>Used Functions - Details</h3>",
 			      idecl, function_event, long_desc);
+
+  close_outfile(outfile);
 }
 
 
@@ -1742,12 +1767,34 @@ typedef enum {
   SORT_PATH = 2
 } index_sort_type;
 
-static void print_index_file(const char *indexname, index_sort_type sort, file_index *ind)
+static void print_index_file(navbar_mode nmode, index_sort_type sort, file_index *ind)
 {
   int i;
   FILE *f;
   char *filename;
-  char *title;
+  char *title, *indexname, *sort_heading;
+
+  // set up some shorthand, based on mode
+  if(nmode == NAV_INT) {
+    indexname = "interfaces";
+    title = "Interface Index";
+    sort_heading = "interface";
+  } else if(nmode == NAV_COMP) {
+    indexname = "components";
+    title = "Component Index";
+    sort_heading = "component";
+  } else if(nmode == NAV_APP) {
+    indexname = "apps";
+    title = "Application Index";
+    sort_heading = "app";
+  } else if(nmode == NAV_ALL) {
+    indexname = "allfiles";
+    title = "All File Index";
+    sort_heading = "file";
+  } else {
+    assert(0);
+  }
+  
 
   // create the file name, & open the file
   filename = rstralloc(doc_region, strlen(indexname) + strlen("_f.html") + 1);
@@ -1763,30 +1810,13 @@ static void print_index_file(const char *indexname, index_sort_type sort, file_i
 
   
   // start the HTML
-  if( !strcmp(indexname, "interfaces") )        title = "Interface Index";
-  else if( !strcmp(indexname, "components") )   title = "Component Index";
-  else if( !strcmp(indexname, "apps") )         title = "Application Index";
-  else if( !strcmp(indexname, "allfiles") )     title = "All File Index";
-  else assert(0);
-  
   fprintf(f, "<html>\n");
   fprintf(f, "<head><title>%s</title></head>\n", title);
   fprintf(f, "<body>\n");
 
 
   // add a navigation banner
-  if( !strcmp(indexname,"apps") )          fprintf(f, "    Apps\n");
-  else                                     fprintf(f, "    <a href=\"apps_p.html\">Apps</a>\n");
-  fprintf(f, "    &nbsp;&nbsp;&nbsp;\n");
-  if( !strcmp(indexname,"components") )    fprintf(f, "    Components\n");
-  else                                     fprintf(f, "    <a href=\"components_p.html\">Components</a>\n");
-  fprintf(f, "    &nbsp;&nbsp;&nbsp;\n");
-  if( !strcmp(indexname,"interfaces") )    fprintf(f, "    Interfaces\n");
-  else                                     fprintf(f, "    <a href=\"interfaces_p.html\">Interfaces</a>\n");
-  fprintf(f, "    &nbsp;&nbsp;&nbsp;\n");
-  if( !strcmp(indexname,"allfiles") )      fprintf(f, "    All Files\n");
-  else                                     fprintf(f, "    <a href=\"allfiles_p.html\">All Files</a>\n");
-  fprintf(f, "<hr><p>\n");
+  print_navbar(f, nmode, NULL, NULL);
 
 
   // title, and table tags
@@ -1796,24 +1826,18 @@ static void print_index_file(const char *indexname, index_sort_type sort, file_i
 
 
   // add the sorting links
-  {
-    char *heading = rstrdup(doc_region, indexname);
-    char *end = heading + strlen(heading)-1;
-    if(*end == 's') *end = '\0'; // trim off the last 's'
-    if( !strcmp(indexname,"allfiles") ) heading = "file";
-
-    fprintf(f, "<tr>\n");
-    if(sort == SORT_FILE) {
-      fprintf(f, "<td><a href=\"%s_p.html\"><em>path</em></a></td>\n", indexname);
-      fprintf(f, "<td>&nbsp;&nbsp;&nbsp;</td>\n");
-      fprintf(f, "<td><em>%s</em></td>\n", heading);
-    } else {
-      fprintf(f, "<td><em>path</em></td>\n");
-      fprintf(f, "<td>&nbsp;&nbsp;&nbsp;</td>\n");
-      fprintf(f, "<td><a href=\"%s_f.html\"><em>%s</em></a></td>\n", indexname, heading);
-    }
-    fprintf(f, "</tr>\n");
+  fprintf(f, "<tr>\n");
+  if(sort == SORT_FILE) {
+    fprintf(f, "<td><a href=\"%s_p.html\"><em>path</em></a></td>\n", indexname);
+    fprintf(f, "<td>&nbsp;&nbsp;&nbsp;</td>\n");
+    fprintf(f, "<td><em>%s</em></td>\n", sort_heading);
+  } else {
+    fprintf(f, "<td><em>path</em></td>\n");
+    fprintf(f, "<td>&nbsp;&nbsp;&nbsp;</td>\n");
+    fprintf(f, "<td><a href=\"%s_f.html\"><em>%s</em></a></td>\n", indexname, sort_heading);
   }
+  fprintf(f, "</tr>\n");
+
 
   // blank line
   fprintf(f, "<tr>\n");
@@ -1832,7 +1856,7 @@ static void print_index_file(const char *indexname, index_sort_type sort, file_i
       fprintf(f, "</tr>\n");
     } else {
       // new path - print a blank line for all but the 'apps' page
-      if(i>0 && strcmp(ind->ent[i].path, ind->ent[i-1].path) && strcmp("apps",indexname)) {
+      if(i>0 && strcmp(ind->ent[i].path, ind->ent[i-1].path) && nmode!=NAV_APP) {
         fprintf(f, "<tr>\n");
         fprintf(f, "    <td>&nbsp;</td>\n");
         fprintf(f, "    <td>&nbsp;</td>\n");
@@ -1871,11 +1895,7 @@ static void print_hierarchical_index_file(const char *filename, file_index *ind)
   fprintf(f, "<body>\n");
 
   // add a navigation banner
-  fprintf(f, "    <a href=\"apps_p.html\">Apps</a>\n");               fprintf(f, "    &nbsp;&nbsp;&nbsp;\n");
-  fprintf(f, "    <a href=\"components_p.html\">Components</a>\n");   fprintf(f, "    &nbsp;&nbsp;&nbsp;\n");
-  fprintf(f, "    <a href=\"interfaces_p.html\">Interfaces</a>\n");   fprintf(f, "    &nbsp;&nbsp;&nbsp;\n");
-  fprintf(f, "    <a href=\"allfiles_p.html\">All Files</a>\n");
-  fprintf(f, "<hr><p>\n");
+  print_navbar(f, NAV_TREE, NULL, NULL);
 
   // title, and table tags
   fprintf(f, "<h1 align=\"center\">%s</h1>\n", title);
@@ -2018,10 +2038,10 @@ static void generate_index_html() {
     qsort(allfiles.ent, allfiles.num, sizeof(index_entry), index_entry_comparator_short);
     
     // index files    
-    print_index_file("interfaces", SORT_FILE, &iface);
-    print_index_file("components", SORT_FILE, &comp);
-    print_index_file("apps", SORT_FILE, &app);
-    print_index_file("allfiles", SORT_FILE, &allfiles);
+    print_index_file(NAV_INT,  SORT_FILE, &iface);
+    print_index_file(NAV_COMP, SORT_FILE, &comp);
+    print_index_file(NAV_APP,  SORT_FILE, &app);
+    print_index_file(NAV_ALL,  SORT_FILE, &allfiles);
   }
 
   // generate index files, sorted by long name
@@ -2033,10 +2053,10 @@ static void generate_index_html() {
     qsort(allfiles.ent, allfiles.num, sizeof(index_entry), index_entry_comparator_full);
     
     // index files    
-    print_index_file("interfaces", SORT_PATH, &iface);
-    print_index_file("components", SORT_PATH, &comp);
-    print_index_file("apps", SORT_PATH, &app);
-    print_index_file("allfiles", SORT_PATH, &allfiles);
+    print_index_file(NAV_INT,  SORT_PATH, &iface);
+    print_index_file(NAV_COMP, SORT_PATH, &comp);
+    print_index_file(NAV_APP,  SORT_PATH, &app);
+    print_index_file(NAV_ALL,  SORT_PATH, &allfiles);
   }
   
 
@@ -2084,22 +2104,9 @@ static void generate_app_page(const char *filename, cgraph cg)
 
   fprintf(f, "<html>\n");
   fprintf(f, "<head><title>App: %s</title></head>\n", appname);
-  fprintf(f, "<body>
-<font size=\"-1\">
-<table BORDER=\"0\" CELLPADDING=\"3\" CELLSPACING=\"0\" width=\"100%%\">
-<tr ><td>
-<b><a href=\"apps_p.html\">Apps</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"components_p.html\">Components</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"interfaces_p.html\">Interfaces</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"allfiles_p.html\">All Files</a></b>&nbsp;&nbsp;&nbsp;
-</td>
-<td align=\"right\">
-&nbsp;
-</td>
-</tr></table>
-</font>
-<hr>
-");
+  fprintf(f, "<body>\n");
+
+  print_navbar(f, NAV_OTHER, NULL, NULL);
 
   fprintf(f, "<h1 align=\"center\">App: %s</h1>\n", appname);
 
