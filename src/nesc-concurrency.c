@@ -22,7 +22,7 @@ Boston, MA 02111-1307, USA.  */
 
 static inline bool is_call_edge(gedge e)
 {
-  return (EDGE_GET(use, e)->c & c_call) != 0;
+  return (EDGE_GET(use, e)->c & c_fncall) != 0;
 }
 
 static void rec_async(gnode n, bool async_caller)
