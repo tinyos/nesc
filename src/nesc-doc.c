@@ -876,7 +876,7 @@ static bool connection_already_printed(dhash_table table,
     *req = left;
     *prov = right;
 
-
+    /*
     fprintf(stderr,"%d.  ",fixme_graph_num);
     fprintf(stderr,"%-15s ", left->interface->name);
     {
@@ -903,6 +903,7 @@ static bool connection_already_printed(dhash_table table,
     fprintf(stderr,"\n");
     assert(left->function->defined == right->function->defined); 
     assert(left->interface->required == right->interface->required);
+    */
   }
 
 
@@ -950,9 +951,10 @@ static void print_cg_html(const char *component_name, const char *component_file
 
 
   // FIXME: increment graph num for debugging
+  /*
   fixme_graph_num++;
   fprintf(stderr, "%d.\n", fixme_graph_num);
-
+  */
 
   // check the version of graphviz, to see if we can use the cmap stuff
   if( use_graphviz  &&  !checked_graphviz_version ) {

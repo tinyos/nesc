@@ -298,6 +298,7 @@ void get_latest_docstring(char **short_s, char **long_s)
 void separate_short_docstring(char *str, char **short_s, char **long_s)
 {
   char *dot;
+  int ret;
   assert(short_s != NULL);
   assert(long_s != NULL);
   
@@ -307,10 +308,16 @@ void separate_short_docstring(char *str, char **short_s, char **long_s)
     return;
   }
 
-  /* find the first sentance */
-  dot = strchr(str,'.');
+  /* find the first period, followed by whitespace */
+  dot = str;
+  do {
+    dot = strchr(dot,'.');
+    if(dot == NULL) break;
+    dot++;
+  } while(*dot != '\0'  &&  *dot != ' '   &&  *dot != '\t'   &&  *dot != '\r'   &&  *dot != '\n');
 
-  /* check for non-whitespace after the first period. */
+
+  /* check for the beginning of the next sentance */
   if(dot != NULL) {
     dot += strspn(dot, " \t\n\r.");
     if( *dot == '\0' ) 
