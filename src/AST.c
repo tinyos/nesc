@@ -46,16 +46,16 @@ unary newkind_unary(region r, AST_kind kind, location location, expression arg1)
 binary newkind_binary(region r, AST_kind kind, location location,
 		      expression arg1, expression arg2)
 {
-  if (kind == kind_assign) /* XXX: Yuck */
-    return CAST(binary, new_assign(r, location, arg1, arg2));
+  binary obj;
+
+  if (kind >= kind_assignment && kind <= postkind_assignment) /* XXX: Yuck */
+    obj = CAST(binary, new_assign(r, location, arg1, arg2));
   else
-    {
-      binary obj = new_binary(r, location, arg1, arg2);
+    obj = new_binary(r, location, arg1, arg2);
 
-      obj->kind = kind;
+  obj->kind = kind;
 
-      return obj;
-    }
+  return obj;
 }
 
 tag_ref newkind_tag_ref(region r, AST_kind kind, location location, word word1, attribute attributes, declaration fields, bool defined)

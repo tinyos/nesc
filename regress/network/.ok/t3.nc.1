@@ -1,0 +1,156 @@
+typedef signed char __nesc_nw_int8_t;
+typedef unsigned char __nesc_nw_uint8_t;
+typedef short __nesc_nw_int16_t;
+typedef unsigned short __nesc_nw_uint16_t;
+typedef long __nesc_nw_int32_t;
+typedef unsigned long __nesc_nw_uint32_t;
+typedef long long __nesc_nw_int64_t;
+typedef unsigned long long __nesc_nw_uint64_t;
+/* Start internal network declarations*/
+#define nw_struct struct
+#define nw_union union
+
+/* Base types. All this code assumes char's are 8-bits */
+typedef struct nw_int8_t  { unsigned char data[1]; } __attribute__((packed)) nw_int8_t;
+typedef struct nw_int16_t { unsigned char data[2]; } __attribute__((packed)) nw_int16_t;
+typedef struct nw_int32_t { unsigned char data[4]; } __attribute__((packed)) nw_int32_t;
+typedef struct nw_int64_t { unsigned char data[8]; } __attribute__((packed)) nw_int64_t;
+typedef struct nw_uint8_t  { unsigned char data[1]; } __attribute__((packed)) nw_uint8_t;
+typedef struct nw_uint16_t { unsigned char data[2]; } __attribute__((packed)) nw_uint16_t;
+typedef struct nw_uint32_t { unsigned char data[4]; } __attribute__((packed)) nw_uint32_t;
+typedef struct nw_uint64_t { unsigned char data[8]; } __attribute__((packed)) nw_uint64_t;
+
+/* Network to host and host to network conversions.
+   Network representation is 2's complement little-endian.
+*/
+static inline __nesc_nw_uint8_t NTOUH8(void *source) {
+  unsigned char *base = source;
+  return (unsigned char)base[0];
+}
+static inline __nesc_nw_uint16_t NTOUH16(void *source) {
+  unsigned char *base = source;
+  return base[1] << 8 | base[0];
+}
+static inline __nesc_nw_uint32_t NTOUH32(void *source) {
+  unsigned char *base = source;
+  return (__nesc_nw_uint32_t)base[3] << 24 |
+         (__nesc_nw_uint32_t)base[2] << 16 |
+         base[1] << 8 | base[0];
+}
+static inline __nesc_nw_uint64_t NTOUH64(void *source) {
+  unsigned char *base = source;
+  return (__nesc_nw_uint64_t)base[7] << 56 |
+         (__nesc_nw_uint64_t)base[6] << 48 |
+         (__nesc_nw_uint64_t)base[5] << 40 |
+         (__nesc_nw_uint64_t)base[4] << 32 |
+         (__nesc_nw_uint64_t)base[3] << 24 |
+         (__nesc_nw_uint64_t)base[2] << 16 |
+         base[1] << 8  | base[0];
+}
+static inline __nesc_nw_int8_t NTOH8(void *source) {
+  return NTOUH8(source);
+}
+static inline __nesc_nw_int16_t NTOH16(void *source) {
+  return NTOUH16(source);
+}
+static inline __nesc_nw_int32_t NTOH32(void *source) {
+  return NTOUH32(source);
+}
+static inline __nesc_nw_int64_t NTOH64(void *source) {
+  return NTOUH64(source);
+}
+
+/* Host to network order assignment */
+static inline __nesc_nw_uint8_t UHTON8(void *target, __nesc_nw_uint8_t value) {
+  unsigned char *base = target;
+  base[0] = value;
+  return value;
+}
+static inline __nesc_nw_uint16_t UHTON16(void *target, __nesc_nw_uint16_t value) {
+  unsigned char *base = target;
+  base[0] = value;
+  base[1] = value >> 8;
+  return value;
+}
+static inline __nesc_nw_uint32_t UHTON32(void *target, __nesc_nw_uint32_t value) {
+  unsigned char *base = target;
+  base[0] = value;
+  base[1] = value >> 8;
+  base[2] = value >> 16;
+  base[3] = value >> 24;
+  return value;
+}
+static inline __nesc_nw_uint64_t UHTON64(void *target, __nesc_nw_uint64_t value) {
+  unsigned char *base = target;
+  base[0] = value;
+  base[1] = value >> 8;
+  base[2] = value >> 16;
+  base[3] = value >> 24;
+  base[4] = value >> 32;
+  base[5] = value >> 40;
+  base[6] = value >> 48;
+  base[7] = value >> 56;
+  return value;
+}
+static inline __nesc_nw_int8_t HTON8(void *target, __nesc_nw_int8_t value) {
+  unsigned char *base = target;
+  base[0] = value;
+  return value;
+}
+static inline __nesc_nw_int16_t HTON16(void *target, __nesc_nw_int16_t value) {
+  unsigned char *base = target;
+  base[0] = value;
+  base[1] = value >> 8;
+  return value;
+}
+static inline __nesc_nw_int32_t HTON32(void *target, __nesc_nw_int32_t value) {
+  unsigned char *base = target;
+  base[0] = value;
+  base[1] = value >> 8;
+  base[2] = value >> 16;
+  base[3] = value >> 24;
+  return value;
+}
+static inline __nesc_nw_int64_t HTON64(void *target, __nesc_nw_int64_t value) {
+  unsigned char *base = target;
+  base[0] = value;
+  base[1] = value >> 8;
+  base[2] = value >> 16;
+  base[3] = value >> 24;
+  base[4] = value >> 32;
+  base[5] = value >> 40;
+  base[6] = value >> 48;
+  base[7] = value >> 56;
+  return value;
+}
+
+
+# 3 "t3.nc"
+nw_struct t3$fun {
+  nw_int8_t x;
+  nw_int16_t y;
+} __attribute__((packed)) t3$a[10];
+static inline 
+int t3$f(void);
+
+int   main(void);
+static inline 
+#line 8
+int t3$f(void)
+#line 8
+{
+#line 8
+  return 2;
+}
+
+#line 10
+int   main(void)
+#line 10
+{
+  nw_int8_t *__nesc_temp42;
+
+#line 11
+  (__nesc_temp42 = &t3$a[t3$f()].x, HTON8(__nesc_temp42, NTOH8(__nesc_temp42) + NTOH16(&t3$a[2 * t3$f()].y)));
+  return 0;
+}
+

@@ -10,6 +10,14 @@ Changes in nesC 1.2
 ===================
 - generic components and interfaces. See doc/user/generics-1.2.txt
 
+Changes in nesC 1.1.3
+=====================
+- network types: platform-independent types to support heterogeneous
+  networking. See doc/network-types.txt.
+- support passing assembler options for nesC programs with -Wa, as usual w/ gcc
+- support -I- correctly (see gcc manual)
+- initialiser bug fix (some initialisers crashed nesC)
+
 Changes in nesC 1.1.2
 =====================
 - Misc bug fixes (in particular, work around latest-cygwin weirdness which

@@ -69,4 +69,8 @@ const char *nice_field_name(const char *s);
      This helps printing the name of potentially unnamed entities
  */
 
+const char *tagkind_name(int tagkind);
+
+conditional conditional_lvalue(expression e);
+
 #endif

@@ -208,6 +208,7 @@ void yyerror();
 %type <u.type> typename
 %type <u.word> idword any_word tag
 %type <u.fields> fieldlist
+%type <u.itoken> structkind
 
 /* the dispatching (fake) tokens */
 %token <u.itoken> DISPATCH_C DISPATCH_NESC
@@ -215,7 +216,7 @@ void yyerror();
 /* nesC reserved words */
 %token <u.itoken> ATOMIC USES INTERFACE COMPONENTS PROVIDES MODULE 
 %token <u.itoken> INCLUDES CONFIGURATION AS TASTNIOP IMPLEMENTATION CALL 
-%token <u.itoken> SIGNAL POST GENERIC NEW 
+%token <u.itoken> SIGNAL POST GENERIC NEW NW_STRUCT NW_UNION
 /* words reserved for nesC's future. Some may never be used... */
 %token <u.itoken> ABSTRACT COMPONENT EXTENDS
 
@@ -1963,17 +1964,15 @@ tag:
 	;
 
 structuse:
-	  STRUCT tag
-		{ $$ = xref_tag($1.location, kind_struct_ref, $2); }
-	| UNION tag
-		{ $$ = xref_tag($1.location, kind_union_ref, $2); }
+	  structkind tag
+		{ $$ = xref_tag($1.location, $1.i, $2); }
 	| ENUM tag
 		{ $$ = xref_tag($1.location, kind_enum_ref, $2); }
 	;
 
 structdef:
-	  STRUCT tag '{'
-		{ $$ = start_struct($1.location, kind_struct_ref, $2);
+	  structkind tag '{'
+		{ $$ = start_struct($1.location, $1.i, $2);
 		  /* Start scope of tag before parsing components.  */
 		}
 	  component_decl_list '}' maybe_attribute 
@@ -1984,16 +1983,8 @@ structdef:
 		}
 	  component_decl_list '}' maybe_attribute 
 		{ $$ = finish_struct($<u.telement>5, $6, $8); }
-	| STRUCT '{' component_decl_list '}' maybe_attribute
-		{ $$ = finish_struct(start_struct($1.location, kind_struct_ref,
-						  NULL), $3, $5);
-		}
-	| UNION tag '{'
-		{ $$ = start_struct ($1.location, kind_union_ref, $2); }
-	  component_decl_list '}' maybe_attribute
-		{ $$ = finish_struct($<u.telement>4, $5, $7); }
-	| UNION '{' component_decl_list '}' maybe_attribute
-		{ $$ = finish_struct(start_struct($1.location, kind_union_ref,
+	| structkind '{' component_decl_list '}' maybe_attribute
+		{ $$ = finish_struct(start_struct($1.location, $1.i,
 						  NULL), $3, $5);
 		}
 	| ENUM tag '{'
@@ -2004,6 +1995,13 @@ structdef:
 		{ $$ = start_enum($1.location, NULL); }
 	  enumlist maybecomma_warn '}' maybe_attribute
 		{ $$ = finish_enum($<u.telement>3, declaration_reverse($4), $7); }
+	;
+
+structkind:
+	  STRUCT { $$ = $1; $$.i = kind_struct_ref; }
+	| UNION { $$ = $1; $$.i = kind_union_ref; }
+	| NW_STRUCT { $$ = $1; $$.i = kind_nw_struct_ref; }
+	| NW_UNION { $$ = $1; $$.i = kind_nw_union_ref; }
 	;
 
 maybecomma:

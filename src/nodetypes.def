@@ -103,6 +103,7 @@
 (deffield parent "node sameregion" ())
 (deffield parent_ptr "node sameregion *sameregion" ())
 (deffield tdecl tag_declaration ())
+(deffield context context ())
 (deffield fdeclarator function_declarator ())
 (deffield lvalue bool ())
 (deffield bitfield bool ())
@@ -141,8 +142,11 @@
 (deffield designator designator (init tree))
 (deffield abstract bool (init))
 (deffield containing_atomic atomic_stmt ())
+(deffield type_checked bool ())
 
 (deffield cdecl nesc_declaration ())
+(deffield temp1 data_declaration ())
+(deffield temp2 data_declaration ())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Base types
@@ -171,7 +175,7 @@ dangling node as we drop these nested statements from the AST)")
 
 (deftype expression node (lvalue side_effects cst bitfield isregister
 			  type static_address converted_to_pointer
-			  cst_checked spelling parens ivalue)
+			  cst_checked spelling parens ivalue context)
   "Expression nodes are subtypes of this type.
 LVALUE is true if this expression can be used in a context requiring an lvalue.
 BITFIELD is true if this lvalue is a bitfield.
@@ -193,7 +197,8 @@ IVALUE is a pointer to an ivalue (see init.h) holding the value of an
   initialiser expression. On an init_list or in an expression used as
   a simple initialiser (e.g., '3 + 2' in 'int x = 3 + 2'), this is the
   value of the initialiser. Inside these initialisers, ivalue points into
-  the ivalue structure of the containing initialiser.")
+  the ivalue structure of the containing initialiser.
+CONTEXT is the usage context for this expression (see nesc-uses.h)")
 
 (deftype type_element node ()
   "A common super-type for all type-building elements (qualifiers, etc)")
@@ -253,9 +258,11 @@ DECLARED_TYPE is the type in this declaration (which may be different than that
 in DDECL->TYPE)
 FORWARD is true for parameters that are forward declarations")
 
-(deftype field_decl declaration (declarator attributes arg1)
+(deftype field_decl declaration (declarator attributes arg1 type_checked)
   "Declaration of field DECLARATOR ATTRIBUTES : ARG1.
-QUALIFIERS and ATTRIBUTEES are lists. ARG1 is an optional bitfield specifier")
+QUALIFIERS and ATTRIBUTEES are lists. ARG1 is an optional bitfield specifier
+TYPE_CHECKED is set to true once it has been checked that this field is of
+  network type (inside network structures)")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Types and type elements
@@ -286,7 +293,7 @@ QUALIFIERS and ATTRIBUTEES are lists. ARG1 is an optional bitfield specifier")
   "Type or function qualifier ID (see qualifiers.h and type_quals in types.h)")
 
 (deftype tag_ref type_element (word1 attributes fields defined
-			       tdecl)
+                               tdecl)
   "struct/union/enum WORD1 { FIELDS; }  ATTRIBUTES
 ATTRIBUTES and FIELDS are lists.
 ATTRIBUTES is GCC specific. WORD1 is optional.
@@ -294,9 +301,10 @@ DEFINED is TRUE if this declaration defines the struct/union/enum.
 DEFINED == FALSE => FIELDS == NULL
 
 TDECL points to the internal declaration node for this type")
-(defnode struct_ref tag_ref "A struct")
+
+(deftype struct_ref tag_ref () "A struct")
 (defnode attribute_ref tag_ref "An attribute definition")
-(defnode union_ref tag_ref "A union")
+(deftype union_ref tag_ref () "A union")
 (defnode enum_ref tag_ref "An enum")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -451,7 +459,7 @@ The field_declaration is saved in FDECL")
 (defnode bitnot unary "~ARG1")
 (defnode not unary "!ARG1")
 
-(deftype increment unary ()
+(deftype increment unary (temp1 temp2)
   "parent for increment nodes")
 (defnode preincrement increment "++ARG1")
 (defnode predecrement increment "--ARG1")
@@ -480,7 +488,7 @@ The field_declaration is saved in FDECL")
 (defnode andand binary "ARG1 && ARG2")
 (defnode oror binary "ARG1 || ARG2")
 
-(deftype assignment binary () "ARG1 <assignop> ARG2")
+(deftype assignment binary (temp1) "ARG1 <assignop> ARG2")
 (defnode assign assignment "ARG1 = ARG2")
 (defnode plus_assign assignment "ARG1 += ARG2")
 (defnode minus_assign assignment "ARG1 -= ARG2")
@@ -663,6 +671,9 @@ with declaration DDECL. The typedef-name is in ddecl->name")
   "ATOMIC stmt
 An atomic_stmt is not made for lexically nested atomic statements")
 
+(defnode nw_struct_ref struct_ref "A network struct")
+(defnode nw_union_ref union_ref "A network union")
+
 (deftype nesc_attribute attribute (arg1 tdecl)
   "@WORD1(ARG1), a nesC attribute. ARG1 is an init_list.
 TDECL is the reference to the declaration of attribute WORD1")
@@ -676,4 +687,3 @@ TDECL is the reference to the declaration of attribute WORD1")
 
 (deftype type_argument expression (asttype)
   "ASTTYPE used as a template argument")
-

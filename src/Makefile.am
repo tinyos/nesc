@@ -139,6 +139,8 @@ libparser_a_SOURCES =				\
 	nesc-module.h				\
 	nesc-msg.c				\
 	nesc-msg.h				\
+	nesc-network.c				\
+	nesc-network.h				\
 	nesc-paths.c				\
 	nesc-paths.h				\
 	nesc-semantics.c			\
@@ -256,6 +258,6 @@ $(srcdir)/AST_walk_children.c: build-walk.el nodetypes.def build-basics.el
 
 $(srcdir)/c-gperf.h: c-parse.gperf qualifiers.h nesc-keywords.h
 	cd $(srcdir) && $(M4) $(M4FLAGS) c-parse.gperf | grep -v '^$$' | \
-	$(GPERF) $(GPERFFLAGS) -p -j1 -i 1 -g -o -t -G -N is_reserved_word -k1,3,$$ >$@-
+	$(GPERF) $(GPERFFLAGS) -p -j1 -i 1 -g -o -t -G -N is_reserved_word -k1,3,8,$$ >$@-
 	mv $@- $@
 

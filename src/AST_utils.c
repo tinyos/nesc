@@ -267,3 +267,41 @@ const char *nice_field_name(const char *s)
   return "(anonymous)";
 }
 
+const char *tagkind_name(int tagkind)
+{
+  switch (tagkind)
+    {
+    case kind_attribute_ref: return "attribute";
+    case kind_struct_ref: return "struct";
+    case kind_union_ref: return "union";
+    case kind_nw_struct_ref: return "nw_struct";
+    case kind_nw_union_ref: return "nw_union";
+    case kind_enum_ref: return "enum";
+    default: assert(0); return NULL;
+    }
+}
+
+conditional conditional_lvalue(expression e)
+{
+  /* a = 0 is not a constant expression but it's value is known to be 0,
+     and other similar cases */
+  for (;;)
+    {
+      if (is_cast(e))
+	{
+	  e = CAST(cast, e)->arg1;
+	  continue;
+	}
+      if (is_comma(e))
+	{
+	  e = CAST(expression, last_node(CAST(node, CAST(comma, e)->arg1)));
+	  continue;
+	}
+      break;
+    }
+
+  if (is_conditional(e))
+    return CAST(conditional, e);
+  else
+    return NULL;
+}

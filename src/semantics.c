@@ -341,8 +341,6 @@ void shadow_tag_warned(type_element elements, int warned)
 
   scan_type_element (elem, elements)
     {
-      AST_kind code = elem->kind;
-
       if (is_tag_ref(elem))
 	{
 	  tag_ref tag = CAST(tag_ref, elem);
@@ -352,7 +350,7 @@ void shadow_tag_warned(type_element elements, int warned)
 
 	  if (name == 0)
 	    {
-	      if (warned != 1 && code != kind_enum_ref)
+	      if (warned != 1 && !is_enum_ref(elem))
 		/* Empty unnamed enum OK */
 		{
 		  pedwarn ("unnamed struct/union that defines no instances");
@@ -429,18 +427,6 @@ bool error_if_void_parms(declaration parms)
   if ((vp = is_void_parms(parms)))
     error("use (), not (void), for 0-argument functios");
   return vp;
-}
-
-const char *tagkind_name(int tagkind)
-{
-  switch (tagkind)
-    {
-    case kind_attribute_ref: return "attribute";
-    case kind_struct_ref: return "struct";
-    case kind_union_ref: return "union";
-    case kind_enum_ref: return "enum";
-    default: assert(0); return NULL;
-    }
 }
 
 /* At end of parameter list, warn about any struct, union or enum tags
@@ -706,7 +692,16 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	      case RID_FLOAT: newtype = float_type; break;
 	      case RID_DOUBLE: newtype = double_type; break;
 	      case RID_VOID: newtype = void_type; break;
-		
+#ifdef NETWORK
+              case RID_NINT1: newtype = nint1_type; break;
+              case RID_NINT2: newtype = nint2_type; break;
+              case RID_NINT4: newtype = nint4_type; break;
+              case RID_NINT8: newtype = nint8_type; break;
+              case RID_NUINT1: newtype = nuint1_type; break;
+              case RID_NUINT2: newtype = nuint2_type; break;
+              case RID_NUINT4: newtype = nuint4_type; break;
+              case RID_NUINT8: newtype = nuint8_type; break;
+#endif
 	      case RID_AUTO: case RID_STATIC: case RID_EXTERN:
 	      case RID_REGISTER: case RID_TYPEDEF: case RID_COMMAND:
 	      case RID_EVENT: case RID_TASK:
@@ -741,7 +736,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	  {
 	    qualifier q = CAST(qualifier, spec);
 	    int id = q->id;
-
+            
 	    check_duplicate_qualifiers1(loc, id, specquals);
 	    specquals |= id;
 	    break;
@@ -763,6 +758,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	    }
 	  break;
 	case kind_struct_ref: case kind_union_ref: case kind_enum_ref:
+	case kind_nw_struct_ref: case kind_nw_union_ref:
 	  newtype = make_tagged_type(CAST(tag_ref, spec)->tdecl);
 	  break;
 	case kind_attribute_ref:
@@ -1650,6 +1646,9 @@ void check_function(data_declaration dd, declaration fd, int class,
     type_function_return_type(function_type) : function_type;
   return_type = type_function_return_type(actual_function_type);
 
+  if (type_network_base_type(return_type))
+    error("network base type results are not yet supported");
+
   /* XXX: Does this volatile/const stuff actually work with my imp ? */
   if (pedantic && type_void(return_type) &&
       (type_const(return_type) || type_volatile(return_type)) &&
@@ -2326,6 +2325,9 @@ dd_list check_parameter(data_declaration dd,
 
   check_variable_scflags(scf, vd->location, "parameter", printname);
 
+  if (type_network_base_type(parm_type))
+    error("network base type parameters are not yet supported");
+
   /* A parameter declared as an array of T is really a pointer to T.
      One declared as a function is really a pointer to a function.  */
   if (type_array(parm_type))
@@ -2714,6 +2716,8 @@ declaration finish_decl(declaration decl, expression init)
 	  if (!type_array_size(dd->type))
 	    dd->type = init->type;
 	}
+      else if (type_network_base_type(dd->type))
+	error_with_decl(decl, "initialisation of network base types not yet supported");
     }
   /* Check for a size */
   if (type_array(dd->type))
@@ -2966,6 +2970,11 @@ cval check_bitfield_width(field_declaration fdecl)
   return bitwidth;
 }
 
+static bool is_nw_tag(tag_declaration tdecl)
+{
+  return tdecl->kind == kind_nw_struct_ref || tdecl->kind == kind_nw_union_ref;
+}
+
 /* Finish definition of struct/union furnishing the fields and attribs.
    Computes size and alignment of struct/union (see ASSUME: comments).
    Returns t */
@@ -2976,6 +2985,7 @@ void layout_struct(tag_declaration tdecl)
   field_declaration fdecl;
   declaration dlist;
   field_decl flist;
+  bool isnetwork = is_nw_tag(tdecl);
 
   offset = size = make_type_cval(0);
   alignment = cval_bitsperbyte;
@@ -3036,6 +3046,16 @@ void layout_struct(tag_declaration tdecl)
 
 	  if (flist->arg1)
 	    bitwidth = check_bitfield_width(fdecl);
+
+	  /* Check for network type fields in network structures once
+	     the type is known. Avoid duplicate error messages. */
+	  if (isnetwork && !flist->type_checked && !type_variable(field_type))
+	    {
+	      flist->type_checked = TRUE;
+	      if (!type_network(field_type))
+		error_with_location(flist->location, "field `%s' must be a network type",
+				    fdecl->name);
+	    }
 
 	  fdecl->bitwidth = bitwidth;
 
@@ -3129,6 +3149,7 @@ type_element finish_struct(type_element t, declaration fields,
   bool hasmembers = FALSE;
   field_declaration *nextfield = &tdecl->fieldlist;
   declaration fdecl;
+  bool isnetwork = is_nw_tag(tdecl);
 
   s->fields = fields;
   s->attributes = attribs;
@@ -3154,6 +3175,9 @@ type_element finish_struct(type_element t, declaration fields,
 	    error_with_location(floc, "anonymous field has incomplete type");
 	  else if (anon_tdecl->name)
 	    warning_with_location(floc, "declaration does not declare anything");
+	  else if (isnetwork && !is_nw_tag(anon_tdecl))
+	    error_with_location(floc, "field `%s' must be a network type",
+				nice_field_name(NULL));
 	  else
 	    {
 	      /* Process alignment to this struct/union in "main" loop below */
@@ -3229,7 +3253,12 @@ type_element finish_struct(type_element t, declaration fields,
 
 	    if (field->arg1)
 	      {
-		if (!type_integer(field_type))
+		if (isnetwork)
+		  {
+		    error_with_location(floc, "bit-fields not yet supported in network types");
+		    field->arg1 = NULL;
+		  }
+		else if (!type_integer(field_type))
 		  {
 		    error_with_location(floc, "bit-field `%s' has invalid type", printname);
 		    field->arg1 = NULL;
@@ -3250,9 +3279,8 @@ type_element finish_struct(type_element t, declaration fields,
 	  }
     }
 
-  if (pedantic && s->kind != kind_attribute_ref && !hasmembers)
-    pedwarn("%s has no %smembers",
-	    (s->kind == kind_union_ref ? "union" : "structure"),
+  if (pedantic && !is_attribute_ref(s) && !hasmembers)
+    pedwarn("%s has no %smembers", tagkind_name(s->kind),
 	    (fields ? "named " : ""));
 
   tdecl->defined = TRUE;
@@ -3633,6 +3661,14 @@ static char *rid_name_int(int id)
     case RID_FLOAT: return "float";
     case RID_DOUBLE: return "double";
     case RID_VOID: return "void";
+    case RID_NINT1: return "nw_int8_t";
+    case RID_NINT2: return "nw_int16_t";
+    case RID_NINT4: return "nw_int32_t";
+    case RID_NINT8: return "nw_int64_t";
+    case RID_NUINT1: return "nw_uint8_t";
+    case RID_NUINT2: return "nw_uint16_t";
+    case RID_NUINT4: return "nw_uint32_t";
+    case RID_NUINT8: return "nw_uint64_t";
     case RID_UNSIGNED: return "unsigned";
     case RID_SHORT: return "short";
     case RID_LONG: return "long";

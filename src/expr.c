@@ -108,12 +108,13 @@ static void incomplete_type_error(expression e, type t)
       while (type_array(t) && type_array_size(t))
 	t = type_array_of(t);
 
-      if (type_struct(t))
-	error("invalid use of undefined type `struct %s'", type_tag(t)->name);
-      else if (type_union(t))
-	error("invalid use of undefined type `union %s'", type_tag(t)->name);
-      else if (type_enum(t))
-	error("invalid use of undefined type `enum %s'", type_tag(t)->name);
+      if (type_tagged(t))
+	{
+	  tag_declaration tag = type_tag(t);
+
+	  error("invalid use of undefined type `%s %s'",
+		tagkind_name(tag->kind), tag->name);
+	}
       else if (type_void(t))
 	error("invalid use of void expression");
       else if (type_array(t))
@@ -1627,8 +1628,8 @@ expression make_field_ref(location loc, expression object, cstring field)
 	  field_declaration fdecl = env_lookup(tag->fields, field.data, FALSE);
 
 	  if (!fdecl)
-	    error(type_struct(otype) ? "structure has no member named `%s'"
-		  : "union has no member named `%s'", field.data);
+	    error("%s has no member named `%s'", tagkind_name(tag->kind),
+		  field.data);
 	  else
 	    {
 	      result->fdecl = fdecl;

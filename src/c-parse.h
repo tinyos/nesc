@@ -73,7 +73,6 @@ struct yystype {
       statement stmt;
       int i;
     } istmt;
-
   } u;
 
   struct {

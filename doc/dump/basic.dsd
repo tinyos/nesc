@@ -186,6 +186,17 @@
     </declare>
   </if>
 
+  <m:doc>Integer and complex integer types may have an unsigned attribute</m:doc>
+  <if>
+    <or>
+      <element name="nesc:type-int"/>
+      <element name="nesc:type-complex-int"/>
+    </or>
+    <declare>
+      <attribute name="unsigned"><stringtype ref="nesc:empty"/></attribute>
+    </declare>
+  </if>
+
   <m:doc>Types that contain a single embedded type</m:doc>
   <if>
     <or>

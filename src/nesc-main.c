@@ -38,6 +38,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-abstract.h"
 #include "nesc-constants.h"
 #include "nesc-dump.h"
+#include "nesc-network.h"
 #include "edit.h"
 #include "machine.h"
 
@@ -313,6 +314,7 @@ void nesc_compile(const char *filename, const char *target_name)
   init_uses();
   init_abstract();
   init_nesc_constants();
+  init_network();
 
   for (includes = includelist; includes; includes = includes->next)
     require_c(toplevel_location, includes->name);

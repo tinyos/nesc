@@ -31,6 +31,7 @@ Boston, MA 02111-1307, USA. */
 #include "errors.h"
 #include "nesc-semantics.h"
 #include "nesc-magic.h"
+#include "nesc-network.h"
 
 /* Set this to 1 to avoid warnings from gcc about paren use with
    -Wparentheses */
@@ -447,8 +448,11 @@ void prt_default_label(default_label l);
 
 void prt_regionof(expression e);
 
-static region unparse_region;
+region unparse_region;
 
+#ifdef NETWORK
+void prt_network_routines();
+#endif
 void unparse_start(FILE *to, FILE *symbols)
 {
   of = to;
@@ -460,6 +464,9 @@ void unparse_start(FILE *to, FILE *symbols)
   indent_level = 0;
   function_separator = "$";
   unparse_region = newregion();
+#ifdef NETWORK
+  prt_network_routines();
+#endif
 }
 
 void unparse_end(void) deletes
@@ -511,7 +518,6 @@ void disable_documentation_mode(void)
 {
   documentation_mode = FALSE;
 }
-
 
 void prt_toplevel_declarations(declaration dlist)
 {
@@ -1053,13 +1059,9 @@ void prt_tag_ref(tag_ref tr, pte_options options)
   /* We just print attributes as structs, with a prefix on the name
      (__nesc_attr_). They will be ignored by the C compiler. */
   set_location(tr->location);
-  switch (tr->kind)
-    {
-    case kind_struct_ref: case kind_attribute_ref: output("struct "); break;
-    case kind_union_ref: output("union "); break;
-    case kind_enum_ref: output("enum "); break;
-    default: assert(0);
-    }
+  /* There's a #define for nw_struct, nw_union in the header (this is not
+     an issue as these are keywords) */
+  output("%s ", tagkind_name(tr->kind));
 
   if (tr->word1)
     {
@@ -1072,7 +1074,7 @@ void prt_tag_ref(tag_ref tr, pte_options options)
   if (!(options & pte_duplicate) && tr->defined)
     {
       if (tr->kind == kind_enum_ref)
-	prt_enumerators(tr->fields, tr->tdecl);
+        prt_enumerators(tr->fields, tr->tdecl);
       else
 	prt_fields(tr->fields);
     }
@@ -1081,6 +1083,8 @@ void prt_tag_ref(tag_ref tr, pte_options options)
       output(" ");
       prt_type_elements(CAST(type_element, tr->attributes), 0);
     }
+  if (type_network(make_tagged_type(tr->tdecl)))
+    output(" __attribute__((packed))");
 }
 
 void prt_enumerators(declaration elist, tag_declaration tdecl)
@@ -1262,7 +1266,8 @@ void prt_expressions(expression elist, bool isfirst)
 /* Context priorities are that of the containing operator, starting at 0
    for , going up to 14 for ->, . See the symbolic P_XX constants 
    P_TOP (-1) is used for contexts with no priority restrictions. */
-void prt_expression(expression e, int context_priority)
+
+void prt_expression_helper(expression e, int context_priority)
 {
   switch (e->kind) 
     {
@@ -1295,6 +1300,12 @@ void prt_expression(expression e, int context_priority)
       prt_binary(CAST(binary, e), context_priority);
       return;
     }
+}
+
+void prt_expression(expression e, int context_priority) 
+{
+  if (!prt_network_expression(e))
+    prt_expression_helper(e, context_priority);
 }
 
 #define OPEN(pri) \
@@ -1335,12 +1346,31 @@ void prt_label_address(label_address e, int context_priority)
   prt_id_label(e->id_label);
 }
 
+void prt_asttype_cast(asttype t)
+{
+#ifdef NETWORK
+  /* Casts to a network base type are replaced by casts to the 
+     correspondingly sized base type */
+  if (type_network_base_type(t->type))
+    {
+      declarator d;
+      type_element qualifiers;
+      type2ast(unparse_region, t->location, 
+	       qualify_type1(type_network_platform_type(t->type), t->type),
+	       NULL, &d, &qualifiers);
+
+      t = new_asttype(unparse_region, t->location, d, qualifiers);
+    }
+#endif
+  prt_asttype(t);
+}
+
 void prt_cast(cast e, int context_priority)
 {
   OPEN(P_CAST);
   set_location(e->location);
   output("(");
-  prt_asttype(e->asttype);
+  prt_asttype_cast(e->asttype);
   output(")");
   prt_expression(e->arg1, P_CAST);
   CLOSE(P_CAST);
@@ -1351,7 +1381,7 @@ void prt_cast_list(cast_list e, int context_priority)
   OPEN(P_CAST);
   set_location(e->location);
   output("(");
-  prt_asttype(e->asttype);
+  prt_asttype_cast(e->asttype);
   output(")");
   prt_init_list(CAST(init_list, e->init_expr), P_ASSIGN);
   CLOSE(P_CAST);
@@ -1527,8 +1557,9 @@ void prt_unary(unary e, int context_priority)
     case kind_not: op = "!"; break;
     default: assert(0); return;
     }
-  OPEN(P_CAST);
+
   set_location(e->location);
+  OPEN(P_CAST);
   if (op)
     {
       output_string(op);
@@ -1649,6 +1680,7 @@ void prt_binary(binary e, int context_priority)
       lpri = P_CAST; pri = P_ASSIGN; rpri = P_ASSIGN; break;
     default: assert(0); return;
     }
+
   OPEN(pri);
   prt_expression(e->arg1, lpri);
   set_location(e->location);

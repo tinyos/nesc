@@ -73,4 +73,6 @@ void *alloca(size_t n);
    (typically log2 of the alignment of allocations) */
 #define ALIGNMENT_BITS 3
 
+#define NETWORK
+
 #endif

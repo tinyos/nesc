@@ -31,6 +31,11 @@ data_decl build_declaration(region r, struct environment *e,
 			    type t, const char *name, expression init,
 			    data_declaration *oddecl);
 
+/* Declare a new temporary that can be assigned a value of type t.
+   Place the declaration at the start of block. 
+   Return it's declaration */
+data_declaration add_temporary(region r, compound_stmt block, type t);
+
 word build_word(region r, const char *cword);
 
 #endif

@@ -45,7 +45,7 @@ Boston, MA 02111-1307, USA.  */
 
 /* The current set of dump requests */
 static dd_list/*nd_option*/ opts;
-static region dump_region; /* for dump request allocations */
+region dump_region; /* for dump request allocations */
 
 /* What to output */
 enum { wiring_none, wiring_user, wiring_functions } wiring = wiring_none;

@@ -1,0 +1,92 @@
+Part 1: Network Types
+=====================
+
+Network types are an extension to nesC for platform-independent networking:
+you can define your packet layout using syntax very similar to existing C
+type declarations, and just accesses it like a regular C type. The compiler
+ensures that this type has the same representation on all platforms and
+generates any necessary conversion code. For instance, the SurgeCmdMsg from
+the Surge application is defined and accessed as follows using network
+types:
+
+  typedef nw_struct {
+    nw_uint8_t type;
+    nw_union {
+      nw_uint32_t newrate;
+      nw_uint16_t focusaddr;
+    } args;
+  } SurgeCmdMsg;
+  ...
+
+  SurgeCmdMsg *pCmdMsg = (SurgeCmdMsg *)payload;
+  if (pCmdMsg->type == SURGE_TYPE_SETRATE) {
+    timer_rate = pCmdMsg->args.newrate;
+  ...
+
+More formally, nesC includes three kinds of network types. 
+
+  o Network base types are similar to the fixed size in8_t, uint16_t, etc
+    types. They include 8, 16, 32 and 64-bit signed and unsigned integers
+    denoted by the types nw_[u]int[8/16/32/64]_t.  
+
+  o Network array types are any array built from a network type, using 
+    the usual C syntax, e.g, nw_int16_t x[10]. 
+
+  o Network structures are declared like C structures and unions, but 
+    using the nw_struct and nw_union keywords (as in the SurgeCmdMsg 
+    example above). A network structure can only contain network types
+    as elements. 
+
+All these network types can be used exactly like regular C types, with a
+few restrictions (which will be lifted in future versions): 
+  o Network structures cannot contain bitfields.  
+  o Network base types cannot be used in casts, as function arguments
+    and results, or to declare initialised variables. Note that you can
+    generally simply use the corresponding non-network type, such as
+    uint16_t, instead.
+
+Network types have no alignment restrictions, network structures contain no
+padding, and the network base types use a 2's complement, little-endian
+representation. Thus their representation is platform-independent, and any
+arbitrary section of memory can be accessed via a network type. Future
+versions will also include big-endian base types.
+
+Part 2: Implementation
+======================
+
+In the generated C code for nesC programs using network types, we simply
+define a C type for each network base type, translate nw_struct and
+nw_union to struct and union and leave array types unchanged.
+
+Reads and writes of network base types are replaced by calls to inline
+functions like NTOH32 in the example below.  For instance, the example
+from Surge becomes:
+
+  typedef struct { char data[4]; } nw_uint32_t;
+  static inline unsigned short NTOUH32(void *target) {
+    unsigned char *base = target;
+    return (unsigned long)base[3] << 24 |
+           (unsigned long)base[2] << 16 |
+           base[1] << 8 | base[0];
+  }
+  ...
+  typedef struct {
+    nw_uint8_t type;
+    union {
+      nw_uint32_t newrate;
+      nw_uint16_t focusaddr;
+    } args;
+  } SurgeCmdMsg;
+  ...
+  SurgeCmdMsg *pCmdMsg = (SurgeCmdMsg *)payload;
+  if (NTOUH8(&pCmdMsg->type) == SURGE_TYPE_SETRATE) {
+      timer_rate = NTOUH32(&pCmdMsg->args.newrate);
+  ...
+
+For this translation to be correct, a structure containing only characters
+(such as nw_uint32_t) should have no alignment restrictions, and the same
+must hold for structures containing such structures (e.g.,
+SurgeCmdMsg). This is true on many, but not all platforms: on ARM
+processors, all structures are aligned to 4-byte boundaries, and on
+Motorola 68K processors they are aligned to 2-byte boundaries. We currently
+work around this problem by using gcc's non-standard packed attribute.
