@@ -25,3 +25,5 @@ stamp-h.in
 .#*
 .deps
 nesc1
+autom4te.cache
+stamp-h1
