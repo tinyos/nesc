@@ -66,4 +66,8 @@ const char *language_name(source_language l);
 nesc_decl dummy_nesc_decl(source_language sl, const char *name);
 void build(nesc_declaration decl, environment env, nesc_decl ast);
 
+bool is_module_variable(data_declaration ddecl);
+/* Returns: TRUE if ddecl is a module variable
+ */
+
 #endif

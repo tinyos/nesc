@@ -133,6 +133,7 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->spontaneous = FALSE;
   dd->magic_reduce = NULL;
   dd->makeinline = FALSE;
+  dd->container_function = NULL;
 }
 
 data_declaration lookup_id(const char *s, bool this_level_only)
@@ -217,6 +218,8 @@ data_declaration declare(environment b, data_declaration from,
 
   if (b->global_level)
     dd->container = current.container;
+  if (current.function_decl)
+    dd->container_function = current.function_decl->ddecl;
 
   env_add(b->id_env, dd->name, dd);
   /* C names go all the way to the top... */
@@ -2665,6 +2668,9 @@ declaration finish_decl(declaration decl, expression init)
       else
 	check_assignment(dd->type, default_conversion_for_assignment(init),
 			 init, "initialization", NULL, NULL, 0);
+
+      if (is_module_variable(dd) && init)
+	error("initialisers not allowed on module variables");
     }
 
   return decl;

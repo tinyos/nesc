@@ -295,3 +295,14 @@ nesc_declaration load(source_language sl, location l,
   return decl;
 }
 
+bool is_module_variable(data_declaration ddecl)
+{
+  return ddecl->kind == decl_variable &&
+    ddecl->Cname == FALSE &&
+     /* top-level module var */
+    (ddecl->container || 
+     /* static var in module function */
+     (ddecl->vtype == variable_static && ddecl->container_function &&
+      ddecl->container_function->container)); 
+}
+

@@ -90,6 +90,9 @@ typedef struct data_declaration {
      NULL for declarations from C files */
   nesc_declaration container;
 
+  /* Function this declaration occurs in (NULL if outside a function) */
+  struct data_declaration *container_function;
+
   declaration definition; /* Pointer to actual definition, if any */
   declaration ast; /* Last declaration */
   expression initialiser; /* NULL if none */

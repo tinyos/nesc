@@ -202,7 +202,6 @@ static void output_stripped_string(const char *s)
 static void output_stripped_string_dollar(const char *s)
 {
   output_stripped_string(s);
-  //output("$");
   output(function_separator);
 }
 
@@ -465,9 +464,11 @@ void prt_data_decl(data_decl d)
 
       if (vdecl) /* because of build_declaration */
 	{
-	  /* Ignore unused declarations */
+	  /* Ignore unused non-local declarations 
+	     (local ones might have an initialiser which must still be
+	     executed) */
 	  if (((vdecl->kind == decl_function || vdecl->kind == decl_variable)
-	       && !vdecl->isused))
+	       && !vdecl->isused && !vdecl->islocal))
 	    continue;
 
 	  static_hack(vdecl);
@@ -575,7 +576,6 @@ void prt_ddecl_full_name(data_declaration ddecl, psd_options options)
 	   (ddecl->ftype == function_event ||
 	    ddecl->ftype == function_command)))
       {
-	//output("default$");
         output("default");
         output(function_separator);
       }
@@ -583,11 +583,8 @@ void prt_ddecl_full_name(data_declaration ddecl, psd_options options)
     }
   output_stripped_string(ddecl->name);
 
-  if (use_tossim &&
-      (ddecl->kind == decl_variable &&
-       (FALSE == ddecl->Cname && NULL != ddecl->container))) {
+  if (use_tossim && is_module_variable(ddecl))
     output("[%s]", tossim_num_nodes);
-  }
 }
 
 void prt_simple_declarator(declarator d, data_declaration ddecl,
@@ -1105,11 +1102,8 @@ void prt_identifier(identifier e, int context_priority)
 
   output_stripped_cstring(e->cstring);
 
-  if (use_tossim &&
-      (decl->kind == decl_variable &&
-       (FALSE == decl->Cname && NULL != decl->container))) {
+  if (use_tossim && is_module_variable(decl))
     output("[tos_state.current_node]");
-  }
 }
 
 void prt_compound_expr(compound_expr e, int context_priority)
@@ -1206,7 +1200,6 @@ void prt_interface_deref(interface_deref e, int context_priority)
 			e->cstring.data);
 
   prt_expression(e->arg1, P_CALL);
-  //output("$");
   output(function_separator);
   output_stripped_cstring(e->cstring);
 }

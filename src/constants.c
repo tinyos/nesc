@@ -37,6 +37,7 @@ Boston, MA 02111-1307, USA. */
 #include "semantics.h"
 #include "cval.h"
 #include <stdlib.h>
+#include "AST_utils.h"
 
 static known_cst new_known_cst(region r, type t, cval c)
 {
