@@ -8,7 +8,7 @@ Packager: TinyOS/NesC Group, UC Berkeley
 Group: Development/Tools
 URL: http://sourceforge.net/projects/nescc
 Source0: %{name}-%{version}.tar.gz
-#BuildRoot: %{_tmppath}/%{name}-root
+BuildRoot: %{_tmppath}/%{name}-root
 Requires: avr-binutils >= 2.13.2.1, avr-gcc >= 3.3, avr-libc
 
 %description
