@@ -1,0 +1,93 @@
+#!/usr/bin/perl
+######################################################################
+#
+#  Simple regression testing tool.  Tests are specified one per
+#  directory.  The script will run the shell script called "TEST.CMD",
+#  and compare the produced output to the contents of the TEST.OUT and
+#  TEST.ERR files.  TESTCMD should have a return status of 0 for
+#  success.
+#
+#  The test is considered to have failed if any of the following occur:
+#     1.  TESTCMD exits with a non-zero status
+#     2.  The STDOUT doesn't match TEST.OUT
+#     3.  The STDERR doesn't match TEST.ERR
+#
+#  If either STDOUT or STDERR do not exist, it is assumed that these
+#  outputs are empty.  On failure, the STDOUT and STDERR of the failed
+#  run are stored in RUN.PID.OUT and RUN.PID.ERR, respectively.
+#
+######################################################################
+use strict;
+$| = 1;
+
+my $cmdfile = "TEST.CMD";
+my $errfile = "TEST.ERR";
+my $outfile = "TEST.OUT";
+
+my $run_out = "RUN.$$.OUT";
+my $run_err = "RUN.$$.ERR";
+
+my $startdir = `pwd`; chomp($startdir);
+
+##################################################
+# MAIN
+##################################################
+{
+    # get the list of subdirs
+    my @dirs = split(/\n/, `find . -type d -mindepth 1 | grep -v CVS | sort`);
+
+    # recurse
+    my ($total, $successes) = (0,0);
+    while (@dirs) {
+        my $dir = shift @dirs;
+        $total++;
+        $successes++ if run_test($dir);
+    }
+
+    print "\n";
+    print "$successes of $total  tests succeeded\n";
+}
+
+
+
+##################################################
+# run a test, from a particular directory
+##################################################
+sub run_test {
+    my $dir = shift;
+
+    return unless -f "$dir/$cmdfile";
+
+    print $dir, ("." x (50-length($dir)));
+    if (-x "$dir/cmdfile") {
+        system("cd $dir; ./$cmdfile >$run_out 2>$run_err");
+    } else {
+        system("cd $dir; /bin/sh ./$cmdfile >$run_out 2>$run_err");
+    }
+
+    # check the return value
+    if ($? != 0) { print "FAILED\n"; return; }
+
+    # check STDOUT
+    if (-s "$dir/$outfile") {
+        system("diff $dir/$outfile $dir/$run_out >/dev/null 2>&1");
+        if ($? != 0) { print "FAILED\n"; return; }
+    } else {
+        if (-s "$dir/$run_out") { print "FAILED\n"; return; }
+    }
+
+    # check STDERR
+    if (-s "$dir/$errfile") {
+        system("diff $dir/$errfile $dir/$run_err >/dev/null 2>&1");
+        if ($? != 0) { print "FAILED\n"; return; }
+    } else {
+        if (-s "$dir/$run_err") { print "FAILED\n"; return; }
+    }
+
+    # everything was OK, so remove temp files, and return success
+    unlink "$dir/$run_out";
+    unlink "$dir/$run_err";
+    print "ok\n";
+}
+
+

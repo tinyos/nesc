@@ -1,0 +1,143 @@
+#!/usr/bin/perl
+# This file is part of the nesC compiler.
+#    Copyright (C) 2002 Intel Corporation
+# 
+# The attached "nesC" software is provided to you under the terms and
+# conditions of the GNU General Public License Version 2 as published by the
+# Free Software Foundation.
+# 
+# nesC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with nesC; see the file COPYING.  If not, write to
+# the Free Software Foundation, 59 Temple Place - Suite 330,
+# Boston, MA 02111-1307, USA.
+
+use File::Basename;
+
+for ($i = 0; $i <= $#ARGV; $i++) {
+    $_ = $ARGV[$i];
+
+    if (/^-/) {
+	$nocompile = 1 if ($_ eq "-fsyntax-only");
+	if (/^-[Wwvpf]/ || /^-pedantic/ || /^-ansi/) {
+	    push @nesc_args, $_ unless /^-fnesc-cfile$/;
+	}
+
+	if (/^-o/) {
+	    ($i, $objtarget) = &extractarg($i);
+	}
+	elsif (/^-fnesc-/) {
+	    if (/^-fnesc-cfile$/) {
+		($i, $ctarget) = &nextarg($i);
+	    }
+	}
+	else {
+	    push @gcc_args, $_;
+	}
+    }
+    else {
+	if ($source ne "") {
+	    printf STDERR "two source files specified ($source and $_)\n";
+	    exit 2;
+	}
+	$source = $_;
+    }
+}
+
+if ($source eq "") {
+    printf STDERR "no source file specified\n";
+    exit 2;
+}
+
+
+($cname, $cpath, $csuffix) = fileparse($source, "\.td");
+if ($csuffix ne ".td") {
+    printf STDERR "nesC components must end in .td\n";
+}
+
+if ($ctarget eq "") {
+    # not a good choice, but we're normally invoked via gcc which gives 
+    # us a -fnesc-cfile option
+    $ctarget = "/tmp/nesc.$$.c";
+}
+
+if ($objtarget eq "") {
+    $objtarget = $source;
+    $objtarget =~ s/\.td$/.o/;
+}
+
+$asmtarget1 = $ctarget;
+$asmtarget1 =~ s/\.c$/.s/;
+
+$asmtarget2 = $objtarget;
+$asmtarget2 =~ s/\.o$/.s/;
+
+unshift @nesc_args, "-fnesc-path=$cpath";
+push @nesc_args, "-fnesc-no-debug";
+push @nesc_args, $cname;
+push @nesc_args, "-o";
+if ($nocompile) {
+    push @nesc_args, "/dev/null";
+} else {
+    push @nesc_args, $ctarget;
+}
+unshift @nesc_args, "nesc1";
+system @nesc_args;
+
+if ($? != 0) {
+    unlink $ctarget;
+    exit 2;
+}
+exit 0 if $nocompile;
+
+push @gcc_args, "-o";
+push @gcc_args, $asmtarget1;
+push @gcc_args, "-S";
+push @gcc_args, $ctarget;
+unshift @gcc_args, "avr-gcc";
+system @gcc_args;
+unlink $ctarget;
+if ($? != 0) {
+    unlink $objtarget;
+    exit 2;
+}
+open(SED, $asmtarget1);
+open(OSED, ">$asmtarget2");
+while (<SED>) {
+    s/\$/./g;
+    print OSED;
+}
+close SED;
+close OSED;
+system("avr-as", "-o", $objtarget, $asmtarget2);
+exit 0;
+
+sub extractarg {
+    local ($i) = @_;
+
+    if (length($ARGV[$i]) == 2) {
+	return &nextarg($i);
+    }
+    else {
+	$arg = substr($ARGV[$i], 2);
+	return ($i, $arg);
+    }
+}
+
+sub nextarg {
+    local ($i) = @_;
+
+    if ($i < $#ARGV) {
+	$arg = $ARGV[++$i];
+    }
+    else {
+	printf STDERR "missing argument to $ARGV[$i]\n";
+	exit 2;
+    }
+    return ($i, $arg);
+}
+

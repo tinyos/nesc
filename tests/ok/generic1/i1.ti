@@ -1,0 +1,3 @@
+interface i1 {
+  defines command void f();
+}

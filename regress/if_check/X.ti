@@ -1,0 +1,7 @@
+interface X {
+  defines command foo();
+  defines event fooDone();
+
+  uses command bar();
+  uses event barDone();
+}

@@ -1,0 +1,26 @@
+module counter {
+  int state;
+
+  command char init.init()
+  {
+    state = 0;
+    return call output.init();
+  }
+
+  command char init.start()
+  {
+    return call clock.set_rate(tick4ps);
+  }
+
+  event void clock.fire()
+  {
+    state++;
+    call output.output(state);
+  }
+
+  event char output.output_complete(char success) 
+  {
+    return 1;
+  }
+}
+

@@ -1,0 +1,7 @@
+configuration int_to_leds
+{
+  uses int_to_leds_m, leds;
+
+  input = int_to_leds_m.input;
+  int_to_leds_m.leds -> leds;
+}

@@ -1,0 +1,14 @@
+interface leds {
+  defines {
+    command char init();
+    command char red_on();
+    command char red_off();
+    command char red_toggle();
+    command char green_on();
+    command char green_off();
+    command char green_toggle();
+    command char yellow_on();
+    command char yellow_off();
+    command char yellow_toggle();
+  }
+}

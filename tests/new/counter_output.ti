@@ -1,0 +1,5 @@
+interface counter_output {
+  uses command void init();
+  uses command void output(int value);
+  defines event char output_complete(char success);
+}

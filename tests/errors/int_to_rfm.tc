@@ -1,0 +1,11 @@
+configuration int_to_rfm
+{
+  uses int_to_rfm_m, generic_comm;
+
+  input = int_to_rfm_m.input;
+  int_to_rfm_m.send -> generic_comm.send[4];
+  int_to_rfm_m.send.send -> generic_comm.send_msg.send.aa;
+  int_to_rfm_m.send.send[1] -> generic_comm.send_msg.send;
+  int_to_rfm_m[1].send -> generic_comm.send_msg;
+}
+

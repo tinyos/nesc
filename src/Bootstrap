@@ -1,0 +1,48 @@
+#!/bin/sh
+
+set -e
+
+srcdir=`dirname $0`
+
+if [ \
+       -r $srcdir/config.h.in \
+    -a -r $srcdir/Makefile.in \
+    -a -r $srcdir/aclocal.m4 \
+    -a -r $srcdir/configure \
+    ]; then
+    echo 'The "Bootstrap" script need only be used on a'
+    echo 'completely clean, fresh source tree.  After the'
+    echo 'first build, you should just use "make" or "gmake".'
+    echo
+    echo 'It looks as though you have already bootstrapped'
+    echo 'this source tree.  You should only bootstrap it'
+    echo 'again if the makefiles or configuration files are'
+    echo 'broken and "make" or "gmake" do not work properly.'
+    echo
+    echo 'Are you sure you want to re-bootstrap this tree?'
+    echo
+
+    case `echo -n` in
+      '')  n='-n' c='' ;;
+      *)   n=''   c='\c' ;;
+    esac
+
+    echo $n "[y/n]: $c"
+    read redo
+
+    case $redo in
+      y* ) ;;
+      *  ) exit 1;
+    esac
+fi
+
+set -x
+(
+    cd $srcdir
+    aclocal
+    autoheader
+    autoconf
+    [ -d config-aux ] || mkdir config-aux
+    automake -a
+)
+rm -f config.cache

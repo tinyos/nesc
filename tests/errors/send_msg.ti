@@ -1,0 +1,5 @@
+interface send_msg
+{
+  defines command char send(short address, struct TOS_Msg *msg);
+  uses event char send_done(struct TOS_Msg *msg);
+}

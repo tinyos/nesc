@@ -1,0 +1,4 @@
+interface receive_msg
+{
+  uses event struct TOS_Msg *receive(struct TOS_Msg *m);
+}

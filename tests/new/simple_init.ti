@@ -1,0 +1,6 @@
+interface simple_init {
+  defines {
+    command char init();
+    command char start();
+  }
+}

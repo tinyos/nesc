@@ -1,0 +1,4 @@
+interface clock {
+  defines command void set_rate(char interval, char scale);
+  uses event void fire();
+}

@@ -1,0 +1,2 @@
+.td:
+perl ../../nesc/src/nesc-compile %{m*} %{a*} %{g*} %{O*} %{W*} %{w} %{pedantic*} %{std*} %{ansi} %{traditional} %{v} %{p*} %{f*} %{!fsyntax-only:-fnesc-cfile %g.c %{c:%W{o*}%{!o*:-o %w%b%O}}%{!c:-o %d%w%u%O}} %{fsyntax-only:-o %j} %i 
