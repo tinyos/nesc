@@ -2220,7 +2220,7 @@ void generate_docs(const char *filename, cgraph cg)
         pos = strchr(pos+1, dirsep);
       }
     }
-    if(mkdir(docdir, 0755) != 0  &&  errno != EEXIST) {
+    if(mkdir(docdir, 0755) != 0  &&  errno != EEXIST  &&  errno != ENOMEDIUM) {
       perror("mkdir");
       fatal("error making docdir '%s'\n", docdir);
     }
