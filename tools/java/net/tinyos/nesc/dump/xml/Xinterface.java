@@ -18,7 +18,7 @@ public class Xinterface extends DataDefinition
     boolean provided;
 
     public NDElement start(Attributes attrs) {
-	Xinterface me = (Xinterface)super.start(attrs);
+	Xinterface me = (Xinterface)define(attrs);
 	me.provided = attrs.getValue("provided").equals("1");
 	return me;
     }

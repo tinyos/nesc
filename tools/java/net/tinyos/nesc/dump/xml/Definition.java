@@ -12,7 +12,11 @@
 package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
+import java.util.*;
 
-public class Definition extends NDElement
+abstract public class Definition extends NDElement
 {
+    public boolean definitionAvailable;
+
+    abstract public void init(Attributes attrs);
 }

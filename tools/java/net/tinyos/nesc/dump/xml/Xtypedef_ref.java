@@ -15,7 +15,7 @@ import org.xml.sax.*;
 
 public class Xtypedef_ref extends NDElement
 {
-    public NDElement start(Attributes attrs) {
-	return DataDefinition.find(attrs, Xtypedef.class);
+    public NDElement start(NDReader reader, Attributes attrs) {
+	return DataDefinition.find(attrs, "typedef");
     }
 }

@@ -10,27 +10,12 @@
  */
 
 package net.tinyos.nesc.dump.xml;
+
 import org.xml.sax.*;
 
-abstract public class NDElement {
-    public NDElement start(Attributes attrs) {
-	return this;
-    }
-
+public class Xcomponent_ref extends NDElement
+{
     public NDElement start(NDReader reader, Attributes attrs) {
-	return start(attrs);
-    }
-
-    public void child(NDElement subElement) {
-    }
-
-    public NDElement end() {
-	return this;
-    }
-
-    public void characters(char[] ch, int start, int length) {
-    }
-
-    public void whitespace() {
+	return NescDefinition.lookup(attrs, reader, "component");
     }
 }

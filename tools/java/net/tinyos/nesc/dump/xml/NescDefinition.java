@@ -14,24 +14,22 @@ package net.tinyos.nesc.dump.xml;
 import org.xml.sax.*;
 import java.util.*;
 
-public class DataDefinition extends Definition
+public class NescDefinition extends Definition
 {
     static protected DefinitionTable defs;
 
-    public String name; /* not globally unique */
-    public String ref; /* globally unique */
+    public String qname; /* globally unique */
 
     public void init(Attributes attrs) {
-	ref = attrs.getValue("ref");
-	name = attrs.getValue("name");
+	qname = attrs.getValue("qname");
     }
 
     synchronized Definition define(Attribute attrs) {
-	return defs.define(attrs.getValue("ref"), attrs, this);
+	return defs.define(attrs.getValue("qname"), attrs, this);
     }
 
     static synchronized Definition lookup(Attribute attrs, NDReader reader,
 					  String elementName) {
-	return defs.lookup(attrs.getValue("ref"), attrs, reader, elementName);
+	return defs.lookup(attrs.getValue("qname"), attrs, reader, elementName);
     }
 }

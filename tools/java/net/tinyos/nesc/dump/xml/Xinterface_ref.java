@@ -15,7 +15,7 @@ import org.xml.sax.*;
 
 public class Xinterface_ref extends NDElement
 {
-    public NDElement start(Attributes attrs) {
-	return DataDefinition.find(attrs, Xinterface.class);
+    public NDElement start(NDReader reader, Attributes attrs) {
+	return DataDefinition.lookup(attrs, reader, "interface");
     }
 }
