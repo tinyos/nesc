@@ -23,6 +23,27 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-dspec.h"
 #include "nesc-dspec-int.h"
 
+/* Filters for XML dump requests. Current filters:
+     file(globexp): match containing file name (unix-style file matching)
+     name(regexp): match by item name (regular expression matching)
+     attribute(namelist): match items containing one of the attributes
+       in the namelist
+     component(cname): match containing component name
+     global(): match items from the global (C) scope
+
+  Filters can be combined with and, or, not.
+*/
+
+/* Implementation of filters is OOish, see the filter_op structure.
+   Filters can be applied to nesc/tag/data_declaration objects (separate
+   method for each).
+
+   Each filter has an argument specification string of the form:
+     - a sequence of n and t's for token and int arguments (in order)
+     - "*t" or "*n" for an arbitrary list of tokens or numbers.
+   See check_arg, make_ndf_op to extend this.
+*/
+
 static bool filter_file(ndf_op filter, location loc)
 {
   return !fnmatch(nd_tokenval(filter->args), loc->filename, 0);
@@ -161,8 +182,12 @@ static bool ftdecl_global(ndf_op op, tag_declaration tdecl)
 
 static struct filter_op {
   const char *name;
-  const char *args;
-  void (*compile)(ndf_op op);
+  const char *args; /* Argument specification (see top) */
+
+  /* (optional) filter "compilation" (eg for regexps) */
+  void (*compile)(ndf_op op); 
+
+  /* Execute filter op on Xdecl */
   bool (*execute_ddecl)(ndf_op op, data_declaration ddecl);
   bool (*execute_ndecl)(ndf_op op, nesc_declaration ndecl);
   bool (*execute_tdecl)(ndf_op op, tag_declaration tdecl);
@@ -230,6 +255,7 @@ nd_filter make_ndf_op(region r, const char *name, nd_arg args)
   return CAST(nd_filter, op);
 }
 
+/* The current filter, applied by dump_filter_Xdecl */
 static nd_filter current_filter;
 
 enum { filter_ddecl, filter_ndecl, filter_tdecl };

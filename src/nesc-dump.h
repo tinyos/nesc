@@ -18,13 +18,29 @@ Boston, MA 02111-1307, USA.  */
 #ifndef NESC_DUMP_H
 #define NESC_DUMP_H
 
+/* The internal nesC dump information system. Dumps information in XML
+   according to the DSD schema which can be found in doc/dump (see the
+   README there for more details).
+
+   Java code to parse this schema into a programmer-friendly form is
+   in the net.tinyos.nesc.dump package (found under tools/java). */
+
 #include "nesc-cg.h"
 
 extern region dump_region;
 
 void select_dump(char *what);
+/* Effects: Register a new -fnesc-dump request 'what'
+     Errors are signaled through the usual 'error' call.
+ */
+
 bool dump_selected(void);
+/* Effects: Return true if any calls to select_dump where made.
+ */
+
 void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
 	       dd_list modules, dd_list components);
+/* Effects: Dump selected information.
+ */
 
 #endif

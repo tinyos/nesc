@@ -15,6 +15,17 @@ along with nesC; see the file COPYING.  If not, write to
 the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
+/* Parser for -fnesc-dump option arguments. General forms are:
+     NAME
+     NAME(arguments)
+   where NAME describes a particular dump request (see nesc-dump.c)
+   and the optional arguments describe the request in more detail.
+
+   The arguments are a list of tokens (arbitrary strings), numbers and
+   filters (see nesc-dfilter.c). The meaning of these depends on the
+   dump request.
+*/
+
 %{
 #include "parser.h"
 #include "nesc-dump.h"

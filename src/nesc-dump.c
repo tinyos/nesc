@@ -15,6 +15,22 @@ along with nesC; see the file COPYING.  If not, write to
 the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
+/* The internal nesC dump information system.
+   Current allowable requests:
+     - components, interfaces, interfacedefs, tags:
+       extract lists of the specified internal objects
+       managed via the lists[] array (see below)
+       support filter arguments (see nesc-dfiler.c)
+     - referenced(<any of the lists above>):
+       implicitly dump any referenced item of the specified kind, e.g.,
+       referenced(interfacedefs) will dump all interface definitions referred
+       to from other XML elements
+     - wiring: dump wiring graph
+       wiring(functions) dumps the function-level graph (but this is currently
+       in a somewhat different form than the regular graph, so should probably
+       not be used)
+*/
+
 #include "parser.h"
 #include "nesc-dump.h"
 #include "nesc-env.h"
@@ -27,12 +43,20 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-component.h"
 #include "constants.h"
 
-dd_list/*nd_option*/ opts;
-region dump_region;
+/* The current set of dump requests */
+static dd_list/*nd_option*/ opts;
+static region dump_region; /* for dump request allocations */
 
 /* What to output */
 enum { wiring_none, wiring_user, wiring_functions } wiring = wiring_none;
 
+/* More OOish stuff to manage dump requests of concrete nesC internal
+   objects (components, tags, etc). The lists array contains the currently
+   supported list.
+
+   Each of these concrete requests supports filters (and does not have any
+   other options).
+*/
 static bool tdecl_addfilter(void *entry);
 static bool ndecl_addfilter(void *entry);
 static bool ddecl_addfilter(void *entry);
@@ -50,11 +74,27 @@ static void select_tags(xml_list l, nd_option opt, dd_list comps);
 /* lists */
 static struct {
   const char *name;
+
+  /* Return TRUE if entry has not yet been added to its dump list */
   bool (*addfilter)(void *entry);
+
+  /* Add entries selected by 'opt' to list 'l'. 'comps' is the list of the
+     program's components. */
   void (*select)(xml_list l, nd_option opt, dd_list comps);
+
+  /* Dump a single entry in XML */
   void (*dump)(void *entry);
+
+  /* The list of referenced items of, e.g., components is created by 
+     adding entries to a global variable (xl_components in this case) holding
+     an xml_list (see xml_list_add in nesc-xml.c). By default this variable
+     is NULL, so nothing happens. The 'referenced' dump request sets this
+     variable to point to the list l (see next field) to track, e.g.,
+     referenced components. The 'referenced' field contains the address of
+     this global variable. */
   xml_list *referenced;
-  xml_list l;
+
+  xml_list l; /* The list of entries of this kind */
 } lists[] = {
   { "components", ndecl_addfilter, select_components, dump_component, &xl_components },
   { "interfaces", ddecl_addfilter, select_interfaces, dump_interface, &xl_interfaces },
@@ -93,6 +133,11 @@ static bool ddecl_addfilter(void *entry)
   decl->dumped = TRUE;
   return TRUE;
 }
+
+/* Actual XML dump functions. See doc/dump for the corresponding DSD schemas.
+   The dump functions are found partially here (for high-level elements),
+   in nesc-xml.c (low-level elements and basic functions) and types.c (for
+   types). */
 
 static void dump_attributes(dd_list/*nesc_attribute*/ attributes)
 {
@@ -195,6 +240,7 @@ static void dump_parameter(declaration parm)
     {
       data_decl data = CAST(data_decl, parm);
       variable_decl vdecl = CAST(variable_decl, data->decls);
+
 
       pdecl = vdecl->ddecl;
     }
@@ -386,6 +432,7 @@ static void dump_list(const char *name, xml_list l,
 
 /* The toplevel requests supported -fnesc-dump */
 /* ------------------------------------------- */
+/* Most of these are handled via the lists system (see above) */
 
 static void select_components(xml_list l, nd_option opt, dd_list comps)
 {
@@ -587,6 +634,7 @@ void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
   for (i = 0; i < NLISTS; i++)
     lists[i].l = new_xml_list(dump_region, &list_change, lists[i].addfilter);
 
+  /* Process options to find out what is selected */
   dd_scan (scan_opts, opts)
     {
       nd_option opt = DD_GET(nd_option, scan_opts);
@@ -611,6 +659,10 @@ void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
 	error("unknown dump request `%s'", opt->name);
     }
 
+  /* Repeatedly dump selected information (w/o performing any actual I/O).
+     This will collect all items selected by the 'referenced' request.
+     This repeated collection of items is supported by the xml_list type
+     (from nesc-xml.c) */
   xml_start_dummy();
   do_wiring(cg, userg);
   for (;;)
@@ -621,6 +673,8 @@ void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
       list_change = FALSE;
     }
 
+  /* All information now collected. Reset the lists and dump the information
+     for real. */
   for (i = 0; i < NLISTS; i++)
     xml_list_reset(lists[i].l);
 
@@ -635,5 +689,6 @@ void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
   indentedtag_pop();
   xml_end();
 
+  /* Nothing should have been added to the lists in the actual output pass */
   assert(!list_change);
 }

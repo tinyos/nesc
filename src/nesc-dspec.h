@@ -23,6 +23,13 @@ Boston, MA 02111-1307, USA.  */
 #include "ND_defs.h"
 
 nd_option nd_parse(const char *what);
+/* Effects: parses -fnesc-dump option argument 'what', 
+   Return: the corresponding dump tree (see nesc-dspec.def)
+*/
+
 const char *nd_tokenval(nd_arg arg);
+/* Requires: nd_arg is an nd_token
+   Returns: the token's string value
+*/
 
 #endif

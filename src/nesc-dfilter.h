@@ -19,10 +19,17 @@ Boston, MA 02111-1307, USA.  */
 #define NESC_DFILTER_H
 
 nd_filter make_ndf_op(region r, const char *name, nd_arg args);
+/* Returns: a new filter op for filter 'name' with arguments 'args' 
+ */
+
+void dump_set_filter(nd_option opt);
+/* Effects: Sets current filter to the and of all filters found in option
+     list opt. */
+
+/* Returns: TRUE if argument passes current filter. */
 bool dump_filter_ddecl(data_declaration ddecl);
 bool dump_filter_ndecl(nesc_declaration ndecl);
 bool dump_filter_tdecl(tag_declaration tdecl);
-void dump_set_filter(nd_option opt);
 
 #endif
 
