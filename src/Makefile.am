@@ -174,6 +174,7 @@ EXTRA_DIST = 					\
 	AST_walk_children.c			\
 	machine/self.c				\
 	machine/avr.c				\
+	machine/keil.c				\
 	tdspecs					\
 	nesc-compile				\
 	COPYING					\
