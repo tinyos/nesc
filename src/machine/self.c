@@ -24,7 +24,6 @@ static machine_spec self_machine = {
   __alignof__(myint4), __alignof__(myint8),	     /* int1/2/4/8 align */
   sizeof(wchar_t), sizeof(size_t),		     /* wchar_t, size_t size */
   (char)-1 < 0, (wchar_t)-1 < 0,		     /* char, wchar_t signed */
-  "gcc",
 
   NULL, NULL, NULL, NULL	/* No special attributes */
 };

@@ -34,7 +34,6 @@ static machine_spec msp430_machine = {
   1, 2, 2, 2,		/* int1/2/4/8 align */
   2, 2,				/* wchar_t, size_t size */
   TRUE, TRUE,			/* char, wchar_t signed */
-  "msp430-gcc",
 
   msp430_decl_attribute,	/* Attribute handling: declarations */
   NULL, NULL, NULL		/* Attribute handling: tag, field, type */
