@@ -444,7 +444,7 @@ parameters1:
 
 parameter_list: 
 	  parameter
-	| parameter_list ',' parameter { $$ = declaration_chain($3, $1) } ;
+	| parameter_list ',' parameter { $$ = declaration_chain($3, $1); } ;
 
 parameter: 
 	  parameter_type identifier
