@@ -122,14 +122,26 @@ void copy_interface_functions(region r, nesc_declaration container,
       fncopy->interface = iref;
       /* required events and provided commands are defined */
       fncopy->defined = (fncopy->ftype == function_command) ^ iref->required;
-      if (iref->gparms) /* Push generic args onto fn type and decl */
-	{
-	  fncopy->gparms = iref->gparms;
-	  fncopy->type = make_generic_type(fncopy->type, iref->gparms);
-	}
     }
 
   iref->functions = icopy;
+}
+
+void set_interface_functions_gparms(environment fns, typelist gparms)
+{
+  env_scanner scanif;
+  const char *fnname;
+  void *fnentry;
+
+  env_scan(fns->id_env, &scanif);
+  while (env_next(&scanif, &fnname, &fnentry))
+    {
+      data_declaration fndecl = fnentry;
+
+      /* Push generic args onto fn type and decl */
+      fndecl->gparms = gparms;
+      fndecl->type = make_generic_type(fndecl->type, gparms);
+    }
 }
 
 void declare_interface_ref(interface_ref iref, declaration gparms,
@@ -171,6 +183,8 @@ void declare_interface_ref(interface_ref iref, declaration gparms,
      type into each function in copy_interface_functions.  This is because
      the syntax for invoking or defining a function on a generic interface
      is interfacename.functionname[generic args](...) */
+  if (gparms)
+    set_interface_functions_gparms(ddecl->functions, ddecl->gparms);
   ddecl->type = make_interface_type(ddecl);
 }
 

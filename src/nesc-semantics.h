@@ -59,7 +59,8 @@ bool nesc_attribute(attribute a);
 
 const char *language_name(source_language l);
 
-nesc_decl dummy_nesc_decl(source_language sl, location loc, const char *name);
+nesc_decl dummy_nesc_decl(source_language sl, location loc, const char *name,
+			  bool declareit);
 void build(nesc_decl ast);
 nesc_declaration start_nesc_entity(source_language sl, word name);
 

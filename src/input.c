@@ -40,6 +40,7 @@ void set_input(FILE *f, const char *filename)
   p->l.lineno = 0;
   p->l.in_system_header = FALSE;
   p->lex.finput = f;
+  p->lex.token_buffer_valid = FALSE;
   input_file_stack_tick++;
 }
 
@@ -54,6 +55,8 @@ void end_input(void)
 
       free(p);
     }
+  if (input_file_stack)
+    input_file_stack->lex.token_buffer_valid = FALSE;
 
   if (f)
     fclose(f);

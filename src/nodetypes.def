@@ -35,6 +35,9 @@
 ;; Current attributes:
 ;;   init: field is an argument to the constructing function for the types
 ;;         that contain it
+;;   tree: "part of" the abstract syntax tree. this means that
+;;         generated functions that walk the tree (XXX_walk, XXX_print) 
+;;	   will follow this field recursively
 ;;   nodump: field is not marshalled/unmarshalled
 ;;   noprint: field is not printed as part of AST
 ;;   dump-special: call dump_FIELD-NAME to marshall/unmarshall this node
@@ -259,7 +262,7 @@ QUALIFIERS and ATTRIBUTEES are lists. ARG1 is an optional bitfield specifier")
   "typedef-type with declaration DDECL. The name is ddecl->name")
 
 (deftype typeof_expr type_element (arg1)
-  "typeof(ARG1)")
+  "typeof ARG1")
 
 (deftype typeof_type type_element (asttype)
   "typeof(ASTTYPE)")

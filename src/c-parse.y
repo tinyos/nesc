@@ -127,7 +127,7 @@ void yyerror();
 %left <u.itoken> '^'
 %left <u.itoken> '&'
 %left <u.itoken> EQCOMPARE
-%left <u.itoken> ARITHCOMPARE
+%left <u.itoken> ARITHCOMPARE '<' '>'
 %left <u.itoken> LSHIFT RSHIFT
 %left <u.itoken> '+' '-'
 %left <u.itoken> '*' '/' '%'
@@ -1049,6 +1049,10 @@ expr_no_commas:
 	| expr_no_commas RSHIFT expr_no_commas
 	    	{ $$ = make_binary($2.location, kind_rshift, $1, $3); }
 	| expr_no_commas ARITHCOMPARE expr_no_commas
+	    	{ $$ = make_binary($2.location, $2.i, $1, $3); }
+	| expr_no_commas '<' expr_no_commas
+	    	{ $$ = make_binary($2.location, $2.i, $1, $3); }
+	| expr_no_commas '>' expr_no_commas
 	    	{ $$ = make_binary($2.location, $2.i, $1, $3); }
 	| expr_no_commas EQCOMPARE expr_no_commas
 	    	{ $$ = make_binary($2.location, $2.i, $1, $3); }

@@ -78,7 +78,7 @@ nesc_declaration require(source_language sl, location l, const char *name)
   if (sl != d->kind)
     {
       /* Make a dummy declaration to make everyone happy */
-      nesc_decl nd = dummy_nesc_decl(sl, d->ast->location, name);
+      nesc_decl nd = dummy_nesc_decl(sl, d->ast->location, name, FALSE);
 
       d = nd->cdecl;
       build(nd);

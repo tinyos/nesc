@@ -203,11 +203,22 @@ node compile(location loc, source_language l,
   return parse_tree;
 }
 
-nesc_decl dummy_nesc_decl(source_language sl, location loc, const char *name)
+nesc_decl dummy_nesc_decl(source_language sl, location loc, const char *name,
+			  bool declareit)
 {
   word wname = build_word(parse_region, name);
   nesc_decl nd;
-  nesc_declaration d = new_nesc_declaration(parse_region, sl, name);
+  nesc_declaration d = NULL;
+
+  if (declareit)
+    {
+      d = nesc_lookup(name);
+      /* If we managed to declare name, then we preserve its kind */
+      if (d)
+	sl = d->kind;
+    }
+  if (!d)
+    d = new_nesc_declaration(parse_region, sl, name);
 
   switch (sl)
     {
@@ -268,7 +279,7 @@ nesc_declaration load(source_language sl, location l,
   if (ptree)
     ast = CAST(nesc_decl, ptree);
   else
-    ast = dummy_nesc_decl(sl, new_location(name, 0), element);
+    ast = dummy_nesc_decl(sl, new_location(name, 0), element, TRUE);
 
   actual_name = ast->word1->cstring.data;
   if (strcmp(element, actual_name))

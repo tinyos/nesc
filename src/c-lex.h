@@ -85,15 +85,6 @@ void lex_ungetc(int c);
 void skip_c_comment(void);
 void skip_cpp_comment(void);
 
-struct lex_state
-{
-  FILE *finput;
-  bool end_of_file;
-  int indent_level;		/* Number of { minus number of }. */
-  int nextchar;  /* Buffered-back input character; faster than using ungetc.  */
-};
-
-
 /**
  * Retrieve the latest code documentation string.  This is used to
  * place the documentation into the appropriate data_declaration.

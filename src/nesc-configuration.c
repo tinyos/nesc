@@ -601,14 +601,14 @@ component_ref require_component(component_ref comp, word as)
       comp->cdecl = specification_copy(parse_region, comp,
 				       current.container->abstract);
       if (!comp->abstract)
-	error_with_location(comp->location, "abstract component `%s' requires instantiation arguments", cname);
+	error_with_location(comp->location, "generic component `%s' requires instantiation arguments", cname);
       else
 	check_abstract_arguments("component", ddecl, comp->cdecl->parameters, comp->args);
     }
   else
     {
       if (comp->abstract)
-	error_with_location(comp->location, "component `%s' is not abstract", cname);
+	error_with_location(comp->location, "component `%s' is not generic", cname);
     }
 
   ddecl->type = make_component_type(ddecl);

@@ -23,7 +23,7 @@ Boston, MA 02111-1307, USA. */
 #ifndef INPUT_H
 #define INPUT_H
 
-#include "c-lex.h"
+#include "c-lex-state.h"
 
 struct file_stack
   {

@@ -127,9 +127,6 @@ static char *traditional token_buffer;	/* Pointer to token buffer.
 static wchar_array string_array;
 static char_array docstring_array;
 
-static int token_s1, token_s2;
-static struct yystype token_l1, token_l2;
-
 static char *extend_token_buffer(char *);
 int check_newline(void);
 
@@ -201,14 +198,14 @@ start_lex (source_language l)
   input_file_stack->lex.end_of_file = 0;
   input_file_stack->lex.nextchar = -1;
   input_file_stack->lex.indent_level = 0;
-  token_s1 = token_s2 = -1;
+  input_file_stack->lex.token_s1 = input_file_stack->lex.token_s2 = -1;
 
   lex_ungetc(check_newline());
 
   switch (l)
     {
-    case l_interface: case l_component: token_s1 = DISPATCH_NESC; break;
-    case l_c: token_s1 = DISPATCH_C; break;
+    case l_interface: case l_component: input_file_stack->lex.token_s1 = DISPATCH_NESC; break;
+    case l_c: input_file_stack->lex.token_s1 = DISPATCH_C; break;
     default: assert(0); break;
     }
 }
@@ -1191,7 +1188,9 @@ yyerror (char *string)
   /* We can't print string and character constants well
      because the token_buffer contains the result of processing escapes.  */
   /* XXX: This is not true anymore, but ignore that for a while */
-  if (input_file_stack->lex.end_of_file)
+  if (!input_file_stack->lex.token_buffer_valid)
+    ;
+  else if (input_file_stack->lex.end_of_file)
     strcat (buf, " at end of input");
   else if (token_buffer[0] == 0)
     strcat (buf, " at null character");
@@ -1846,13 +1845,13 @@ static int lextoken(struct yystype *lvalp)
 	    else
 	      {
 		token_ungetc (c1);
-		value = ARITHCOMPARE;
+		value = '<';
 		lvalp->u.itoken.i = kind_lt;
 	      }
 	  }
 	else if (c == '>')
 	  {
-	    value = ARITHCOMPARE;	
+	    value = '>';	
 	    lvalp->u.itoken.i = kind_gt;
 	  }
 	else
@@ -1900,33 +1899,38 @@ done:
 static int poptoken(struct yystype *lvalp)
 {
   /* Check the queue first */
-  if (token_s1 != -1)
+  if (input_file_stack->lex.token_s1 != -1)
     {
-      int token = token_s1;
-      *lvalp = token_l1;
+      int token = input_file_stack->lex.token_s1;
+      *lvalp = input_file_stack->lex.token_l1;
 
-      token_s1 = token_s2;
-      token_l1 = token_l2;
-      token_s2 = -1;
+      input_file_stack->lex.token_s1 = input_file_stack->lex.token_s2;
+      input_file_stack->lex.token_l1 = input_file_stack->lex.token_l2;
+      input_file_stack->lex.token_s2 = -1;
 
+      /* could set this true (it's only two tokens ahead at most) */
+      input_file_stack->lex.token_buffer_valid = FALSE;
       return token;
     }
   else
-    return lextoken(lvalp);
+    {
+      input_file_stack->lex.token_buffer_valid = TRUE;
+      return lextoken(lvalp);
+    }
 }
 
 static void pushtoken(int t, struct yystype *lvalp)
 {
   /* Save token on our 2-element queue */
-  if (token_s1 == -1)
+  if (input_file_stack->lex.token_s1 == -1)
     {
-      token_s1 = t;
-      token_l1 = *lvalp;
+      input_file_stack->lex.token_s1 = t;
+      input_file_stack->lex.token_l1 = *lvalp;
     }
   else
     {
-      token_s2 = t;
-      token_l2 = *lvalp;
+      input_file_stack->lex.token_s2 = t;
+      input_file_stack->lex.token_l2 = *lvalp;
     }
 }
 
@@ -1956,7 +1960,7 @@ yylex(struct yystype *lvalp)
 	      token2 == MAGIC_STRING)
 	    {
 	      data_declaration cref = lvalp->idtoken.decl;
-	      data_declaration fdecl = env_lookup(cref->ctype->env->id_env, token_l2.idtoken.id.data, TRUE);
+	      data_declaration fdecl = env_lookup(cref->ctype->env->id_env, val2.idtoken.id.data, TRUE);
 
 	      if (fdecl && fdecl->kind == decl_typedef)
 		{

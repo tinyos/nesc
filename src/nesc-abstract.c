@@ -986,7 +986,7 @@ nesc_declaration specification_copy(region r, component_ref cref,
   assert(comp->kind == l_component);
 
   copy = nesc_declaration_copy(r, comp, cref->args, copy_is_abstract, NULL);
-  copy->instance_name = cref->word2->cstring.data;
+  copy->instance_name = (cref->word2 ? cref->word2 : cref->word1)->cstring.data;
   if (!copy_is_abstract)
     {
       /* Give it a new name */
