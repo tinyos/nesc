@@ -13,7 +13,9 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-/* Note: this is an attribute definition. See Xattribute_value for a use */
+/**
+ * Class for attribute definitions. See Xattribute_value for attribute uses
+ */
 public class Xattribute extends StructureDefinition
 {
 }

@@ -11,14 +11,26 @@
 
 package net.tinyos.nesc.dump.xml;
 
+/**
+ * A scanner to scan backwards in a wiring graph
+ */
 public class WiringScanBackwards extends WiringScan
 {
-    public WiringScanBackwards() { }
-
+    /**
+     * Create a new backwards wiring scanner starting at wiring graph node n,
+     * with no arguments.
+     * @param n Wiring node graph to start at.
+     */
     public WiringScanBackwards(WiringNode n) { 
 	node = n;
     }
 
+    /**
+     * Create a new backwards wiring scanner starting at wiring graph node n,
+     * with arguments a.
+     * @param n Wiring node graph to start at.
+     * @param a Position arguments.
+     */
     public WiringScanBackwards(WiringNode n, Xarguments a) { 
 	node = n;
 	arguments = a;

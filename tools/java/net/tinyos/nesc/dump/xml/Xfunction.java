@@ -13,14 +13,27 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * A function.
+ */
 public class Xfunction extends DataDefinition implements Container
 {
-    /* non-null for commands and events of interfaces of components (but
-       null for those representing the command and event definition in an
-       interfacedef) */
+    /**
+     * Non-null for commands and events of interfaces of components
+     * (but null for those representing the command and event
+     * definition in an interfacedef).
+     */
     public Xinterface intf;
 
-    public boolean command, event;
+    /**
+     * true for functions that are commands.
+     */
+    public boolean command;
+
+    /**
+     * true for functions that are events.
+     */
+    public boolean event;
 
     public NDElement start(Attributes attrs) {
 	Xfunction me = (Xfunction)super.start(attrs);

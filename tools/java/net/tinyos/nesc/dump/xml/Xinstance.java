@@ -13,10 +13,27 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xinstance extends NescDefinition
+/**
+ * Information on instances of interfaces and generic components.
+ */
+public class Xinstance extends NDElement
 {
+    /**
+     * For instances of generic components: a unique number identifying
+     * this particular instance. These numbers start consecutively at 0.
+     * -1 for instances of interface definitions.
+     */
     public long number;
+
+    /**
+     * Arguments for this instance. null for instances of non-generic
+     * interfaces.
+     */
     public Xarguments arguments;
+
+    /**
+     * What component or interface this is an instance of.
+     */
     public NescDefinition parent;
 
     public NDElement start(Attributes attrs) {

@@ -15,12 +15,27 @@ import net.tinyos.nesc.dump.*;
 import org.xml.sax.*;
 import java.util.*;
 
-public class DataDefinition extends CDefinition
+/**
+ * Base class for definitions of C objects (typedefs, variables, functions, 
+ * constants, interfaces, and internal-components (component references in
+ * configurations). These are uniquely identified by their 'ref' attribute.
+ */
+abstract public class DataDefinition extends CDefinition
 {
     static protected DefinitionTable defs = new DefinitionTable();
 
-    public String name; /* not globally unique */
-    public String ref; /* globally unique */
+    /**
+     * Name of this object. Not globally unique.
+     */
+    public String name; 
+    /**
+     * Unique identifier for this object.
+     */
+    public String ref;
+
+    /**
+     * (definition only) Type of this object.
+     */
     public Type type;
 
     /* for reference handling */

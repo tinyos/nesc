@@ -13,11 +13,21 @@ package net.tinyos.nesc.dump.xml;
 
 import java.util.*;
 
+/**
+ * A node in a wiring graph.
+ * @see net.tinyos.nesc.dump.xml.WiringGraph
+ * @see net.tinyos.nesc.dump.xml.Xwire
+ * @see net.tinyos.nesc.dump.xml.WiringEndpoint
+ */
 public class WiringNode
 {
     static LinkedList empty = new LinkedList();
 
-    LinkedList outgoing, incoming;
+    LinkedList/*Xwire*/ outgoing, incoming;
+
+    /**
+     * The definition this node is for.
+     */
     public DataDefinition ep;
 
     WiringNode(DataDefinition ep) {
@@ -38,14 +48,22 @@ public class WiringNode
 	incoming.add(e);
     }
 
-    public ListIterator outgoingEdges() {
+    /**
+     * Get all outgoing edges from this node.
+     * @return Outgoing edge iterator for this node.
+     */
+    public ListIterator/*Xwire*/ outgoingEdges() {
 	if (outgoing == null)
 	    return empty.listIterator();
 	else
 	    return outgoing.listIterator();
     }
 
-    public ListIterator incomingEdges() {
+    /**
+     * Get all incoming edges from this node.
+     * @return Incoming edge iterator for this node.
+     */
+    public ListIterator/*Xwire*/ incomingEdges() {
 	if (incoming == null)
 	    return empty.listIterator();
 	else

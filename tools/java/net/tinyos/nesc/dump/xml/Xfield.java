@@ -15,15 +15,55 @@ import net.tinyos.nesc.dump.*;
 import org.xml.sax.*;
 import java.util.*;
 
+/**
+ * A field in a structure. Note: these are always defined.
+ */
 public class Xfield extends Definition
 {
     static protected DefinitionTable defs = new DefinitionTable();
 
-    public String name; /* not unique, even within the containing struct/... */
-    public String ref; /* globally unique */
+    /**
+     * Name of the field. Note that it may not be unique (because of
+     * anonymous structs/unions collapsed into the containing struct).
+     */
+    public String name;
+
+    /**
+     * Unique identifier for this field.
+     */
+    public String ref;
+
+    /**
+     * Type of this field.
+     */
     public Type type;
+
+    /**
+     * Structure this field belongs to.
+     */
     public StructureDefinition container;
-    public Constant bitOffset, size, bitSize;
+
+    /**
+     * Offset in bits for this field from the start of the structure.
+     * Note that this may be an UnknownConstant or a NonConstant.
+     */
+    public Constant bitOffset;
+
+    /**
+     * Size in bytes for this field.  Note that this may be an
+     * UnknownConstant or a NonConstant.
+     */
+    public Constant size;
+
+    /**
+     * For bitfields only: size in bits for this field.  Note that
+     * this may be an UnknownConstant (within generic components).
+     */
+    public Constant bitSize;
+
+    /**
+     * true if the gcc "packed" attribute was specified for this field.
+     */
     public boolean packed;
 
     public void init(Attributes attrs) {

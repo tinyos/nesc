@@ -9,6 +9,29 @@
  * 94704.  Attention:  Intel License Inquiry.
  */
 
+/**
+ * Reader for nesC XML dump files.  The parser is based on SAX XML
+ * parser. For each nesC element baz, the reader attempts to create an
+ * instance of the Xbaz class (and -'s are replaced with _'s). All
+ * such classes must extend (directly or indirectly)
+ * net.tinyos.nesc.dump.xml.NDElement.  The attributes and subelements
+ * of baz will be passed to various methods of
+ * net.tinyos.nesc.dump.xml.NDElement, see it's documentations for
+ * details.
+ * <p>
+ * The Xbaz classes are in the net.tinyos.nesc.dump.xml package. Users
+ * can extend these classes and have the NDReader create their classes
+ * rather than the standard ones if they so choose.  
+ * <p>
+ * See the documentation of the Xbaz classes in net.tinyos.nesc.dump.xml
+ * for information on the Java representation of the XML elements.
+ *
+ * @see net.tinyos.nesc.dump.xml
+ * @see net.tinyos.nesc.dump.xml.NDElement
+ *
+ * @author David Gay
+ */
+
 package net.tinyos.nesc.dump;
 
 import net.tinyos.nesc.dump.xml.NDElement;
@@ -20,43 +43,57 @@ import java.lang.reflect.*;
 
 public class NDReader extends DefaultHandler
 {
-    XMLReader parser;
-    Stack activeElements = new Stack();
-    static Class[] builderArgs = new Class[1];
-    NDElement top;
-    String userPkg;
+    protected XMLReader parser;
+    /* The elements currently being parsed */
+    protected Stack activeElements = new Stack();
+
+    /* Packages in which to search for XML element classes */
+    protected String userPkg; /* user-specfied package to search */
     final static String standardPkg = "net.tinyos.nesc.dump.xml";
 
-    static {
-	try {
-	    builderArgs[0] = Class.forName("org.xml.sax.Attributes");
-	}
-	catch (ClassNotFoundException e) {
-	    System.err.println("xml not configured");
-	}
-    }
-
+    /**
+     * Create a new nesC dump reader, that builds the standard elements
+     * found in net.tinyos.nesc.dump.xml 
+     */
     public NDReader() throws SAXException {
 	this(null);
     }
 
+    /**
+     * Create a new nesC dump reader, that checks userPkg for XML
+     * element classes. If there is no user-specified class, the class
+     * from net.tinyos.nesc.dump.xml is used.
+     *
+     * @param userPkg package to search for XML element classes before
+     *   net.tinyos.nesc.dump.xml
+     */
     public NDReader(String userPkg) throws SAXException {
 	this.userPkg = userPkg;
 	parser = XMLReaderFactory.createXMLReader();
 	parser.setContentHandler(this);
     }
 
-    public NDElement parse(InputSource source) throws IOException {
-	top = null;
+    /**
+     * Parse nesC XML elements from input source 'source'.
+     * @param source InputSource to read from.
+     * @return TRUE if the parse completed successfully (no SAX exceptions)
+     */
+    public boolean parse(InputSource source) throws IOException {
 	try {
 	    parser.parse(source);
+	    return TRUE;
 	}
 	catch (SAXException e) {
+	    return FALSE;
 	}
-	return top;
     }
 
-    public NDElement parse(String id) throws IOException {
+    /**
+     * Parse nesC XML elements from input source 'id'.
+     * @param id input source string to read from.
+     * @return TRUE if the parse completed successfully (no SAX exceptions)
+     */
+    public boolean parse(String id) throws IOException {
 	return parse(new InputSource(id));
     }
 
@@ -67,6 +104,12 @@ public class NDReader extends DefaultHandler
 	return (NDElement)Class.forName(pkg + "." + name).newInstance();
     }
 
+    /**
+     * Create Java class for XML element 'name', checking the user package
+     * (if any) before the net.tinyos.nesc.dump.xml package.
+     * @param XML element name
+     * @return The newly created class
+     */
     public NDElement makeElement(String name) throws Exception {
 	name = "X" + name.replace('-', '_');
 	if (userPkg != null) {
@@ -78,14 +121,23 @@ public class NDReader extends DefaultHandler
 	return makeElementIn(standardPkg, name);
     }
 
+    /**
+     * Return the parent of the element currently being parsed
+     * (note: does not work from within the NDElement.end() method)
+     * @return Parent of current element.
+     */
     public NDElement parent() {
 	return (NDElement)activeElements.elementAt(activeElements.size() - 2);
     }
+
+    /* SAX parsing methods */
 
     public void startElement(String uri, String localName, String qName,
 			     Attributes attrs) {
 	NDElement element = null;
 
+	/* Create the Java class for this element, call it's start method
+	   and save the result to the active elements stack */
 	try {
 	    element = makeElement(localName);
 	}
@@ -98,7 +150,7 @@ public class NDReader extends DefaultHandler
     }
 
     public void endElement(String uri, String localName, String qName) {
-	/* Finalize element, and signal parent */
+	/* Finalize element, and signal parent's child method */
 	NDElement current = (NDElement)activeElements.pop();
 
 	if (current == null)
@@ -107,13 +159,14 @@ public class NDReader extends DefaultHandler
 	if (current == null)
 	    return;
 
-	if (activeElements.empty()) 
-	    top = current; /* top level element */
-	else {
+	if (!activeElements.empty()) {
 	    NDElement parent = (NDElement)activeElements.peek();
 	    parent.child(this, current);
 	}
     }
+
+    /* The current spec doesn't actually use any whitespace or character
+       contents */
 
     public void ignorableWhitespace(char[] ch, int start, int length) {
 	NDElement current = (NDElement)activeElements.peek();
@@ -129,6 +182,9 @@ public class NDReader extends DefaultHandler
 	}
     }
 
+    /**
+     * Test method.
+     */
     public static void main(String[] args) throws IOException {
 	try {
 	    NDElement t = new NDReader().parse(args[0]);

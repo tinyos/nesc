@@ -13,9 +13,22 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Type extends NDElement
+/**
+ * Base class for all elements representing types.
+ * <p>
+ * equals() is defined on all Type objects and represents C type equality.
+ */
+abstract public class Type extends NDElement
 {
-    public Constant size, alignment;
+    /**
+     * Size of this type in bytes. May be a non or unknown constant.
+     */
+    public Constant size;
+
+    /**
+     * Alignment for this type in bytes. May be a non or unknown constant.
+     */
+    public Constant alignment;
 
     public NDElement start(Attributes attrs) {
 	size = Constant.decode(attrs.getValue("size"));

@@ -11,8 +11,14 @@
 
 package net.tinyos.nesc.dump.xml;
 
+/**
+ * Class representing string constants
+ */
 public class StringConstant extends KnownConstant
 {
+    /**
+     * Value of this string constant
+     */
     public String value;
 
     public StringConstant(String s) {

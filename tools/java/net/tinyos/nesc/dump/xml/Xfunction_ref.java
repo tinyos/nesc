@@ -14,6 +14,12 @@ package net.tinyos.nesc.dump.xml;
 import net.tinyos.nesc.dump.*;
 import org.xml.sax.*;
 
+/**
+ * Class for function references. These objects go away, replaced by
+ * the Xfunction object representing the definition.
+ * @see net.tinyos.nesc.dump.xml.Xfunction
+ * @see net.tinyos.nesc.dump.xml.Definition
+ */
 public class Xfunction_ref extends NDElement
 {
     public NDElement start(NDReader reader, Attributes attrs) {

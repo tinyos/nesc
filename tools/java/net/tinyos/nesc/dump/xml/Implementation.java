@@ -13,6 +13,9 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Implementation extends NDElement
+/**
+ * Base class for nesC component implementation objects
+ */
+abstract public class Implementation extends NDElement
 {
 }

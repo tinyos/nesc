@@ -11,8 +11,14 @@
 
 package net.tinyos.nesc.dump.xml;
 
+/**
+ * Class representing floating point constants
+ */
 public class FloatConstant extends KnownConstant
 {
+    /**
+     * Value of this floating point constant
+     */
     public double value;
 
     public FloatConstant(String s) {

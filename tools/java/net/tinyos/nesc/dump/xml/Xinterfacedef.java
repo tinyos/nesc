@@ -14,8 +14,14 @@ package net.tinyos.nesc.dump.xml;
 import org.xml.sax.*;
 import java.util.*;
 
+/**
+ * An interface definition.
+ */
 public class Xinterfacedef extends NescDefinition
 {
+    /**
+     * (definition only) Type parameters of generic interfaces.
+     */
     public Xparameters parameters;
     public LinkedList/*Xfunction*/ functions = new LinkedList();
 

@@ -13,8 +13,16 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Value extends NDElement
+/**
+ * Base class for elements representing C initialisers (the {} stuff in
+ *  struct foo x = { ... }
+ * Attributes use these initialisers too.
+ */
+abstract public class Value extends NDElement
 {
+    /**
+     * Type of this value.
+     */
     public Type type;
 
     public void child(NDElement subElement) {

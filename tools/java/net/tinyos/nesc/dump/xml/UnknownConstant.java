@@ -11,6 +11,9 @@
 
 package net.tinyos.nesc.dump.xml;
 
+/**
+ * Class representing "unknown constants"
+ */
 public class UnknownConstant extends Constant
 {
     public boolean equals(Object obj) {

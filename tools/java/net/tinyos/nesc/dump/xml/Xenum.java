@@ -13,8 +13,15 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * An enum definition.
+ */
 public class Xenum extends TagDefinition
 {
+    /**
+     * (definition only) The base C type (int, etc) used as the
+     * underlying representation of this enum.
+     */
     public Type repType;
 
     public void child(NDElement subElement) {

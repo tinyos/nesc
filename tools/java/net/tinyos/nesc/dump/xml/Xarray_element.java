@@ -13,9 +13,25 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * Elements of an array initialiser (Xvalue_array)
+ * @see net.tinyos.nesc.dump.xml.Xvalue_array
+ */
 public class Xarray_element extends NDElement
 {
-    public long from, to;
+    /**
+     * First array element initialised with this value 
+     */
+    public long from;
+
+    /**
+     * Last array element initialised with this value 
+     */
+    public long to;
+
+    /**
+     * Value placed in these array elements
+     */
     public Value value;
 
     public NDElement start(Attributes attrs) {

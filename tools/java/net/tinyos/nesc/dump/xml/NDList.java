@@ -14,9 +14,13 @@ package net.tinyos.nesc.dump.xml;
 import org.xml.sax.*;
 import java.util.*;
 
-public class NDList extends NDElement
+/**
+ * A generic list-of-element class.
+ */
+abstract public class NDList extends NDElement
 {
-    LinkedList l = new LinkedList();
+    /* The elements of this list, in order. */
+    public LinkedList/*NDElement*/ l = new LinkedList();
 
     public void child(NDElement subElement) {
 	l.add(subElement);

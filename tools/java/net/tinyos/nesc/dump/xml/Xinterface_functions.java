@@ -13,6 +13,10 @@ package net.tinyos.nesc.dump.xml;
 
 import java.util.*;
 
+/**
+ * Container for functions of interface. Goes away.
+ * @see net.tinyos.nesc.dump.xml.Xinterface
+ */
 public class Xinterface_functions extends NDList
 {
 }

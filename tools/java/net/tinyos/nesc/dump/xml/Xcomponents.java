@@ -13,9 +13,15 @@ package net.tinyos.nesc.dump.xml;
 
 import java.util.*;
 
+/**
+ * Top-level component list.
+ */
 public class Xcomponents extends NDList
 {
-    public static LinkedList list;
+    /**
+     * The list of all components in the dump.
+     */
+    public static LinkedList/*Xcomponent*/ list;
 
     public NDElement end() {
 	list = l;

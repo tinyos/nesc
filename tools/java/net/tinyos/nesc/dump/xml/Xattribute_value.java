@@ -13,9 +13,19 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * An attribute use.
+ */
 public class Xattribute_value extends NDElement
 {
+    /**
+     * What attribute this is.
+     */
     public Xattribute attribute;
+
+    /**
+     * Initialiser for this attribute.
+     */
     public Value value;
 
     public void child(NDElement subElement) {

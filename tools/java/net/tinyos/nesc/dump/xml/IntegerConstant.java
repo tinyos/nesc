@@ -11,8 +11,14 @@
 
 package net.tinyos.nesc.dump.xml;
 
+/**
+ * Class representing integer constants
+ */
 public class IntegerConstant extends KnownConstant
 {
+    /**
+     * Value of this integer constant
+     */
     public long value;
 
     public IntegerConstant(String s) {

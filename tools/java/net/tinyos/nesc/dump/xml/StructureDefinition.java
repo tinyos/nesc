@@ -14,9 +14,15 @@ package net.tinyos.nesc.dump.xml;
 import org.xml.sax.*;
 import java.util.*;
 
-public class StructureDefinition extends TagDefinition
+/**
+ * Base class for structure tags (struct, union, network versions thereof)
+ */
+abstract public class StructureDefinition extends TagDefinition
 {
-    public LinkedList fields = new LinkedList();
+    /**
+     * Fields of this structure.
+     */
+    public LinkedList/*Xfield*/ fields = new LinkedList();
 
     public void child(NDElement subElement) {
 	super.child(subElement);

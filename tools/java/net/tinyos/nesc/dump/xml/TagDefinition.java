@@ -15,14 +15,43 @@ import net.tinyos.nesc.dump.*;
 import org.xml.sax.*;
 import java.util.*;
 
-public class TagDefinition extends CDefinition
+/**
+ * Base class for Java object representing a C tag (enum, struct, union)
+ */
+abstract public class TagDefinition extends CDefinition
 {
     static protected DefinitionTable defs = new DefinitionTable();
 
-    public String name; /* not globally unique, may be null */
-    public String ref; /* globally unique */
-    public Constant size, alignment;
-    public boolean defined, packed;
+    /**
+     * Name of this tag, not globally unique, may be null.
+     */
+    public String name;
+
+    /**
+     * Unique identifier for this tag.
+     */
+    public String ref;
+
+    /**
+     * (definition only) Size of objects of this struct/union/enum/etc.
+     */
+    public Constant size;
+
+    /**
+     * (definition only) Alignment for objects of this struct/union/enum/etc.
+     */
+    public Constant alignment;
+
+    /**
+     * (definition only) True if this tag is actually defined.
+     */
+    public boolean defined;
+
+    /**
+     * (definition only) True if the gcc packed "attribute" was used on
+     * this tag.
+     */
+    public boolean packed;
 
     public void init(Attributes attrs) {
 	super.init(attrs);

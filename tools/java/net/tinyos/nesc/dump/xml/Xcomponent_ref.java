@@ -14,6 +14,12 @@ package net.tinyos.nesc.dump.xml;
 import net.tinyos.nesc.dump.*;
 import org.xml.sax.*;
 
+/**
+ * Class for component references. These objects go away, replaced by the
+ * Xcomponent object representing the definition.
+ * @see net.tinyos.nesc.dump.xml.Xcomponent
+ * @see net.tinyos.nesc.dump.xml.Definition
+ */
 public class Xcomponent_ref extends NDElement
 {
     public NDElement start(NDReader reader, Attributes attrs) {

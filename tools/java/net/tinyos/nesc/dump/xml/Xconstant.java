@@ -13,8 +13,14 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * An enum constant.
+ */
 public class Xconstant extends DataDefinition
 {
+    /**
+     * (definition only) Value of the enum constant.
+     */
     public Constant value;
 
     public NDElement start(Attributes attrs) {

@@ -13,9 +13,22 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * A position in a wiring graph, i.e., a node and an optional argument list.
+ *
+ * @see net.tinyos.nesc.dump.xml.WiringGraph
+ * @see net.tinyos.nesc.dump.xml.WiringNode
+ */
 public class WiringEndpoint extends NDElement
 {
+    /**
+     * The graph node of this endpoint.
+     */
     public WiringNode node;
+
+    /**
+     * Arguments to the graph node for this endpoint. May be null.
+     */
     public Xarguments arguments; /* optional */
 
     public void child(NDElement subElement) {
@@ -25,21 +38,41 @@ public class WiringEndpoint extends NDElement
 	    arguments = (Xarguments)subElement;
     }
     
+    /**
+     * Create a new, unitialised wiring endpoint.
+     */
     public WiringEndpoint() { }
 
+    /**
+     * Create a new wiring endpoint on wiring graph node n.
+     * @param n Wiring node graph to create endpoint for.
+     */
     public WiringEndpoint(WiringNode n) { 
 	node = n;
     }
 
+    /**
+     * Create a new wiring endpoint on wiring graph node n, with arguments a.
+     * @param n Wiring node graph to create endpoint for.
+     * @param a Arguments for endpoint.
+     */
     public WiringEndpoint(WiringNode n, Xarguments a) { 
 	node = n;
 	arguments = a;
     }
 
+    /**
+     * Create a new wiring endpoint as a copy of endpoint p.
+     * @param p endpoint to copy.
+     */
     public WiringEndpoint(WiringEndpoint p) { 
 	copy(p);
     }
     
+    /**
+     * Copy endpoint from into this endpoint.
+     * @param from endpoint to copy.
+     */
     public void copy(WiringEndpoint from) {
 	node = from.node;
 	arguments = from.arguments;

@@ -13,6 +13,11 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * A list of arguments. Each argument is a Constant or Type.
+ * <p>
+ * equals() compares these arguments lists.
+ */
 public class Xarguments extends NDList
 {
     public boolean equals(Object obj) {

@@ -13,6 +13,9 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * A starting point for a wire (wiring graph edge).
+ */
 public class Xto extends WiringEndpoint
 {
 }

@@ -13,6 +13,11 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * Interface implemented by elements that represent containers for C symbols
+ * (typedefs, tags, variables, etc). See classes inheriting from CDefinition.
+ * @see net.tintyos.nesc.dump.xml.CDefinition
+ */
 public interface Container
 {
 }

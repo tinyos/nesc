@@ -11,14 +11,26 @@
 
 package net.tinyos.nesc.dump.xml;
 
+/**
+ * A scanner to scan forwards in a wiring graph
+ */
 public class WiringScanForwards extends WiringScan
 {
-    public WiringScanForwards() { }
-
+    /**
+     * Create a new forwards wiring scanner starting at wiring graph node n,
+     * with no arguments.
+     * @param n Wiring node graph to start at.
+     */
     public WiringScanForwards(WiringNode n) { 
 	node = n;
     }
 
+    /**
+     * Create a new forwards wiring scanner starting at wiring graph node n,
+     * with arguments a.
+     * @param n Wiring node graph to start at.
+     * @param a Position arguments.
+     */
     public WiringScanForwards(WiringNode n, Xarguments a) { 
 	node = n;
 	arguments = a;

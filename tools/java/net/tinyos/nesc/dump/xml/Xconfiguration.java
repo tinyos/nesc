@@ -13,6 +13,9 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * Configuration implementation.
+ */
 public class Xconfiguration extends Implementation
 {
 }

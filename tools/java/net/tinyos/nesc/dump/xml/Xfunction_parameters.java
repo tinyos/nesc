@@ -13,6 +13,10 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * Container for function parameter lists. Goes away.
+ * @see net.tinyos.nesc.dump.xml.Xtype_function
+ */
 public class Xfunction_parameters extends NDList
 {
 }

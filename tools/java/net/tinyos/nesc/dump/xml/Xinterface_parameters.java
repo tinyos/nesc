@@ -13,6 +13,10 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * Container for parameters of interfaces. Goes away.
+ * @see net.tinyos.nesc.dump.xml.Xinterface
+ */
 public class Xinterface_parameters extends NDList
 {
 }

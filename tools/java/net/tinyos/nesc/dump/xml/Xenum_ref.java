@@ -14,6 +14,12 @@ package net.tinyos.nesc.dump.xml;
 import net.tinyos.nesc.dump.*;
 import org.xml.sax.*;
 
+/**
+ * Class for enum definition references. These objects go away,
+ * replaced by the Xenum object representing the definition.
+ * @see net.tinyos.nesc.dump.xml.Xenum
+ * @see net.tinyos.nesc.dump.xml.Definition
+ */
 public class Xenum_ref extends NDElement
 {
     public NDElement start(NDReader reader, Attributes attrs) {
