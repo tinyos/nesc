@@ -61,6 +61,11 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	elsif (/^-v$/) {
 	    $verbose = 1;
 	}
+	elsif (/^-I/) {
+	    ($i, $file) = &extractarg($i);
+	    $strip = 1;
+	    push @includes, $file;
+	}
     } 
 
     push @new_args, $_ if !$strip;
@@ -111,13 +116,18 @@ unshift @new_args, "-DPLATFORM_\U$target";
 unshift @new_args, "nescc";
 
 if (!$nostdinc) {
-    push @new_args, map "-I$TOSDIR/sensorboards/$_", @boards;
-    push @new_args, "-I$TOSDIR/platform/$target";
-    push @new_args, map "-I$TOSDIR/platform/$_", @commonplatforms;
-    push @new_args, "-I$TOSDIR/interfaces";
-    push @new_args, "-I$TOSDIR/types";
-    push @new_args, "-I$TOSDIR/system";
-    push @new_args, "-I$TOSDIR/lib";
+    push @includes, map "%T/sensorboards/$_", @boards;
+    push @includes, "%T/platform/$target";
+    push @includes, map "%T/platform/$_", @commonplatforms;
+    push @includes, "%T/interfaces";
+    push @includes, "%T/types";
+    push @includes, "%T/system";
+    push @includes, "%T/lib";
+}
+
+foreach $idir (@includes) {
+    $idir = &idir_subst($idir);
+    push @new_args, "-I$idir";
 }
 
 print STDERR join(' ', @new_args), "\n" if $verbose;
@@ -135,6 +145,23 @@ sub extractarg {
 	$arg = substr($ARGV[$i], 2);
     }
     return ($i, $arg);
+}
+
+sub idir_subst {
+    local ($idir) = @_;
+    local $idx = 0;
+
+    while (($idx = index $idir, "%", $idx) >= 0) {
+	$char = substr $idir, $idx + 1, 1;
+	$rep = 0;
+	$rep = "%" if $char eq "%";
+	$rep = $TOSDIR if $char eq "T";
+	$rep = $target if $char eq "p";
+	&fail("unknown include-path substitution %" . $char) if !$rep;
+	substr($idir, $idx, 2) = $rep;
+	$idx += length $rep;
+    }
+    return $idir;
 }
 
 sub fail {
