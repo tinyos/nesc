@@ -92,7 +92,20 @@ This document is a reference manual for \nesc rather than a tutorial. The
 TinyOS tutorial~\cite{tinyos-tutorial} presents a gentler introduction
 to \nesc.
 
+The rest of this document is structured as follows:
+Sections~\ref{sec:notation} and~\ref{sec:terminology} present the notation
+and terminology used in the reference manual.
+Sections~\ref{sec:interface},~\ref{sec:component},~\ref{sec:module},
+and~\ref{sec:configuration} present \nesc interfaces and
+components. Section~\ref{sec:app} explains how C files, \nesc interfaces
+and components are assembled into an application. Section~\ref{sec:misc}
+covers the remaining miscellaneous features of \nesc. Finally,
+Section~\ref{sec:grammar} fully defines \nesc's grammar (as an extension to
+the C grammar from Appendix~A of Kernighan and Ritchie (K\&R)
+~\cite[pp234--239]{kandr}).
+
 \section{Notation}
+\label{sec:notation}
 
 The \texttt{typewriter} font is used for \nesc code and for filenames.
 
@@ -113,6 +126,7 @@ The examples will often use the \code{uint8\_t}, \code{uint16\_t} types
 from the standard \file{inttypes.h} file.
 
 \section{Concepts and Terminology}
+\label{sec:terminology}
 
 We use the following terminology in the rest of the reference manual:
 
@@ -183,7 +197,7 @@ per-component-implementation and per-interface-type scopes.
 
 \item \emph{namespaces}: \nesc has the standard C variable (also used for
 functions and \emph{typedefs}), tagged type (\code{struct}, \code{union}
-and \code{enum} tag names) and label namespaces. Additionally, it has a
+and \code{enum} tag names) and label namespaces. Additionally, \nesc has a
 component and interface type namespace for component and interface type
 names.
 
@@ -235,7 +249,7 @@ function declarations with the \kw{command} or \kw{event} storage class (if
 not, a compile-time error occurs).
 
 An interface can optionally include C files via the \emph{includes-list}
-(see Section~\ref{sec:c}).
+(see Section~\ref{sec:app}).
 
 A simple interface is:
 \begin{verbatim}
@@ -272,7 +286,7 @@ nested in the C global scope, and an implementation scope nested in the
 specification scope.
 
 A component can optionally include C files via the \emph{includes-list}
-(see Section~\ref{sec:c}).
+(see Section~\ref{sec:app}).
 
 The \emph{specification} lists the specification elements (interface
 instances, commands or events) used or provided by this
@@ -583,7 +597,7 @@ A TinyOS task is an independent locus of control defined by a function of
 storage class \kw{task} returning \kw{void} and with no arguments:
 \code{task void myTask() \{ ... \}}.\footnote{\nesc functions with no
 arguments are declared with \code{()}, not \code{(void)}. See
-Section~\ref{sec:c}.} A task can also have a forward declaration, e.g.,
+Section~\ref{sec:misc-void}.} A task can also have a forward declaration, e.g.,
 \code{task void myTask();}.
 
 Tasks are posted by prefixing a call to the task with \kw{post}, e.g.,
@@ -621,6 +635,7 @@ and specification elements from one of the configuration's components
 \emph{internal}.
 
 \subsection{Included components}
+\label{sec:config-components}
 
 The \emph{component-list} specifies the components used to build this
 configuration. These components can be optionally renamed within the
@@ -999,20 +1014,77 @@ expressions used to specify interface parameter values at the call-site).
 \end{itemize}
 \end{itemize}
 
-\section{C}
-\label{sec:c}
+\section{\nesc Applications}
+\label{sec:app}
 
-The C global scope is populated by including C \file{.h} files. All
-macro and C declarations and definitions in these files are placed in the
-global C scope and are available to all subsequently loaded components,
-interfaces and C files. Similarly, if a \kw{\#define} macros is undefined,
-then it will remain undefined for subsequently loaded files.
+A \nesc application has three parts: a list of C declarations and
+definitions, a set of interface types and a set of components. The naming
+environment of \nesc applications is structured as follows:
+\begin{itemize}
+\item An outermost, global scope with three namespaces: a C variable and a
+C tag namespace for the C declarations and definitions, and a component and
+interface type namespace for the \nesc interface types and components.
+\item C declarations and definitions may introduce their own nested scopes
+within the global scope, as usual (for function declarations and
+definitions, code blocks within functions, etc).
 
-A C file called \file{tos.h} is automatically
-included before any components. Subsequent C files are loaded according
-to the \kw{includes} directives found at the start of component and
-interface files:
-\emph{\begin{tabbing}
+\item Each interface type introduces has a scope that holds the interface's
+commands or events. This scope is nested in the global scope, therefore
+command and event definitions can refer to C types and tags defined in the
+global scope.
+
+\item Each component introduces two new scopes. The specification scope,
+nested in the global scope, contains a variable namespace which holds the
+component's specification elements. The implementation scope, nested in the
+specification scope, contains a variable and a tag namespace. 
+
+For configurations, the implementation's scope variable namespace contains
+the names by which this component refers to its included components
+(Section~\ref{sec:config-components}). For modules, the implementation
+scope holds the command and event implementations, tasks, C declarations
+and definitions that form the module's body. These declarations, etc may
+introduce their own nested scopes within the implementation scope (for
+function bodies, code blocks, etc). As a result of the scope nesting
+structure, code in modules has access to the C declarations and definitions
+in the global scope, but not to any declarations or definitions in other
+components.
+\end{itemize}
+
+The C declarations and defintions, interface types and components that form
+a \nesc application are determined by an on-demand loading process. The
+input to the \nesc compiler is a single component $K$. The \nesc compiler
+first loads C file \file{tos} (Section~\ref{sec:load-c}), then loads
+component $K$ (Section~\ref{sec:load-component}). The code for the
+application is all the code loaded as part of the process of loading these
+two files. A \nesc compiler can assume that all calls to functions,
+commands or events not marked with the \code{spontaneous} attribute
+(Section~\ref{sec:attributes}) occur in the loaded code (i.e., there are no
+``invisible'' calls to non-\code{spontaneous} functions).\footnote{For
+instance, the current \nesc compiler uses this information to eliminate
+unreachable code.}
+
+Part of the process of loading a C file, \nesc component or interface type
+involves locating the corresponding source file. The mechanism used to
+locate files is outside the scope of this reference manual; for details on
+how this works in the current compiler please see the \file{ncc} man page.
+
+\subsection{Loading C file $X$}
+\label{sec:load-c}
+
+If $X$ has already been loaded, nothing more is done. Otherwise, file $X$.h
+is located and preprocessed. Changes made to C macros (via \code{\#define}
+and \code{\#undef}) are visible to all subsequently preprocessed files. The C
+declarations and definitions from the preprocessed $X$.h file are entered
+into the C global scope, and are therefore visible to all subsequently
+processed C files, interface types and components.
+
+\subsection{Loading Component $K$}
+\label{sec:load-component}
+
+If $K$ has already been loaded, nothing more is done. Otherwise, file
+$X$.nc is located and preprocessed. Changes made to C macros (via
+\code{\#define} and \code{\#undef}) are discarded. The preprocessed file is
+parsed using the following grammar: \emph{\begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 nesC-file: \\
 \>	includes-list\opt interface\\
@@ -1026,13 +1098,31 @@ includes-list:\\
 includes:\\
 \>	\kw{includes} identifier-list \kw{;}\\
 \end{tabbing}}
+If $X$.nc does not define \code{module $K$} or \code{configuration $K$}, a
+compile-time error is reported. Otherwise, all C files specified by the
+\emph{includes-list} are loaded (Section~\ref{sec:load-c}). Then all
+interface types used in the component's specification are loaded
+(Section~\ref{sec:load-intf}). Next, the component specification is
+processed (Section~\ref{sec:component}). If $K$ is a configuration, all
+components specified (Section~\ref{sec:config-components}) by $K$ are
+loaded (Section~\ref{sec:load-component}). Finally, $K$'s implementation is
+processed (Sections~\ref{sec:module} and~\ref{sec:configuration})..
 
-An \code{includes X} directive tells \nesc to load C file \file{X.h}. Once
-\file{X.h} has been loaded, all subsequent \code{includes X} directives
-are ignored.
+\subsection{Loading Interface Type $I$}
+\label{sec:load-intf}
 
-As an example, interface type \code{Bar} might include C file
-\file{BarTypes.h} which defines types used in the interface:
+If $I$ has already been loaded, nothing more is done. Otherwise, file
+$X$.nc is located and preprocessed. Changes made to C macros (via
+\code{\#define} and \code{\#undef}) are discarded. The preprocessed file is
+parsed following the \emph{nesC-file} production above. If $X$.nc does not
+define \code{interface $I$} a compile-time error is reported. Otherwise,
+all C files specified by the \emph{includes-list} are loaded
+(Section~\ref{sec:load-c}). Then $I$'s definition is processed
+(Section~\ref{sec:interface}).
+
+As an example of including C files in components or interfaces, interface
+type \code{Bar} might include C file \file{BarTypes.h} which defines types
+used in \code{Bar}:
 
 \begin{minipage}[t]{3in}
 \begin{verbatim}
@@ -1052,7 +1142,16 @@ typedef struct {
 \end{verbatim}
 \end{minipage}
 
+The definition of interface \code{Bar} can refer to \code{BarType}, as can
+any component that uses or provides interface \code{Bar} (interface
+\code{Bar}, and hence \file{BarTypes.h}, are loaded before any such
+component's specification or implementation are processed).
+
+\section{Miscellaneous}
+\label{sec:misc}
+
 \subsection{Functions with no arguments, old-style C declarations}
+\label{sec:misc-void}
 
 \nesc functions with no arguments are declared with \code{()}, not
 \code{(void)}. The latter syntax reports a compile-time error.
@@ -1064,35 +1163,12 @@ interfaces or components (and cause compile-time errors).
 Note that neither of these changes apply to C files (so that existing
 \file{.h} files can be used unchanged).
 
-\subsection{\nesc and the C preprocessor}
+\subsection{// comments}
 
-\nesC supports the C preprocessor in all files (interfaces, components and
-C files). As an extension, C++-style // comments are also allowed.
-
-The effect of \kw{\#define} and \kw{\#undef} within components is
-limited to the component in which they occur (this is somewhat like
-having a per-component scope for preprocessor macros).
-
-While \kw{\#include} directives are allowed in components and interfaces,
-they are unlikely to be useful. For instance, a \code{\#include <math.h>}
-directive will produce the following effects:
-\begin{itemize}
-\item In a configuration or interface type file: various compilation errors.
-\item In a module: this will declare a number of functions (e.g., \code{sin})
-in the module's per-component-implementation scope. This is obviously
-not very useful.
-\end{itemize}
-
-\section{Miscellaneous}
-\label{sec:misc}
-
-\subsection{Component and Interface Type Name Space}
-
-Components and interface types share a name space; this name space is 
-global and distinct from the C global name space. Compile-time error
-if expected interface foo and found component foo.
+\nesc allows // comments in C, interface type and component files.
 
 \subsection{Attributes}
+\label{sec:attributes}
 
 \nesc uses gcc's~\cite{gcc} \kw{\_\_attribute\_\_} syntax for
 declaring some properties of functions. These attributes can be placed
@@ -1140,7 +1216,7 @@ C code.
 $f$ (in modules or C code). It indicates that there are calls $f$ that
 are not visible in the source code. Typically, functions that are
 called spontaneously are interrupt handlers, and the C \code{main}
-function. Section~\ref{sec:cmodel} discusses how the \nesc compiler
+function. Section~\ref{sec:app} discusses how the \nesc compiler
 uses the \code{spontaneous} attribute during compilation.
 \end{itemize}
 
@@ -1178,21 +1254,6 @@ The intended use of \code{unique} is for passing a unique integer
 to parameterised interface instances, so that a component providing
 a parameterised interface can uniquely identify the various components
 connected to that interface.
-
-\subsection{Files and Compilation Model}
-\label{sec:cmodel}
-
-The \nesc compiler assumes that a component or interface $x$ is found
-in a file called \file{$x$.nc}, and that an included C file $y$ is
-found in a file called \file{$y$.h}. The current implementation of
-the \nesc uses a search path to locate these files (details can be
-found in the \file{ncc} manual).
-
-The \nesc compiler's input is a component $c$ to be compiled. The compiler
-locates $c$'s file, loads and compiles this file and the files for all
-components, interfaces and C files used (directly or indirectly) by $c$.
-The compiler may assume that the only entry points to this component
-are the functions marked with the \code{spontaneous} attribute.
 
 \section{Grammar}
 \label{sec:grammar}
