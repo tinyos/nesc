@@ -13,32 +13,70 @@
 \newcommand{\file}[1]{{\tt #1}}
 \newcommand{\nesc}{nesC\xspace}
 \newcommand{\opt}{$_\mbox{opt}$\xspace}
+\newcommand{\FSE}{\mathcal{F}}
+\newcommand{\connect}{\mathcal{C}}
 
 \parskip 0.15cm
 \parindent 0cm
 
 \begin{document}
 
+\title{\nesc Language Reference Manual}
+\author{David Gay [add your names here as you edit]}
+\date{August 2002}
+
+\maketitle
+
 \section{Introduction}
 
-1 para goal (execution model embodies TinyOS concepts, TinyOS implemented
-in \nesc)
+\nesc is a new programming language designed to embody the structuring
+concepts and execution model of TinyOS~\cite{tinyos}. [Someone: insert the
+standard 2-sentence TinyOS/sensor network desc]. TinyOS has now been
+reimplemented in \nesc.
 
-``whole program'' compilation
+The basic concepts behind \nesc are:
+\begin{itemize}
+\item Program decompisition into \emph{components}, which can be assembled
+(``wired'') to form whole programs.
+\item Specification of component behaviour as a set of \emph{interfaces}
+provided or used by the component. The provided interfaces are intended
+to represent the functionality that the component provides to its user,
+the used interfaces represent the functionality the component needs to
+perform its job.
+\item Interfaces are bidirectional: they specify a set of functions to be
+implemented by the interface's provider (``commands'') and a set to be
+implemented by the interface's user (``events''). This allows a single
+interface to represent a complex interaction between components (e.g.,
+registration of interest in some event, followed by a callback when that
+event happens).
+\item Components are statically linked to each other via their interfaces.
+This increases runtime efficiency and allows for better static analysis of 
+program's.
+\item \nesc is designed under the expectation that code will be generated
+by whole-program compilers. This should also allow for better code 
+generation and analysis.
+\end{itemize}
 
-1 para introduce basic language concepts:
-- components
-- interfaces
-- based on ANSI C (footnote will evolve to C99)
-
-1 para this not tutorial, see blah for that
+This document is a reference manual for \nesc rather than a tutorial. The
+TinyOS tutorial~\cite{tinyos-tutorial} presents a gentler introduction
+to \nesc.
 
 \section{Notation}
 
-We use the following notations: the \texttt{typewriter} font is used for
-\nesc code and for filenames.
+The \texttt{typewriter} font is used for \nesc code and for filenames.
 
-\ldots for elided productions
+The grammar of \nesc is an extension the ANSI C grammar. We chose to base
+our presentation on the ANSI C grammar from Appendix~A of Kernighan and
+Ritchie (K\&R) ~\cite[pp234--239]{kandr}. We will not repeat productions
+from that grammar here. Words in \emph{italics} are non-terminals and
+non-literal terminals, \kw{typewriter} words and symbols are literal
+terminals. The subscript \emph{opt} indicates optional terminals or
+non-terminals. In some cases, we change some ANSI C grammar rules. We
+indicate this as follows: \emph{also} indicates additional productions for
+existing non-terminals, \emph{replaced by} indicates replacement of an
+existing non-terminal. In the piecemeal presentation of the grammar, we
+sometimes use \ldots to represent elided productions (not relevant to the
+construction being presented).
 
 \section{Concepts and Terminology}
 
@@ -84,7 +122,7 @@ a \emph{simple interface instance}, with parameters it is a
 
 \item \emph{interface parameter}: An interface parameter must be of
 integral type. There is (conceptually) a separate simple interface instance
-for each distinct tuple of parameter values of a parameterised interface
+for each distinct list of parameter values of a parameterised interface
 instance.
 
 \item \emph{interface}: When the context is unambiguous, we will say
@@ -239,11 +277,11 @@ as Y}, explicitly specifying \code{Y} as the instance's name. The
 If the \emph{parameters} are omitted, then \code{interface X as Y} declares
 a single interface to this component. If the \emph{parameters} are present
 (e.g., \code{interface SendMsg[uint8\_t id]}) then this interface instance
-declares multiple interfaces to this component, one for each distinct tuple
+declares multiple interfaces to this component, one for each distinct list
 of parameter values (so there are 256 \code{SendMsg} interfaces in the
 previous example). The types of the \emph{parameters} must be integral
 types (\kw{enum}s are not allowed).
-% why no enums?
+[why no enums?]
 
 It is also possible to provide commands and events directly, rather than
 via interfaces (but this facility should only be used occasionally as
@@ -655,6 +693,19 @@ The \code{M2.SC -> M1} line is equivalent to \code{M2.SC -> M1.StdControl}.
 \subsection{Wiring Semantics}
 \label{sec:wiring}
 
+[This section could use an informal presentation. I think the rather
+formal one below should stay because I doubt an informal one can be
+easily made unambiguous]
+
+[issue: We should decide if wiring the same two interface instances
+together twice (with the same parameter values, etc) leads to one or two
+calls. If the answer is two (as the current implementation does), we should
+talk about multi-graphs below, and hence edge lists not sets.
+
+Note: such multiple calls can also happen a bit more indirectly when
+configurations are involved, i.e., there are two distinct paths in
+the wiring graph between a pair of functions. One call or two?]
+
 The semantics of wiring are defined in terms of the program's wiring graph,
 a directed graph which connects nodes representing command or event calls
 to nodes representing command or event definitions.
@@ -664,58 +715,73 @@ graphs} of each configuration (by unioning their node and edge sets).
 A \emph{configuration graph} is a directed graph representing the wiring
 specified in a single configuration.
 
-We first introduce some notation. Node names are of the form $C.F.P$ for
-command or event $F$ in component $C$'s specification with parameter values
-$P$, $C.I.F.P$ for command or event $F$ in interface instance $I$ of $C$'s
-specification with parameter values $P$. We write the empty tuple as $()$.
-All endpoints in the wiring can be viewed as being of the form $D.I.P$ with
-$P = ()$ when no parameters are specified and $D = C$ if $I$ is an external
-specification element.  All wires can be viewed as being of the form
-$C_1.I_1.P_1 \kw{to} C_2.I_2.P_2$ where $I_1$ is used if $C_1 \not= C$ and
-provided if $C_1 = C$, and $I_2$ is provided if $C_2 \not= C$ and used if
-$C_2 = C$.
+We first introduce some notation. The configuration whose graph is being
+created will be denoted with $C$. Other components will be called $C_1,
+C_2, D$ and $M, M'$ if the component is a module. A specification element
+is called $I, I_1, I_2$ or $J$.  A command or event is $F, F_1$ or
+$F_2$. Parameter lists are $P, P_1$ or $P_2$. Lists of parameter lists are
+denoted with $L_P$. The empty list is $()$, $::$ represents list
+concatenation.
 
-The functions of specification element $I$ of component $C$ with parameters
-$P$, $\FSE(C, I, P)$, are defined as:
+Node names are of the form $D.F.P$ for command or event $F$ in component
+$D$'s specification with parameter values $P$, $D.I.F.P$ for command or
+event $F$ in interface instance $I$ of $D$'s specification with parameter
+values $P$. We use $X$ to stand for a node name. All endpoints in the
+wiring can be viewed as being of the form $D.I.P$ with $P = ()$ when no
+parameters are specified and $D = C$ if $I$ is an external specification
+element.  All wires can be viewed as being of the form $C_1.I_1.P_1 \kw{\
+to\ } C_2.I_2.P_2$ where $I_1$ is used if $C_1 \not= C$ and provided if
+$C_1 = C$, and $I_2$ is provided if $C_2 \not= C$ and used if $C_2 = C$.
+
+The functions of endpoint $D.I.P$, $\FSE(D.I.P)$ are defined as:
 \begin{itemize}
-\item $\FSE(C, I, P) = \{ C.I.P \}$ if $I$ is a command or event.
-\item $\FSE(C, I, P) = \{ C.I.F.P | F \mbox{is a command or event of} I \}$ if
+\item $\FSE(D.I.P) = \{ D.I.P \}$ if $I$ is a command or event.
+\item $\FSE(D.I.P) = \{ D.I.F.P | F \mbox{is a command or event of} I \}$ if
 $I$ is an interface instance.
 \end{itemize}
 
 We define a connection function for connecting two endpoints:
-$\connect(ep_1, ep_2)$ returns a set of directed edges as follows:
+$\connect(C_1.I_1.P_1, C_2.I_2.P_2)$ returns a set of directed edges as
+follows:
 \begin{itemize}
-\item $\connect(C_1.I_1.P_1, C_2.I_2.P_2) = \{ (C_1.I_1.P_1, C_2.I_2.P_2)
-\}$ if $I_1$ is a command or event.
-\item $\connect(C_1.I_1.P_1, C_2.I_2.P_2) = 
-\{ C_1.I_1.F.P_1, C_2.I_2.F.P_2) | F \mbox{is a command in} I_1 \} \cup
-\{ C_2.I_2.F.P_2, C_1.I_1.F.P_1) | F \mbox{is an event in} I_1 \}$ if $I_1$ is an interface instance.
+\item If $I_1$ is a command or event: $\connect(C_1.I_1.P_1, C_2.I_2.P_2) = \{ (C_1.I_1.P_1, C_2.I_2.P_2)
+\}$ .
+\item If $I_1$ is an interface instance: 
+\begin{eqnarray*}
+\connect(C_1.I_1.P_1, C_2.I_2.P_2) & = &
+\{ C_1.I_1.F.P_1, C_2.I_2.F.P_2) | F \mbox{ is a command in} I_1 \} \cup \\
+& & \{ C_2.I_2.F.P_2, C_1.I_1.F.P_1) | F \mbox{ is an event in} I_1 \}
+\end{eqnarray*}
 \end{itemize}
 
 Configuration graph $(V,E)$ for configuration $C$ is the smallest graph
 such that:
 \begin{itemize}
-\item For each wire $C_1.I_1.P_1 \kw{to} C_2.I_2.P_2$:
-$\FSE(C_1, I_1, ()) \cup \FSE(C_2, I_2, ()) \cup \FSE(C_1, I_1, P_1) \cup
-\FSE(C_2, I_2, P_2) \in V$.
+\item For each wire $C_1.I_1.P_1 \kw{\ to\ } C_2.I_2.P_2$:
+$$\FSE(C_1, I_1, ()) \cup \FSE(C_2, I_2, ()) \cup \FSE(C_1, I_1, P_1) \cup
+\FSE(C_2, I_2, P_2) \in V$$
 
-\item For each wire $C_1.I_1.P_1 \kw{to} C_2.I_2.P_2$:
-$\connect(C_1.I_1.P_1, C_2.I_2.P_2) \in E$. If $P_1 \not= ()$ then
-$\connect(C_1.I_1.(), C_1.I_1.P_1) \in E$. If $P_2 \not= ()$ then
-$\connect(C_2.I_2.P_2, C_2.I_2.()) \in E$.
+\item For each wire $C_1.I_1.P_1 \kw{\ to\ } C_2.I_2.P_2$:
+\begin{itemize}
+\item $\connect(C_1.I_1.P_1, C_2.I_2.P_2) \in E$
+\item If $P_1 \not= ()$ then $\connect(C_1.I_1.(), C_1.I_1.P_1) \in E$
+\item If $P_2 \not= ()$ then $\connect(C_2.I_2.P_2, C_2.I_2.()) \in E$
+\end{itemize}
 \end{itemize}
 
 The semantics of a call to a command or event $F$ of interface $I$ in
-module $M$ are now easily defined, given the whole program graph $G$,
+module $M$ are now defined in terms of the whole program graph $G$.
 
 First, if there is a cycle in $G$ starting at $M.I.F.()$ a compile-time
 error occurs.
 
 Otherwise, set $S$ is the set of reachable command or event definitions
-from $M.I.F.()$. 
-
-% This is still missing parameter value collection
+$M'.I'.F'.()$ from $M.I.F.()$, along with the list of parameter values
+$L_P$ on the path from $M.I.F.()$ to $M'.I'.F'.()$. Note that there will be
+two elements for $M'.I'.F'.()$ in $S$ if there are paths with distinct
+parameter value lists. Also, the semantics of \nesc guarantee that $L_P$
+has zero, one, or two elements (each element is a tuple of parameter
+values).
 
 If $F$ is a non-parameterised call, then:
 \begin{itemize}
@@ -723,26 +789,37 @@ If $F$ is a non-parameterised call, then:
 compile-time error occurs.
 \item If $S$ is empty and $M$ has a default defintion $F'$ for $I.F$, then
 $F'$ is called.
-\item If $S$ is non-empty: the elements of $S$ are called in an arbitrary
-order.
+\item If $S$ is non-empty: the elements $(X, L_P)$ of $S$ are
+called in an arbitrary order. The parameterised elements receive
+the first element of $L_P$ as parameter values.
 \end{itemize}
 
 If $F$ is a parameterised call with parameter values $P$ (computed at
-runtime in $M$), then $S$ is split into two sets: $S_1$ contains the
-parameterised definitions, $S_2$ the non-parameterised ones whose
-condition matches $P$.
+runtime in $M$), then $S$ is split into two sets: 
+\begin{itemize}
+\item $S_1 = \{ (X, ()) | (X, ()) \in S \}$ (these are the parameterised
+definitions connected directly to $F$). Note that $S_1$ can be computed
+at compile-time.
+\item $S_2 = \{ (X, (L_P) | (X, (P) :: L_P) \in S \}$ (these are the calls
+whose condition, as specified in configurations, matches $P$). Note that
+$S_2$ can only be computed at runtime.
+\end{itemize}
+
+The call then proceeds as follows:
 \begin{itemize}
 \item If $S_1$ is empty and there is no default definition for $I.F$, then
 a compile-time error occurs.
 \item If $S_1 \cup S_2$ is empty and $M$ has a default definition
-$F'$ for $I.F$, then $F'$ is called.
+$F'$ for $I.F$, then $F'$ is called with parameter values $P$.
 \item If $S_1 \cup S_2$ is non-empty: the elements of $S_1 \cup S_2$ are
-called in an arbitrary order.
+called in an arbitrary order. The elements of $S_1$ receive $P$ as their
+parameter values. The parameterised elements $(X, L_P)$ of $S_2$ receive
+the first element of $L_P$ as parameter values.
 \end{itemize}
 
 The result of $I.F$ is the result of one of the functions called (note that
 the rules above guarantee that at least one function will always be called).
-% we could change this to ``last function called''
+[we could change this to ``last function called'']
 
 \section{C}
 \label{sec:c}
@@ -939,18 +1016,11 @@ components, interfaces and C files used (directly or indirectly) by $c$.
 The compiler may assume that the only entry points to this component
 are the functions marked with the \code{spontaneous} attribute.
 
-\section{Concurrency}
-\label{sec:concurrency}
-
 \section{Grammar}
 \label{sec:grammar}
 
-The grammar for \nesc is presented as an extension to the ANSI C grammar
-from Appendix~A of Kernighan and Ritchie (K\&R)
-~\cite[pp234--239]{kandr}. Words in \emph{italics} are non-terminals (except
-\emph{identifier} which is a terminal), \kw{typewriter} words and symbols
-are literal terminals. The subscript \emph{opt} indicates optional
-terminals or non-terminals.
+Please refer to  Appendix~A of Kernighan and Ritchie (K\&R)
+~\cite[pp234--239]{kandr} while reading this grammar.
 
 The following keywords are new for \nesc: \kw{as}, \kw{call}, \kw{command},
 \kw{components}, \kw{configuration}, \kw{event}, \kw{implementation},
@@ -1057,9 +1127,7 @@ parameters:\\
 \>	\kw{[} parameter-type-list \kw{]}
 \end{tabbing}}
 
-Changed rules: \emph{also} indicates additional productions for existing
-non-terminals, \emph{replaced by} indicates replacement of an existing
-non-terminal:
+Changed rules: 
 \emph{\begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 storage-class-specifier: \emph{also one of}\\
