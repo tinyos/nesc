@@ -2194,6 +2194,8 @@ void nxml_type(type t, dhash_table tags)
 {
   type_quals quals = type_qualifiers(t) & (const_qualifier | volatile_qualifier | restrict_qualifier);
 
+  xstartline();
+
   if (quals)
     {
       xml_tag_start("type-qualified");
@@ -2202,6 +2204,7 @@ void nxml_type(type t, dhash_table tags)
 #include "qualifiers.h"
 #undef Q
       xml_tag_end();
+      xnewline();
       xindent();
     }
     
@@ -2239,8 +2242,11 @@ void nxml_type(type t, dhash_table tags)
 	xml_attr_noval("varargs");
       break;
     case tk_tagged:
-      if (tags)
-	dhaddif(tags, t->u.tag);
+      if (tags && !t->u.tag->dumped)
+	{
+	  dhadd(tags, t->u.tag);
+	  t->u.tag->dumped = TRUE;
+	}
       xml_tag_start("type-tag");
       break;
     case tk_iref:

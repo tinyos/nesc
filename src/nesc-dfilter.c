@@ -30,7 +30,7 @@ static bool filter_file(ndf_op filter, location loc)
 
 static bool filter_name(ndf_op filter, const char *name)
 {
-  return !regexec(filter->info, name, 0, NULL, 0);
+  return name && !regexec(filter->info, name, 0, NULL, 0);
 }
 
 static bool filter_attribute(ndf_op filter, dd_list/*nesc_attribute*/ attrs)

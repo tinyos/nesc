@@ -79,6 +79,7 @@ typedef struct tag_declaration {
 				   (due to variable-size arrays in struct) */
   cval alignment;
   bool packed;			/* if packed attribute specified */
+  bool dumped;			/* TRUE if already added to dump list */
 
   nesc_declaration container;	/* as in data_declarations */
 

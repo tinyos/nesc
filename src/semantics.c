@@ -269,6 +269,7 @@ tag_declaration declare_tag_env(environment env, tag_ref t)
   tdecl->size = tdecl->alignment = 0;
   tdecl->size_cc = FALSE;
   tdecl->container = NULL;
+  tdecl->dumped = FALSE;
 #endif
 
   if (name)

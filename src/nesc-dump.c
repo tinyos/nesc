@@ -73,7 +73,11 @@ static void create_tags(void)
 static dhash_table get_tags(void)
 {
   if (reachable_tags)
-    return tags;
+    {
+      if (!tags)
+	create_tags();
+      return tags;
+    }
   else
     return NULL;
 }
@@ -99,6 +103,11 @@ static void simpletag_pop(void)
   xunindent();
   xml_pop();
   xnewline();
+}
+
+static void dump_type(type t)
+{
+  nxml_type(t, get_tags());
 }
 
 static void dump_wiring(cgraph cg)
@@ -155,7 +164,7 @@ static void dump_typelist(const char *name, typelist types)
   simpletag(name);
   typelist_scan(types, &scantypes);
   while ((t = typelist_next(&scantypes)))
-    nxml_type(t, get_tags());
+    dump_type(t);
   simpletag_pop();
 }
 
@@ -179,12 +188,33 @@ static void dump_interface(void *entry)
   simpletag_pop();
 }
 
+static void dump_field(field_declaration field)
+{
+  simpletag_start("field");
+  xml_attr("name", field->name);
+  xml_attr_bool("packed", field->packed);
+  xml_attr_cval("bit-offset", field->offset);
+  if (cval_istop(field->bitwidth))
+    {
+      if (type_size_cc(field->type))
+	xml_attr_cval("size", type_size(field->type));
+    }
+  else
+    xml_attr_cval("bit-size", field->bitwidth);
+  xml_tag_end();
+  dump_type(field->type);
+  dump_attributes(field->attributes);
+  simpletag_pop();
+}
+
 static void dump_tag(void *entry)
 {
   tag_declaration tdecl = entry;
 
   simpletag_start(tagkind_name(tdecl->kind));
-  xml_attr("name", tdecl->name);
+  if (tdecl->name)
+    xml_attr("name", tdecl->name);
+  xml_attr_ptr("ref", tdecl);
   xml_attr_bool("defined", tdecl->defined);
   xml_attr_bool("packed", tdecl->packed);
   xml_attr_cval("size", tdecl->size);
@@ -209,26 +239,48 @@ static void dump_tag(void *entry)
   if (tdecl->kind == kind_enum_ref)
     {
       simpletag("reptype");
-      nxml_type(tdecl->reptype, get_tags());
+      dump_type(tdecl->reptype);
       simpletag_pop();
     }
   else
     {
+      field_declaration fields;
+
+      for (fields = tdecl->fieldlist; fields; fields = fields->next)
+	if (fields->name) /* skip unnamed fields */
+	  dump_field(fields);
     }
 
   simpletag_pop();
 }
 
-static void dump_list(const char *name, dhash_table list,
+static void dump_list(const char *name, dhash_table *plist,
 		      void (*dump)(void *entry))
 {
-  dhash_scan scanner = dhscan(list);
-  void *entry;
+  bool first = TRUE;
 
-  simpletag(name);
-  while ((entry = dhnext(&scanner)))
-    dump(entry);
-  simpletag_pop();
+  for (;;)
+    {
+      dhash_table list;
+      dhash_scan scanner;
+      void *entry;
+
+      if (!*plist)
+	break;
+
+      if (first)
+	simpletag(name);
+      first = FALSE;
+
+      list= *plist;
+      scanner = dhscan(list);
+      *plist = NULL;
+
+      while ((entry = dhnext(&scanner)))
+	dump(entry);
+    }
+  if (!first)
+    simpletag_pop();
 }
 
 /* The toplevel requests supported -fnesc-dump */
@@ -409,12 +461,9 @@ void dump_info(nesc_declaration program, cgraph cg,
 
   if (wiring)
     dump_wiring(cg);
-  if (components)
-    dump_list("components", components, dump_component);
-  if (interfaces)
-    dump_list("interfaces", interfaces, dump_interface);
-  if (tags)
-    dump_list("tags", tags, dump_tag);
+  dump_list("components", &components, dump_component);
+  dump_list("interfaces", &interfaces, dump_interface);
+  dump_list("tags", &tags, dump_tag);
 
   simpletag_pop();
   xml_end();

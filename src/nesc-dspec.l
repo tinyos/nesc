@@ -15,6 +15,8 @@ along with nesC; see the file COPYING.  If not, write to
 the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
+%option nounput
+
 %{
 #include <string.h>
 #include <stdlib.h>
@@ -51,6 +53,22 @@ HEXDIGIT	[0-9a-fA-F]
 		  if (errno)
 	    	    nderror("integer constant out of bounds.");
             	  return ND_INTEGER; 
+		}
+\"([^\\"]*(\\.)?)+\" {
+		  char *str = rstralloc(dump_region, strlen(ndtext));
+		  const char *text = ndtext + 1;
+
+		  ndlval.token = str;
+		  while (*text)
+		    {
+		      /* Shell-like \-processing: \ is preserved except
+		         in front of " and \ */
+		      if (*text == '\\' && (text[1] == '"' || text[1] == '\\'))
+		        text++;
+		      *str++ = *text++;
+		    }
+		  str[-1] = '\0';
+		  return ND_TOKEN;
 		}
 [^, \t()|&!]+	{
   		  ndlval.token = rstrdup(dump_region, ndtext);

@@ -261,14 +261,14 @@ static void dump_arguments(expression arguments, dhash_table tags)
 
 void nxml_ndefinition_ref(nesc_declaration ndecl, dhash_table tags)
 {
-  ndecl = original_component(ndecl);
+  nesc_declaration orig = original_component(ndecl);
 
   xstartline();
-  if (ndecl->kind == l_interface)
+  if (orig->kind == l_interface)
     xml_tag_start("interfacedef-ref");
   else
     xml_tag_start("componentdef-ref");
-  xml_attr("name", ndecl->name);
+  xml_attr("name", orig->name);
   if (!ndecl->arguments)
     xml_tag_end_pop();
   else
@@ -286,6 +286,7 @@ void nxml_tdecl_ref(tag_declaration tdecl)
   char tag[20];
 
   sprintf(tag, "%s-ref", tagkind_name(tdecl->kind));
+  xml_tag_start(tag);
   if (tdecl->name)
     xml_attr("name", tdecl->name);
   if (tdecl->container/* || tdecl->container_function*/)
