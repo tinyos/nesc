@@ -329,8 +329,6 @@ static void output_docstring(char *docstring)
   docstring_context context = in_main;
   static char *whitespace = " \t\r\n";
 
-  fprintf(stderr, "DOC: %s\n", pos);
-  
   while( 1 ) {
     // find the next @ directive
     at = strchr(pos,'@');
