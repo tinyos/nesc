@@ -207,7 +207,7 @@ sub gen() {
         ### Offset
 	print "    /**\n";
 	print "     * Return the offset (in bytes) of the field '$field'\n";
-	if ($offset % 8) {
+	if ((int($offset) % 8) != 0) {
 	  print "     * WARNING: This field is not byte-aligned (bit offset $offset).\n";
 	}
 	print "     */\n";
@@ -215,8 +215,7 @@ sub gen() {
 	if ($isarray) {
 	  printoffset($base + $offset, $amax, $abitsize, $aoffset, 0);
 	} else {
-	  $byteoff = ($offset / 8);
-	  print "        return $byteoff;\n";
+	  print "        return ($offset / 8);\n";
 	}
 	print "    }\n\n";
 
@@ -254,7 +253,7 @@ sub gen() {
           ### Size
   	  print "    /**\n";
 	  print "     * Return the size, in bytes, of the field '$field'\n";
-	  if ($bitsize % 8) {
+	  if ((int($bitlength) % 8) != 0) {
 	    print "     * WARNING: This field is not an even-sized number of bytes ($bitlength bits).\n";
 	  } 
 	  print "     */\n";
@@ -263,10 +262,7 @@ sub gen() {
 	  print "    }\n\n";
 
   	  print "    /**\n";
-	  print "     * Return the size, in bytes, of the field '$field'\n";
-	  if ($bitsize % 8) {
-	    print "     * WARNING: This field is not an even-sized number of bytes ($bitlength bits).\n";
-	  } 
+	  print "     * Return the size, in bits, of the field '$field'\n";
 	  print "     */\n";
 	  print "    public static int sizeBits_$javafield() {\n";
 	  print "        return $bitlength;\n";
@@ -311,7 +307,7 @@ sub gen() {
             ### Total size (when array size is known)
   	    print "    /**\n";
 	    print "     * Return the total size, in bytes, of the array '$field'\n";
-	    if ($arraysize_bits % 8) {
+	    if ((int($arraysize_bits) % 8) != 0) {
   	      print "     * WARNING: This array is not an even-sized number of bytes ($arraysize_bits bits).\n";
 	    } 
 	    print "     */\n";
@@ -330,7 +326,7 @@ sub gen() {
           ### Element size
 	  print "    /**\n";
 	  print "     * Return the size, in bytes, of each element of the array '$field'\n";
-	  if ($bitlength % 8) {
+	  if ((int($bitlength) % 8) != 0) {
 	    print "     * WARNING: This field is not an even-sized number of bytes ($bitlength bits).\n";
 	  }
 	  print "     */\n";
