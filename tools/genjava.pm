@@ -209,7 +209,7 @@ sub gen() {
 
 	  if (@$amax==1 && $bitlength == 8) {
 	      print "    /**\n";
-	      print "     * Fill in the char array with a String \n";
+	      print "     * Fill in the $field array with a String\n";
 	      print "     */\n";
 	      print "    public void set\u$javafield(String s) { \n";
 	      if ($amax[0] != 0) {
@@ -219,21 +219,21 @@ sub gen() {
 	      }
 	      print "         int i;\n";
 	      print "         for (i = 0; i < len; i++) {\n";
-	      print "             set\u$javafield(i, s.charAt(i));\n";
+	      print "             set\u$javafield(i, ($javatype)s.charAt(i));\n";
               print "         }\n";
-	      print "         set\u$javafield(i, (char)0); //null terminate\n";
+	      print "         set\u$javafield(i, ($javatype)0); //null terminate\n";
 	      print "    }\n\n";
 
 	      if ($amax[0] != 0) {
   	        print "    /**\n";
- 	        print "     * Read the char array into a String  \n";
+ 	        print "     * Read the $field array as a String\n";
 	        print "     */\n";
 	        print "    public String get\u$javafield() { \n";
                 print "         char carr[] = new char[$$amax[0]];\n";
 	        print "         int i;\n";
 	        print "         for (i = 0; i < $$amax[0]; i++) {\n";
-	        print "             if (get\u$javafield(i) == 0) break;\n";
-	        print "             carr[i] = get\u$javafield(i);\n";
+	        print "             if ((char)get\u$javafield(i) == (char)0) break;\n";
+	        print "             carr[i] = (char)get\u$javafield(i);\n";
                 print "         }\n";
                 print "         return new String(carr,0,i-1);\n";
 	        print "    }\n\n";
