@@ -131,6 +131,23 @@ void outputln(char *format, ...)
   newline();
 }
 
+void output_quoted(const char *s)
+{
+  /* Output a string which may contain newlines, \ and " */
+  while (*s)
+    {
+      if (*s == '\n') /* don't confuse the line numbers */
+	fputs("\\n", of);
+      else 
+	{
+	  if (*s == '\\' || *s == '"')
+	    putc('\\', of);
+	  putc(*s, of);
+	}
+      s++;
+    }
+}
+
 
 /**
  * copy a file to the output stream.
@@ -194,10 +211,11 @@ static void output_line_directive(location l, bool include_filename)
 {
   startline_noindent();
   if (include_filename)
-    /* The filename doesn't need any quoting as the quotes were not stripped on
-       input */
-    outputln("# %lu \"%s\"%s", l->lineno, l->filename,
-	     l->in_system_header ? " 3" : "");
+    {
+      output("# %lu \"", l->lineno);
+      output_quoted(l->filename);
+      outputln("\"%s", l->in_system_header ? " 3" : "");
+    }
   else
     outputln("#line %lu", l->lineno);
 }
