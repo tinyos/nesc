@@ -30,8 +30,6 @@ Boston, MA 02111-1307, USA. */
 /* To whomever it may concern: I have heard that such a thing was once
    written by AT&T, but I have never seen it.  */
 
-%expect 4
-
 %pure_parser
 
 
@@ -138,6 +136,7 @@ void yyerror();
 %type <u.decl> nested_function notype_nested_function old_style_parm_decls
 %type <u.decl> initdcl component_decl_list component_decl_list2 component_decl
 %type <u.decl> components component_declarator enumerator enumlist
+%type <u.decl> components_notype component_notype_declarator 
 %type <u.decl> parmlist parmlist_1 parmlist_2 parms parm
 %type <u.decl> parmlist_or_identifiers identifiers notype_initdcl
 %type <u.decl> parmlist_or_identifiers_1 old_parameter just_datadef
@@ -327,6 +326,48 @@ void parse(void) deletes
   pstate = old_pstate;
 }
 
+/* Simple build functions */
+declaration make_data_decl(location l, declaration decls)
+{
+  data_decl dd = new_data_decl(parse_region, l, pstate.declspecs,
+			       pstate.all_prefix_attributes, decls);
+
+  pop_declspec_stack();
+
+  return CAST(declaration, dd);
+}
+
+declaration make_error_decl(void)
+{
+  return new_error_decl(pr, last_location);
+}
+
+declaration make_extension_decl(int old_pedantic, location l, declaration d)
+{ 
+  pedantic = old_pedantic; 
+  return CAST(declaration, new_extension_decl(pr, l, d));
+}
+
+word make_cword(location l, const char *s)
+{
+  return new_word(pr, l, str2cstring(pr, s));
+}
+
+declarator make_pointer_declarator(location l, declarator d, type_element quals)
+{
+  return CAST(declarator, new_pointer_declarator(pr, l, d, quals));
+}
+
+declarator make_identifier_declarator(location l, cstring id)
+{
+  return CAST(declarator, new_identifier_declarator(pr, l, id));
+}
+
+statement make_error_stmt(void)
+{
+  return new_error_stmt(pr, last_location);
+}
+
 /* Tell yyparse how to print a token's value, if yydebug is set.  */
 
 #define YYPRINT(FILE,YYCHAR,YYLVAL) yyprint(FILE,YYCHAR,YYLVAL)
@@ -377,7 +418,7 @@ parameters:
 
 parameters1: 
 	  parameter_list ']' { $$ = declaration_reverse($1); }
-	| error ']' { $$ = new_error_decl(pr, dummy_location); }
+	| error ']' { $$ = make_error_decl(); }
 	;
 
 parameter_list: 
@@ -387,9 +428,9 @@ parameter_list:
 parameter: 
 	  parameter_type identifier
    		{ 
-		  identifier_declarator id =
-		    new_identifier_declarator(pr, $2.location, $2.id);
-		  $$ = declare_parameter(CAST(declarator, id), $1, NULL, NULL, TRUE);
+		  declarator id =
+		    make_identifier_declarator($2.location, $2.id);
+		  $$ = declare_parameter(id, $1, NULL, NULL, TRUE);
 		}
 	;
 
@@ -556,8 +597,7 @@ extdef:
 		    (pr, $1.location,
 		     new_asm_stmt(pr, $1.location, $3, NULL, NULL, NULL, NULL))); }
 	| extension extdef
-		{ pedantic = $1.i; 
-		  $$ = CAST(declaration, new_extension_decl(pr, $1.location, $2)); }
+		{ $$ = make_extension_decl($1.i, $1.location, $2); }
 	;
 
 just_datadef: 
@@ -570,20 +610,16 @@ datadef:
 		  else if (!flag_traditional)
 		    warning("data definition has no type or storage class"); 
 
-		  $$ = CAST(declaration, new_data_decl(pr, $2->location, NULL, NULL, $2));
-		  pop_declspec_stack(); }
+		  $$ = make_data_decl($2->location, $2); }
         | declspecs_nots setspecs notype_initdecls ';'
-		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, $3));
-		  pop_declspec_stack(); }
+		{ $$ = make_data_decl($1->location, $3); }
 	| declspecs_ts setspecs initdecls ';'
-		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, $3));
-		  pop_declspec_stack(); }
+		{ $$ = make_data_decl($1->location, $3); }
 	| declspecs setspecs ';'
-	  { shadow_tag($1); 
-	    $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, NULL));
-	    pop_declspec_stack(); }
-	| error ';' { $$ = new_error_decl(pr, last_location); }
-	| error '}' { $$ = new_error_decl(pr, last_location); }
+	  	{ shadow_tag($1); 
+	    	  $$ = make_data_decl($1->location, NULL); }
+	| error ';' { $$ = make_error_decl(); }
+	| error '}' { $$ = make_error_decl(); }
 	| ';'
 		{ if (pedantic)
 		    pedwarn("ANSI C does not allow extra `;' outside of a function");
@@ -964,15 +1000,12 @@ datadecls:
    style parm.  */
 datadecl:
 	  declspecs_ts_nosa setspecs initdecls ';'
-		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, $3));
-		  pop_declspec_stack(); }
+		{ $$ = make_data_decl($1->location, $3); }
 	| declspecs_nots_nosa setspecs notype_initdecls ';'
-		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, $3));
-		  pop_declspec_stack(); }
+		{ $$ = make_data_decl($1->location, $3); }
 	| declspecs_ts_nosa setspecs ';'
 		{ shadow_tag_warned($1, 1);
-		  $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, NULL));
-		  pop_declspec_stack();
+		  $$ = make_data_decl($1->location, NULL);
 		  pedwarn("empty declaration"); }
 	| declspecs_nots_nosa ';'
 		{ pedwarn("empty declaration"); 
@@ -985,9 +1018,9 @@ datadecl:
    where statement labels are allowed.  */
 decls:
 	  decl
-	| errstmt { $$ = new_error_decl(pr, last_location); }
+	| errstmt { $$ = make_error_decl(); }
 	| decls decl { $$ = declaration_chain($2, $1); }
-	| decl errstmt { $$ = new_error_decl(pr, last_location); }
+	| decl errstmt { $$ = make_error_decl(); }
 	;
 
 /* records the type and storage class specs to use for processing
@@ -1014,11 +1047,9 @@ maybe_resetattrs:
 
 decl:
 	  declspecs_ts setspecs initdecls ';'
-		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, $3));
-		  pop_declspec_stack(); }
+		{ $$ = make_data_decl($1->location, $3); }
 	| declspecs_nots setspecs notype_initdecls ';'
-		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, $3));
-		  pop_declspec_stack(); }
+		{ $$ = make_data_decl($1->location, $3); }
 	| declspecs_ts setspecs nested_function
 		{ $$ = $3;
 		  pop_declspec_stack(); }
@@ -1027,11 +1058,9 @@ decl:
 		  pop_declspec_stack(); }
 	| declspecs setspecs ';'
 		{ shadow_tag($1);
-		  $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, NULL));
-		  pop_declspec_stack(); }
+		  $$ = make_data_decl($1->location, NULL); }
 	| extension decl
-		{ pedantic = $1.i; 
-		  $$ = CAST(declaration, new_extension_decl(pr, $1.location, $2)); }
+		{ $$ = make_extension_decl($1.i, $1.location, $2); }
 	;
 
 /* declspecs borrowed from gcc 3. I think it's really ugly, but I guess
@@ -1502,10 +1531,14 @@ attrib:
 
 any_word:
 	  idword
-	| scspec { $$ = new_word(pr, $1->location, str2cstring(pr, rid_name(CAST(rid, $1)))); }
-	| type_spec { $$ = new_word(pr, $1->location, str2cstring(pr, rid_name(CAST(rid, $1)))); }
-	| type_qual { $$ = new_word(pr, $1->location, str2cstring(pr, qualifier_name(CAST(qualifier, $1)->id))); }
-	| SIGNAL { $$ = new_word(pr, $1.location, str2cstring(pr, "signal")); }
+	| scspec
+		{ $$ = make_cword($1->location, rid_name(CAST(rid, $1))); }
+	| type_spec 
+		{ $$ = make_cword($1->location, rid_name(CAST(rid, $1))); }
+	| type_qual 
+		{ $$ = make_cword($1->location, qualifier_name(CAST(qualifier, $1)->id)); }
+	| SIGNAL
+		{ $$ = make_cword($1.location, "signal"); }
 	;
 
 /* Initializers.  `init' is the entry point.  */
@@ -1610,10 +1643,10 @@ after_type_declarator:
 	  after_type_declarator array_or_fn_declarator 
 		{ $$ = finish_array_or_fn_declarator($1, $2); }
         | '*' maybe_type_quals_attrs after_type_declarator
-		{ $$ = CAST(declarator, new_pointer_declarator(pr, $1.location, $3, $2)); }
+		{ $$ = make_pointer_declarator($1.location, $3, $2); }
 	| '(' after_type_declarator ')'
 		{ $$ = $2; }
-	| TYPENAME { $$ = CAST(declarator, new_identifier_declarator(pr, $1.location, $1.id)); }
+	| TYPENAME { $$ = make_identifier_declarator($1.location, $1.id); }
 	| TYPENAME '.' identifier 
 		{
 		  $$ = make_interface_ref_declarator($1.location, $1.id, $3.id);
@@ -1624,14 +1657,15 @@ after_type_declarator:
    in addition to notype_declarator.  This is like after_type_declarator
    but does not allow a typedef name in parentheses as an identifier
    (because it would conflict with a function with that typedef as arg).  */
-
 parm_declarator:
 	  parm_declarator array_or_fn_declarator
 		{ $$ = finish_array_or_fn_declarator($1, $2); }
 	| '*' maybe_type_quals_attrs parm_declarator
-		{ $$ = CAST(declarator, new_pointer_declarator(pr, $1.location, $3, $2)); }
-	| TYPENAME { $$ = CAST(declarator, new_identifier_declarator(pr, $1.location, $1.id)); }
+		{ $$ = make_pointer_declarator($1.location, $3, $2); }
+	| TYPENAME 
+		{ $$ = make_identifier_declarator($1.location, $1.id); }
 	;
+
 
 /* A declarator allowed whether or not there has been
    an explicit type_spec.  These cannot redeclare a typedef-name.  */
@@ -1640,11 +1674,12 @@ notype_declarator:
 	  notype_declarator array_or_fn_declarator
 		{ $$ = finish_array_or_fn_declarator($1, $2); }
 	| '*' maybe_type_quals_attrs notype_declarator
-		{ $$ = CAST(declarator, new_pointer_declarator(pr, $1.location, $3, $2)); }
+		{ $$ = make_pointer_declarator($1.location, $3, $2); }
 	| '(' notype_declarator ')'
 		{ $$ = $2; }
-	| IDENTIFIER { $$ = CAST(declarator, new_identifier_declarator(pr, $1.location, $1.id)); }
-	| IDENTIFIER '.' identifier { }
+	| IDENTIFIER 
+		{ $$ = make_identifier_declarator($1.location, $1.id); }
+	| IDENTIFIER '.' identifier
 		{
 		  $$ = make_interface_ref_declarator($1.location, $1.id, $3.id);
 		}
@@ -1733,28 +1768,23 @@ component_decl_list2:
 
 component_decl:
 	  declspecs_nosc_ts setspecs components
-		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, declaration_reverse($3)));
-		  pop_declspec_stack(); }
+		{ $$ = make_data_decl($1->location, declaration_reverse($3)); }
 	| declspecs_nosc_ts setspecs
 		{ if (pedantic)
 		    pedwarn("ISO C doesn't support unnamed structs/unions");
 
-		  $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, NULL));
-		  pop_declspec_stack(); }
-	| declspecs_nosc_nots setspecs components
-		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, declaration_reverse($3)));
-		  pop_declspec_stack(); }
+		  $$ = make_data_decl($1->location, NULL); }
+	| declspecs_nosc_nots setspecs components_notype
+		{ $$ = make_data_decl($1->location, declaration_reverse($3)); }
 	| declspecs_nosc_nots setspecs
 		{ if (pedantic)
 		    pedwarn("ANSI C forbids member declarations with no members");
 		  shadow_tag($1);
-		  $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, NULL));	
-		  pop_declspec_stack(); }
+		  $$ = make_data_decl($1->location, NULL); }
 	| error
-		{ $$ = new_error_decl(pr, last_location); }
+		{ $$ = make_error_decl(); }
 	| extension component_decl
-		{ pedantic = $<u.itoken>1.i;
-		  $$ = CAST(declaration, new_extension_decl(pr, $1.location, $2)); }
+		{ $$ = make_extension_decl($1.i, $1.location, $2); }
 	;
 
 components:
@@ -1763,11 +1793,31 @@ components:
 		{ $$ = declaration_chain($4, $1); }
 	;
 
+/* It should be possible to use components after the ',', but gcc 3
+   isn't doing this */
+components_notype:
+	  component_notype_declarator
+	| components_notype ',' maybe_resetattrs component_notype_declarator
+		{ $$ = declaration_chain($4, $1); }
+	;
+
 component_declarator:
 	  declarator maybe_attribute
 		{ $$ = make_field($1, NULL, pstate.declspecs,
 				  $2, pstate.all_prefix_attributes); }
 	| declarator ':' expr_no_commas maybe_attribute
+		{ $$ = make_field($1, $3, pstate.declspecs,
+				  $4, pstate.all_prefix_attributes); }
+	| ':' expr_no_commas maybe_attribute
+		{ $$ = make_field(NULL, $2, pstate.declspecs,
+				  $3, pstate.all_prefix_attributes); }
+	;
+
+component_notype_declarator:
+	  notype_declarator maybe_attribute
+		{ $$ = make_field($1, NULL, pstate.declspecs,
+				  $2, pstate.all_prefix_attributes); }
+	| notype_declarator ':' expr_no_commas maybe_attribute
 		{ $$ = make_field($1, $3, pstate.declspecs,
 				  $4, pstate.all_prefix_attributes); }
 	| ':' expr_no_commas maybe_attribute
@@ -1812,14 +1862,14 @@ absdcl1:  /* a nonempty absolute declarator */
 absdcl1_noea:
 	  direct_absdcl1
 	| '*' maybe_type_quals_attrs absdcl1_noea
-		{ $$ = CAST(declarator, new_pointer_declarator(pr, $1.location, $3, $2)); }
+		{ $$ = make_pointer_declarator($1.location, $3, $2); }
 	;
 
 absdcl1_ea:
 	  '*' maybe_type_quals_attrs
-		{ $$ = CAST(declarator, new_pointer_declarator(pr, $1.location, NULL, $2)); }
+		{ $$ = make_pointer_declarator($1.location, NULL, $2); }
 	| '*' maybe_type_quals_attrs absdcl1_ea
-		{ $$ = CAST(declarator, new_pointer_declarator(pr, $1.location, $3, $2)); }
+		{ $$ = make_pointer_declarator($1.location, $3, $2); }
 	;
 
 direct_absdcl1:
@@ -1888,7 +1938,7 @@ stmt_or_labels:
 	| stmt_or_labels stmt_or_label
 		{ $$.i = $2.i; $$.stmt = chain_with_labels($1.stmt, $2.stmt); }
 	| stmt_or_labels errstmt
-		{ $$.i = 0; $$.stmt = new_error_stmt(pr, last_location); }
+		{ $$.i = 0; $$.stmt = make_error_stmt(); }
 	;
 
 xstmts:
@@ -1943,7 +1993,7 @@ compstmt:
 		    declaration_reverse($4), $5, poplevel())); }
 	| compstmt_start pushlevel maybe_label_decls error '}'
 		{ poplevel();
-		  $$ = new_error_stmt(pr, last_location); }
+		  $$ = make_error_stmt(); }
 	| compstmt_start pushlevel maybe_label_decls stmts '}'
 		{ $$ = CAST(statement, new_compound_stmt(pr, $1.location, $3, NULL, $4, poplevel())); }
 	;
@@ -1953,7 +2003,7 @@ simple_if:
 	  if_prefix labeled_stmt
 		{ $$.stmt = CAST(statement, new_if_stmt(pr, $1.expr->location, $1.expr, $2, NULL));
 		  $$.i = $1.i; }
-	| if_prefix error { $$.i = $1.i; $$.stmt = new_error_stmt(pr, last_location); }
+	| if_prefix error { $$.i = $1.i; $$.stmt = make_error_stmt(); }
 	;
 
 if_prefix:
@@ -2017,7 +2067,7 @@ stmt:
 					   "empty body in an if-statement");
 		  $$ = $1.stmt; }
 	| simple_if ELSE error
-		{ $$ = new_error_stmt(pr, last_location); }
+		{ $$ = make_error_stmt(); }
 	| WHILE
 		{ stmt_count++; }
 	  '(' expr ')' 
@@ -2038,7 +2088,7 @@ stmt:
 		     with while, but GCC is inconsistent. See loop1.c */
 		  pop_loop(); }
 	| do_stmt_start error
-		{ $$ = new_error_stmt(pr, last_location); 
+		{ $$ = make_error_stmt(); 
 		  pop_loop(); }
 	| FOR '(' xexpr ';' { stmt_count++; }
 		xexpr ';' { if ($6) check_condition("for", $6); }
