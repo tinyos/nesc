@@ -21,6 +21,7 @@ while(<SECTS>) {
   $vma = hex($datainf[4]);
   $lma = hex($datainf[5]);
 }
+
 close(SECTS);
 
 open(SYMBOL, "avr-objdump -t $exein | grep TOS_LOCAL_ADDRESS|") or die "Cannot extract symbol information";
@@ -34,17 +35,36 @@ close(SYMBOL);
 open (SREC_IN, "$srecin") or die "Srec file not found"; 
 open (SREC_OUT, ">$srecout") or die "Cannot create an output file";
 while(<SREC_IN>){
-  my $line = hex(substr($_, 4, 4));
+    my $type = substr($_, 1, 1); #type of record is second byte
+    my $len_bytes = 0;
+    my $record_start_byte = 0;
+
+    if ($type == '1') { #record type 1 -- length is 2 bytes (4 chars)
+	$len_bytes = 2;
+	$record_start_byte = 8;
+    } elsif ($type == '2') { #record type 2 -- length is 3 bytes
+	$len_bytes = 3;
+	$record_start_byte = 10;
+    } else {  #unknown record type
+	print SREC_OUT;
+	next;
+    }
+
+    #we've got a type 1 or type 2 record
+    #fetch the address from the record
+  my $line = hex(substr($_, 4, $len_bytes * 2)); #2 chars per byte
   if ($line == $lma) {
-    my $len = hex(substr($_, 2,2))-3;
-#    print $len;
+      
+      #fetch the length from the record, subtracting
+      #the length of the address and type bytes 
+    my $len = hex(substr($_, 2,2))-($len_bytes + 1);
     if ($len < ($addr_addr - $vma)) {
       print "This should not have happened!";
       $vma += $len;
       $lma += $len;
       print SREC_OUT;
     } else {
-      my $st = 8 + 2 * ($addr_addr - $vma); 
+      my $st = $record_start_byte + 2 * ($addr_addr - $vma); 
       #my $sym = hex(substr($_, $st, 2)); 
       #my $csum = hex(substr($_, -4)) + $sym - $MOTE_ADDRESS;
 
