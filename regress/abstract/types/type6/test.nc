@@ -1,6 +1,6 @@
 configuration test { }
 implementation {
-  components main, conf(int) as conf1, conf(float *) as conf2;
+  components main, new conf(int) as conf1, new conf(float *) as conf2;
 
   main.sc -> conf1;
   main.sc -> conf2;

@@ -1,6 +1,6 @@
 module main {
-  uses interface sc(int, int) as sc1;
-  uses interface sc(int, char *) as sc2;
+  uses interface sc<int, int> as sc1;
+  uses interface sc<int, char *> as sc2;
 }
 implementation {
   void entry() __attribute((spontaneous)) {

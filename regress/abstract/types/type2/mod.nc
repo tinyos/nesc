@@ -1,4 +1,4 @@
-abstract module mod(t) {
+abstract module mod(typedef t) {
   provides interface sc;
 }
 implementation {

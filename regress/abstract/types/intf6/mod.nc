@@ -1,5 +1,5 @@
 module mod {
-  provides interface sc(short, char *);
+  provides interface sc<short, char *>;
 }
 implementation {
   command short sc.init(char *foo, int b) {

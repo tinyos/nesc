@@ -1,8 +1,8 @@
 abstract configuration conf(int t) {
-  provides interface sc(int, char *);
+  provides interface sc<int, char *>;
 }
 implementation {
-  components mod(t) as themod;
+  components new mod(t) as themod;
 
   sc = themod;
 }

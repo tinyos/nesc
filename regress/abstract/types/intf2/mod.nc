@@ -1,5 +1,5 @@
 abstract module mod(int n) {
-  provides interface sc(int, char *);
+  provides interface sc<int, char *>;
 }
 implementation {
   command int sc.init(char *foo, int b) {

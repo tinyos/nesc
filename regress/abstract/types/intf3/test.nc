@@ -1,6 +1,6 @@
 configuration test { }
 implementation {
-  components main, conf(2) as conf1, conf(20) as conf2;
+  components main, new conf(2) as conf1, new conf(20) as conf2;
 
   main.sc -> conf1;
   main.sc -> conf2;

@@ -1,8 +1,8 @@
-abstract configuration conf(int n, t) {
-  provides interface sc(int, t *);
+abstract configuration conf(int n, typedef t) {
+  provides interface sc<int, t *>;
 }
 implementation {
-  components mod(t *, n) as themod;
+  components new mod(t *, n) as themod;
 
   sc = themod;
 }

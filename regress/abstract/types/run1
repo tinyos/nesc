@@ -1,2 +1,2 @@
-NESC=`pwd | sed -e 's|nesc/.*|nesc|'`
-$NESC/src/nesc1 test.nc
+NESC=`pwd | sed -e 's|regress/.*||'`
+$NESC/src/nesc1 -Dabstract=generic test.nc

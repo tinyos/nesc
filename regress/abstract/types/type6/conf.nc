@@ -1,8 +1,8 @@
-abstract configuration conf(t) {
+abstract configuration conf(typedef t) {
   provides interface sc;
 }
 implementation {
-  components mod(t *) as themod;
+  components new mod(t *) as themod;
 
   sc = themod;
 }
