@@ -2685,7 +2685,7 @@ type_element finish_struct(type_element t, declaration fields,
   bool hasmembers = FALSE;
   field_declaration *nextfield = &tdecl->fieldlist;
   declaration fdecl;
-  size_t offset = 0, alignment = BITSPERBYTE, size = 0;
+  largest_uint offset = 0, alignment = BITSPERBYTE, size = 0;
   bool size_cc = TRUE;
   bool isunion = tdecl->kind == kind_union_ref;
 

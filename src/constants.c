@@ -30,9 +30,6 @@ Boston, MA 02111-1307, USA. */
    +, -, *, /, ==, !=, &&, ||, __real__, __imag__, ~ (conjugate)
 */
 
-/* "Same machine" constant folding. This file makes a number of assumptions
- * about type represenation, marked by comments preceded by ASSUMES:
- */
 #define _ISOC99_SOURCE
 #include "parser.h"
 #include "constants.h"

@@ -58,7 +58,8 @@ typedef struct tag_declaration {
   bool fields_const, fields_volatile;
   bool transparent_union;	/* transparent_union attribute is present */
 
-  size_t size, alignment;
+  largest_uint size;
+  size_t alignment;
   bool size_cc;			/* TRUE if size is a compile-time constant
 				   (can be false because of variable-size arrays) */
   bool packed;			/* if packed attribute specified */

@@ -91,7 +91,7 @@ void typelist_scan(typelist tl, typelist_scanner *scanner);
 type typelist_next(typelist_scanner *scanner);
 
 /* Size and alignment */
-size_t type_size(type t); /* Requires: type_size_cc(t) */
+largest_uint type_size(type t); /* Requires: type_size_cc(t) */
 size_t type_alignment(type t);
 
 /* True if t has a size (void or not incomplete) */

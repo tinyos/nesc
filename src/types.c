@@ -24,6 +24,7 @@ Boston, MA 02111-1307, USA. */
 #include "types.h"
 #include "constants.h"
 #include "c-parse.h"
+#include "machine.h"
 #include <stddef.h>
 
 struct type
@@ -38,7 +39,8 @@ struct type
      alignment is used for aggregates and arrays only if it is non-zero
      (indicating an alignment overridden by an attribute)
   */
-  size_t size, alignment; 
+  largest_uint size;
+  size_t alignment; 
 
   union {
     /* tk_primtive and tk_complex.
@@ -232,8 +234,8 @@ type make_pointer_type(type t)
   nt->u.pointsto = t;
 
   /* ASSUME: all pointers are the same */
-  nt->size = sizeof(void *); 
-  nt->alignment = __alignof__(void *);
+  nt->size = MACHINE_PTR_SIZE;
+  nt->alignment = MACHINE_PTR_ALIGN;
 
   return nt;
 }
@@ -332,44 +334,43 @@ void init_types(void)
 {
   types_region = newregion();
 
-  float_type = make_primitive(tp_float, sizeof(float), __alignof__(float));
-  double_type = make_primitive(tp_double, sizeof(double), __alignof__(double));
+  float_type = make_primitive
+    (tp_float, MACHINE_FLOAT_SIZE, MACHINE_FLOAT_ALIGN);
+  double_type = make_primitive
+    (tp_double, MACHINE_DOUBLE_SIZE, MACHINE_DOUBLE_ALIGN);
   long_double_type = make_primitive
-    (tp_long_double, sizeof(long double), __alignof__(long double));
-  short_type = make_primitive(tp_short, sizeof(short), __alignof__(short));
+    (tp_long_double, MACHINE_LONG_DOUBLE_SIZE, MACHINE_LONG_DOUBLE_ALIGN);
+
+  short_type = make_primitive
+    (tp_short, MACHINE_SHORT_SIZE, MACHINE_SHORT_ALIGN);
   unsigned_short_type = make_primitive
-    (tp_unsigned_short, sizeof(unsigned short), __alignof__(unsigned short));
-  int_type = make_primitive(tp_int, sizeof(int), __alignof__(int));
+    (tp_unsigned_short, MACHINE_SHORT_SIZE, MACHINE_SHORT_ALIGN);
+
+  int_type = make_primitive
+    (tp_int, MACHINE_INT_SIZE, MACHINE_INT_ALIGN);
   unsigned_int_type = make_primitive
-    (tp_unsigned_int, sizeof(unsigned int), __alignof__(unsigned int));
-  long_type = make_primitive(tp_long, sizeof(long), __alignof__(long));
+    (tp_unsigned_int, MACHINE_INT_SIZE, MACHINE_INT_ALIGN);
+
+  long_type = make_primitive
+    (tp_long, MACHINE_LONG_SIZE, MACHINE_LONG_ALIGN);
   unsigned_long_type = make_primitive
-    (tp_unsigned_long, sizeof(unsigned long), __alignof__(unsigned long));
+    (tp_unsigned_long, MACHINE_LONG_SIZE, MACHINE_LONG_ALIGN);
 
   long_long_type = make_primitive
-    (tp_long_long, sizeof(long long), __alignof__(long long));
+    (tp_long_long, MACHINE_LONG_LONG_SIZE, MACHINE_LONG_LONG_ALIGN);
   unsigned_long_long_type = make_primitive
-    (tp_unsigned_long_long, sizeof(unsigned long long), __alignof__(unsigned long long));
-  signed_char_type = make_primitive
-    (tp_signed_char, sizeof(signed char), __alignof__(signed char));
-  unsigned_char_type = make_primitive
-    (tp_unsigned_char, sizeof(unsigned char), __alignof__(unsigned char));
-  char_type = make_primitive(tp_char, sizeof(char), __alignof__(char));
+    (tp_unsigned_long_long, MACHINE_LONG_LONG_SIZE, MACHINE_LONG_LONG_ALIGN);
 
- {
-    /* GCC is broken (could be a broken design issue ;-)), so need the
-       typedefs (rather than using the types directly in the calls
-       to alignof) */
-    typedef int __attribute__ ((mode(__HI__))) myint2;
-    typedef int __attribute__ ((mode(__SI__))) myint4;
-    typedef int __attribute__ ((mode(__DI__))) myint8;
-    int2_type = lookup_primitive(tp_int2, 2, __alignof__(myint2), FALSE);
-    uint2_type = lookup_primitive(tp_uint2, 2, __alignof__(myint2), TRUE);
-    int4_type = lookup_primitive(tp_int4, 4, __alignof__(myint4), FALSE);
-    uint4_type = lookup_primitive(tp_uint4, 4, __alignof__(myint4), TRUE);
-    int8_type = lookup_primitive(tp_int8, 8, __alignof__(myint8), FALSE);
-    uint8_type = lookup_primitive(tp_uint8, 8, __alignof__(myint8), TRUE);
-  }
+  signed_char_type = make_primitive(tp_signed_char, 1, MACHINE_INT1_ALIGN);
+  unsigned_char_type = make_primitive(tp_unsigned_char, 1, MACHINE_INT1_ALIGN);
+  char_type = make_primitive(tp_char, 1, MACHINE_INT1_ALIGN);
+
+  int2_type = lookup_primitive(tp_int2, 2, MACHINE_INT2_ALIGN, FALSE);
+  uint2_type = lookup_primitive(tp_uint2, 2, MACHINE_INT2_ALIGN, TRUE);
+  int4_type = lookup_primitive(tp_int4, 4, MACHINE_INT4_ALIGN, FALSE);
+  uint4_type = lookup_primitive(tp_uint4, 4, MACHINE_INT4_ALIGN, TRUE);
+  int8_type = lookup_primitive(tp_int8, 8, MACHINE_INT8_ALIGN, FALSE);
+  uint8_type = lookup_primitive(tp_uint8, 8, MACHINE_INT8_ALIGN, TRUE);
 
   char_array_type = make_array_type(char_type, NULL);
   error_type = new_type(tk_error);
@@ -378,12 +379,11 @@ void init_types(void)
   void_type->size = void_type->alignment = 1;
   ptr_void_type = make_pointer_type(void_type);
 
-  /* SAME: wchar_t, size_t, ptrdiff_t, pointer size */
-  wchar_type = type_for_size(sizeof(wchar_t), (wchar_t)-1 > 0);
+  wchar_type = type_for_size(MACHINE_WCHAR_T_SIZE, !MACHINE_WCHAR_T_SIGNED);
   wchar_array_type = make_array_type(wchar_type, NULL);
-  size_t_type = type_for_size(sizeof(size_t), TRUE);
-  ptrdiff_t_type = type_for_size(sizeof(ptrdiff_t), FALSE);
-  intptr_type = type_for_size(sizeof(void *), TRUE);
+  size_t_type = type_for_size(MACHINE_SIZE_T_SIZE, TRUE);
+  ptrdiff_t_type = type_for_size(MACHINE_PTR_SIZE, FALSE);
+  intptr_type = type_for_size(MACHINE_PTR_SIZE, TRUE);
 }
 
 struct typelist
@@ -479,7 +479,7 @@ bool type_unsigned(type t)
 {
   return t->kind == tk_primitive &&
     (t->u.primitive == tp_unsigned_char ||
-#ifdef __CHAR_UNSIGNED__
+#if MACHINE_CHAR_SIGNED
      t->u.primitive == tp_char ||
 #endif
      t->u.primitive == tp_unsigned_short ||
@@ -1553,7 +1553,7 @@ type function_call_type(function_call fcall)
   return fntype;
 }
 
-size_t type_size(type t)
+largest_uint type_size(type t)
 {
   assert(type_size_cc(t));
 
