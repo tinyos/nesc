@@ -34,6 +34,7 @@ struct yystype {
     string_cst string_cst;
     declaration decl;
     declarator declarator;
+    nested_declarator nested;
     expression expr;
     id_label id_label;
     label label;

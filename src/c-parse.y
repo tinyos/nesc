@@ -30,7 +30,7 @@ Boston, MA 02111-1307, USA. */
 /* To whomever it may concern: I have heard that such a thing was once
    written by AT&T, but I have never seen it.  */
 
-%expect 8
+%expect 4
 
 %pure_parser
 
@@ -142,10 +142,10 @@ void yyerror();
 %type <u.decl> parmlist_or_identifiers identifiers notype_initdcl
 %type <u.decl> parmlist_or_identifiers_1 old_parameter just_datadef
 %type <u.declarator> declarator after_type_declarator notype_declarator
-%type <u.declarator> after_attributes_and_type_declarator
-%type <u.declarator> after_attributes_notype_declarator
-%type <u.declarator> after_attributes_parm_declarator
-%type <u.declarator> absdcl absdcl1 parm_declarator
+%type <u.declarator> absdcl absdcl1 absdcl1_noea absdcl1_ea direct_absdcl1
+%type <u.declarator> parm_declarator 
+%type <u.nested> array_declarator fn_declarator array_or_fn_declarator
+%type <u.nested> absfn_declarator array_or_absfn_declarator
 %type <u.expr> cast_expr expr expr_no_commas exprlist init initlist_maybe_comma
 %type <u.expr> initlist1 initelt nonnull_exprlist primary string_component 
 %type <u.expr> STRING string_list nonnull_exprlist_
@@ -162,14 +162,36 @@ void yyerror();
 %type <u.stmt> labeled_stmt stmt
 %type <u.cstmt> do_stmt_start
 %type <u.string> asm_clobbers string
-%type <u.telement> scspec type_qual type_spec
-%type <u.telement> declmods
-%type <u.telement> reserved_declspecs
-%type <u.telement> typed_declspecs
-%type <u.telement> typed_typespecs reserved_typespecquals 
-%type <u.telement> typespec typespecqual_reserved structsp
-%type <u.telement> nonempty_type_quals type_quals
-%type <u.telement> maybe_type_qual fn_qual fn_quals
+%type <u.telement> declspecs_nosc_nots_nosa_noea
+%type <u.telement> declspecs_nosc_nots_nosa_ea
+%type <u.telement> declspecs_nosc_nots_sa_noea
+%type <u.telement> declspecs_nosc_nots_sa_ea
+%type <u.telement> declspecs_nosc_ts_nosa_noea
+%type <u.telement> declspecs_nosc_ts_nosa_ea
+%type <u.telement> declspecs_nosc_ts_sa_noea
+%type <u.telement> declspecs_nosc_ts_sa_ea
+%type <u.telement> declspecs_sc_nots_nosa_noea
+%type <u.telement> declspecs_sc_nots_nosa_ea
+%type <u.telement> declspecs_sc_nots_sa_noea
+%type <u.telement> declspecs_sc_nots_sa_ea
+%type <u.telement> declspecs_sc_ts_nosa_noea
+%type <u.telement> declspecs_sc_ts_nosa_ea
+%type <u.telement> declspecs_sc_ts_sa_noea
+%type <u.telement> declspecs_sc_ts_sa_ea
+%type <u.telement> declspecs_ts
+%type <u.telement> declspecs_nots
+%type <u.telement> declspecs_ts_nosa
+%type <u.telement> declspecs_nots_nosa
+%type <u.telement> declspecs_nosc_ts
+%type <u.telement> declspecs_nosc_nots
+%type <u.telement> declspecs_nosc
+%type <u.telement> declspecs
+%type <u.telement> scspec type_qual type_spec eattributes
+%type <u.telement> type_spec_attr type_spec_nonattr
+%type <u.telement> type_spec_nonreserved_nonattr type_spec_reserved_attr
+%type <u.telement> type_spec_reserved_nonattr
+%type <u.telement> structdef structuse
+%type <u.telement> maybe_type_qual maybe_type_quals_attrs fn_qual fn_quals
 %type <u.type> typename
 %type <u.word> idword any_word tag
 %type <u.fields> fieldlist
@@ -252,6 +274,7 @@ struct parse_state
   /* List of types and structure classes of the current declaration.  */
   type_element declspecs;
   attribute prefix_attributes;
+  attribute all_prefix_attributes;
 
   /* >0 if currently parsing an expression that will not be evaluated (argument
      to alignof, sizeof. Currently not typeof though that could be considered
@@ -269,7 +292,8 @@ bool unevaluated_expression(void)
 static void pop_declspec_stack(void) deletes
 {
   pstate.declspecs = pstate.declspec_stack->declspecs;
-  pstate.prefix_attributes = pstate.declspec_stack->attributes;
+  pstate.all_prefix_attributes = 
+    pstate.prefix_attributes = pstate.declspec_stack->attributes;
   pstate.declspec_stack = pstate.declspec_stack->next;
 }
 
@@ -280,7 +304,6 @@ static void push_declspec_stack(void)
   news = ralloc(pstate.ds_region, struct spec_stack);
   news->declspecs = pstate.declspecs;
   news->attributes = pstate.prefix_attributes;
-  assert(news->attributes == NULL); /* I killed the broken attribute syntax */
   news->next = pstate.declspec_stack;
   pstate.declspec_stack = news;
 }
@@ -291,7 +314,7 @@ void parse(void) deletes
   struct parse_state old_pstate = pstate;
 
   pstate.declspecs = NULL;
-  pstate.prefix_attributes = NULL;
+  pstate.all_prefix_attributes = pstate.prefix_attributes = NULL;
   pstate.unevaluated_expression = 0;
   pstate.declspec_stack = NULL;
   pstate.ds_region = newsubregion(parse_region);
@@ -313,108 +336,124 @@ void yyprint();
 %%
 
 dispatch:
-	DISPATCH_NESC interface { }
+	  DISPATCH_NESC interface { }
 	| DISPATCH_NESC component { }
 	| DISPATCH_C extdefs { cdecls = declaration_reverse($2); }
 	| DISPATCH_C { cdecls = NULL; }
 	;
 
-includes_list: includes_list includes 
+includes_list: 
+	  includes_list includes 
 	| /* empty */
 	;
 
 includes:
-	INCLUDES include_list ';' { }
+	  INCLUDES include_list ';' { }
 	;
 
 include_list:
-	identifier { require_c($1.location, $1.id.data); }
-	| include_list ',' identifier { require_c($3.location, $3.id.data); }
+	  identifier 
+		{ require_c($1.location, $1.id.data); }
+	| include_list ',' identifier 
+		{ require_c($3.location, $3.id.data); }
 	;
 
 interface: 
-        includes_list
-	INTERFACE { $<u.docstring>$ = get_docstring(); } idword '{' datadef_list '}' 
+          includes_list
+	  INTERFACE { $<u.docstring>$ = get_docstring(); } 
+	  idword '{' datadef_list '}' 
 		{
 		  parsed_nesc_decl = CAST(nesc_decl, new_interface(pr, $2.location, $4, $<u.docstring>3, declaration_reverse($6)));
 		}
 	;
 
 datadef_list: 
-	datadef_list just_datadef { $$ = declaration_chain($2, $1); }
+	  datadef_list just_datadef { $$ = declaration_chain($2, $1); }
 	| just_datadef ;
 
-parameters: '[' { pushlevel(TRUE); } parameters1 
-	{ /* poplevel done in users of parameters */ $$ = $3; } ;
+parameters: 
+	  '[' { pushlevel(TRUE); } parameters1 
+		{ /* poplevel done in users of parameters */ $$ = $3; } ;
 
 parameters1: 
 	  parameter_list ']' { $$ = declaration_reverse($1); }
 	| error ']' { $$ = new_error_decl(pr, dummy_location); }
 	;
 
-parameter_list: parameter
+parameter_list: 
+	  parameter
 	| parameter_list ',' parameter { $$ = declaration_chain($3, $1) } ;
 
-parameter: parameter_type identifier
-   	{ 
-	  identifier_declarator id =
-	    new_identifier_declarator(pr, $2.location, $2.id);
-	  $$ = declare_parameter(CAST(declarator, id), $1, NULL, NULL, TRUE);
-	}
+parameter: 
+	  parameter_type identifier
+   		{ 
+		  identifier_declarator id =
+		    new_identifier_declarator(pr, $2.location, $2.id);
+		  $$ = declare_parameter(CAST(declarator, id), $1, NULL, NULL, TRUE);
+		}
 	;
 
-parameter_type: typespec 
-	| parameter_type typespec { $$ = type_element_chain($1, $2); }
+parameter_type: 
+	  type_spec_nonattr
+	| parameter_type type_spec_nonattr { $$ = type_element_chain($1, $2); }
 	;
 
 
 
-component: includes_list module
+component: 
+	  includes_list module
 	| includes_list configuration
 	;
 
-module: MODULE { $<u.docstring>$ = get_docstring(); } idword '{' requires_or_provides_list '}' imodule
-	{ 
-	  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $1.location, $3, $<u.docstring>2, rp_interface_reverse($5), $7));
-
-        }
+module: 
+	  MODULE { $<u.docstring>$ = get_docstring(); } 
+	  idword '{' requires_or_provides_list '}' imodule
+		{ 
+		  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $1.location, $3, $<u.docstring>2, rp_interface_reverse($5), $7));
+	        }
 	;
 
-configuration: CONFIGURATION { $<u.docstring>$ = get_docstring(); } idword '{' requires_or_provides_list '}' iconfiguration
-        { 
-	  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $1.location, $3, $<u.docstring>2, rp_interface_reverse($5), $7));
-        }
+configuration:
+	  CONFIGURATION { $<u.docstring>$ = get_docstring(); } 
+	  idword '{' requires_or_provides_list '}' iconfiguration
+	        { 
+		  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $1.location, $3, $<u.docstring>2, rp_interface_reverse($5), $7));
+	        }
         ;
 
 requires_or_provides_list: 
-	requires_or_provides_list requires_or_provides
+	  requires_or_provides_list requires_or_provides
 		{ $$ = rp_interface_chain($2, $1); }
 	| /* empty */ { $$ = NULL; }
 	;
 
-requires_or_provides: requires | provides ;
+requires_or_provides: 
+	  requires 
+	| provides ;
 
-requires: USES { current.component_requires = TRUE; } 
+requires: 
+	  USES { current.component_requires = TRUE; } 
 	  parameterised_interface_list 
 		{ $$ = new_rp_interface(pr, $1.location, TRUE, declaration_reverse($3)); } ;
 
-provides: PROVIDES { current.component_requires = FALSE; } 
+provides: 
+	  PROVIDES { current.component_requires = FALSE; } 
 	  parameterised_interface_list 
 		{ $$ = new_rp_interface(pr, $1.location, FALSE, declaration_reverse($3)); } ;
 
 parameterised_interface_list:
-	parameterised_interface
+	  parameterised_interface
 	| '{' parameterised_interfaces '}' { $$ = $2; }
 	;
 
 parameterised_interfaces: 
-	parameterised_interfaces parameterised_interface 
+	  parameterised_interfaces parameterised_interface 
 		{ $$ = declaration_chain($2, $1); }
 	| parameterised_interface
 	;
 
 parameterised_interface:
-	just_datadef
+	  just_datadef
 	| interface_ref ';' 
 		{
 		  declare_interface_ref($1, NULL, NULL);
@@ -429,45 +468,46 @@ parameterised_interface:
 	;
 
 interface_ref: 
-	INTERFACE idword 
+	  INTERFACE idword 
 		{ $$ = new_interface_ref(pr, $1.location, $2, NULL, NULL); }
 	| INTERFACE idword AS idword
 		{ $$ = new_interface_ref(pr, $1.location, $2, $4, NULL); }
 	;
 
 iconfiguration:
-	IMPLEMENTATION { $<u.env>$ = start_implementation(); } '{'
+	  IMPLEMENTATION { $<u.env>$ = start_implementation(); } 
+	  '{'
 	  uses
 	  connection_list
-	'}'
+	  '}'
 		{ $$ = CAST(implementation, new_configuration(pr, $1.location, $<u.env>2, component_ref_reverse($4), connection_reverse($5)));
 		}
 	;
 
-uses:   /* empty */ { $$ = NULL; }
+uses:     /* empty */ { $$ = NULL; }
 	| uses cuses { $$ = component_ref_chain($2, $1); }
 	;
 
-cuses:  COMPONENTS component_list ';' { $$ = $2; }
+cuses:    COMPONENTS component_list ';' { $$ = $2; }
 	;
 
 component_list: 
-	component_list ',' component_ref { $$ = component_ref_chain($3, $1); }
+	  component_list ',' component_ref { $$ = component_ref_chain($3, $1); }
 	| component_ref
 	;
 
 component_ref: 
-	idword { $$ = new_component_ref(pr, $1->location, $1, NULL); }
+	  idword { $$ = new_component_ref(pr, $1->location, $1, NULL); }
 	| idword AS idword { $$ = new_component_ref(pr, $1->location, $1, $3); }
 	;
 
 connection_list: 
-	connection_list connection { $$ = connection_chain($2, $1); }
+	  connection_list connection { $$ = connection_chain($2, $1); }
 	| connection
 	;
 
 connection:
-	endpoint '=' endpoint ';' 
+	  endpoint '=' endpoint ';' 
 		{ $$ = CAST(connection, new_eq_connection(pr, $2.location, $3, $1)); }
 	| endpoint POINTSAT endpoint ';' 
 		{ $$ = CAST(connection, new_rp_connection(pr, $2.location, $3, $1)); }
@@ -476,7 +516,7 @@ connection:
 	;
 
 endpoint: 
-	endpoint '.' parameterised_identifier
+	  endpoint '.' parameterised_identifier
 		{ $$ = $1;
 		  $$->ids = parameterised_identifier_chain($$->ids, $3);
 		}
@@ -485,14 +525,14 @@ endpoint:
 	;
 
 parameterised_identifier:
-	idword 
+	  idword 
 	  { $$ = new_parameterised_identifier(pr, $1->location, $1, NULL); }
 	| idword '[' nonnull_exprlist ']'
 	  { $$ = new_parameterised_identifier(pr, $1->location, $1, $3); }
 	;
 
 
-imodule: IMPLEMENTATION { $<u.env>$ = start_implementation(); } '{' extdefs '}' 
+imodule:  IMPLEMENTATION { $<u.env>$ = start_implementation(); } '{' extdefs '}' 
 		{ 
 		  $$ = CAST(implementation, new_module(pr, $1.location, $<u.env>2, declaration_reverse($4))); 
 		} ;
@@ -502,13 +542,13 @@ imodule: IMPLEMENTATION { $<u.env>$ = start_implementation(); } '{' extdefs '}'
  can find a valid list of type and sc specs in $0. */
 
 extdefs:
-	{ $<u.telement>$ = NULL; } extdef { $$ = $2; }
+	  { $<u.telement>$ = NULL; } extdef { $$ = $2; }
 	| extdefs { $<u.telement>$ = NULL; } extdef
 		{ $$ = declaration_chain($3, $1); }	  
 	;
 
 extdef:
-	fndef
+	  fndef
 	| datadef
 	| ASM_KEYWORD '(' expr ')' ';'
 		{ 
@@ -521,7 +561,7 @@ extdef:
 	;
 
 just_datadef: 
-	{ $<u.telement>$ = NULL; } datadef { $$ = $2; } ;
+	  { $<u.telement>$ = NULL; } datadef { $$ = $2; } ;
 
 datadef:
 	  setspecs notype_initdecls ';'
@@ -532,17 +572,15 @@ datadef:
 
 		  $$ = CAST(declaration, new_data_decl(pr, $2->location, NULL, NULL, $2));
 		  pop_declspec_stack(); }
-        | declmods setspecs notype_initdecls ';'
-		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.prefix_attributes, $3));
+        | declspecs_nots setspecs notype_initdecls ';'
+		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, $3));
 		  pop_declspec_stack(); }
-	| typed_declspecs setspecs initdecls ';'
-		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.prefix_attributes, $3));
+	| declspecs_ts setspecs initdecls ';'
+		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, $3));
 		  pop_declspec_stack(); }
-        | declmods ';'
-	  { pedwarn("empty declaration"); }
-	| typed_declspecs setspecs ';'
+	| declspecs setspecs ';'
 	  { shadow_tag($1); 
-	    $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.prefix_attributes, NULL));
+	    $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, NULL));
 	    pop_declspec_stack(); }
 	| error ';' { $$ = new_error_decl(pr, last_location); }
 	| error '}' { $$ = new_error_decl(pr, last_location); }
@@ -553,8 +591,8 @@ datadef:
 	;
 
 fndef:
-	  typed_declspecs setspecs declarator fndef2 { $$ = $4; }
-	| declmods setspecs notype_declarator fndef2 { $$ = $4; }
+	  declspecs_ts setspecs declarator fndef2 { $$ = $4; }
+	| declspecs_nots setspecs notype_declarator fndef2 { $$ = $4; }
 	| setspecs notype_declarator fndef2 { $$ = $3; }
 	;
 
@@ -578,16 +616,16 @@ fndef2:	  maybeasm maybe_attribute
 	;
 
 identifier:
-	IDENTIFIER
+	  IDENTIFIER
 	| TYPENAME
 	;
 
 id_label:
-	identifier { $$ = new_id_label(pr, $1.location, $1.id); }
+	  identifier { $$ = new_id_label(pr, $1.location, $1.id); }
 	;
 
 idword:
-	identifier { $$ = new_word(pr, $1.location, $1.id); }
+	  identifier { $$ = new_word(pr, $1.location, $1.id); }
         ;
 
 unop:     '&'
@@ -624,25 +662,25 @@ exprlist:
 	;
 
 nonnull_exprlist:
-	nonnull_exprlist_
+	  nonnull_exprlist_
 		{ $$ = expression_reverse($1); }
 	;
 
 nonnull_exprlist_:
-	expr_no_commas
+	  expr_no_commas
 		{ $$ = $1; }
 	| nonnull_exprlist_ ',' expr_no_commas
 		{ $$ = expression_chain($3, $1); }
 	;
 
 callkind:
-	CALL { $$.i = command_call; }
+	  CALL { $$.i = command_call; }
 	| SIGNAL { $$.i = event_signal; }
 	| POST { $$.i = post_task; }
 	;
 
 unary_expr:
-	primary
+	  primary
 	| callkind function_call 
 		{
 		  function_call fc = CAST(function_call, $2);
@@ -706,15 +744,15 @@ unary_expr:
 	;
 
 sizeof:
-	SIZEOF { pstate.unevaluated_expression++; $$ = $1; }
+	  SIZEOF { pstate.unevaluated_expression++; $$ = $1; }
 	;
 
 alignof:
-	ALIGNOF { pstate.unevaluated_expression++; $$ = $1; }
+	  ALIGNOF { pstate.unevaluated_expression++; $$ = $1; }
 	;
 
 cast_expr:
-	unary_expr
+	  unary_expr
 	| '(' typename ')' cast_expr
 	  	{ $$ = make_cast($1.location, $2, $4); }
 	| '(' typename ')' '{' 
@@ -810,7 +848,7 @@ expr_no_commas:
 	;
 
 primary:
-	IDENTIFIER
+	  IDENTIFIER
 		{ 
 		  if (yychar == YYEMPTY)
 		    yychar = YYLEX;
@@ -877,23 +915,24 @@ fieldlist:
 	| fieldlist '.' identifier { $$ = $1; dd_add_last(pr, $$, $3.id.data); }
 	;
 
-function_call: primary '(' exprlist ')'
+function_call: 
+	  primary '(' exprlist ')'
 	  	{ $$ = make_function_call($2.location, $1, $3); }
 	;
 
 /* Produces a STRING_CST with perhaps more STRING_CSTs chained onto it.  */
 string:
-	string_list { $$ = make_string($1->location, expression_reverse($1)); }
+	  string_list { $$ = make_string($1->location, expression_reverse($1)); }
         ;
 
 string_list:
-	string_component { $$ = $1; }
+	  string_component { $$ = $1; }
 	| string_list string_component
 		{ $$ = expression_chain($2, $1); }
 	;
 
 string_component:
-	STRING { $$ = CAST(expression, $1); }
+	  STRING { $$ = CAST(expression, $1); }
 	| MAGIC_STRING
 	  { $$ = make_identifier($1.location, $1.id, FALSE);
 	  }
@@ -901,7 +940,7 @@ string_component:
 
 
 old_style_parm_decls:
-	/* empty */ { $$ = NULL; }
+	  /* empty */ { $$ = NULL; }
 	| datadecls
 	| datadecls ELLIPSIS
 		/* ... is used here to indicate a varargs function.  */
@@ -915,7 +954,7 @@ old_style_parm_decls:
    except that they do not allow nested functions.
    They are used for old-style parm decls.  */
 datadecls:
-	datadecl
+	  datadecl
 	| datadecls datadecl { $$ = declaration_chain($2, $1); }
 	;
 
@@ -924,18 +963,18 @@ datadecls:
    attribute suffix, or function defn with attribute prefix on first old
    style parm.  */
 datadecl:
-	typed_declspecs setspecs initdecls ';'
-		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.prefix_attributes, $3));
+	  declspecs_ts_nosa setspecs initdecls ';'
+		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, $3));
 		  pop_declspec_stack(); }
-	| declmods setspecs notype_initdecls ';'
-		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.prefix_attributes, $3));
+	| declspecs_nots_nosa setspecs notype_initdecls ';'
+		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, $3));
 		  pop_declspec_stack(); }
-	| typed_declspecs setspecs ';'
+	| declspecs_ts_nosa setspecs ';'
 		{ shadow_tag_warned($1, 1);
-		  $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.prefix_attributes, NULL));
+		  $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, NULL));
 		  pop_declspec_stack();
 		  pedwarn("empty declaration"); }
-	| declmods ';'
+	| declspecs_nots_nosa ';'
 		{ pedwarn("empty declaration"); 
 		  $$ = NULL; }
 	;
@@ -945,7 +984,7 @@ datadecl:
    This is to avoid shift/reduce conflicts in contexts
    where statement labels are allowed.  */
 decls:
-	decl
+	  decl
 	| errstmt { $$ = new_error_decl(pr, last_location); }
 	| decls decl { $$ = declaration_chain($2, $1); }
 	| decl errstmt { $$ = new_error_decl(pr, last_location); }
@@ -961,98 +1000,396 @@ setspecs: /* empty */
 		  pending_xref_error();
 		  split_type_elements($<u.telement>0,
 				      &pstate.declspecs, &pstate.prefix_attributes);
+		  pstate.all_prefix_attributes = pstate.prefix_attributes;
 		}
 	;
 
+/* Possibly attributes after a comma, which should reset all_prefix_attributes
+   to prefix_attributes with these ones chained on the front.  */
+maybe_resetattrs:
+	  maybe_attribute
+		{ pstate.all_prefix_attributes = 
+		    attribute_chain($1, pstate.prefix_attributes); }
+	;
+
 decl:
-	typed_declspecs setspecs initdecls ';'
-		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.prefix_attributes, $3));
+	  declspecs_ts setspecs initdecls ';'
+		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, $3));
 		  pop_declspec_stack(); }
-	| declmods setspecs notype_initdecls ';'
-		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.prefix_attributes, $3));
+	| declspecs_nots setspecs notype_initdecls ';'
+		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, $3));
 		  pop_declspec_stack(); }
-	| typed_declspecs setspecs nested_function
+	| declspecs_ts setspecs nested_function
 		{ $$ = $3;
 		  pop_declspec_stack(); }
-	| declmods setspecs notype_nested_function
+	| declspecs_nots setspecs notype_nested_function
 		{ $$ = $3;
 		  pop_declspec_stack(); }
-	| typed_declspecs setspecs ';'
+	| declspecs setspecs ';'
 		{ shadow_tag($1);
-		  $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.prefix_attributes, NULL));
+		  $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, NULL));
 		  pop_declspec_stack(); }
-	| declmods ';'
-		{ pedwarn("empty declaration"); }
 	| extension decl
 		{ pedantic = $1.i; 
 		  $$ = CAST(declaration, new_extension_decl(pr, $1.location, $2)); }
 	;
 
-/* Declspecs which contain at least one type specifier or typedef name.
-   (Just `const' or `volatile' is not enough.)
-   A typedef'd name following these is taken as a name to be declared. */
+/* declspecs borrowed from gcc 3. I think it's really ugly, but I guess
+   they (and therefore I) am stuck with this brokenness.
+   The only redeeming feature is that it's cleaner than gcc 2
+*/
+/* A list of declaration specifiers.  These are:
 
-typed_declspecs:
-	  typespec reserved_declspecs
-		{ $$ = $1; $1->next = CAST(node, $2); }
-	| declmods typespec reserved_declspecs
-		{ $$ = type_element_chain($1, $2); $2->next = CAST(node, $3); }
+   - Storage class specifiers (SCSPEC), which for GCC currently include
+   function specifiers ("inline").
+
+   - Type specifiers (type_spec_*).
+
+   - Type qualifiers (TYPE_QUAL).
+
+   - Attribute specifier lists (attributes).
+
+   These are stored as a TREE_LIST; the head of the list is the last
+   item in the specifier list.  Each entry in the list has either a
+   TREE_PURPOSE that is an attribute specifier list, or a TREE_VALUE that
+   is a single other specifier or qualifier; and a TREE_CHAIN that is the
+   rest of the list.  TREE_STATIC is set on the list if something other
+   than a storage class specifier or attribute has been seen; this is used
+   to warn for the obsolescent usage of storage class specifiers other than
+   at the start of the list.  (Doing this properly would require function
+   specifiers to be handled separately from storage class specifiers.)
+
+   The various cases below are classified according to:
+
+   (a) Whether a storage class specifier is included or not; some
+   places in the grammar disallow storage class specifiers (_sc or _nosc).
+
+   (b) Whether a type specifier has been seen; after a type specifier,
+   a typedef name is an identifier to redeclare (_ts or _nots).
+
+   (c) Whether the list starts with an attribute; in certain places,
+   the grammar requires specifiers that don't start with an attribute
+   (_sa or _nosa).
+
+   (d) Whether the list ends with an attribute (or a specifier such that
+   any following attribute would have been parsed as part of that specifier);
+   this avoids shift-reduce conflicts in the parsing of attributes
+   (_ea or _noea).
+
+   TODO:
+
+   (i) Distinguish between function specifiers and storage class specifiers,
+   at least for the purpose of warnings about obsolescent usage.
+
+   (ii) Halve the number of productions here by eliminating the _sc/_nosc
+   distinction and instead checking where required that storage class
+   specifiers aren't present.  */
+
+declspecs_nosc_nots_nosa_noea:
+	  type_qual
+	| declspecs_nosc_nots_nosa_noea type_qual
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_nots_nosa_ea type_qual
+		{ $$ = type_element_chain($1, $2); }
 	;
 
-reserved_declspecs:
+declspecs_nosc_nots_nosa_ea:
+	  declspecs_nosc_nots_nosa_noea eattributes
+		{ $$ = type_element_chain($1, $2); }
+	;
+
+declspecs_nosc_nots_sa_noea:
+	  declspecs_nosc_nots_sa_noea type_qual
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_nots_sa_ea type_qual
+		{ $$ = type_element_chain($1, $2); }
+	;
+
+declspecs_nosc_nots_sa_ea:
+	  eattributes
+	| declspecs_nosc_nots_sa_noea eattributes
+	;
+
+declspecs_nosc_ts_nosa_noea:
+	  type_spec_nonattr
+	| declspecs_nosc_ts_nosa_noea type_qual
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_ts_nosa_ea type_qual
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_ts_nosa_noea type_spec_reserved_nonattr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_ts_nosa_ea type_spec_reserved_nonattr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_nots_nosa_noea type_spec_nonattr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_nots_nosa_ea type_spec_nonattr
+		{ $$ = type_element_chain($1, $2); }
+	;
+
+declspecs_nosc_ts_nosa_ea:
+	  type_spec_attr
+	| declspecs_nosc_ts_nosa_noea eattributes
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_ts_nosa_noea type_spec_reserved_attr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_ts_nosa_ea type_spec_reserved_attr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_nots_nosa_noea type_spec_attr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_nots_nosa_ea type_spec_attr
+		{ $$ = type_element_chain($1, $2); }
+	;
+
+declspecs_nosc_ts_sa_noea:
+	  declspecs_nosc_ts_sa_noea type_qual
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_ts_sa_ea type_qual
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_ts_sa_noea type_spec_reserved_nonattr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_ts_sa_ea type_spec_reserved_nonattr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_nots_sa_noea type_spec_nonattr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_nots_sa_ea type_spec_nonattr
+		{ $$ = type_element_chain($1, $2); }
+	;
+
+declspecs_nosc_ts_sa_ea:
+	  declspecs_nosc_ts_sa_noea eattributes
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_ts_sa_noea type_spec_reserved_attr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_ts_sa_ea type_spec_reserved_attr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_nots_sa_noea type_spec_attr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_nots_sa_ea type_spec_attr
+		{ $$ = type_element_chain($1, $2); }
+	;
+
+declspecs_sc_nots_nosa_noea:
+	  scspec
+	| declspecs_sc_nots_nosa_noea type_qual
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_nots_nosa_ea type_qual
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_nots_nosa_noea scspec
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_nots_nosa_ea scspec
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_nots_nosa_noea scspec
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_nots_nosa_ea scspec
+		{ $$ = type_element_chain($1, $2); }
+	;
+
+declspecs_sc_nots_nosa_ea:
+	  declspecs_sc_nots_nosa_noea eattributes
+		{ $$ = type_element_chain($1, $2); }
+	;
+
+declspecs_sc_nots_sa_noea:
+	  declspecs_sc_nots_sa_noea type_qual
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_nots_sa_ea type_qual
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_nots_sa_noea scspec
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_nots_sa_ea scspec
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_nots_sa_noea scspec
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_nots_sa_ea scspec
+		{ $$ = type_element_chain($1, $2); }
+	;
+
+declspecs_sc_nots_sa_ea:
+	  declspecs_sc_nots_sa_noea eattributes
+		{ $$ = type_element_chain($1, $2); }
+	;
+
+declspecs_sc_ts_nosa_noea:
+	  declspecs_sc_ts_nosa_noea type_qual
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_ts_nosa_ea type_qual
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_ts_nosa_noea type_spec_reserved_nonattr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_ts_nosa_ea type_spec_reserved_nonattr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_nots_nosa_noea type_spec_nonattr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_nots_nosa_ea type_spec_nonattr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_ts_nosa_noea scspec
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_ts_nosa_ea scspec
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_ts_nosa_noea scspec
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_ts_nosa_ea scspec
+		{ $$ = type_element_chain($1, $2); }
+	;
+
+declspecs_sc_ts_nosa_ea:
+	  declspecs_sc_ts_nosa_noea eattributes
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_ts_nosa_noea type_spec_reserved_attr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_ts_nosa_ea type_spec_reserved_attr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_nots_nosa_noea type_spec_attr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_nots_nosa_ea type_spec_attr
+		{ $$ = type_element_chain($1, $2); }
+	;
+
+declspecs_sc_ts_sa_noea:
+	  declspecs_sc_ts_sa_noea type_qual
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_ts_sa_ea type_qual
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_ts_sa_noea type_spec_reserved_nonattr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_ts_sa_ea type_spec_reserved_nonattr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_nots_sa_noea type_spec_nonattr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_nots_sa_ea type_spec_nonattr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_ts_sa_noea scspec
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_ts_sa_ea scspec
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_ts_sa_noea scspec
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_ts_sa_ea scspec
+		{ $$ = type_element_chain($1, $2); }
+	;
+
+declspecs_sc_ts_sa_ea:
+	  declspecs_sc_ts_sa_noea eattributes
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_ts_sa_noea type_spec_reserved_attr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_ts_sa_ea type_spec_reserved_attr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_nots_sa_noea type_spec_attr
+		{ $$ = type_element_chain($1, $2); }
+	| declspecs_sc_nots_sa_ea type_spec_attr
+		{ $$ = type_element_chain($1, $2); }
+	;
+
+/* Particular useful classes of declspecs.  */
+declspecs_ts:
+	  declspecs_nosc_ts_nosa_noea
+	| declspecs_nosc_ts_nosa_ea
+	| declspecs_nosc_ts_sa_noea
+	| declspecs_nosc_ts_sa_ea
+	| declspecs_sc_ts_nosa_noea
+	| declspecs_sc_ts_nosa_ea
+	| declspecs_sc_ts_sa_noea
+	| declspecs_sc_ts_sa_ea
+	;
+
+declspecs_nots:
+	  declspecs_nosc_nots_nosa_noea
+	| declspecs_nosc_nots_nosa_ea
+	| declspecs_nosc_nots_sa_noea
+	| declspecs_nosc_nots_sa_ea
+	| declspecs_sc_nots_nosa_noea
+	| declspecs_sc_nots_nosa_ea
+	| declspecs_sc_nots_sa_noea
+	| declspecs_sc_nots_sa_ea
+	;
+
+declspecs_ts_nosa:
+	  declspecs_nosc_ts_nosa_noea
+	| declspecs_nosc_ts_nosa_ea
+	| declspecs_sc_ts_nosa_noea
+	| declspecs_sc_ts_nosa_ea
+	;
+
+declspecs_nots_nosa:
+	  declspecs_nosc_nots_nosa_noea
+	| declspecs_nosc_nots_nosa_ea
+	| declspecs_sc_nots_nosa_noea
+	| declspecs_sc_nots_nosa_ea
+	;
+
+declspecs_nosc_ts:
+	  declspecs_nosc_ts_nosa_noea
+	| declspecs_nosc_ts_nosa_ea
+	| declspecs_nosc_ts_sa_noea
+	| declspecs_nosc_ts_sa_ea
+	;
+
+declspecs_nosc_nots:
+	  declspecs_nosc_nots_nosa_noea
+	| declspecs_nosc_nots_nosa_ea
+	| declspecs_nosc_nots_sa_noea
+	| declspecs_nosc_nots_sa_ea
+	;
+
+declspecs_nosc:
+	  declspecs_nosc_ts
+	| declspecs_nosc_nots
+	;
+
+declspecs:
+	  declspecs_ts
+	| declspecs_nots
+	;
+
+/* A (possibly empty) sequence of type qualifiers and attributes.  */
+maybe_type_quals_attrs:
 	  /* empty */
 		{ $$ = NULL; }
-	| reserved_declspecs typespecqual_reserved
-		{ $$ = type_element_chain($1, $2); }
-	| reserved_declspecs scspec
-		{ if (extra_warnings)
-		    warning("`%s' is not at beginning of declaration",
-			    rid_name(CAST(rid, $2)));
-		  $$ = type_element_chain($1, $2); }
+	| declspecs_nosc_nots
 	;
 
-/* List of just storage classes, type modifiers, and prefix attributes.
-   A declaration can start with just this, but then it cannot be used
-   to redeclare a typedef-name.
-   Declspecs have a non-NULL TREE_VALUE, attributes do not.  */
-
-declmods:
-	  type_qual
-	| scspec
-	| declmods type_qual
-		{ $$ = type_element_chain($1, $2); }
-	| declmods scspec
-		{ if (extra_warnings /*&& TREE_STATIC ($1)*/)
-		    warning("`%s' is not at beginning of declaration",
-			    rid_name(CAST(rid, $2)));
-		  $$ = type_element_chain($1, $2); }
-	;
-
-
-/* Used instead of declspecs where storage classes are not allowed
-   (that is, for typenames and structure components).
-   Don't accept a typedef-name if anything but a modifier precedes it.  */
-
-typed_typespecs:
-	  typespec reserved_typespecquals
-		{ $$ = $1; $1->next = CAST(node, $2); }
-	| nonempty_type_quals typespec reserved_typespecquals
-		{ $$ = type_element_chain($1, $2); $2->next = CAST(node, $3); }
-	;
-
-reserved_typespecquals:  /* empty */
-		{ $$ = NULL; }
-	| reserved_typespecquals typespecqual_reserved
-		{ $$ = type_element_chain($1, $2); }
-	;
-
-/* A typespec (but not a type qualifier).
+/* A type specifier (but not a type qualifier).
    Once we have seen one of these in a declaration,
-   if a typedef name appears then it is being redeclared.  */
+   if a typedef name appears then it is being redeclared.
 
-typespec: type_spec
-	| structsp
-	| TYPENAME
+   The _reserved versions start with a reserved word and may appear anywhere
+   in the declaration specifiers; the _nonreserved versions may only
+   appear before any other type specifiers, and after that are (if names)
+   being redeclared.
+
+   FIXME: should the _nonreserved version be restricted to names being
+   redeclared only?  The other entries there relate only the GNU extensions
+   and Objective C, and are historically parsed thus, and don't make sense
+   after other type specifiers, but it might be cleaner to count them as
+   _reserved.
+
+   _attr means: specifiers that either end with attributes,
+   or are such that any following attributes would
+   be parsed as part of the specifier.
+
+   _nonattr: specifiers.  */
+
+type_spec_nonattr:
+	  type_spec_reserved_nonattr
+	| type_spec_nonreserved_nonattr
+	;
+
+type_spec_attr:
+	  type_spec_reserved_attr
+	;
+
+type_spec_reserved_nonattr:
+	  type_spec
+	| structuse
+	;
+
+type_spec_reserved_attr:
+	  structdef
+	;
+
+type_spec_nonreserved_nonattr:
+	  TYPENAME
 		{ /* For a typedef name, record the meaning, not the name.
 		     In case of `foo foo, bar;'.  */
 		  $$ = CAST(type_element, new_typename(pr, $1.location, $1.decl)); }
@@ -1061,30 +1398,26 @@ typespec: type_spec
 	| TYPEOF '(' typename ')'
 		{ $$ = CAST(type_element, new_typeof_type(pr, $1.location, $3)); }
 	;
-
-/* A typespec that is a reserved word, or a type qualifier.  */
-
-typespecqual_reserved: type_spec
-	| type_qual
-	| structsp
-	;
+/* type_spec_nonreserved_attr does not exist.  */
 
 initdecls:
-	initdecls_ { $$ = declaration_reverse($1); }
+	  initdecls_ { $$ = declaration_reverse($1); }
 	;
 
 notype_initdecls:
-	notype_initdecls_ { $$ = declaration_reverse($1); }
+	  notype_initdecls_ { $$ = declaration_reverse($1); }
 	;
 
 initdecls_:
-	initdcl
-	| initdecls_ ',' initdcl { $$ = declaration_chain($3, $1); }
+	  initdcl
+	| initdecls_ ',' maybe_resetattrs initdcl 
+		{ $$ = declaration_chain($4, $1); }
 	;
 
 notype_initdecls_:
-	notype_initdcl { $$ = $1; }
-	| notype_initdecls_ ',' initdcl { $$ = declaration_chain($3, $1); }
+	  notype_initdcl { $$ = $1; }
+	| notype_initdecls_ ',' maybe_resetattrs initdcl 
+		{ $$ = declaration_chain($4, $1); }
 	;
 
 maybeasm:
@@ -1098,56 +1431,60 @@ maybeasm:
 initdcl:
 	  declarator maybeasm maybe_attribute '='
 		{ $<u.decl>$ = start_decl($1, $2, pstate.declspecs, 1,
-					$3, pstate.prefix_attributes); }
+					$3, pstate.all_prefix_attributes); }
 	  init
 /* Note how the declaration of the variable is in effect while its init is parsed! */
 		{ $$ = finish_decl($<u.decl>5, $6); }
 	| declarator maybeasm maybe_attribute
 		{ declaration d = start_decl($1, $2, pstate.declspecs, 0,
-					     $3, pstate.prefix_attributes);
+					     $3, pstate.all_prefix_attributes);
 		  $$ = finish_decl(d, NULL); }
 	;
 
 notype_initdcl:
 	  notype_declarator maybeasm maybe_attribute '='
 		{ $<u.decl>$ = start_decl($1, $2, pstate.declspecs, 1,
-					 $3, pstate.prefix_attributes); }
+					 $3, pstate.all_prefix_attributes); }
 	  init
 /* Note how the declaration of the variable is in effect while its init is parsed! */
 		{ $$ = finish_decl($<u.decl>5, $6); }
 	| notype_declarator maybeasm maybe_attribute
 		{ declaration d = start_decl($1, $2, pstate.declspecs, 0,
-					     $3, pstate.prefix_attributes);
+					     $3, pstate.all_prefix_attributes);
 		  $$ = finish_decl(d, NULL); }
 	;
 maybe_attribute:
-	/* empty */
+	  /* empty */
   		{ $$ = NULL; }
 	| attributes
 		{ $$ = attribute_reverse($1); }
 	;
  
+eattributes:
+	  attributes { $$ = CAST(type_element, $1); }
+	;
+
 attributes:
-	attribute
+	  attribute
 		{ $$ = $1; }
 	| attributes attribute
 		{ $$ = attribute_chain($2, $1); }
 	;
 
 attribute:
-      ATTRIBUTE '(' '(' attribute_list ')' ')'
+	  ATTRIBUTE '(' '(' attribute_list ')' ')'
 		{ $$ = $4; }
 	;
 
 attribute_list:
-	attrib
+	  attrib
 		{ $$ = $1; }
 	| attribute_list ',' attrib
 		{ $$ = attribute_chain($3, $1); }
 	;
  
 attrib:
-	/* empty */
+	  /* empty */
 		{ $$ = NULL; }
 	| any_word
 		{ $$ = new_attribute(pr, $1->location, $1, NULL, NULL); }
@@ -1174,7 +1511,7 @@ any_word:
 /* Initializers.  `init' is the entry point.  */
 
 init:
-	expr_no_commas
+	  expr_no_commas
 	| '{'
 	  initlist_maybe_comma '}'
 		{ $$ = CAST(expression, new_init_list(pr, $1.location, $2)); 
@@ -1200,7 +1537,7 @@ initlist1:
 /* `initelt' is a single element of an initializer.
    It may use braces.  */
 initelt:
-	expr_no_commas { $$ = $1; }
+	  expr_no_commas { $$ = $1; }
 	| '{' initlist_maybe_comma '}'
 		{ $$ = CAST(expression, new_init_list(pr, $1.location, $2)); }
 	| error { $$ = make_error_expr(last_location); }
@@ -1222,7 +1559,7 @@ initelt:
 nested_function:
 	  declarator
 		{ if (!start_function(pstate.declspecs, $1,
-				      pstate.prefix_attributes, 1))
+				      pstate.all_prefix_attributes, 1))
 		    {
 		      YYERROR1;
 		    }
@@ -1242,7 +1579,7 @@ nested_function:
 notype_nested_function:
 	  notype_declarator
 		{ if (!start_function(pstate.declspecs, $1,
-				      pstate.prefix_attributes, 1))
+				      pstate.all_prefix_attributes, 1))
 		    {
 		      YYERROR1;
 		    }
@@ -1260,30 +1597,19 @@ notype_nested_function:
 	;
 
 /* Any kind of declarator (thus, all declarators allowed
-   after an explicit typespec).  */
+   after an explicit type_spec).  */
 
 declarator:
 	  after_type_declarator
 	| notype_declarator
 	;
 
-/* A declarator that is allowed only after an explicit typespec.  */
+/* A declarator that is allowed only after an explicit type_spec.  */
 
 after_type_declarator:
-	after_type_declarator parameters '(' parmlist_or_identifiers_1 fn_quals
-		{ $$ = make_function_declarator($3.location, $1, $4, $5, $2); }
-	| after_type_declarator '(' parmlist_or_identifiers fn_quals
-		{ $$ = make_function_declarator($2.location, $1, $3, $4, NULL); }
-	| after_type_declarator '[' expr ']'
-		{ $$ = CAST(declarator, new_array_declarator(pr, $2.location, $1, $3)); }
-	| after_type_declarator '[' ']'
-		{ $$ = CAST(declarator, new_array_declarator(pr, $2.location, $1, NULL)); }
-	| attributes after_attributes_and_type_declarator { $$ = $2; }
-	| after_attributes_and_type_declarator
-	;
-
-after_attributes_and_type_declarator:
-	'*' type_quals after_type_declarator
+	  after_type_declarator array_or_fn_declarator 
+		{ $$ = finish_array_or_fn_declarator($1, $2); }
+        | '*' maybe_type_quals_attrs after_type_declarator
 		{ $$ = CAST(declarator, new_pointer_declarator(pr, $1.location, $3, $2)); }
 	| '(' after_type_declarator ')'
 		{ $$ = $2; }
@@ -1300,40 +1626,20 @@ after_attributes_and_type_declarator:
    (because it would conflict with a function with that typedef as arg).  */
 
 parm_declarator:
-	  parm_declarator '(' parmlist_or_identifiers fn_quals
-		{ $$ = make_function_declarator($2.location, $1, $3, $4, NULL); }
-	| parm_declarator '[' expr ']'
-		{ $$ = CAST(declarator, new_array_declarator(pr, $2.location, $1, $3)); }
-	| parm_declarator '[' ']'
-		{ $$ = CAST(declarator, new_array_declarator(pr, $2.location, $1, NULL)); }
-	| attributes after_attributes_parm_declarator { $$ = $2; }
-	| after_attributes_parm_declarator
-	;
-
-after_attributes_parm_declarator:
-	'*' type_quals parm_declarator
+	  parm_declarator array_or_fn_declarator
+		{ $$ = finish_array_or_fn_declarator($1, $2); }
+	| '*' maybe_type_quals_attrs parm_declarator
 		{ $$ = CAST(declarator, new_pointer_declarator(pr, $1.location, $3, $2)); }
 	| TYPENAME { $$ = CAST(declarator, new_identifier_declarator(pr, $1.location, $1.id)); }
 	;
 
 /* A declarator allowed whether or not there has been
-   an explicit typespec.  These cannot redeclare a typedef-name.  */
+   an explicit type_spec.  These cannot redeclare a typedef-name.  */
 
 notype_declarator:
-	  notype_declarator parameters '(' parmlist_or_identifiers_1 fn_quals
-		{ $$ = make_function_declarator($3.location, $1, $4, $5, $2); }
-	| notype_declarator '(' parmlist_or_identifiers fn_quals
-		{ $$ = make_function_declarator($2.location, $1, $3, $4, NULL); }
-	| notype_declarator '[' expr ']' 
-		{ $$ = CAST(declarator, new_array_declarator(pr, $2.location, $1, $3)); }
-	| notype_declarator '[' ']'
-		{ $$ = CAST(declarator, new_array_declarator(pr, $2.location, $1, NULL)); }
-	| attributes after_attributes_notype_declarator { $$ = $2; }
-	| after_attributes_notype_declarator
-	;
-
-after_attributes_notype_declarator:
-	'*' type_quals notype_declarator
+	  notype_declarator array_or_fn_declarator
+		{ $$ = finish_array_or_fn_declarator($1, $2); }
+	| '*' maybe_type_quals_attrs notype_declarator
 		{ $$ = CAST(declarator, new_pointer_declarator(pr, $1.location, $3, $2)); }
 	| '(' notype_declarator ')'
 		{ $$ = $2; }
@@ -1345,10 +1651,19 @@ after_attributes_notype_declarator:
 	;
 
 tag:
-	identifier { $$ = new_word(pr, $1.location, $1.id); }
+	  identifier { $$ = new_word(pr, $1.location, $1.id); }
 	;
 
-structsp:
+structuse:
+	  STRUCT tag
+		{ $$ = xref_tag($1.location, kind_struct_ref, $2); }
+	| UNION tag
+		{ $$ = xref_tag($1.location, kind_union_ref, $2); }
+	| ENUM tag
+		{ $$ = xref_tag($1.location, kind_enum_ref, $2); }
+	;
+
+structdef:
 	  STRUCT tag '{'
 		{ $$ = start_struct($1.location, kind_struct_ref, $2);
 		  /* Start scope of tag before parsing components.  */
@@ -1356,21 +1671,17 @@ structsp:
 	  component_decl_list '}' maybe_attribute 
 		{ $$ = finish_struct($<u.telement>4, $5, $7); }
 	| STRUCT '{' component_decl_list '}' maybe_attribute
-		{ $$ = finish_struct(start_struct($1.location, kind_struct_ref, NULL),
-				     $3, $5);
+		{ $$ = finish_struct(start_struct($1.location, kind_struct_ref,
+						  NULL), $3, $5);
 		}
-	| STRUCT tag
-		{ $$ = xref_tag($1.location, kind_struct_ref, $2); }
 	| UNION tag '{'
 		{ $$ = start_struct ($1.location, kind_union_ref, $2); }
 	  component_decl_list '}' maybe_attribute
 		{ $$ = finish_struct($<u.telement>4, $5, $7); }
 	| UNION '{' component_decl_list '}' maybe_attribute
-		{ $$ = finish_struct(start_struct($1.location, kind_union_ref, NULL),
-				     $3, $5);
+		{ $$ = finish_struct(start_struct($1.location, kind_union_ref,
+						  NULL), $3, $5);
 		}
-	| UNION tag
-		{ $$ = xref_tag($1.location, kind_union_ref, $2); }
 	| ENUM tag '{'
 		{ $$ = start_enum($1.location, $2); }
 	  enumlist maybecomma_warn '}' maybe_attribute
@@ -1379,8 +1690,6 @@ structsp:
 		{ $$ = start_enum($1.location, NULL); }
 	  enumlist maybecomma_warn '}' maybe_attribute
 		{ $$ = finish_enum($<u.telement>3, declaration_reverse($4), $7); }
-	| ENUM tag
-		{ $$ = xref_tag($1.location, kind_enum_ref, $2); }
 	;
 
 maybecomma:
@@ -1402,7 +1711,8 @@ component_decl_list:
 		  pedwarn("no semicolon at end of struct or union"); }
 	;
 
-component_decl_list2:	/* empty */
+component_decl_list2:	
+	  /* empty */
 		{ $$ = NULL; }
 	| component_decl_list2 component_decl ';'
 		{ $$ = declaration_chain($2, $1); }
@@ -1415,30 +1725,30 @@ component_decl_list2:	/* empty */
 /* There is a shift-reduce conflict here, because `components' may
    start with a `typename'.  It happens that shifting (the default resolution)
    does the right thing, because it treats the `typename' as part of
-   a `typed_typespecs'.
+   a `typed_type_specs'.
 
    It is possible that this same technique would allow the distinction
    between `notype_initdecls' and `initdecls' to be eliminated.
    But I am being cautious and not trying it.  */
 
 component_decl:
-	  typed_typespecs setspecs components
-		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.prefix_attributes, declaration_reverse($3)));
+	  declspecs_nosc_ts setspecs components
+		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, declaration_reverse($3)));
 		  pop_declspec_stack(); }
-	| typed_typespecs setspecs
+	| declspecs_nosc_ts setspecs
 		{ if (pedantic)
 		    pedwarn("ISO C doesn't support unnamed structs/unions");
 
-		  $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.prefix_attributes, NULL));
+		  $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, NULL));
 		  pop_declspec_stack(); }
-	| nonempty_type_quals setspecs components
-		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.prefix_attributes, declaration_reverse($3)));
+	| declspecs_nosc_nots setspecs components
+		{ $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, declaration_reverse($3)));
 		  pop_declspec_stack(); }
-	| nonempty_type_quals setspecs
+	| declspecs_nosc_nots setspecs
 		{ if (pedantic)
 		    pedwarn("ANSI C forbids member declarations with no members");
 		  shadow_tag($1);
-		  $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.prefix_attributes, NULL));	
+		  $$ = CAST(declaration, new_data_decl(pr, $1->location, pstate.declspecs, pstate.all_prefix_attributes, NULL));	
 		  pop_declspec_stack(); }
 	| error
 		{ $$ = new_error_decl(pr, last_location); }
@@ -1449,20 +1759,20 @@ component_decl:
 
 components:
 	  component_declarator
-	| components ',' component_declarator
-		{ $$ = declaration_chain($3, $1); }
+	| components ',' maybe_resetattrs component_declarator
+		{ $$ = declaration_chain($4, $1); }
 	;
 
 component_declarator:
 	  declarator maybe_attribute
 		{ $$ = make_field($1, NULL, pstate.declspecs,
-				  $2, pstate.prefix_attributes); }
+				  $2, pstate.all_prefix_attributes); }
 	| declarator ':' expr_no_commas maybe_attribute
 		{ $$ = make_field($1, $3, pstate.declspecs,
-				  $4, pstate.prefix_attributes); }
+				  $4, pstate.all_prefix_attributes); }
 	| ':' expr_no_commas maybe_attribute
 		{ $$ = make_field(NULL, $2, pstate.declspecs,
-				  $3, pstate.prefix_attributes); }
+				  $3, pstate.all_prefix_attributes); }
 	;
 
 enumlist:
@@ -1482,10 +1792,10 @@ enumerator:
 	;
 
 typename:
-	typed_typespecs absdcl
-		{ $$ = make_type($1, $2); }
-	| nonempty_type_quals absdcl
-		{ $$ = make_type($1, $2); }
+	  declspecs_nosc 
+	  	{ pending_xref_error(); }
+	  absdcl
+		{ $$ = make_type($1, $3); }
 	;
 
 absdcl:   /* an abstract declarator */
@@ -1494,41 +1804,63 @@ absdcl:   /* an abstract declarator */
 	| absdcl1
 	;
 
-nonempty_type_quals:
-	  type_qual
-	| nonempty_type_quals type_qual
-		{ $$ = type_element_chain($1, $2); }
+absdcl1:  /* a nonempty absolute declarator */
+	  absdcl1_ea
+	| absdcl1_noea
 	;
 
-type_quals:
-	  /* empty */
-		{ $$ = NULL; }
-	| type_quals type_qual
-		{ $$ = type_element_chain($1, $2); }
+absdcl1_noea:
+	  direct_absdcl1
+	| '*' maybe_type_quals_attrs absdcl1_noea
+		{ $$ = CAST(declarator, new_pointer_declarator(pr, $1.location, $3, $2)); }
 	;
 
-absdcl1:  /* a nonempty abstract declarator */
+absdcl1_ea:
+	  '*' maybe_type_quals_attrs
+		{ $$ = CAST(declarator, new_pointer_declarator(pr, $1.location, NULL, $2)); }
+	| '*' maybe_type_quals_attrs absdcl1_ea
+		{ $$ = CAST(declarator, new_pointer_declarator(pr, $1.location, $3, $2)); }
+	;
+
+direct_absdcl1:
 	  '(' absdcl1 ')'
 		{ $$ = $2; }
-	  /* `(typedef)1' is `int'.  */
-	| '*' type_quals absdcl1
-		{ $$ = CAST(declarator, new_pointer_declarator(pr, $1.location, $3, $2)); }
-	| '*' type_quals
-		{ $$ = CAST(declarator, new_pointer_declarator(pr, $1.location, NULL, $2)); }
-	| absdcl1 '(' parmlist fn_quals
-		{ $$ = make_function_declarator($2.location, $1, $3, $4, NULL); }
-	| absdcl1 '[' expr ']'
-		{ $$ = CAST(declarator, new_array_declarator(pr, $2.location, $1, $3)); }
-	| absdcl1 '[' ']'
-		{ $$ = CAST(declarator, new_array_declarator(pr, $2.location, $1, NULL)); }
-	| '(' parmlist fn_quals
-		{ $$ = make_function_declarator($1.location, NULL, $2, $3, NULL); }
-	| '[' expr ']'
-		{ $$ = CAST(declarator, new_array_declarator(pr, $1.location, NULL, $2)); }
+	| direct_absdcl1 array_or_absfn_declarator
+		{ $$ = finish_array_or_fn_declarator($1, $2); }
+	| array_or_absfn_declarator 
+		{ $$ = finish_array_or_fn_declarator(NULL, $1); }
+	;
+
+array_or_fn_declarator:
+	  fn_declarator 
+	| array_declarator
+	;
+
+array_or_absfn_declarator:
+	  absfn_declarator 
+	| array_declarator
+	;
+
+fn_declarator:
+	  parameters '(' parmlist_or_identifiers_1 fn_quals
+		{ $$ = CAST(nested_declarator,
+		    new_function_declarator(pr, $2.location, NULL, $3, $1, $4, NULL)); }
+	|  '(' parmlist_or_identifiers fn_quals
+		{ $$ = CAST(nested_declarator,
+		    new_function_declarator(pr, $1.location, NULL, $2, NULL, $3, NULL)); }
+	;
+
+absfn_declarator:
+	  '(' parmlist fn_quals
+		{ $$ = CAST(nested_declarator,
+		    new_function_declarator(pr, $1.location, NULL, $2, NULL, $3, NULL)); }
+	;
+
+array_declarator:
+	  '[' expr ']'
+		{ $$ = CAST(nested_declarator, new_array_declarator(pr, $1.location, NULL, $2)); }
 	| '[' ']' 
-		{ $$ = CAST(declarator, new_array_declarator(pr, $1.location, NULL, NULL)); }
-	/* ??? It appears we have to support attributes here, however
-	   using pstate.prefix_attributes is wrong.  */
+		{ $$ = CAST(nested_declarator, new_array_declarator(pr, $1.location, NULL, NULL)); }
 	;
 
 /* at least one statement, the first of which parses without error.  */
@@ -1567,7 +1899,8 @@ xstmts:
 errstmt:  error ';'
 	;
 
-pushlevel:  /* empty */
+pushlevel:
+	  /* empty */
 		{ pushlevel(FALSE); }
 	;
 
@@ -1598,10 +1931,12 @@ compstmt_or_error:
 	| error compstmt { $$ = $2; }
 	;
 
-compstmt_start: '{' { $$ = $1; compstmt_count++; }
+compstmt_start: 
+	  '{' { $$ = $1; compstmt_count++; }
         ;
 
-compstmt: compstmt_start pushlevel '}'
+compstmt: 
+	  compstmt_start pushlevel '}'
 		{ $$ = CAST(statement, new_compound_stmt(pr, $1.location, NULL, NULL, NULL, poplevel())); }
 	| compstmt_start pushlevel maybe_label_decls decls xstmts '}'
 		{ $$ = CAST(statement, new_compound_stmt(pr, $1.location, $3,
@@ -1807,7 +2142,8 @@ xexpr:
 
 /* These are the operands other than the first string and colon
    in  asm ("addextend %2,%1": "=dm" (x), "0" (y), "g" (*x))  */
-asm_operands: /* empty */
+asm_operands:
+	  /* empty */
 		{ $$ = NULL; }
 	| nonnull_asm_operands
 	;
@@ -1876,7 +2212,7 @@ parmlist_2:  /* empty */
 	;
 
 parms:
-	parm
+	  parm
 	| parms ',' parm
 		{ $$ = declaration_chain($1, $3); }
 	;
@@ -1884,25 +2220,25 @@ parms:
 /* A single parameter declaration or parameter type name,
    as found in a parmlist.  */
 parm:
-	  typed_declspecs setspecs parm_declarator maybe_attribute
+	  declspecs_ts setspecs parm_declarator maybe_attribute
 		{ $$ = declare_parameter($3, pstate.declspecs, $4,
-					 pstate.prefix_attributes, FALSE);
+					 pstate.all_prefix_attributes, FALSE);
 		  pop_declspec_stack(); }
-	| typed_declspecs setspecs notype_declarator maybe_attribute
+	| declspecs_ts setspecs notype_declarator maybe_attribute
 		{ $$ = declare_parameter($3, pstate.declspecs, $4,
-					 pstate.prefix_attributes, FALSE);
+					 pstate.all_prefix_attributes, FALSE);
 		  pop_declspec_stack(); }
-	| typed_declspecs setspecs absdcl
+	| declspecs_ts setspecs absdcl
 		{ $$ = declare_parameter($3, pstate.declspecs, NULL,
-					 pstate.prefix_attributes, FALSE);
+					 pstate.all_prefix_attributes, FALSE);
 		pop_declspec_stack(); }
-	| declmods setspecs notype_declarator maybe_attribute
+	| declspecs_nots setspecs notype_declarator maybe_attribute
 		{ $$ = declare_parameter($3, pstate.declspecs, $4,
-					 pstate.prefix_attributes, FALSE);
+					 pstate.all_prefix_attributes, FALSE);
 		  pop_declspec_stack(); }
-	| declmods setspecs absdcl
+	| declspecs_nots setspecs absdcl
 		{ $$ = declare_parameter($3, pstate.declspecs, NULL,
-					 pstate.prefix_attributes, FALSE);
+					 pstate.all_prefix_attributes, FALSE);
 		  pop_declspec_stack(); }
 	;
 
@@ -1923,19 +2259,19 @@ parmlist_or_identifiers_1:
 
 /* A nonempty list of identifiers.  */
 identifiers:
-	old_parameter
+	  old_parameter
 		{ $$ = $1; }
 	| identifiers ',' old_parameter
 		{ $$ = declaration_chain($1, $3); }
 	;
 
 old_parameter:
-	IDENTIFIER { $$ = declare_old_parameter($1.location, $1.id); }
+	  IDENTIFIER { $$ = declare_old_parameter($1.location, $1.id); }
 	;
 
 /* A nonempty list of identifiers, including typenames.  */
 identifiers_or_typenames:
-	id_label { $$ = $1; declare_label($1); }
+	  id_label { $$ = $1; declare_label($1); }
 	| identifiers_or_typenames ',' id_label
 		{ $$ = id_label_chain($3, $1);
 		  declare_label($3); }
@@ -1943,32 +2279,37 @@ identifiers_or_typenames:
 
 /* A possibly empty list of function qualifiers (only one exists so far) */
 fn_quals:
-	/* empty */ { $$ = NULL; }
+	  /* empty */ { $$ = NULL; }
 	| fn_qual { $$ = $1; }
 	;
 
 extension:
-	EXTENSION
+	  EXTENSION
 		{ $$.location = $1.location;
 		  $$.i = pedantic;
 		  pedantic = 0; }
 	;
 
 scspec:
-	SCSPEC maybe_attribute { $$ = CAST(type_element, new_rid(pr, $1.location, $1.i)); }
-	| DEFAULT maybe_attribute { $$ = CAST(type_element, new_rid(pr, $1.location, RID_DEFAULT)); }
+	  SCSPEC
+		{ $$ = CAST(type_element, new_rid(pr, $1.location, $1.i)); }
+	| DEFAULT
+		{ $$ = CAST(type_element, new_rid(pr, $1.location, RID_DEFAULT)); }
 	;
 
 type_qual:
-	TYPE_QUAL { $$ = CAST(type_element, new_qualifier(pr, $1.location, $1.i)); }
+         TYPE_QUAL 
+		{ $$ = CAST(type_element, new_qualifier(pr, $1.location, $1.i)); }
 	;
 
 fn_qual:
-	FN_QUAL { $$ = CAST(type_element, new_qualifier(pr, $1.location, $1.i)); }
+	  FN_QUAL 
+		{ $$ = CAST(type_element, new_qualifier(pr, $1.location, $1.i)); }
 	;
 
 type_spec:
-	TYPESPEC maybe_attribute { $$ = CAST(type_element, new_rid(pr, $1.location, $1.i)); }
+	  TYPESPEC
+		{ $$ = CAST(type_element, new_rid(pr, $1.location, $1.i)); }
 	;
 
 

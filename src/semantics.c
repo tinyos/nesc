@@ -1011,25 +1011,22 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
   *ot = t;
 }
 
-declarator make_function_declarator(location l, declarator d,
-				    declaration parms, type_element quals,
-				    declaration gparms)
+static declarator finish_function_declarator(function_declarator fd)
 {
   declaration parm;
-
   environment penv = poplevel();
-  function_declarator fd =
-    new_function_declarator(parse_region, l, d, parms, gparms, quals, penv);
 
-  if (new_style(parms) && !is_void_parms(parms))
-    scan_declaration (parm, parms)
+  fd->env = penv;
+
+  if (new_style(fd->parms) && !is_void_parms(fd->parms))
+    scan_declaration (parm, fd->parms)
       if (!is_ellipsis_decl(parm) && !is_error_decl(parm))
 	{
 	  variable_decl vp = CAST(variable_decl, CAST(data_decl, parm)->decls);
 
 	  if (!vp->ddecl)
 	    {
-	      error_with_location(l, "parameter declared void");
+	      error_with_location(fd->location, "parameter declared void");
 	      vp->ddecl = bad_decl;
 	    }
 	  else if (!vp->ddecl->isused)
@@ -1039,7 +1036,8 @@ declarator make_function_declarator(location l, declarator d,
 	      if (!pname)
 		pname = "((anonymous))";
 
-	      error_with_location(l, "parameter `%s' has just a forward declaration", pname);
+	      error_with_location(fd->location,
+		"parameter `%s' has just a forward declaration", pname);
 	    }
 	}
 
@@ -1047,6 +1045,17 @@ declarator make_function_declarator(location l, declarator d,
 
   return CAST(declarator, fd);
 }
+
+declarator finish_array_or_fn_declarator(declarator nested, nested_declarator d)
+{
+  d->declarator = nested;
+
+  if (is_function_declarator(d))
+    return finish_function_declarator(CAST(function_declarator, d));
+  else
+    return CAST(declarator, d);
+}
+
 
 /* Return zero if the declaration NEWDECL is valid
    when the declaration OLDDECL (assumed to be for the same name and kind

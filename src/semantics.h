@@ -48,9 +48,7 @@ void shadow_tag(type_element elements);
 void shadow_tag_warned(type_element elements, int warned);
 
 
-declarator make_function_declarator(location l, declarator d,
-				    declaration parms, type_element quals,
-				    declaration gparms);
+declarator finish_array_or_fn_declarator(declarator nested, nested_declarator d);
 
 /* Start definition of function 'elements d' with attributes attribs.
    nested is true for nested function definitions.
