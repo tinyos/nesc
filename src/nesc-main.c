@@ -240,6 +240,21 @@ bool nesc_option(char *p)
     warn_data_race = warn_fnptr = warn_async = warn_no_combiner = 1;
   else if (!strcmp (p, "Wnesc-error"))
     nesc_error = TRUE;
+  else if (!strncmp(p, "fnesc-diff=", strlen("fnesc-diff=")))
+    {
+      char *dirs = p + 11, *comma = strchr(dirs, ',');
+
+      /* <inputdir>,<outputdir> or <outputdir> only for original */
+      if (comma)
+	{
+	  diff_input = rstralloc(permanent, comma - dirs + 1);
+	  strncpy(diff_input, dirs, comma - dirs);
+	  diff_input[comma - dirs] = '\0';
+	  diff_output = comma + 1;
+	}
+      else
+	diff_output = dirs;
+    }
   else
     return FALSE;
 

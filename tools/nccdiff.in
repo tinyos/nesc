@@ -1,0 +1,321 @@
+#!@pathperl@
+# -*- perl -*-
+
+# This file is part of the nesC compiler.
+#    Copyright (C) 2004 Intel Corporation
+# 
+# The attached "nesC" software is provided to you under the terms and
+# conditions of the GNU General Public License Version 2 as published by the
+# Free Software Foundation.
+# 
+# nesC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with nesC; see the file COPYING.  If not, write to
+# the Free Software Foundation, 59 Temple Place - Suite 330,
+# Boston, MA 02111-1307, USA.
+
+# Configuration
+$prefix = "@prefix@";
+$exec_prefix = "@exec_prefix@";
+$NCDIR = "@libdir@/ncc";
+
+# Have fun with the arguments
+
+for ($i = 0; $i <= $#ARGV; $i++) {
+    $strip = 0;
+    $_ = $ARGV[$i];
+    if (/^-/) {
+	if (/^-fnesc-diff=(.*),(.*)$/) {
+	    $diff_from = $1;
+	    $diff_to = $2;
+	}
+	elsif (/^-fnesc-diff=(.*)$/) {
+	    $diff_to = $1;
+	}
+	elsif (/^-fnesc-cfile/ || /^-o/ || /^-c/ || /^-Wl,/) {
+	    print STDERR "$_ option not allowed\n";
+	    exit 2;
+	}
+	elsif (/^-v$/) {
+	    $verbose = 1;
+	}
+	push @ncc_args, $_ if !$strip;
+    }
+    push @new_args, $_ if !$strip;
+}
+
+if (!$diff_to) {
+    print STDERR "no -fnesc-diff directive specified\n";
+    exit 2;
+}
+
+if (system("mkdir -p $diff_to")) {
+    print STDERR "Couldn't create destination directory $diff_to\n";
+    exit 1;
+}
+
+unshift @new_args, 
+  "ncc", "-c", "-o$diff_to/app.o", "-fnesc-cfile=$diff_to/app.c";
+
+print STDERR join(' ', @new_args), "\n" if $verbose;
+
+if (system @new_args) {
+    print STDERR "ncc failed\n";
+    exit 1;
+}
+
+#%sizes = &get_sizes("$diff_to/app.o");
+%kinds = &get_kinds("$diff_to/symbols");
+
+#foreach $sym (keys %kinds) {
+#    print "$sym: $kinds{$sym}\n";
+#}
+
+open(SCRIPT, ">$diff_to/scr.x") || die;
+$textsec = &print_section("FN");
+$datasec = &print_section("DATA");
+$bsssec = &print_section("BSS");
+&gen_script("$NCDIR/first-avr5.x");
+close SCRIPT || die;
+
+@exe1_args = @ncc_args;
+push @exe1_args, "$diff_to/app.o";
+unshift @exe1_args, "ncc", "-Wl,--script=$diff_to/scr.x", "-Wl,-Map=$diff_to/map1", 
+    "-o", "$diff_to/exe1";
+
+print STDERR join(' ', @exe1_args), "\n" if $verbose;
+system(@exe1_args) && die;
+
+#foreach $sym (keys %sizes) {
+#    print "$sym: $sizes{$sym} $output{$sym}\n";
+#}
+
+#foreach $sec (keys %sections) {
+#    print "$sec: " . join(' ', @{$sections{$sec}}) . "\n";
+#}
+
+#foreach $sym (keys %symbols) {
+#    print "$sym = $symbols{$sym}\n";
+#}
+
+if (!$diff_from) {
+    &parse_map("$diff_to/map1");
+}
+else {
+    &parse_map("$diff_from/map2");
+    foreach $sym (keys %address) {
+	$new = $sym;
+	$new =~ s/^\Q$diff_from\E/\Q$diff_to\E/;
+	$oldaddress{$new} = $address{$sym} - $secaddress{$output{$sym}};
+    }
+
+    &parse_map("$diff_to/map1");
+}
+
+$offset = &layout(".progmem", $symbols{"__ebase"} + 1024, 16);
+$osize{".progmem"} = $offset;
+$offset = &layout(".text", ($offset + 128 + 1) & ~1, 128);
+$osize{".text"} = $offset + 4096;
+
+$offset = &layout(".data", 0, 0);
+$osize{".data"} = $offset + 16;
+
+$offset = &layout(".bss", 0, 0);
+$osize{".bss"} = $offset;
+
+open(SCRIPT, ">$diff_to/fscr.x") || die;
+$textsec = &print_final_section(".text");
+$progmemsec = &print_final_section(".progmem");
+$datasec = &print_final_section(".data");
+$bsssec = &print_final_section(".bss");
+&gen_script("$NCDIR/second-avr5.x");
+close SCRIPT || die;
+
+@exe2_args = @ncc_args;
+push @exe2_args, "$diff_to/app.o";
+unshift @exe2_args, "ncc", "-Wl,--script=$diff_to/fscr.x", "-Wl,-Map=$diff_to/map2", 
+    "-o", "$diff_to/exe2";
+
+print STDERR join(' ', @exe2_args), "\n" if $verbose;
+system(@exe2_args) && die;
+
+
+sub layout {
+    my ($section, $base, $spacing) = @_;
+    my (@names, $isec, @order);
+
+    @names = @{$sections{$section}};
+
+    #open(LAYOUT, "|$NCDIR/smalldiff >$diff_to/layout$section") || die;
+    open(LAYOUT, ">$diff_to/ilayout$section") || die;
+    $count = $#names + 1;
+    print LAYOUT "(original $count $base $spacing)\n";
+    foreach $isec (@names) {
+	$oldaddress = $oldaddress{$isec};
+	$oldaddress = "null" if !defined($oldaddress);
+	print LAYOUT "(\"$isec\" $oldaddress $sizes{$isec})\n";
+    }
+    close LAYOUT || die;
+    system("$NCDIR/smalldiff <$diff_to/ilayout$section >$diff_to/layout$section") && die;
+    #die if $?;
+
+    open LAYOUT, "$diff_to/layout$section";
+    while (<LAYOUT>) {
+	next if /^;/;
+	die unless /\(\"(.*)\" ([0-9]+)\)/;
+	$offset = $offset{$1} = $2;
+	push @order, $1 if $1 ne "";
+    }
+    $order{$section} = \ @order;
+    return $offset;
+}
+
+sub print_final_section {
+    my ($section) = @_;
+    my (@names, $isec, $inp);
+
+    @names = @{$order{$section}};
+    foreach $isec (@names) {
+	$inp .= "    . = $offset{$isec};\n";
+	$inp .= "    $isec\n";
+    }
+    $inp .= "    . = $osize{$section};\n";
+
+    return $inp;
+}
+
+sub print_section {
+    my ($kindre) = @_;
+    my ($inp);
+
+    foreach $sym (keys %kinds) {
+	$inp .= "    *(.nesc.$sym)\n" if $kinds{$sym} =~ /$kindre/;
+    }
+    return $inp;
+}
+
+sub get_sizes {
+    my ($f) = @_;
+    my (%sizes);
+
+    if (!open(OBJINFO, "objdump -h $f |")) {
+	print STDERR "error obtaining symbol sizes\n";
+	exit 1;
+    }
+
+    while (<OBJINFO>) {
+	if (/\.nesc\.([A-Za-z0-9_\$]+)\s+([0-9a-fA-F]+)/) {
+	    $sizes{$1} = hex $2;
+	}
+    }
+    close OBJINFO;
+    return %sizes;
+}
+
+sub parse_map {
+    my ($f) = @_;
+    my ($name, $size, $file, $ilistref, $output, $aoutput, $address);
+
+    if (!open(MAP, "$f")) {
+	print STDERR "error reading $f\n";
+	exit 1;
+    }
+
+    undef %secaddress;
+    undef %symbols;
+    undef %output;
+    undef %address;
+    undef %sizes;
+    undef %sections;
+
+    while (<MAP>) {
+	last if /^Linker script/;
+    }
+    while (<MAP>) {
+	chomp;
+	$name = 0;
+	if (/^([^ ()*]+)\s+([0-9a-fx]+)/) {
+	    $secaddress{$1} = hex $2;
+	    $output = $1;
+	}
+	elsif (/^ ([^ ()*]+)\s+([0-9a-fx]+)\s+([0-9a-fx]+)\s+(.*)/) {
+	    die unless $output;
+	    $name = $1;
+	    $address = $2;
+	    $size = $3;
+	    $file = $4;
+	}
+	elsif (/^ ([^ ()*]+)$/) {
+	    # Split into two lines, sometimes.
+	    $name = $1;
+	    $_ = <MAP>;
+	    if (/^\s+([0-9a-fx]+)\s+([0-9a-fx]+)\s+(.*)/) {
+		$address = $1;
+		$size = $2;
+		$file = $3;
+	    }
+	    else {
+		$name = 0;
+	    }
+	}
+	elsif (/^\s+([0-9a-fx]+)\s+(.*) =/) {
+	    $symbols{$2} = hex $1;
+	}
+	elsif (/^\s+([0-9a-fx]+)\s+PROVIDE \((.*),/) {
+	    $symbols{$2} = hex $1;
+	}
+	#if ($name && !($name =~ /^\.(vectors|init|fini)/) &&
+	if ($name && ($name =~ /^\.(nesc|progmem)/) &&
+	    ($output =~ /^\.(bss|text|data)$/)) {
+	    if ($name =~ /^\.(progmem)/) {
+		$aoutput = ".progmem";
+	    }
+	    else {
+		$aoutput = $output;
+	    }
+	    $name = "$file($name)";
+	    $output{$name} = $aoutput;
+	    $address{$name} = hex $address;
+	    $sizes{$name} = hex $size;
+
+	    $ilistref = $sections{$aoutput};
+	    if (!$ilistref) {
+		$ilistref = [ ];
+		$sections{$aoutput} = $ilistref;
+	    }
+	    push @{$ilistref}, $name;
+	}
+    }
+    close MAP || die;
+}
+
+sub get_kinds {
+    my ($f) = @_;
+    my (%kinds);
+
+    if (!open(OBJINFO, $f)) {
+	print STDERR "error obtaining symbol information\n";
+	exit 1;
+    }
+
+    while (<OBJINFO>) {
+	die unless /^([A-Za-z0-9_\$]+) ([A-Z]+)$/;
+	$kinds{$1} = $2;
+    }
+    close OBJINFO || die;
+    return %kinds;
+}
+
+sub gen_script {
+    my ($template) = @_;
+
+    open(TEMPLATE, $template) || die;
+    while (<TEMPLATE>) {
+	print SCRIPT eval "qq[$_]";
+    }
+    close TEMPLATE || die;
+}

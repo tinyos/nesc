@@ -21,8 +21,18 @@ use File::Basename;
 for ($i = 0; $i <= $#ARGV; $i++) {
     $_ = $ARGV[$i];
 
-    if (/^-/) {
-	$nocompile = 1 if ($_ eq "-fsyntax-only");
+    if (/^-_ASM$/) {
+	# magic marker for assembler options
+	$for_assembler = 1;
+    }
+    elsif ($for_assembler) {
+	push @gcc_args, "-Wa,$_";
+    }
+    elsif (/^-/) {
+	if (/^-fsyntax-only/) {
+	    $nocompile = 1;
+	}
+
 	if (/^-[_WwvpfmD]/ || /^-pedantic/ || /^-ansi/) {
 	    push @nesc_args, $_ unless /^-_?fnesc-.*cfile=/;
 	    $verbose = 1 if /^-v/;

@@ -252,4 +252,8 @@ extern int warn_no_combiner;
    are treated as errors */
 extern int nesc_error;
 
+/* diff processing enabled if diff_output is not NULL 
+   (diff_input is NULL for orignal program, non-NULL to reduce diff size) */\
+extern char *diff_input, *diff_output;
+
 #endif

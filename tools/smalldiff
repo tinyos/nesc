@@ -1,0 +1,256 @@
+#!/usr/bin/guile -s
+!#
+;; "Simple" diff minimisation algorithm
+;;
+;; Goal:
+;; given a set S of sections, identified by triples (name old-address size),
+;; a base address B and desired spacing I, where old-address may be 'null'
+;; return a set S' of sections, identified by (name new-address) such that:
+;;   all sections of S are present in S'
+;;   for all s=(name, address) in S': address >= base
+;;   for all s=(name, address) in S':
+;;     s.address -> s.address+s.size does not overlap with any other element
+;;     of S'
+;;   the differences between the layout specified by S and S' are
+;;   reduced (i.e., try and keep sections at the same as their old address)
+;;     Note: the difference will ultimately be measured by the number of
+;;           page that change in the executable. Minimising this requires
+;;           more information that currently provided as input.
+
+;; Algorithm:
+;;  - split S into P = { s in S | s.old-address != null && s.old-address >= B} 
+;;             and U = S - P
+;;  - create sorted sequence LP from P, sorting by old-address
+;;  - identify overlapping sections S:
+;;      LP[i].old-address + LP[i].size > LP[j].old-address
+;;      => problem(i) && problem(j)
+;;  - resolve problems:
+;;    move elements from P to U until for all i: ~problem[i]
+;;    (is minimising the size/number of moves is probably hard NP-complete?)
+;;  - place elements of U:
+;;    o based on B and P, find set H of "holes" in the address space
+;;    o place elements of U in H, respecting spacing I
+;;      (sounds like knapsack)
+
+(debug-enable 'backtrace)
+
+(define (ewrite fmt . args)
+  (apply format (current-error-port) fmt args))
+
+(define (repeat n fn)
+  (if (<= n 0) #f
+      (begin
+	(fn)
+	(repeat (- n 1) fn))))
+
+(define (for s e fn)
+  (if (<= s e)
+      (begin
+	(fn s)
+	(for (+ s 1) e fn))))
+
+(define (filter fn list)
+  (let loop ((filtered '())
+	     (l list))
+    (if (pair? l)
+	(if (fn (car l))
+	    (loop (cons (car l) filtered) (cdr l))
+	    (loop filtered (cdr l)))
+	(reverse! filtered))))
+
+(define info (make-hash-table 512))
+(define sections '())
+(define base '())
+(define spacing '())
+
+(define placed '())
+(define unplaced '())
+
+(define (make-info name old-address size)
+  (vector name old-address size #f '()))
+
+(define (info-name info) (vector-ref info 0))
+(define (info-old-address info) (vector-ref info 1))
+(define (info-size info) (vector-ref info 2))
+(define (info-new-address info) (vector-ref info 3))
+(define (info-problem info) (vector-ref info 4))
+;(define (info-name-set! info x) (vector-set! info 0 x))
+;(define (info-old-address-set! info x) (vector-set! info 1 x))
+;(define (info-size-set! info x) (vector-set! info 2 x))
+(define (info-new-address-set! info x) (vector-set! info 3 x))
+(define (info-problem-set! info x) (vector-set! info 4 x))
+
+(define (old-address-< s1 s2)
+  (< (info-old-address s1) (info-old-address s2)))
+
+(define (new-address-< s1 s2)
+  (< (info-new-address s1) (info-new-address s2)))
+
+(define (read-input)
+  (let* ((spec (read))
+	 (count (cadr spec)))
+    (set! base (caddr spec))
+    (set! spacing (cadddr spec))
+    (repeat count
+	    (lambda ()
+	      (let* ((section (read))
+		     (name (car section))
+		     (data (make-info name (cadr section) (caddr section))))
+		(set! sections (cons data sections))
+		(hash-set! info name data))))))
+
+(define (write-results)
+  (for-each (lambda (info)
+	      (write (list (info-name info) (info-new-address info)))
+	      (newline))
+	    (sort sections new-address-<))
+  (write (list "" base))
+  (newline))
+
+(define (set-offsets sections offset)
+  (for-each (lambda (info)
+	      (info-new-address-set! info offset)
+	      (set! offset (+ offset (info-size info) spacing)))
+	    sections)
+  (set! base offset))
+
+(define (split-sections)
+  (let split ((P '())
+	      (U '())
+	      (S sections))
+    (if (null? S)
+	(begin
+	  (set! placed P)
+	  (set! unplaced U))
+	(let* ((s (car S))
+	       (old (info-old-address s)))
+	  (if (and (integer? old) (>= old base))
+	      (split (cons s P) U (cdr S))
+	      (split P (cons s U) (cdr S)))))))
+
+(define (fits s address)
+  (or (<= (+ (info-old-address s) (info-size s)) address)))
+
+(define (add-problem s in-the-way)
+  (info-problem-set! s (cons in-the-way (info-problem s))))
+
+(define (identify-overlap)
+  (set! placed (sort! placed old-address-<))
+
+  (let loop ((pl placed)
+	     (problems '()))
+    (if (pair? pl)
+	(let* ((s (car pl))
+	       (address (info-old-address s)))
+	  (loop (cdr pl)
+		(cons s (filter (lambda (prev)
+				  (let ((oops (not (fits prev address))))
+				    (if oops
+					(begin
+					  (add-problem s prev)
+					  (add-problem prev s)))
+				    oops))
+				problems)))))))
+
+(define (problems)
+  (filter (lambda (s) (pair? (info-problem s))) placed))
+
+(define (resolve-overlap)
+  ;; On the assumption that this is NP-complete, do something greedy:
+  (for-each
+   (lambda (s)
+     (if (pair? (info-problem s))	; may have been resolved already
+	 (begin
+	   ;; move to unplaced
+	   ;(ewrite "unplace ~S\n" (info-name s))
+	   (set! unplaced (cons s unplaced))
+	   (for-each ;; s no longer causes conflicts
+	    (lambda (conflict)
+	      ;(ewrite "clearing conflict with ~S\n" (info-name conflict))
+	      (info-problem-set! conflict
+		(filter (lambda (cf) (not (equal? (info-name cf) (info-name s))))
+			(info-problem conflict))))
+	    (info-problem s)))))
+   ;; resolve problems starting with the smallest section
+   ;; (this is not even a good greedy approach...)
+   (sort! (problems)
+	  (lambda (problem1 problem2)
+	    (< (info-size problem1) (info-size problem2)))))
+  ;; remove elements added to unplaced (their problem field was left
+  ;; untouched) 
+  (set! placed (filter (lambda (s) (null? (info-problem s))) placed)))
+
+(define (place-remaining)
+  ;; hack version: place at end
+  (set-offsets unplaced
+	       (if (pair? placed)
+		   (let ((last-placed (car (last-pair placed))))
+		     (+ (info-new-address last-placed)
+			(info-size last-placed)
+			spacing))
+		   base)))
+
+(define (find-holes sections)
+  (let ((holes '()))
+    (let loop ((address base)
+	       (l sections))
+      (if (null? l)
+	  (cons (cons address #xffffffff) holes)
+	  (let* ((s (car l))
+		 (at (info-new-address s)))
+	    (if (> (- at address) spacing)
+		(set! holes (cons (cons address (- at spacing address))
+				  holes)))
+	    (loop (+ at (info-size s) spacing) (cdr l)))))))
+
+(define (valid-holes holes size)
+  (filter (lambda (hole) (<= size (cdr hole))) holes))
+
+(define (place-remaining-new)
+  ;; something knapsacky, we go greedy again: place large things first, in
+  ;; smallest available hole
+  (set! unplaced (sort! unplaced
+			(lambda (s1 s2) (> (info-size s1) (info-size s2)))))
+  (let ((holes (find-holes placed)))
+    (for-each
+     (lambda (s)
+       ;; there's always a candidate because of the giant hole at the end
+       ;(ewrite "sec ~S, size ~S, holes ~S\n" (info-name s) (info-size s) holes)
+       (let* ((size (info-size s))
+	      (candidates (valid-holes holes size))
+	      (chosen (car (sort! candidates
+				  (lambda (s1 s2) (< (cdr s1) (cdr s2)))))))
+	 ;(ewrite "  chose ~S\n" chosen)
+	 (info-new-address-set! s (car chosen))
+	 (if (> (- (cdr chosen) size) spacing)
+	     ;; shrink hole
+	     (begin
+	       (set-car! chosen (+ (car chosen) size spacing))
+	       (set-cdr! chosen (- (cdr chosen) size spacing)))
+	     ;; else remove hole
+	     (set! holes (assq-remove! holes (car chosen))))))
+     unplaced)
+    (set! base (+ spacing (caar holes)))))
+
+(define (layout port)
+  (with-input-from-port port
+    (lambda ()
+      (read-input)
+
+      ;;(set-offsets sections base)
+      (split-sections)
+      (identify-overlap)
+      (resolve-overlap)
+      (if (pair? (problems))
+	  (error "failed to resolve overlap"))
+      ;; sections in placed keep their old address
+      (for-each (lambda (s) (info-new-address-set! s (info-old-address s)))
+		placed)
+      (place-remaining-new)
+
+      (write-results))))
+
+(define (layout-file s)
+  (call-with-input-file s layout))
+
+(layout (current-input-port))

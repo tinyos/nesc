@@ -6,6 +6,7 @@ EXTRA_DIST =					\
 	debugging_files/jtagpod.jpg		\
 	debugging_files/micamod.jpg		\
 	debugging_files/progboard.jpg		\
+	envtarget.html				\
 	mig.html				\
 	ncc.html                                \
 	ncg.html                                \

@@ -120,6 +120,7 @@ struct data_declaration {
   expression initialiser; /* NULL if none. For type arguments, this gets set
 			     to the argument type (type_argument node) */
 
+  bool printed;			/* symbol info already printed */
   bool islimbo; /* TRUE if comes from an extern declaration in an inner scope
 		   (also true for implicit function declarations) */
   bool isexternalscope; /* == TREE_PUBLIC   */

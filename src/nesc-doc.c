@@ -434,7 +434,7 @@ static FILE *open_outfile(const char *outfile) {
     fatal("can't write to output file '%s'",outfile);
 
   // set up unparse routines
-  unparse_start(current_doc_outfile);
+  unparse_start(current_doc_outfile, NULL);
   disable_line_directives();
   set_function_separator(".");
   enable_documentation_mode();

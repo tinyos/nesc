@@ -145,6 +145,7 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->norace = FALSE;
   dd->instantiation = NULL;
   dd->call_contexts = 0;
+  dd->printed = FALSE;
 }
 
 data_declaration lookup_id(const char *s, bool this_level_only)

@@ -43,10 +43,7 @@ static void build_include_argv(void)
   char *pathdata;
 
   for (p = searchpath; p; p = p->next)
-    if (p->dirname[0]) /* Skip "", current dir always searched anyway */
-      {
-	n += 2;
-      }
+    n += 2;
 
   path_argv_count = n;
   path_argv = rarrayalloc(pathregion, n, char *);
@@ -54,12 +51,10 @@ static void build_include_argv(void)
 
   n = 0;
   for (p = searchpath; p; p = p->next)
-    if (p->dirname[0])
-      {
-	path_argv[n++] = "-I";
-	path_argv[n++] = fix_filename(pathregion, p->dirname);
-      }
-
+    {
+      path_argv[n++] = "-I";
+      path_argv[n++] = p->dirname ? fix_filename(pathregion, p->dirname) : "-";
+    }
 }
 
 static char *canonicalise(region r, const char *path, int len)
@@ -81,6 +76,18 @@ static char *canonicalise(region r, const char *path, int len)
   return cp;
 }
 
+static void add_minus(region r)
+/* Add special marker for -I- directive */
+{
+  struct path *np = ralloc(r, struct path);
+
+  np->next = searchpath;
+  searchpath = np;
+  np->dirname = NULL;
+
+  include_current_dir = FALSE;
+}
+
 static void add_dir(region r, const char *path, int len)
 {
   struct path *np = ralloc(r, struct path);
@@ -97,7 +104,7 @@ static void add_dir(region r, const char *path, int len)
 void add_nesc_dir(const char *path)
 {
   if (!strcmp(path, "-"))
-    include_current_dir = FALSE;
+    add_minus(pathregion);
   else
     add_dir(pathregion, path, strlen(path));
 }
@@ -118,19 +125,28 @@ static void reverse_searchpath(void)
   searchpath = last;
 }
 
+static bool file_exists(const char *fullname)
+{
+  struct stat sbuf;
+  return stat(fullname, &sbuf) == 0 && S_ISREG(sbuf.st_mode);
+}
+
 static const char *find_file(char *filename)
 {
   char *fullname = alloca(maxdirlen + strlen(filename) + 1);
   struct path *p;
-  struct stat sbuf;
 
+  if (include_current_dir && file_exists(filename))
+    return "";
   for (p = searchpath; p; p = p->next)
-    {
-      sprintf(fullname, "%s%s", p->dirname, filename);
-      if (stat(fullname, &sbuf) == 0)
-	if (S_ISREG(sbuf.st_mode))
+    /* Hack 'if' to skip '-' directory, while keeping it in searchpath
+       so as to preserve its position for preprocessor invocations */
+    if (p->dirname)
+      {
+	sprintf(fullname, "%s%s", p->dirname, filename);
+	if (file_exists(fullname))
 	  return p->dirname;
-    }
+      }
   return NULL;
 }
 
@@ -166,9 +182,6 @@ void init_nesc_paths_end(void)
 {
   build_search_path(pathregion, getenv("NESCPATH"));
   reverse_searchpath();
-  if (include_current_dir)
-    add_dir(pathregion, "", 0);
-
   build_include_argv();
 }
 

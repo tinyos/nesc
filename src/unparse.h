@@ -26,7 +26,7 @@ Boston, MA 02111-1307, USA. */
 extern char *nido_mote_number;
 
 void unparse(FILE *to, declaration program) deletes;
-void unparse_start(FILE *to);
+void unparse_start(FILE *to, FILE *symbols);
 void unparse_end(void) deletes;
 void enable_line_directives(void);
 void disable_line_directives(void);
@@ -110,5 +110,7 @@ void prt_ddecl_full_name(data_declaration ddecl, psd_options options);
 void prt_plain_ddecl(data_declaration ddecl, psd_options options);
 
 void prt_function_body(function_decl d);
+
+void prt_diff_info(data_declaration ddecl);
 
 #endif

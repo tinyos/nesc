@@ -41,6 +41,7 @@ static void prt_nesc_function_hdr(data_declaration fn_decl,
   variable_decl ifn_vd = CAST(variable_decl, fn_decl->ast);
   data_decl fn_dd = CAST(data_decl, ifn_vd->parent);
 
+  prt_diff_info(fn_decl);
   output("static ");
   prt_type_elements(fn_dd->modifiers, FALSE);
 
@@ -1096,7 +1097,7 @@ void generate_c_code(nesc_declaration program, const char *target_name,
 {
   dd_list_pos mod;
   cgraph callgraph;
-  FILE *output = NULL;
+  FILE *output = NULL, *diff_file = NULL;
 
   if (target_name)
     {
@@ -1107,9 +1108,30 @@ void generate_c_code(nesc_declaration program, const char *target_name,
 	  exit(2);
 	}
     }
+
+  if (diff_output)
+    {
+      char *diffname = rstralloc(permanent, strlen(diff_output) + 9);
+
+      if (use_nido)
+	{
+	  /* There's no use for nido+diffs, and it would complicate
+	     things somewhat (nido changes rules for symbols, etc) */
+	  error("diff output is not supported with simulation");
+	  exit(1);
+	}
+      sprintf(diffname, "%s/symbols", diff_output);
+      diff_file = fopen(diffname, "w");
+      if (!diff_file)
+	{
+	  fprintf(stderr, "couldn't create diff output file %s: ", diffname);
+	  perror(NULL);
+	  exit(2);
+	}
+    }
   
 
-  unparse_start(output ? output : stdout);
+  unparse_start(output ? output : stdout, diff_file);
   disable_line_directives();
 
   /* suppress debug functions if necessary */
@@ -1177,4 +1199,6 @@ void generate_c_code(nesc_declaration program, const char *target_name,
 
   if (output)
     fclose(output);
+  if (diff_file)
+    fclose(diff_file);
 }

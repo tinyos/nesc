@@ -2317,7 +2317,8 @@ stmt:
 		{ if (extra_warnings && stmt_count == $1.i)
 		    warning("empty body in an else-statement");
 		  $$ = $1.stmt;
-		  CAST(if_stmt, $$)->stmt2 = $4;
+		  if (is_if_stmt($$)) /* could be an error_stmt */
+		    CAST(if_stmt, $$)->stmt2 = $4;
 		}
 	| simple_if %prec IF
 		{ /* This warning is here instead of in simple_if, because we
