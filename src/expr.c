@@ -31,6 +31,7 @@ Boston, MA 02111-1307, USA. */
 #include "AST_utils.h"
 #include "nesc-module.h"
 #include "nesc-component.h"
+#include "nesc-magic.h"
 
 /* Return TRUE if TTL and TTR are pointers to types that are equivalent,
    ignoring their qualifiers.  */
@@ -1248,12 +1249,13 @@ expression make_compound_expr(location loc, statement block)
     }
 }
 
-void check_arguments(type fntype, expression arglist,
+bool check_arguments(type fntype, expression arglist,
 		     data_declaration fundecl, const char *name)
 {
   typelist_scanner parmtypes;
   int parmnum = 1;
   type parmtype;
+  int old_errorcount = errorcount;
 
   if (!type_function_oldstyle(fntype))
     {
@@ -1329,6 +1331,8 @@ void check_arguments(type fntype, expression arglist,
       require_complete_type(arglist, default_conversion(arglist));
       arglist = CAST(expression, arglist->next);
     }
+
+  return errorcount == old_errorcount;
 }
 
 expression make_function_call(location loc, expression fn, expression arglist)
@@ -1337,6 +1341,7 @@ expression make_function_call(location loc, expression fn, expression arglist)
   type fntype = default_conversion(fn), rettype;
   char *funname;
   data_declaration fundecl;
+  bool argumentsok;
 
   result->type = error_type;
   if (fntype == error_type)
@@ -1369,12 +1374,15 @@ expression make_function_call(location loc, expression fn, expression arglist)
 	}
     }
 
-  check_arguments(fntype, arglist, fundecl, funname);
+  argumentsok = check_arguments(fntype, arglist, fundecl, funname);
 
   rettype = type_function_return_type(fntype);
   result->type = rettype;
   if (!type_void(rettype))
     result->type = require_complete_type(result, rettype);
+
+  if (argumentsok)
+    result = magic_reduce(CAST(function_call, result));
 
   return result;
 }

@@ -29,6 +29,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-semantics.h"
 #include "nesc-cpp.h"
 #include "nesc-msg.h"
+#include "nesc-magic.h"
 
 /* Adds the component graph 'component' to the whole program graph 'master' */
 static void connect_graph(cgraph master, cgraph component)
@@ -102,6 +103,7 @@ void nesc_compile(const char *filename, const char *target_name)
   init_semantics();
   init_nesc_env(parse_region);
   init_nesc_paths_end();
+  init_magic_functions();
 
   toplevel.filename = "<commandline>";
   toplevel.lineno = 0;

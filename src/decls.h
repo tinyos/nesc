@@ -68,7 +68,8 @@ typedef struct tag_declaration {
 } *tag_declaration;
 
 typedef enum { decl_variable, decl_constant, decl_function,
-	       decl_typedef, decl_error, decl_magic_string,
+	       decl_typedef, decl_error, decl_magic_string,	
+	       decl_magic_function,
 	       decl_interface_ref, decl_component_ref } data_kind;
 
 typedef struct data_declaration {
@@ -127,6 +128,8 @@ typedef struct data_declaration {
   dd_list uses;			/* list of declarations of identifiers used */
   struct connections *connections; /* See nesc-generate.c: what this command
 				      or event is connected to. */
+  /* reduction function for magic functions */
+  expression (*magic_reduce)(function_call fcall);
 
   /* For variables */
   enum { variable_register, variable_static, variable_normal } vtype;

@@ -21,7 +21,8 @@ ncclibdir=$(libdir)/ncc
 
 bin_SCRIPTS = mig ncc set-mote-id
 
-ncclib_DATA = genjava.pm
+ncclib_DATA = genjava.pm migdecode.pm
 
 EXTRA_DIST =					\
-	genjava.pm
+	genjava.pm				\
+	migdecode.pm

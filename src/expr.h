@@ -61,7 +61,7 @@ bool check_assignment(type lhstype, type rhstype, expression rhs,
 		      const char *funname, int parmnum);
 
 bool check_conversion(type to, type from);
-void check_arguments(type fntype, expression arglist,
+bool check_arguments(type fntype, expression arglist,
 		     data_declaration fundecl, const char *name);
 
 type default_conversion(expression e);

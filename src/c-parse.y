@@ -842,15 +842,19 @@ primary:
 		}
 	| function_call
 		{
-		  function_call fc = CAST(function_call, $1);
-		  type calltype = fc->arg1->type;
+		  /* Magic functions may rewrite this to something else */
+		  if (is_function_call($1))
+		    {
+		      function_call fc = CAST(function_call, $1);
+		      type calltype = fc->arg1->type;
 
-		  if (type_command(calltype))
-		    error("commands must be called with call");
-		  else if (type_event(calltype))
-		    error("events must be signaled with signal");
-		  else if (type_task(calltype))
-		    error("tasks must be posted with post");
+		      if (type_command(calltype))
+			error("commands must be called with call");
+		      else if (type_event(calltype))
+			error("events must be signaled with signal");
+		      else if (type_task(calltype))
+			error("tasks must be posted with post");
+		    }
 
 		  $$ = $1;
 		}
