@@ -1,0 +1,19 @@
+To build nesC from the CVS distribution, you need
+automake 
+autoconf 2.50 or later
+emacs
+gperf
+
+Directions: in this directory
+./Bootstrap (once only after checkout)
+./configure TOSDIR=<location of your TinyOS tos directory>
+  (note: if you don't specify TOSDIR, configure will try and find a directory
+         named ../tos, then ../../tos, then $HOME/nest/tos before failing)
+make
+
+To install:
+make install
+
+To make a distribution that doesn't need the above tools:
+make dist
+or: make distdir=<your favourite name for the toplevel directory> dist
