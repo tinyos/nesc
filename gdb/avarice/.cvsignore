@@ -1,4 +1,5 @@
 .deps
+Makefile
 Makefile.in
 aclocal.m4
 autoconf.h
