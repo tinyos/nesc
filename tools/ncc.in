@@ -81,16 +81,22 @@ elsif ($target eq "mica") {
     $gcc = "avr-gcc";
     push @new_args, "-mmcu=atmega103";
     push @new_args, "-fnesc-target=avr";
-    $commonplatform = "avrmote";
+    @commonplatforms = ("avrmote");
+}
+elsif ($target eq "mica128") {
+    $gcc = "avr-gcc";
+    push @new_args, "-mmcu=atmega128";
+    push @new_args, "-fnesc-target=avr";
+    @commonplatforms = ("mica", "avrmote");
 }
 elsif ($target eq "rene2") {
     $gcc = "avr-gcc";
     push @new_args, "-mmcu=atmega163";
     push @new_args, "-fnesc-target=avr";
-    $commonplatform = "avrmote";
+    @commonplatforms = ("avrmote");
 }
 else {
-    &fail("unknown target $target\n(known targets are pc, mica, rene2)");
+    &fail("unknown target $target\n(known targets are pc, mica, mica128, rene2)");
 }
 
 unshift @new_args, map "-DBOARD_\U$_", @boards;
@@ -101,7 +107,7 @@ unshift @new_args, $gcc;
 if (!$nostdinc) {
     push @new_args, map "-I$TOSDIR/sensorboards/$_", @boards;
     push @new_args, "-I$TOSDIR/platform/$target";
-    push @new_args, "-I$TOSDIR/platform/$commonplatform" if $commonplatform;
+    push @new_args, map "-I$TOSDIR/platform/$_", @commonplatforms;
     push @new_args, "-I$TOSDIR/interfaces";
     push @new_args, "-I$TOSDIR/system";
     push @new_args, "-I$TOSDIR/lib";
