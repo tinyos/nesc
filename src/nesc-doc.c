@@ -542,7 +542,7 @@ static void print_navbar(FILE *f, navbar_mode mode, const char *srcfile, const c
   else fprintf(f, "<b><a href=\"allfiles_p.html\">All Files</a></b>\n");
   fprintf(f, "%s\n", spaces);
 
-  if(mode == NAV_COMP) fprintf(f,"Source Tree\n");
+  if(mode == NAV_TREE) fprintf(f,"Source Tree\n");
   else fprintf(f, "<b><a href=\"index.html\">Source Tree</a></b>\n");
   fprintf(f, "%s\n", spaces);
 
