@@ -109,16 +109,6 @@ sub gen() {
     print "        super(msg, base_offset, data_length);\n";
     print "    }\n\n";
 
-# XXX MDW: Deprecated
-#    print "    $java_classname(net.tinyos.message.ByteArray packet, int size) {\n";
-#    print "        this(size);\n";
-#    print "        dataSet(packet);\n";
-#    print "    }\n\n";
-#
-#    print "    $java_classname(net.tinyos.message.ByteArray packet) {\n";
-#    print "        this(packet, $size);\n";
-#    print "    }\n\n";
-
     print "    /** Return the Active Message type of this message (-1 if unknown). */\n";
     print "    public int amType() {\n";
     print "        return AM_TYPE;\n";
@@ -135,7 +125,7 @@ sub gen() {
 	$javafield = $field;
 	$javafield =~ s/\./_/g;
 	if (!@$amax) {
-          print "      s += \"[$field=0x\"+Long.toHexString(get\u$javafield())+\"] \";\n";
+          print "      s += \"[$field=0x\"+Long.toHexString(get_$javafield())+\"] \";\n";
 	}
     }
     print "      return s;\n";
@@ -144,74 +134,213 @@ sub gen() {
     print "    // Message-type-specific access methods appear below.\n\n";
     for (@fields) {
 	($field, $type, $bitlength, $offset, $amax, $abitsize, $aoffset) = @{$_};
+        # Determine if array
+	if (@$amax) {
+	  $isarray = 1;
+	  $arraydims = @$amax;
+	  $arraysize_bits = $$amax[0] * $$abitsize[0];
+	} else {
+	  $isarray = 0;
+	}
+
+        # Determine if signed
+	if ($basetype eq "U") {
+	  $signed = 0; $signedstr = ", unsigned";
+	} elsif ($basetype eq "I") {
+	  $signed = 1; $signedstr = ", signed";
+	} elsif ($basetype eq "F" || $basetype eq "D" || $basetype eq "LD") {
+	  $signed = 1; $signstr = "";
+	}
 
 	$javafield = $field;
 	$javafield =~ s/\./_/g;
-	
 	($javatype, $java_access) = &javabasetype($type, $bitlength);
 
 	$index = 0;
 	@args = map { $index++; "int index$index" } @{$amax};
 	$argspec = join(", ", @args);
-
 	$index = 0;
 	@passargs = map { $index++; "index$index" } @{$amax};
 	$passargs = join(", ", @passargs);
 
 	print "    /////////////////////////////////////////////////////////\n";
 	print "    // Accessor methods for field: $field\n";
-	print "    //   Field type: $javatype\n";
-	print "    //   Offset (bits): $offset\n";
-	print "    //   Size (bits): $bitlength\n";
+	if ($isarray) {
+	  print "    //   Field type: $arraydims-dimensional array of $javatype$signedstr\n";
+	  print "    //   Offset (bits): $offset\n";
+	  print "    //   Size of each element (bits): $bitlength\n";
+	} else {
+	  print "    //   Field type: $javatype$signedstr\n";
+	  print "    //   Offset (bits): $offset\n";
+	  print "    //   Size (bits): $bitlength\n";
+	}
 	print "    /////////////////////////////////////////////////////////\n\n";
+        ### isSigned
+	if ($signed) { $strue = "true"; } else { $strue = "false"; }
 	print "    /**\n";
-	print "     * Return the offset, in bits, of the field: $field\n";
-	print "     * in this message.\n";
+	print "     * Return whether the field '$field' is signed ($strue).\n";
 	print "     */\n";
-	print "    public static int offset\u$javafield($argspec) {\n";
-	printoffset($base + $offset, $amax, $abitsize, $aoffset);
-	print "        return offset;\n";
+	print "    public static boolean isSigned_$javafield() {\n";
+	print "        return $strue;\n";
+	print "    }\n\n";
+
+        ### isArray
+	if ($isarray) { $atrue = "true"; } else { $atrue = "false"; }
+	print "    /**\n";
+	print "     * Return whether the field '$field' is an array ($atrue).\n";
+	print "     */\n";
+	print "    public static boolean isArray_$javafield() {\n";
+	print "        return $atrue;\n";
+	print "    }\n\n";
+
+        ### Offset
+	print "    /**\n";
+	print "     * Return the offset (in bytes) of the field '$field'\n";
+	if ($offset % 8) {
+	  print "     * WARNING: This field is not byte-aligned (bit offset $offset).\n";
+	}
+	print "     */\n";
+	print "    public static int offset_$javafield($argspec) {\n";
+	if ($isarray) {
+	  printoffset($base + $offset, $amax, $abitsize, $aoffset, 0);
+	} else {
+	  $byteoff = ($offset / 8);
+	  print "        return $byteoff;\n";
+	}
 	print "    }\n\n";
 
 	print "    /**\n";
-	print "     * Return the value (as a $javatype) of the field: $field\n";
+	print "     * Return the offset (in bits) of the field '$field'\n";
 	print "     */\n";
-	print "    public $javatype get\u$javafield($argspec) {\n";
-	print "        return ($javatype)get$java_access(offset\u$javafield($passargs), $bitlength);\n";
+	print "    public static int offsetBits_$javafield($argspec) {\n";
+	if ($isarray) {
+	  printoffset($base + $offset, $amax, $abitsize, $aoffset, 1);
+	} else {
+	  print "        return $offset;\n";
+	}
 	print "    }\n\n";
 
+        ### Get
 	print "    /**\n";
-	print "     * Set the value of the field: $field\n";
+	print "     * Return the value (as a $javatype) of the field '$field'\n";
+	print "     */\n";
+	print "    public $javatype get_$javafield($argspec) {\n";
+	print "        return ($javatype)get$java_access(offsetBits_$javafield($passargs), $bitlength);\n";
+	print "    }\n\n";
+
+        ### Set
+	print "    /**\n";
+	print "     * Set the value of the field '$field'\n";
 	print "     */\n";
 	push @args, "$javatype value";
 	$argspec = join(", ", @args);
-	print "    public void set\u$javafield($argspec) {\n";
-	print "        set$java_access(offset\u$javafield($passargs), $bitlength, value);\n";
+	print "    public void set_$javafield($argspec) {\n";
+	print "        set$java_access(offsetBits_$javafield($passargs), $bitlength, value);\n";
 	print "    }\n\n";
 
-        # For arrays
-	if (@$amax) {
-	  print "    /**\n";
-	  print "     * Return the size, in bits, of each element of the array field: $field\n";
+	if (!$isarray) {
+	  ### For non-array fields
+
+          ### Size
+  	  print "    /**\n";
+	  print "     * Return the size, in bytes, of the field '$field'\n";
+	  if ($bitsize % 8) {
+	    print "     * WARNING: This field is not an even-sized number of bytes ($bitlength bits).\n";
+	  } 
 	  print "     */\n";
-	  print "    public static int elementSize\u$javafield() {\n";
-	  print "        return $$abitsize[0];\n";
+	  print "    public static int size_$javafield() {\n";
+	  print "        return ($bitlength / 8);\n";
 	  print "    }\n\n";
 
-	  if ($$amax[0] != 0) {
+  	  print "    /**\n";
+	  print "     * Return the size, in bytes, of the field '$field'\n";
+	  if ($bitsize % 8) {
+	    print "     * WARNING: This field is not an even-sized number of bytes ($bitlength bits).\n";
+	  } 
+	  print "     */\n";
+	  print "    public static int sizeBits_$javafield() {\n";
+	  print "        return $bitlength;\n";
+	  print "    }\n\n";
+
+	} else {
+          ### For array fields
+
+	  if ($arraysize_bits != 0) {
+            ### Total size (when array size is known)
   	    print "    /**\n";
-	    print "     * Return the number of elements in the array field: $field\n";
+	    print "     * Return the total size, in bytes, of the array '$field'\n";
+	    if ($arraysize_bits % 8) {
+  	      print "     * WARNING: This array is not an even-sized number of bytes ($arraysize_bits bits).\n";
+	    } 
 	    print "     */\n";
-	    print "    public static int numElements\u$javafield() {\n";
-	    print "        return $$amax[0];\n";
+	    print "    public static int totalSize_$javafield() {\n";
+	    print "        return ($arraysize_bits / 8);\n";
+	    print "    }\n\n";
+
+  	    print "    /**\n";
+	    print "     * Return the total size, in bits, of the array '$field'\n";
+	    print "     */\n";
+	    print "    public static int totalSizeBits_$javafield() {\n";
+	    print "        return $arraysize_bits;\n";
 	    print "    }\n\n";
 	  }
 
-	  if (@$amax==1 && $bitlength == 8) {
+          ### Element size
+	  print "    /**\n";
+	  print "     * Return the size, in bytes, of each element of the array '$field'\n";
+	  if ($bitlength % 8) {
+	    print "     * WARNING: This field is not an even-sized number of bytes ($bitlength bits).\n";
+	  }
+	  print "     */\n";
+	  print "    public static int elementSize_$javafield() {\n";
+	  print "        return ($bitlength / 8);\n";
+	  print "    }\n\n";
+
+	  print "    /**\n";
+	  print "     * Return the size, in bits, of each element of the array '$field'\n";
+	  print "     */\n";
+	  print "    public static int elementSizeBits_$javafield() {\n";
+	  print "        return $bitlength;\n";
+	  print "    }\n\n";
+
+          ### Number of dimensions
+	  print "    /**\n";
+	  print "     * Return the number of dimensions in the array '$field'\n";
+	  print "     */\n";
+	  print "    public static int numDimensions_$javafield() {\n";
+	  print "        return $arraydims;\n";
+	  print "    }\n\n";
+
+          ### Number of elements
+	  if ($arraydims == 1 && $$amax[0] != 0) {
+            # For 1D arrays where the size of the array is known
+  	    print "    /**\n";
+	    print "     * Return the number of elements in the array '$field'\n";
+	    print "     */\n";
+	    print "    public static int numElements_$javafield() {\n";
+	    print "        return $$amax[0];\n";
+	    print "    }\n\n";
+	  } else {
+  	    print "    /**\n";
+	    print "     * Return the number of elements in the array '$field'\n";
+	    print "     * for the given dimension.\n";
+	    print "     */\n";
+	    print "    public static int numElements_$javafield(int dimension) {\n";
+	    print "      int array_dims[] = { ";
+	    foreach $e (@$amax) { print "$e, "; }
+	    print " };\n";
+	    print "        if (dimension < 0 || dimension >= $arraydims) throw new ArrayIndexOutOfBoundsException();\n";
+	    print "        if (array_dims[dimension] == 0) throw new IllegalArgumentException(\"Array dimension \"+dimension+\" has unknown size\");\n";
+	    print "        return array_dims[dimension];\n";
+	    print "    }\n\n";
+	  }
+
+          ### String conversions (for 1D arrays of 8-bit values)
+	  if ($arraydims == 1 && $bitlength == 8) {
 	      print "    /**\n";
-	      print "     * Fill in the $field array with a String\n";
+	      print "     * Fill in the array '$field' with a String\n";
 	      print "     */\n";
-	      print "    public void set\u$javafield(String s) { \n";
+	      print "    public void set_$javafield(String s) { \n";
 	      if ($amax[0] != 0) {
                 print "         int len = Math.min(s.length(), $$amax[0]-1);\n";
 	      } else {
@@ -219,42 +348,28 @@ sub gen() {
 	      }
 	      print "         int i;\n";
 	      print "         for (i = 0; i < len; i++) {\n";
-	      print "             set\u$javafield(i, ($javatype)s.charAt(i));\n";
+	      print "             set_$javafield(i, ($javatype)s.charAt(i));\n";
               print "         }\n";
-	      print "         set\u$javafield(i, ($javatype)0); //null terminate\n";
+	      print "         set_$javafield(i, ($javatype)0); //null terminate\n";
 	      print "    }\n\n";
 
-	      if ($amax[0] != 0) {
-  	        print "    /**\n";
- 	        print "     * Read the $field array as a String\n";
-	        print "     */\n";
-	        print "    public String get\u$javafield() { \n";
-                print "         char carr[] = new char[$$amax[0]];\n";
-	        print "         int i;\n";
-	        print "         for (i = 0; i < $$amax[0]; i++) {\n";
-	        print "             if ((char)get\u$javafield(i) == (char)0) break;\n";
-	        print "             carr[i] = (char)get\u$javafield(i);\n";
-                print "         }\n";
-                print "         return new String(carr,0,i-1);\n";
-	        print "    }\n\n";
-	      }
+  	      print "    /**\n";
+ 	      print "     * Read the array '$field' as a String\n";
+	      print "     */\n";
+	      print "    public String get_$javafield() { \n";
+	      if ($$amax[0] == 0) {
+                print "         char carr[] = new char[Message.MAX_CONVERTED_STRING_LENGTH];\n";
+	      } else {
+                print "         char carr[] = new char[Math.min(Message.MAX_CONVERTED_STRING_LENGTH,$$amax[0])];\n";
+              }
+	      print "         int i;\n";
+	      print "         for (i = 0; i < carr.length; i++) {\n";
+	      print "             if ((char)get_$javafield(i) == (char)0) break;\n";
+	      print "             carr[i] = (char)get_$javafield(i);\n";
+              print "         }\n";
+              print "         return new String(carr,0,i-1);\n";
+	      print "    }\n\n";
 	  }
-
-  	  print "    /**\n";
-	  print "     * Return the size, in bits, of the field: $field\n";
-	  print "     */\n";
-	  print "    public static int size\u$javafield() {\n";
-	  print "        return $$abitsize[0] * $$amax[0];\n";
-	  print "    }\n\n";
-
-	} else {
-	  # For non-arrays
-  	  print "    /**\n";
-	  print "     * Return the size, in bits, of the field: $field\n";
-	  print "     */\n";
-	  print "    public static int size\u$javafield() {\n";
-	  print "        return $bitlength;\n";
-	  print "    }\n\n";
 	}
     }
 
@@ -271,26 +386,32 @@ sub javabasetype()
 
     # Pick the java type whose range is closest to the corresponding C type
     if ($basetype eq "U") {
-	$acc = "UIntElement";
+      $acc = "UIntElement";
+    } elsif ($basetype eq "I") {
+      $acc = "SIntElement";
+    }
+
+#    if ($basetype eq "U") {
+#	$acc = "UIntElement";
 	return ("byte", $acc) if $bitlength < 8;
-	return ("char", $acc) if $bitlength <= 16;
+	return ("short", $acc) if $bitlength < 16;
 	return ("int", $acc) if $bitlength < 32;
 	return ("long", $acc);
-    }
-    if ($basetype eq "I") {
-	$acc = "SIntElement";
-	return ("byte", $acc) if $bitlength <= 8;
-	return ("short", $acc) if $bitlength <= 16;
-	return ("int", $acc) if $bitlength <= 32;
-	return ("long", $acc);
-    }
+#    }
+#    if ($basetype eq "I") {
+#	$acc = "SIntElement";
+#	return ("byte", $acc) if $bitlength <= 8;
+#	return ("short", $acc) if $bitlength <= 16;
+#	return ("int", $acc) if $bitlength <= 32;
+#	return ("long", $acc);
+#    }
 
     return (0, 0);
 }
 
 sub printoffset()
 {
-    my ($offset, $max, $bitsize, $aoffset) = @_;
+    my ($offset, $max, $bitsize, $aoffset, $inbits) = @_;
 
     print "        int offset = $offset;\n";
     for ($i = 1; $i <= @$max; $i++) {
@@ -304,5 +425,10 @@ sub printoffset()
 	    print "        if (index$i < 0) throw new ArrayIndexOutOfBoundsException();\n";
 	}
 	print "        offset += $$aoffset[$i - 1] + index$i * $$bitsize[$i - 1];\n";
+    }
+    if ($inbits) {
+      print "        return offset;\n";
+    } else {
+      print "        return (offset / 8);\n";
     }
 }
