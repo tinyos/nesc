@@ -2,6 +2,7 @@
 #define MACHINE_H
 
 /* Basic pointer sizes and alignments for the AVR */
+#undef PCC_BITFIELD_TYPE_MATTERS
 
 /* The size of pointers */
 #define MACHINE_PTR_SIZE 2

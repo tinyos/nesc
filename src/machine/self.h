@@ -1,6 +1,10 @@
 #ifndef MACHINE_H
 #define MACHINE_H
 
+/* Not sure how to trivially find this out here. Probably should be
+   discovered by configure */
+#define PCC_BITFIELD_TYPE_MATTERS 1
+
 /* The size of pointers */
 #define MACHINE_PTR_SIZE sizeof(void *)
 #define MACHINE_PTR_ALIGN __alignof__(void *)

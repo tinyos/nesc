@@ -4,25 +4,54 @@ sub printoffset($\@\@\@)
 {
     my ($offset, $max, $bitsize, $aoffset) = @_;
 
-    print "    int offset = $offset;\n";
+    print "        int offset = $offset;\n";
     for ($i = 1; $i <= @$max; $i++) {
-	print "    if (index$i < 0 || index$i >= $$max[$i - 1]) throw new ArrayIndexOutOfBoundsException();\n";
-	print "    offset += $$aoffset[$i - 1] + index$i * $$bitsize[$i - 1];\n";
+	print "        if (index$i < 0 || index$i >= $$max[$i - 1]) throw new ArrayIndexOutOfBoundsException();\n";
+	print "        offset += $$aoffset[$i - 1] + index$i * $$bitsize[$i - 1];\n";
     }
 }
 
-sub genjava() {
+sub gen() {
     my ($classname, @spec) = @_;
 
-    print "public class $classname extends net.tinyos.message.Message {\n";
-    print <<EOT
-  /* Whatever standard code goes here */
-EOT
-    ;
-    print @spec;
+    &usage("no classname name specified") if !defined($java_classname);
+
+    $java_extends = "net.tinyos.message.Message" if !defined($java_extends);
+    if ($java_classname =~ /(.*)\.([^.]*)$/) {
+	$package = $1;
+	$java_classname = $2;
+    }
+    else {
+	print STDERR "no package specification in class name $java_classname\n";
+	exit 2;
+    }
+    print STDERR @spec;
     $_ = shift @spec;
-    /^struct .* ([0-9]+)/ or die;
+    /^struct .* ([0-9]+) ([-0-9]+)/ or die;
     $size = $1;
+    $amtype = $2;
+
+    print "package $package;\n\n";
+    print "public class $java_classname extends $java_extends {\n";
+
+    print "    $java_classname() {\n";
+    print "        super(new byte[$size]);\n";
+    print "    }\n\n";
+
+    print "    $java_classname(byte[] packet) {\n";
+    print "        this(packet, 0);\n";
+    print "    }\n\n";
+
+    print "    $java_classname(byte[] packet, int offset) {\n";
+    print "        this();\n";
+    print "        setData(packet, offset);\n";
+    print "    }\n\n";
+
+    print "    public int getType() {\n";
+    print "        return $amtype;\n";
+    print "    }\n\n";
+
+
     $base = 0;
     for (@spec) {
 	/ *(.*)/;
@@ -63,17 +92,17 @@ EOT
 	    $index = 0;
 	    @args = map { $index++; "int index$index" } @array_max;
 	    $argspec = join(", ", @args);
-	    print "  $javatype get\u$javafield($argspec) {\n";
+	    print "    $javatype get\u$javafield($argspec) {\n";
 	    printoffset($base + $offset, @array_max, @array_bitsize, @array_offset);
-	    print "    return get$java_access(offset, $bitlength);\n";
-	    print "  }\n\n";
+	    print "        return get$java_access(offset, $bitlength);\n";
+	    print "    }\n\n";
 
 	    push @args, "$javatype value";
 	    $argspec = join(", ", @args);
-	    print "  void set\u$javafield($argspec) {\n";
+	    print "    void set\u$javafield($argspec) {\n";
 	    printoffset($base + $offset, @array_max, @array_bitsize, @array_offset);
-	    print "    return set$java_access(offset, $bitlength, value);\n";
-	    print "  }\n\n";
+	    print "        set$java_access(offset, $bitlength, value);\n";
+	    print "    }\n\n";
 
 	    &poparray($#field_array_max + 1);
 	}

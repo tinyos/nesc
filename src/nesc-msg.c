@@ -15,6 +15,8 @@ along with nesC; see the file COPYING.  If not, write to
 the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
+#include <ctype.h>
+
 #include "parser.h"
 #include "nesc-msg.h"
 #include "semantics.h"
@@ -94,14 +96,37 @@ static void dump_fields(region r, const char *prefix, field_declaration fields)
     }
 }
 
+static int am_type(region r, tag_declaration tdecl)
+{
+  char *am_name = rarrayalloc(r, strlen(tdecl->name) + 4, char), *s;
+  data_declaration am_decl;
+
+  sprintf(am_name, "AM_%s", tdecl->name);
+  for (s = am_name; *s; s++)
+    *s = toupper(*s);
+
+  am_decl = lookup_global_id(am_name);
+
+  if (am_decl && am_decl->kind == decl_constant)
+    {
+      known_cst am_val = am_decl->value;
+
+      if (type_integer(am_val->type) && cval_knownvalue(am_val->cval))
+	return constant_sint_value(am_val);
+    }
+  return -1;
+}
+
 static void dump_layout(tag_declaration tdecl)
 {
   region r = newregion();
+  
 
-  printf("%s %s %lu\n",
+  printf("%s %s %lu %d\n",
 	 tdecl->kind == kind_struct_ref ? "struct" : "union",
 	 tdecl->name,
-	 (unsigned long)tdecl->size);
+	 (unsigned long)tdecl->size,
+	 am_type(r, tdecl));
 
   dump_fields(r, "", tdecl->fieldlist);
 

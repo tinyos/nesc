@@ -35,6 +35,7 @@ Boston, MA 02111-1307, USA. */
 #include "nesc-interface.h"
 #include "nesc-semantics.h"
 #include "nesc-cpp.h"
+#include "machine.h"
 
 /* Predefined __builtin_va_list type */
 type builtin_va_list_type;
@@ -2952,9 +2953,11 @@ type_element finish_struct(type_element t, declaration fields,
 	    }
 	  else if (bitwidth > 0)
 	    {
+#ifdef PCC_BITFIELD_TYPE_MATTERS
 	      if (((offset + bitwidth + falign - 1) / falign - offset / falign)
 		  > fsize / falign)
 		offset = align_to(offset, falign);
+#endif
 	    }
 	  else /* regular field */
 	    {

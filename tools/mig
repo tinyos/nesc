@@ -1,37 +1,38 @@
 #!/usr/bin/perl
 
-$NESCDIR = "$ENV{HOME}/work/new-nest/nesc/src";
-$ENV{PATH}= "$NESCDIR:$ENV{PATH}";
+$NESCDIR = "$ENV{HOME}/work/new-nest/nesc";
+$ENV{PATH}= "$NESCDIR/src:$ENV{PATH}";
+push @INC, "$NESCDIR/tools";
 
 for (@ARGV) {
     if (/^-/) {
 	if (/^-fnesc-path=/) {
 	    $nesc_path = $_;
 	}
-	elsif (/^-msgtype=(.*)$/) {
-	    $message_type = $1;
+	elsif (/^-java-classname=(.*)$/) {
+	    $java_classname = $1;
+	}
+	elsif (/^-java-extends=(.*)$/) {
+	    $java_extends = $1;
 	}
 	else {
 	    &usage("unknown option $_");
 	}
     }
     else {
-	&usage(0) if defined($cfile);
-	$cfile = $_ if defined($classname);
-	$classname = $_ if !defined($classname);
+	&usage(0) if defined($message_type);
+	$message_type = $_ if defined($cfile) && !defined($message_type);
+	$cfile = $_ if defined($target) && !defined($cfile);
+	$target = $_ if !defined($target);
     }
 }
-&usage("no classname name specified") if !defined($classname);
+&usage("no target specified") if !defined($target);
 &usage("no message format file specified") if !defined($cfile);
-
-if (!defined($message_type)) {
-    @names = split /\./, $classname;
-    $message_type = $names[$#names];
-}
+&usage("no message specified") if !defined($message_type);
 
 @args = ("nesc1", "-fnesc-msg=$message_type", "-mmcu=atmega103", $cfile);
 push @args, $nesc_path if defined($nesc_path);
-print join(" ", @args), "\n";
+print STDERR join(" ", @args), "\n";
 open(NESC, '-|', join(" ", @args)) or die "nesc1 not found";
 @lines = <NESC>;
 close NESC;
@@ -41,8 +42,8 @@ if ($?) {
     exit 1;
 }
 
-require genjava;
-&genjava($classname, @lines);
+require "gen$target.pm";
+&gen($classname, @lines);
 
 sub usage()
 {
@@ -50,10 +51,13 @@ sub usage()
 
     print STDERR "$error\n\n" if $error;
 
-    print STDERR "Usage: $0 [options] full-class-name msg-format-file\n";
-    print STDERR "  options are\n";
-    print STDERR "    -fnesc-path=COLON-DELIMITED-PATH Select nesC path\n";
-    print STDERR "    -msgtype=NAME                    Message type to process\n";
-    print STDERR "                                     (default is last component of full-class-name)\n";
+    print STDERR "Usage: $0 [options] target msg-format-file message-type\n";
+    print STDERR "  general options are\n";
+    print STDERR "    -fnesc-path=COLON-DELIMITED-PATH  Select nesC path\n\n";
+    print STDERR "  target specific options are\n";
+    print STDERR "    java:\n";
+    print STDERR "      -java-classname=FULL-CLASS-NAME Select class name (required)\n";
+    print STDERR "      -java-extends=CLASS-NAME        Select class to extend\n";
+    print STDERR "                                      (default net.tinyos.message.Message)\n";
     exit 2;
 }
