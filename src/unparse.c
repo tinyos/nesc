@@ -25,7 +25,6 @@ Boston, MA 02111-1307, USA. */
 #include "parser.h"
 #include "unparse.h"
 #include "semantics.h"
-#include "builtins.h"
 #include "constants.h"
 #include "AST_utils.h"
 #include "errors.h"
@@ -1100,6 +1099,8 @@ void prt_identifier(identifier e, int context_priority)
   if (decl->kind == decl_function && decl->uncallable)
     error_with_location(e->location, "%s not connected", e->cstring.data);
 
+  decl->makeinline = FALSE;
+
   set_location(e->location);
   if (decl->container && !decl->Cname)
     output_stripped_string_dollar(decl->container->name);
@@ -1205,6 +1206,8 @@ void prt_interface_deref(interface_deref e, int context_priority)
     error_with_location(e->location, "%s.%s not connected",
 			CAST(identifier, e->arg1)->cstring.data,
 			e->cstring.data);
+
+  decl->makeinline = FALSE;
 
   prt_expression(e->arg1, P_CALL);
   //output("$");
@@ -1570,6 +1573,19 @@ void prt_asm_operand(asm_operand o)
 
 void prt_if_stmt(if_stmt s)
 {
+#if 0
+  if (s->condition->cst && constant_knownbool(s->condition->cst))
+    {
+      if (constant_boolvalue(s->condition->cst))
+	prt_statement(s->stmt1);
+      else if (s->stmt2)
+	prt_statement(s->stmt2);
+      else
+	outputln(";");
+      return;
+    }
+#endif
+
   set_location(s->location);
   output("if (");
   /* CONSERVATIVE_PARENS: force parens around assignment within if */
@@ -1617,6 +1633,17 @@ void prt_while_stmt(while_stmt s)
 
 void prt_dowhile_stmt(while_stmt s)
 {
+#if 0
+  /* Elide do ... while (0) */
+  if (s->condition->cst &&
+      constant_knownbool(s->condition->cst) &&
+      !constant_boolvalue(s->condition->cst))
+    {
+      prt_statement(s->stmt);
+      return;
+    }
+#endif
+
   set_location(s->location);
   output("do ");
   indent();

@@ -336,6 +336,16 @@ known_cst fold_conditional(expression e)
   return NULL;
 }
 
+known_cst fold_function_call(expression e)
+{
+  function_call fce = CAST(function_call, e);
+
+  if (call_to(builtin_constant_p, fce) && fce->args)
+    return make_signed_cst(fce->args->cst != NULL, int_type);
+
+  return NULL;
+}
+
 known_cst fold_identifier(expression e, data_declaration decl)
 {
   if (decl->kind == decl_constant)

@@ -31,7 +31,6 @@ Boston, MA 02111-1307, USA. */
 #include "stmt.h"
 #include "AST_utils.h"
 #include "constants.h"
-#include "builtins.h"
 #include "nesc-component.h"
 #include "nesc-interface.h"
 #include "nesc-semantics.h"
@@ -41,6 +40,7 @@ Boston, MA 02111-1307, USA. */
 /* Predefined __builtin_va_list type */
 type builtin_va_list_type;
 data_declaration builtin_va_arg_decl;
+data_declaration builtin_constant_p;
 
 /* The current semantic state */
 struct semantic_state current;
@@ -1797,6 +1797,14 @@ static void declare_magic_string(const char *name, const char *value)
   chars[l] = 0;
 }
 
+bool builtin_declaration(data_declaration dd)
+/* Returns: TRUE if dd is a declaration for something builtin (i.e.,
+     starts with __builtin_
+*/
+{
+  return strncmp(dd->name, "__builtin_", 10) == 0;
+}
+
 static void declare_builtin_type(const char *name, type t)
 {
   struct data_declaration tempdecl;
@@ -1859,7 +1867,8 @@ static void declare_builtin_identifiers(void)
      nodes that represent calls to __builtin_va_arg) */
   builtin_va_arg_decl = declare_builtin_identifier("=va_arg", int_type);
 
-  declare_builtin_function("__builtin_constant_p", default_function_type);
+  builtin_constant_p =
+    declare_builtin_function("__builtin_constant_p", default_function_type);
 }
 
 static void declare_function_name(void)

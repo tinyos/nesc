@@ -108,7 +108,8 @@ static type function_return_type(data_declaration fndecl)
 
 void prt_ncf_header(struct connections *c, type return_type)
 {
-  output("inline ");
+  if (c->called->makeinline)
+    output("inline ");
   prt_nesc_function_hdr(c->called, 0);
   outputln("{");
   indent();
@@ -640,9 +641,19 @@ static size_t expression_size(expression expr)
     case kind_conditional: {
       conditional ce = CAST(conditional, expr);
 
-      sum += 2 + expression_size(ce->condition);
-      sum += expression_size(ce->arg1);
-      sum += expression_size(ce->arg2);
+      if (ce->condition->cst)
+	{
+	  if (definite_zero(ce->condition))
+	    sum += expression_size(ce->arg2);
+	  else
+	    sum += expression_size(ce->arg1);
+	}
+      else
+	{
+	  sum += 2 + expression_size(ce->condition);
+	  sum += expression_size(ce->arg1);
+	  sum += expression_size(ce->arg2);
+	}
       break;
     }
     case kind_compound_expr:
@@ -723,9 +734,19 @@ static size_t statement_size(statement stmt)
     case kind_if_stmt: {
       if_stmt is = CAST(if_stmt, stmt);
 
-      sum += 2 + expression_size(is->condition);
-      sum += statement_size(is->stmt1);
-      sum += statement_size(is->stmt2);
+      if (is->condition->cst)
+	{
+	  if (definite_zero(is->condition))
+	    sum += statement_size(is->stmt2);
+	  else
+	    sum += statement_size(is->stmt1);
+	}
+      else
+	{
+	  sum += 2 + expression_size(is->condition);
+	  sum += statement_size(is->stmt1);
+	  sum += statement_size(is->stmt2);
+	}
       break;
     }
     case kind_labeled_stmt: {
@@ -743,6 +764,15 @@ static size_t statement_size(statement stmt)
     case kind_while_stmt: case kind_dowhile_stmt: case kind_switch_stmt: {
       conditional_stmt cs = CAST(conditional_stmt, stmt);
 
+      if (cs->condition->cst && stmt->kind != kind_switch_stmt &&
+	  definite_zero(cs->condition))
+	{
+	  /* do s while (0): just include size of s
+	     while (0) s: size is 0 */
+	  if (stmt->kind == kind_dowhile_stmt)
+	    sum += statement_size(cs->stmt);
+	  break;
+	}
       sum += 2 + expression_size(cs->condition);
       sum += statement_size(cs->stmt);
       break;
@@ -796,17 +826,19 @@ static void inline_functions(cgraph callgraph)
       endp fn = NODE_GET(endp, n);
       data_declaration fndecl = fn->function;
 
-      if (fndecl->definition && !fndecl->isinline)
+      if (!fndecl->definition)
+	fndecl->makeinline = TRUE;
+      else if (fndecl->definition && !fndecl->isinline)
 	{
 	  gedge e;
-	  size_t edgecount = 0;
+	  size_t edgecount = 0,
+	    fnsize = function_size(CAST(function_decl, fndecl->definition));
 
 	  graph_scan_in (e, n)
 	    edgecount++;
       
-	  if (edgecount == 1 ||
-	      function_size(CAST(function_decl, fndecl->definition)) <= 15)
-	    fndecl->makeinline = TRUE; /* Small function */
+	  if (fnsize <= 15 || edgecount == 1 && fnsize <= 100)
+	    fndecl->makeinline = TRUE;
 	}
     }
 }

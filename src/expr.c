@@ -1381,6 +1381,8 @@ expression make_function_call(location loc, expression fn, expression arglist)
   if (!type_void(rettype))
     result->type = require_complete_type(result, rettype);
 
+  result->cst = fold_function_call(result);
+
   if (argumentsok)
     result = magic_reduce(CAST(function_call, result));
 

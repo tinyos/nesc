@@ -26,6 +26,7 @@ Boston, MA 02111-1307, USA. */
 /* Predefined __builtin_va_list type */
 extern type builtin_va_list_type;
 extern data_declaration builtin_va_arg_decl;
+extern data_declaration builtin_constant_p;
 
 #include "cstring.h"
 #include "decls.h"

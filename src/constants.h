@@ -57,6 +57,7 @@ known_cst fold_address_of(expression e);
 known_cst fold_unary(expression e);
 known_cst fold_binary(type restype, expression e);
 known_cst fold_conditional(expression e);
+known_cst fold_function_call(expression e);
 known_cst fold_identifier(expression e, data_declaration decl);
 
 known_cst fold_add(type restype, known_cst c1, known_cst c2);
