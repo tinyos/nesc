@@ -85,11 +85,12 @@ static void dump_fields(region r, const char *prefix, field_declaration fields)
 	    }
 	  dump_type(t);
 
-	  assert(fields->offset_cc);
-	  printf(" %lu %lu\n", (unsigned long)fields->offset,
+	  assert(cval_isinteger(fields->offset));
+	  printf(" %lu %lu\n", (unsigned long)cval_uint_value(fields->offset),
 		 (unsigned long)
-		 (fields->bitwidth >= 0 ? fields->bitwidth :
-		  BITSPERBYTE * type_size(t)));
+		 (!cval_istop(fields->bitwidth) ?
+		  cval_uint_value(fields->bitwidth) :
+		  BITSPERBYTE * cval_uint_value(type_size(t))));
 
 	  if (type_aggregate(t))
 	    {
@@ -146,7 +147,7 @@ static void dump_layout(tag_declaration tdecl)
   printf("%s %s %lu %d\n",
 	 tdecl->kind == kind_struct_ref ? "struct" : "union",
 	 tdecl->name,
-	 (unsigned long)tdecl->size,
+	 (unsigned long)cval_uint_value(tdecl->size),
 	 am_type(r, tdecl));
 
   dump_fields(r, "", tdecl->fieldlist);
@@ -181,7 +182,7 @@ bool dump_msg_layout(void)
 	  exit(1);
 	}
 
-      if (!tdecl->size_cc)
+      if (cval_istop(tdecl->size))
 	{
 	  fprintf(stderr, "error: %s is variable size\n", selected_type);
 	  exit(1);

@@ -279,3 +279,13 @@ tag_declaration get_unnamed_tag_decl(data_decl decl)
   return NULL;
 }
 
+const char *nice_field_name(const char *s)
+/* Returns: "(anonymous)" if s == NULL, s otherwise
+     This helps printing the name of potentially unnamed entities
+ */
+{
+  if (s)
+    return s;
+  return "(anonymous)";
+}
+

@@ -23,6 +23,15 @@ Boston, MA 02111-1307, USA. */
 #ifndef TYPES_H
 #define TYPES_H
 
+/* Type sizes, alignments and offsets are represented as cvals, and can be
+   one of: 
+   - top: variable-sized types
+   - unknown: derived from a template argument
+   - an unsigned number
+
+   These numbers represent bytes, except in field offsets which use bits
+*/
+
 #include "cval.h"
 
 #include "decls.h"
@@ -42,7 +51,7 @@ extern type float_type, double_type, long_double_type,
   long_long_type, unsigned_long_long_type, short_type, unsigned_short_type,
   char_type, char_array_type, wchar_type, wchar_array_type,
   unsigned_char_type, signed_char_type, void_type, ptr_void_type,
-  size_t_type, ptrdiff_t_type, intptr_type;
+  size_t_type, ptrdiff_t_type, intptr_type, unknown_int_type;
 extern type error_type;
 
 void init_types(void);
@@ -64,7 +73,7 @@ type qualify_type1(type t, type t1);
 type qualify_type2(type t, type t1, type t2);
 
 /* Return 't' modified to have alignment 'new_alignment' */
-type align_type(type t, int new_alignment);
+type align_type(type t, cval new_alignment);
 
 /* Return type 'pointer to t' (unqualified) */
 type make_pointer_type(type t);
@@ -91,8 +100,13 @@ void typelist_scan(typelist tl, typelist_scanner *scanner);
 type typelist_next(typelist_scanner *scanner);
 
 /* Size and alignment */
-largest_uint type_size(type t); /* Requires: type_size_cc(t) */
-size_t type_alignment(type t);
+cval type_size(type t); /* Requires: type_size_cc(t) */
+cval type_alignment(type t);
+largest_uint type_size_int(type t);
+/* Requires: type_size_cc(t) && cval_isinteger(type_size(t))
+     (i.e., t not variable or unknown size)
+   Returns: size of t
+*/
 
 /* True if t has a size (void or not incomplete) */
 bool type_has_size(type t);
@@ -133,6 +147,7 @@ bool type_long(type t);
 bool type_unsigned_long(type t);
 bool type_long_long(type t);
 bool type_unsigned_long_long(type t);
+bool type_unknown_int(type t);
 bool type_long_double(type t);
 
 bool type_tagged(type t);
@@ -172,8 +187,8 @@ type type_points_to(type t);
 type type_array_of(type t);
 type type_array_of_base(type t);
 expression type_array_size(type t);
-largest_int type_array_size_int(type t);
-/* Returns: number of elements in array type t if known, -1 otherwise */
+cval type_array_size_cval(type t);
+/* Returns: number of elements in array type t if known, cval_top otherwise */
 tag_declaration type_tag(type t);
 type type_base(type t);
 
@@ -194,7 +209,7 @@ type function_call_type(function_call fcall);
 void name_tag(tag_declaration tag);
 
 /* Return the integral type of size 'size', unsigned if 'isunsigned' is true */
-type type_for_size(int size, bool isunsigned);
+type type_for_size(cval size, bool isunsigned);
 
 type type_for_cval(cval c, bool isunsigned);
 

@@ -153,7 +153,7 @@ init_lex (void)
   string_array = new_wchar_array(parse_region, 512);
   docstring_array = new_char_array(parse_region, 2048);
 
-  int_type_size = type_size(int_type);
+  int_type_size = type_size_int(int_type);
 
   /* Some options inhibit certain reserved words.
      Clear those words out of the hash table so they won't be recognized.  */
@@ -1086,7 +1086,7 @@ readescape (int *ignore_ptr)
 static int read_char(char *context, char terminating_char,
 		     char *cp, wchar_t *wcp)
 {
-  unsigned width = wcp ? type_size(wchar_type) * BITSPERBYTE
+  unsigned width = wcp ? type_size_int(wchar_type) * BITSPERBYTE
     : BITSPERBYTE; /* sizeof(char) == 1 */
   int c;
 #ifdef MULTIBYTE_CHARS
@@ -1633,7 +1633,7 @@ yylex(struct yystype *lvalp)
 	wchar_t wc;
 	char *cbuf = alloca(max_char_length);
 	int chars_seen = 0, count, result = 0;
-	unsigned width = wide_flag ? type_size(wchar_type) * BITSPERBYTE
+	unsigned width = wide_flag ? type_size_int(wchar_type) * BITSPERBYTE
 	  : BITSPERBYTE; /* sizeof(char) == 1 */
 
 	for (;;)

@@ -28,9 +28,11 @@ Boston, MA 02111-1307, USA. */
 
 typedef struct environment *environment;
 typedef struct data_declaration *data_declaration;
+typedef struct label_declaration *label_declaration;
 
 #include "nesc-decls.h"
 #include "nesc-uses.h"
+#include "cval.h"
 
 /* Types representing declarations */
 
@@ -39,10 +41,9 @@ typedef struct field_declaration {
   const char *name;		/* May be NULL for bitfields (if NULL, bitwidth == 0) */
   type type;
   field_decl ast;
-  int bitwidth;			/* for bitfields, -1 otherwise */
-  size_t offset;		/* in bits, not bytes */
-  bool offset_cc;		/* TRUE if offset is a compile-time constant
-				   (can be false because of variable-size arrays) */
+  cval bitwidth;		/* for bitfields, cval_top otherwise */
+  cval offset;			/* in bits, not bytes. Can be cval_top if
+				   offset is not a compile-time constant */
   bool packed;			/* if packed attribute specified */
 } *field_declaration;
 
@@ -63,10 +64,9 @@ typedef struct tag_declaration {
   bool collapsed;		/* TRUE if this struct/union was collapsed
 				   into its parent. */
 
-  largest_uint size;
-  size_t alignment;
-  bool size_cc;			/* TRUE if size is a compile-time constant
-				   (can be false because of variable-size arrays) */
+  cval size;			/* Can be cval_top if not compile-time constant
+				   (due to variable-size arrays in struct) */
+  cval alignment;
   bool packed;			/* if packed attribute specified */
 
   nesc_declaration container;	/* as in data_declarations */
@@ -199,7 +199,7 @@ struct data_declaration {
 
 };
 
-typedef struct label_declaration {
+struct label_declaration {
   const char *name;
   bool explicitly_declared;
   bool used;
@@ -207,7 +207,7 @@ typedef struct label_declaration {
   id_label definition; /* NULL until actually defined */
   function_decl containing_function;
   atomic_stmt containing_atomic;
-} *label_declaration;
+};
 
 struct environment
 {

@@ -95,7 +95,7 @@ known_cst fold_label_address(expression e)
 known_cst fold_sizeof(expression e, type stype)
 {
   if (type_size_cc(stype))
-    return make_unsigned_cst(type_size(stype), e->type);
+    return make_cst(type_size(stype), e->type);
   else
     return NULL;
 }
@@ -103,7 +103,7 @@ known_cst fold_sizeof(expression e, type stype)
 known_cst fold_alignof(expression e, type atype)
 {
   if (type_has_size(atype))
-    return make_unsigned_cst(type_alignment(atype), e->type);
+    return make_cst(type_alignment(atype), e->type);
   else
     /* compile-time error, alignof incomplete type */
     return make_unsigned_cst(1, e->type); 
@@ -181,7 +181,7 @@ static known_cst fold_sub(type restype, known_cst c1, known_cst c2)
       if (!type_size_cc(basetype))
 	return NULL;
 
-      s = make_cval_unsigned(type_size(basetype), size_t_type);
+      s = cval_cast(type_size(basetype), size_t_type);
       ct = intptr_type;
     }
   else
@@ -220,7 +220,7 @@ known_cst fold_add(type restype, known_cst c1, known_cst c2)
       if (!type_size_cc(basetype))
 	return NULL;
 
-      s = make_cval_unsigned(type_size(basetype), size_t_type);
+      s = cval_cast(type_size(basetype), size_t_type);
       ct = intptr_type;
     }
   else
@@ -386,14 +386,14 @@ known_cst foldaddress_field_ref(expression e)
   field_declaration fdecl = fref->fdecl;
   known_cst object = fref->arg1->static_address;
 
-  if (!object || !fdecl->offset_cc || fdecl->bitwidth >= 0)
+  if (!object || cval_istop(fdecl->offset) || !cval_istop(fdecl->bitwidth))
     return NULL;
 
   if (constant_unknown(object))
     return make_unknown_cst(object->type);
 
   return make_cst(cval_add(object->cval,
-			   make_cval_unsigned(fdecl->offset / BITSPERBYTE, size_t_type)),
+			   cval_divide(fdecl->offset, cval_bitsperbyte)),
 		  make_pointer_type(fdecl->type));
 }
 
@@ -565,7 +565,7 @@ void constant_print(FILE *f, known_cst c)
       else
 	fprintf(f, "%lld", constant_sint_value(c));
 
-      if (type_size(t) <= type_size(int_type))
+      if (type_size_int(t) <= type_size_int(int_type))
 	{
 	  if (type_unsigned(t))
 	    putc('U', f);
@@ -582,3 +582,28 @@ void constant_print(FILE *f, known_cst c)
 	assert(0);
     }
 }
+
+bool check_constant_once(expression e)
+/* Effects: We want to check whether e is a constant, and possibly for
+     valid constant values, exactly once (to avoid repeated errors and
+     warnings) over our multiple constant folding passes. Additionally,
+     we can't check unknown constants until their value is known. We can
+     rely on the following:
+     - a non-constant will not become constant
+     - a known constant will maintain its value
+     - an unknown constant will become either non-constant or a known constant
+     
+     check_constant_once supports this by returning TRUE exactly once, when
+     its possible to check e's value
+
+   Returns: TRUE the first time !e->cst || e->cst && !constant_unkown(e)
+*/
+{
+  if (e->cst_checked || (e->cst && constant_unknown(e->cst)))
+    return FALSE;
+  e->cst_checked = TRUE;
+
+  return TRUE;
+}
+
+

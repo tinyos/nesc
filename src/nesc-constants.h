@@ -7,10 +7,6 @@ bool fold_constants_list(node n, int pass);
      is reserved for parse-time constant folding)
  */
 
-void check_constant_uses_list(node n);
-/* Effects: Checks use of constants in AST n
- */
-
 void init_nesc_constants(void);
 
 #endif

@@ -71,6 +71,9 @@ extern cval cval_top; /* The non-constant value */
 extern cval cval_unknown; /* The unknown value */
 extern cval cval_zero; /* A zero value. Use cval_cast to make the desired 
 			  kind of constant */
+extern cval cval_one; /* A one value. Use cval_cast to make the desired 
+			  kind of constant */
+extern cval cval_bitsperbyte; /* BITSPERBYTE */
 
 void cval_init(void);
 
@@ -189,5 +192,11 @@ void cval_print(FILE *f, cval c);
 /* Requires: cval_knownvalue(c)
    Effects: prints a parsable representable of c to f
  */
+
+/* Utility functions (used for struct layout) */
+cval cval_lcm(cval x, cval y);
+cval cval_gcd(cval x, cval y);
+cval cval_align_to(cval n, cval alignment);
+cval cval_max(cval c1, cval c2);
 
 #endif

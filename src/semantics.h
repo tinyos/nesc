@@ -156,6 +156,10 @@ char *rid_name(rid r);
 statement chain_with_labels(statement l1, statement l2);
 
 void declarator_name(declarator d, const char **oname, const char **iname);
+const char *nice_declarator_name(declarator d);
+/* Returns: a user-friendly name for declarator d, allocated in 
+     current.fileregion if necessary
+*/
 
 data_declaration lookup_id(const char *s, bool this_level_only);
 
@@ -220,6 +224,11 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
 		    bool different_binding_level, bool newinitialised);
 
-expression check_array_size(expression size, const char *printname);
+void check_array_size(expression size, const char *printname);
+
+void layout_enum_start(tag_declaration tdecl);
+void layout_enum_end(tag_declaration tdecl);
+known_cst layout_enum_value(enumerator e);
+void layout_struct(tag_declaration tdecl);
 
 #endif

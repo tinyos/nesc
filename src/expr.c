@@ -1555,7 +1555,7 @@ expression make_field_ref(location loc, expression object, cstring field)
 	    {
 	      result->fdecl = fdecl;
 	      result->type = qualify_type2(fdecl->type, fdecl->type, object->type);
-	      result->bitfield = fdecl->bitwidth >= 0;
+	      result->bitfield = !cval_istop(fdecl->bitwidth);
 	      result->static_address = foldaddress_field_ref(CAST(expression, result));
 	    }
 	}

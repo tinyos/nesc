@@ -560,7 +560,6 @@ static void check_constant_uses_components(nesc_declaration cdecl)
   cdecl->folded = 0;
 
   current.container = cdecl;
-  check_constant_uses_list(CAST(node, cdecl->impl));
 
   if (is_module(cdecl->impl))
     ;
@@ -593,7 +592,6 @@ void fold_program(nesc_declaration program)
   while (!done);
 
   current.container = NULL;
-  check_constant_uses_list(CAST(node, all_cdecls));
   if (program)
     check_constant_uses_components(program);
 }

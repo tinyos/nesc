@@ -43,7 +43,7 @@ field_declaration type_fields(type t)
 field_declaration skip_unnamed_bitfields(field_declaration flist)
 /* Returns: return first field which is not an unnamed bit field */
 {
-  while (flist && flist->bitwidth >= 0 && !flist->name)
+  while (flist && !cval_istop(flist->bitwidth) && !flist->name)
     flist = flist->next;
 
   return flist;
@@ -123,7 +123,7 @@ static void push_string(const char *string)
 /* Push a member name on the stack.  Printed as '.' STRING.  */
 static void push_member_name(field_declaration fdecl)
 {
-  const char *const string = fdecl->name ? fdecl->name : "<anonymous>";
+  const char *const string = nice_field_name(fdecl->name);
   PUSH_SPELLING (SPELLING_MEMBER, string, u.s);
 }
 
@@ -237,12 +237,12 @@ static bool digest_init(type t, expression init)
   if (type_array(t))
     {
       type typ1 = type_array_of(t);
-      largest_int tsize;
 
       if ((type_char(typ1) || type_equal_unqualified(typ1, wchar_type))
 	  && is_string(init))
 	{
 	  type init_chartype = type_array_of(itype);
+	  largest_int tsize;
 
 	  if (type_compatible_unqualified(t, itype))
 	    return TRUE;
@@ -258,7 +258,7 @@ static bool digest_init(type t, expression init)
 	      return FALSE;
 	    }
 
-	  tsize = type_array_size_int(t);
+	  tsize = cval_uint_value(type_array_size_cval(t));
 	  if (tsize >= 0
 	      /* Don't count the null char (char x[1] = "a" is ok) */
 	      && tsize < CAST(string, init)->ddecl->chars_length)
@@ -681,7 +681,7 @@ static bool new_constructor_type(void)
   else if (type_array(constructor_type))
     {
       constructor_kind = c_array;
-      constructor_max_index = type_array_size_int(constructor_type) - 1;
+      constructor_max_index = cval_sint_value(type_array_size_cval(constructor_type)) - 1;
       constructor_index = constructor_array_size = 0;
     }
   else

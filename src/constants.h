@@ -139,4 +139,20 @@ void constant_print(FILE *f, known_cst c);
    Effects: prints a parsable representable of c to f
  */
 
+bool check_constant_once(expression e);
+/* Effects: We want to check whether e is a constant, and possibly for
+     valid constant values, exactly once (to avoid repeated errors and
+     warnings) over our multiple constant folding passes. Additionally,
+     we can't check unknown constants until their value is known. We can
+     rely on the following:
+     - a non-constant will not become constant
+     - a known constant will maintain its value
+     - an unknown constant will become either non-constant or a known constant
+     
+     check_constant_once supports this by returning TRUE exactly once, when
+     its possible to check e's value
+
+   Returns: TRUE the first time !e->cst || e->cst && !constant_unkown(e)
+*/
+
 #endif

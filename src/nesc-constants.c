@@ -26,7 +26,6 @@ Boston, MA 02111-1307, USA.  */
 #include "constants.h"
 
 static AST_walker folder_walker;
-static AST_walker check_walker;
 
 struct folder_data {
   bool done;
@@ -160,29 +159,55 @@ bool fold_constants_list(node n, int pass)
   return d.done;
 }
 
-static AST_walker_result check_array_declarator(AST_walker spec, void *data,
-						array_declarator *n)
+static AST_walker_result folder_array_declarator(AST_walker spec, void *data,
+						 array_declarator *n)
 {
   expression size = (*n)->arg1;
 
-  if (size->cst)
-    check_array_size(size, NULL);
+  AST_walk_children(spec, data, CAST(node, *n));
 
-  return aw_walk;
+  if (size->cst)
+    check_array_size(size, nice_declarator_name((*n)->declarator));
+
+  return aw_done;
 }
 
-void check_constant_uses_list(node n)
-/* Effects: Checks use of constants in AST n
- */
+static AST_walker_result folder_enum_ref(AST_walker spec, void *data,
+					 enum_ref *n)
 {
-  AST_walk_list(check_walker, NULL, CASTPTR(node, &n));
+  layout_enum_start((*n)->tdecl);
+  AST_walk_children(spec, data, CAST(node, *n));
+  layout_enum_end((*n)->tdecl);
+
+  return aw_done;
+}
+
+static AST_walker_result folder_enumerator(AST_walker spec, void *data,
+					   enumerator *n)
+{
+  enumerator e = *n;
+
+  AST_walk_children(spec, data, CAST(node, e));
+  e->ddecl->value = layout_enum_value(e);
+
+  return aw_done;
+}
+
+static AST_walker_result folder_tag_ref(AST_walker spec, void *data,
+					tag_ref *n)
+{
+  AST_walk_children(spec, data, CAST(node, *n));
+  layout_struct((*n)->tdecl);
+
+  return aw_done;
 }
 
 void init_nesc_constants(void)
 {
   folder_walker = new_AST_walker(permanent);
   AST_walker_handle(folder_walker, kind_expression, folder_expression);
-
-  check_walker = new_AST_walker(permanent);
-  AST_walker_handle(check_walker, kind_array_declarator, check_array_declarator);
+  AST_walker_handle(folder_walker, kind_array_declarator, folder_array_declarator);
+  AST_walker_handle(folder_walker, kind_tag_ref, folder_tag_ref);
+  AST_walker_handle(folder_walker, kind_enum_ref, folder_enum_ref);
+  AST_walker_handle(folder_walker, kind_enumerator, folder_enumerator);
 }

@@ -40,8 +40,8 @@ struct type
      alignment is used for aggregates and arrays only if it is non-zero
      (indicating an alignment overridden by an attribute)
   */
-  largest_uint size;
-  size_t alignment; 
+  cval size;
+  cval alignment; 
 
   union {
     /* tk_primtive and tk_complex.
@@ -71,6 +71,11 @@ struct type
 	   tp_int, tp_unsigned_int,
 	   tp_long, tp_unsigned_long,
 	   tp_long_long, tp_unsigned_long_long,
+	   /* Used as the rep type of enums whose constants are derived
+	      from template arguments and whose size is hence unknown.
+	      The unknown int type has the highest rank (its unsignedness
+	      is unknown, we assume its signed). */
+	   tp_unknown_int,
 
 	   
 	   tp_first_floating,
@@ -97,7 +102,7 @@ struct type
     struct {
       type arrayof;
       expression size;
-      /* If size is a constant, it is guaranteed >= 0 */
+      /* If size is a known constant, it is guaranteed >= 0 */
     } array;
 
     /* tk_iref */
@@ -174,8 +179,19 @@ type float_type, double_type, long_double_type,
   char_type, char_array_type, wchar_type, wchar_array_type,
   unsigned_char_type, signed_char_type, void_type, ptr_void_type,
   size_t_type, ptrdiff_t_type, intptr_type,
-  int2_type, uint2_type, int4_type, uint4_type, int8_type, uint8_type;
+  int2_type, uint2_type, int4_type, uint4_type, int8_type, uint8_type,
+  unknown_int_type;
 type error_type;
+
+static bool legal_array_size(cval c) 
+{
+  return !cval_isinteger(c) || cval_intcompare(c, cval_zero) >= 0;
+}
+
+static cval make_type_cval(size_t s)
+{
+  return make_cval_unsigned(s, size_t_type);
+}
 
 static type copy_type(type t)
 {
@@ -190,8 +206,8 @@ static type new_type(int kind)
 
   nt->kind = kind;
   /*nt->qualifiers = 0;
-    nt->size = nt->alignment = 0;
     nt->combiner = NULL;*/
+  nt->size = nt->alignment = cval_top;
   return nt;
 }
 
@@ -239,8 +255,8 @@ type make_pointer_type(type t)
   nt->u.pointsto = t;
 
   /* ASSUME: all pointers are the same */
-  nt->size = target->tptr.size;
-  nt->alignment = target->tptr.align;
+  nt->size = make_type_cval(target->tptr.size);
+  nt->alignment = make_type_cval(target->tptr.align);
 
   return nt;
 }
@@ -252,7 +268,7 @@ type make_array_type(type t, expression size)
 
   nt->u.array.arrayof = t;
   nt->u.array.size = size;
-  assert(!size || !size->cst || cval_intcompare(size->cst->cval, cval_zero) >= 0);
+  assert(!size || !size->cst || legal_array_size(size->cst->cval));
 
   return nt;
 }
@@ -269,7 +285,7 @@ type make_function_type(type t, typelist argtypes, bool varargs,
   nt->u.fn.argtypes = argtypes;
   nt->u.fn.varargs = varargs;
   nt->u.fn.oldstyle = oldstyle;
-  nt->size = nt->alignment = 1;
+  nt->size = nt->alignment = cval_one;
   return nt;
 }
 
@@ -290,15 +306,31 @@ static type make_primitive(int pk, int size, int alignment)
   type nt = new_type(tk_primitive), ct;
 
   nt->u.primitive = pk;
-  nt->size = size;
-  nt->alignment = alignment;
+  nt->size = make_type_cval(size);
+  nt->alignment = make_type_cval(alignment);
   primitive_types[pk] = nt;
 
   ct = new_type(tk_complex);
   ct->u.primitive = pk;
-  ct->size = size * 2;
-  ct->alignment = alignment; /* ASSUME: alignof(complex t) == alignof(t) */
-  complex_types[pk] = nt;
+  ct->size = make_type_cval(size * 2);
+  ct->alignment = nt->alignment; /* ASSUME: alignof(complex t) == alignof(t) */
+  complex_types[pk] = ct;
+
+  return nt;
+}
+
+static type make_unknown_int()
+{
+  type nt = new_type(tk_primitive), ct;
+
+  nt->u.primitive = tp_unknown_int;
+  nt->size = nt->alignment = cval_unknown;
+  primitive_types[tp_unknown_int] = nt;
+
+  ct = new_type(tk_complex);
+  ct->u.primitive = tp_unknown_int;
+  ct->size = ct->alignment = cval_unknown;
+  complex_types[tp_unknown_int] = ct;
 
   return nt;
 }
@@ -308,15 +340,28 @@ static type lookup_primitive(int default_kind, int size, int alignment,
 {
   int i;
 
-  for (i = tp_signed_char; i < tp_first_floating; i++)
-    if (primitive_types[i]->size == size && type_unsigned(primitive_types[i]) == isunsigned)
+  for (i = tp_signed_char; i < tp_unknown_int; i++)
+    if (cval_uint_value(primitive_types[i]->size) == size &&
+	type_unsigned(primitive_types[i]) == isunsigned)
       return primitive_types[i];
 
   return make_primitive(default_kind, size, alignment);
 }
 
 /* Return the integral type of size 'size', unsigned if 'isunsigned' is true */
-type type_for_size(int size, bool isunsigned)
+type type_for_size(cval size, bool isunsigned)
+{
+  type t;
+
+  if (cval_isunknown(size))
+    return unknown_int_type;
+
+  t = lookup_primitive(tp_error, cval_sint_value(size), 0, isunsigned);
+  assert(t->u.primitive != tp_error);
+  return t;
+}
+
+static type type_for_size_int(int size, bool isunsigned)
 {
   type t = lookup_primitive(tp_error, size, 0, isunsigned);
   assert(t->u.primitive != tp_error);
@@ -327,7 +372,10 @@ type type_for_cval(cval c, bool isunsigned)
 {
   int i;
 
-  for (i = tp_signed_char; i < tp_first_floating; i++)
+  if (cval_isunknown(c))
+    return unknown_int_type;
+
+  for (i = tp_signed_char; i < tp_unknown_int; i++)
     if (type_unsigned(primitive_types[i]) == isunsigned &&
 	cval_inrange(c, primitive_types[i]))
       return primitive_types[i];
@@ -377,18 +425,20 @@ void init_types(void)
   int8_type = lookup_primitive(tp_int8, 8, target->int8_align, FALSE);
   uint8_type = lookup_primitive(tp_uint8, 8, target->int8_align, TRUE);
 
+  unknown_int_type = make_unknown_int();
+
   char_array_type = make_array_type(char_type, NULL);
   error_type = new_type(tk_error);
-  error_type->size = error_type->alignment = 1;
+  error_type->size = error_type->alignment = cval_one;
   void_type = new_type(tk_void);
-  void_type->size = void_type->alignment = 1;
+  void_type->size = void_type->alignment = cval_one;
   ptr_void_type = make_pointer_type(void_type);
 
-  wchar_type = type_for_size(target->wchar_t_size, !target->wchar_t_signed);
+  wchar_type = type_for_size_int(target->wchar_t_size, !target->wchar_t_signed);
   wchar_array_type = make_array_type(wchar_type, NULL);
-  size_t_type = type_for_size(target->size_t_size, TRUE);
-  ptrdiff_t_type = type_for_size(target->tptr.size, FALSE);
-  intptr_type = type_for_size(target->tptr.size, TRUE);
+  size_t_type = type_for_size_int(target->size_t_size, TRUE);
+  ptrdiff_t_type = type_for_size_int(target->tptr.size, FALSE);
+  intptr_type = type_for_size_int(target->tptr.size, TRUE);
 }
 
 struct typelist
@@ -477,7 +527,8 @@ bool type_integral(type t) /* Does not include enum's */
 
 bool type_smallerthanint(type t)
 {
-  return type_integral(t) && t->size < int_type->size;
+  return t->kind == tk_primitive && t->u.primitive < tp_unknown_int &&
+    cval_intcompare(t->size, int_type->size) < 0;
 }
 
 bool type_unsigned(type t)
@@ -549,6 +600,11 @@ bool type_long_long(type t)
 bool type_unsigned_long_long(type t)
 {
   return t->kind == tk_primitive && t->u.primitive == tp_unsigned_long_long;
+}
+
+bool type_unknown_int(type t)
+{
+  return t->kind == tk_primitive && t->u.primitive == tp_unknown_int;
 }
 
 bool type_float(type t)
@@ -668,15 +724,16 @@ expression type_array_size(type t)
   return t->u.array.size;
 }
 
-largest_int type_array_size_int(type t)
-/* Returns: number of elements in array type t if known, -1 otherwise */
+cval type_array_size_cval(type t)
+/* Returns: number of elements in array type t if known, cval_top otherwise */
 {
   known_cst s;
 
-  if (t->u.array.size && (s = t->u.array.size->cst) && constant_integral(s))
-    return constant_sint_value(s);
+  if (t->u.array.size && (s = t->u.array.size->cst) &&
+      (constant_integral(s) || constant_unknown(s)))
+    return s->cval;
 
-  return -1;
+  return cval_top;
 }
 
 tag_declaration type_tag(type t)
@@ -735,6 +792,23 @@ bool type_equal(type t1, type t2)
   return t1->qualifiers == t2->qualifiers && type_equal_unqualified(t1, t2);
 }
 
+static bool array_sizes_match(type t1, type t2)
+/* Return: TRUE if we think the array sizes of t1, t2 match
+ */
+{
+  known_cst s1 = t1->u.array.size ? t1->u.array.size->cst : NULL;
+  known_cst s2 = t2->u.array.size ? t2->u.array.size->cst : NULL;
+
+  // Non-constant array sizes match everything
+  // Unknown array sizes match everything too 
+  // (XXX: we should check again after instantiation, but we'll leave
+  // that to the backend C compiler)
+  if (!s1 || !constant_integral(s1) || !s2 || !constant_integral(s2))
+    return TRUE;
+
+  return cval_intcompare(s1->cval, s2->cval) == 0;
+}
+
 bool type_equal_unqualified(type t1, type t2)
 {
   if (t1 == error_type || t2 == error_type)
@@ -770,13 +844,10 @@ bool type_equal_unqualified(type t1, type t2)
     case tk_function:
       return function_equal(t1, t2);
 
-    case tk_array: {
-      known_cst s1 = t1->u.array.size ? t1->u.array.size->cst : NULL;
-      known_cst s2 = t2->u.array.size ? t2->u.array.size->cst : NULL;
-
+    case tk_array:
       return type_equal(t1->u.array.arrayof, t2->u.array.arrayof) &&
-	(!s1 || !s2 || cval_intcompare(s1->cval, s2->cval) == 0);
-    }
+	array_sizes_match(t1, t2);
+
     case tk_variable:
       return t1->u.tdecl == t2->u.tdecl;
 
@@ -830,14 +901,20 @@ static bool weird_parameter_match(type t1, type t2)
 
   if (type_union(t1)
       && (!(t1decl = type_tag(t1))->name || t1decl->transparent_union)
-      && type_size_cc(t1) && type_size_cc(t2)
-      && type_size(t1) == type_size(t2))
+      && type_size_cc(t1) && type_size_cc(t2))
     {
-      field_declaration field;
+      cval s1 = type_size(t1), s2 = type_size(t2);
 
-      for (field = t1decl->fieldlist; field; field = field->next)
-	if (type_compatible(field->type, t2))
-	  return TRUE;
+      /* We don't do this for types of unknown size */
+      if (cval_isinteger(s1) && cval_isinteger(s2) &&
+	  cval_intcompare(s1, s2) == 0)
+	{
+	  field_declaration field;
+
+	  for (field = t1decl->fieldlist; field; field = field->next)
+	    if (type_compatible(field->type, t2))
+	      return TRUE;
+	}
     }
   return FALSE;
 }
@@ -989,19 +1066,16 @@ bool type_compatible_unqualified(type t1, type t2)
     case tk_function:
       return function_compatible(t1, t2);
 
-    case tk_array: {
-      known_cst s1 = t1->u.array.size ? t1->u.array.size->cst : NULL;
-      known_cst s2 = t2->u.array.size ? t2->u.array.size->cst : NULL;
-
+    case tk_array:
       return type_compatible(t1->u.array.arrayof, t2->u.array.arrayof) &&
-	(!s1 || !s2 || cval_intcompare(s1->cval, s2->cval) == 0);
+	array_sizes_match(t1, t2);
 
     case tk_iref:
       return t1->u.iref->itype == t2->u.iref->itype;
 
     case tk_variable:
       return t1->u.tdecl == t2->u.tdecl;
-    }
+
     default: assert(0); return 0;
     }
 }
@@ -1028,7 +1102,7 @@ type qualify_type2(type t, type t1, type t2)
   return make_qualified_type(t, type_qualifiers(t1) | type_qualifiers(t2));
 }
 
-type align_type(type t, int new_alignment)
+type align_type(type t, cval new_alignment)
 {
   type nt = copy_type(t);
 
@@ -1049,10 +1123,17 @@ static int common_primitive_type(type t1, type t2)
   */
   if (pk1 < tp_first_floating && pk2 < tp_first_floating)
     {
+      largest_uint s1, s2;
+
       /* The simple cases */
-      if (t1->size < t2->size)
+      if (pk1 == tp_unknown_int || pk2 == tp_unknown_int)
+	return tp_unknown_int;
+
+      s1 = cval_uint_value(t1->size);
+      s2 = cval_uint_value(t2->size);
+      if (s1 < s2)
 	return pk2;
-      else if (t1->size > t2->size)
+      else if (s1 > s2)
 	return pk1;
 
       /* The pain starts, see 6.3.1.8 of c9x */
@@ -1598,7 +1679,11 @@ type function_call_type(function_call fcall)
   return fntype;
 }
 
-largest_uint type_size(type t)
+cval type_size(type t)
+/* Requires: type_size_cc(t)
+   Returns: size of type t in a cval. The cval is either unknown (for types
+     derived in some way from template arguments) or an unsigned number
+*/
 {
   assert(type_size_cc(t));
 
@@ -1606,18 +1691,26 @@ largest_uint type_size(type t)
     return t->u.tag->size;
 
   if (type_array(t))
-    /* XXX: doesn't detect overflow */
-    return constant_uint_value(t->u.array.size->cst)
-      * type_size(t->u.array.arrayof);
+    return cval_times(t->u.array.size->cst->cval, 
+		      type_size(t->u.array.arrayof));
 
   return t->size;
 }
 
-size_t type_alignment(type t)
+largest_uint type_size_int(type t)
+/* Requires: type_size_cc(t) && cval_isinteger(type_size(t))
+     (i.e., t not variable or unknown size)
+   Returns: size of t
+*/
+{
+  return cval_uint_value(type_size(t));
+}
+
+cval type_alignment(type t)
 {
   assert(type_has_size(t));
 
-  if (t->alignment > 0) /* Possibly overridden alignment */
+  if (!cval_istop(t->alignment)) /* Possibly overridden alignment */
     return t->alignment;
 
   if (type_tagged(t))
@@ -1640,10 +1733,10 @@ bool type_size_cc(type t)
     return FALSE;
 
   if (type_tagged(t))
-    return t->u.tag->size_cc;
+    return !cval_istop(t->u.tag->size);
 
   if (type_array(t))
-    return t->u.array.size && t->u.array.size->cst &&
+    return !cval_istop(type_array_size_cval(t)) &&
       type_size_cc(t->u.array.arrayof);
 
   return TRUE;
@@ -1723,8 +1816,9 @@ type make_interface_type(data_declaration itype)
 
   /* These are not yet stored, but I'll assume they might be like
      pointers some day... */
-  nt->size = sizeof(void *); 
-  nt->alignment = __alignof__(void *);
+  /* ASSUME: all pointers are the same */
+  nt->size = make_type_cval(target->tptr.size);
+  nt->alignment = make_type_cval(target->tptr.align);
 
   return nt;
 }
@@ -1771,7 +1865,8 @@ type make_variable_type(data_declaration tdecl)
   type nt = new_type(tk_variable);
   nt->u.tdecl = tdecl;
 
-  /* Type variables have no intrinsic size or alignment */
+  /* Type variables have unknown size and alignment */
+  nt->size = nt->alignment = cval_unknown;
 
   return nt;
 }

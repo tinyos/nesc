@@ -33,6 +33,9 @@ cval cval_top; /* The non-constant value */
 cval cval_unknown; /* The unknown value */
 cval cval_zero; /* A zero value. Use cval_cast to make the desired kind of
 		   constant */
+cval cval_one; /* A one value. Use cval_cast to make the desired kind of
+		   constant */
+cval cval_bitsperbyte; /* BITSPERBYTE */
 
 /* We use cval_invalid_address to mark those places where a constant
    is computed which is "not computable at load time"
@@ -53,7 +56,13 @@ void cval_init(void)
   cval_unknown.kind = cval_unk;
   cval_zero.kind = cval_sint;
   cval_zero.si = 0;
-  cval_zero.isize = type_size(int_type);
+  cval_zero.isize = type_size_int(int_type);
+  cval_one.kind = cval_sint;
+  cval_one.si = 1;
+  cval_one.isize = type_size_int(int_type);
+  cval_bitsperbyte.kind = cval_uint;
+  cval_bitsperbyte.ui = BITSPERBYTE;
+  cval_bitsperbyte.isize = type_size_int(size_t_type);
 }
 
 cval make_cval_unsigned(largest_uint i, type t)
@@ -63,7 +72,7 @@ cval make_cval_unsigned(largest_uint i, type t)
   assert(type_integral(t) && type_unsigned(t));
   c.kind = cval_uint;
   c.ui = i;
-  c.isize = type_size(t);
+  c.isize = type_size_int(t);
   return c;
 }
 
@@ -74,7 +83,7 @@ cval make_cval_signed(largest_int i, type t)
   assert(type_integral(t) && !type_unsigned(t));
   c.kind = cval_sint;
   c.si = i;
-  c.isize = type_size(t);
+  c.isize = type_size_int(t);
   return c;
 }
 
@@ -333,8 +342,14 @@ cval cval_cast(cval c, type to)
     }
   else
     {
-      size_t tosize = type_size(to);
+      cval tosize_cval = type_size(to);
+      size_t tosize;
 
+      // Cast to int of unknown size produces unknown value
+      if (cval_isunknown(tosize_cval))
+	return cval_unknown;
+
+      tosize = cval_uint_value(tosize_cval);
       switch (c.kind)
 	{
 	case cval_float:
@@ -357,7 +372,7 @@ cval cval_cast(cval c, type to)
 
 	case cval_address:
 	  /* Lose value if cast address of symbol to too-narrow a type */
-	  if (!type_array(to) && tosize < type_size(intptr_type))
+	  if (!type_array(to) && tosize < type_size_int(intptr_type))
 	    return cval_invalid_address;
 	  /* Otherwise nothing happens (the offset is already restricted to
 	     the range of intptr_type). */
@@ -860,7 +875,7 @@ cval cval_eq(cval c1, cval c2)
 /* True if x fits in the range of type t */
 bool uint_inrange(largest_uint x, type t)
 {
-  size_t tsize = type_size(t);
+  size_t tsize = type_size_int(t);
   largest_uint max;
 
   assert(tsize <= sizeof(largest_uint));
@@ -875,7 +890,7 @@ bool uint_inrange(largest_uint x, type t)
 
 bool sint_inrange(largest_int x, type t)
 {
-  size_t tsize = type_size(t);
+  size_t tsize = type_size_int(t);
   largest_int max;
 
   assert(tsize <= sizeof(largest_uint));
@@ -963,3 +978,49 @@ void cval_print(FILE *f, cval c)
     }
 }
 
+cval cval_align_to(cval n, cval alignment)
+{
+  cval count = cval_divide(cval_sub(cval_add(n, alignment), cval_one),
+			   alignment);
+
+  return cval_times(count, alignment);
+}
+
+cval cval_gcd(cval x, cval y)
+{
+  cval z;
+
+  if (cval_istop(x) || cval_istop(y))
+    return cval_top;
+
+  if (cval_isunknown(x) || cval_isunknown(y))
+    return cval_unknown;
+
+  for (;;)
+    {
+      if (!cval_boolvalue(y)) /* ie 0 */
+	return x;
+      
+      z = cval_modulo(x, y); x = y; y = z;
+    }
+}
+
+cval cval_lcm(cval x, cval y)
+{
+  /* ignoring risk of overflow (used for alignments which are typically <= 16) */
+  return cval_divide(cval_times(x, y), cval_gcd(x, y)); 
+}
+
+cval cval_max(cval c1, cval c2)
+{
+  if (cval_istop(c1) || cval_istop(c2))
+    return cval_top;
+
+  if (cval_isunknown(c1) || cval_isunknown(c2))
+    return cval_unknown;
+
+  // Not used for anything else yet. Fix later if need to.
+  assert(cval_isinteger(c1) && cval_isinteger(c2));
+
+  return cval_intcompare(c1, c2) > 0 ? c1 : c2;
+}

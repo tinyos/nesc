@@ -66,4 +66,9 @@ tag_declaration get_unnamed_tag_decl(data_decl decl);
 /* Returns:. Check to see if it is a struct or
      union, and if so return that struct or union's declaration */
 
+const char *nice_field_name(const char *s);
+/* Returns: "(anonymous)" if s == NULL, s otherwise
+     This helps printing the name of potentially unnamed entities
+ */
+
 #endif

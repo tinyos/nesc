@@ -620,34 +620,39 @@ void check_variable_scflags(scflags scf,
     msg(l, "%s `%s' declared `%s'", kind, name, badqual);
 }
 
-expression check_array_size(expression size, const char *printname)
+void check_array_size(expression size, const char *printname)
 {
-  assert(constant_integral(size->cst));
-  if (pedantic)
+  if (!check_constant_once(size))
+    return;
+
+  if (size->cst && constant_integral(size->cst))
     {
-      constant_overflow_warning(size->cst);
-      if (definite_zero(size))
+      if (pedantic)
 	{
-	  if (printname)
+	  constant_overflow_warning(size->cst);
+	  if (definite_zero(size))
 	    pedwarn_with_location
 	      (size->location, "ANSI C forbids zero-size array `%s'", printname);
-	  else
-	    pedwarn_with_location
-	      (size->location, "ANSI C forbids zero-size array");
 	}
-    }
 
-  if (cval_intcompare(size->cst->cval, cval_zero) < 0)
-    {
-      if (printname)
+      if (cval_intcompare(size->cst->cval, cval_zero) < 0)
 	error_with_location(size->location,
 			    "size of array `%s' is negative", printname);
-      else
-	error_with_location(size->location, "size of array is negative");
-      return oneexpr;
     }
-
-  return size;
+  else if (!(current.function_decl || current.env->parm_level))
+    {
+      if (size->cst)
+	error_with_location(size->location, "type size can't be explicitly evaluated");
+      else
+	error_with_location(size->location, "variable-size type declared outside of any function");
+    }
+  else if (pedantic)
+    {
+      if (size->cst)
+	pedwarn_with_location(size->location, "ANSI C forbids array `%s' whose size can't be evaluated", printname);
+      else
+	pedwarn_with_location(size->location, "ANSI C forbids variable-size array `%s'", printname);
+    }
 }
 
 void parse_declarator(type_element modifiers, declarator d, bool bitfield, 
@@ -674,12 +679,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
   if (ointf)
     *ointf = NULL;
   declarator_name(d, oname, &iname);
-  if (!*oname)
-    printname = "type name";
-  else if (iname)
-    printname = make_intf_printname(iname, *oname);
-  else
-    printname = *oname;
+  printname = nice_declarator_name(d);
 
   *oclass = 0;
 
@@ -969,36 +969,8 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 					"size of array `%s' has non-integer type", printname);
 		    size = oneexpr;
 		  }
-
-		if (size->cst && constant_integral(size->cst))
-		  size = check_array_size(size, printname);
 		else
-		  {
-		    if (!(current.function_decl || current.env->parm_level))
-		      {
-			if (size->cst)
-			  {
-			    /* We allow unknown size arrays (i.e., derived
-			       from template args or unique/uniqueCount) as
-			       they will eventually become an actual number */
-			    if (!constant_unknown(size->cst))
-			      error_with_location(ad->location, "type size can't be explicitly evaluated");
-			  }
-			else
-			  error_with_location(ad->location, "variable-size type declared outside of any function");
-		      }
-		    else if (pedantic)
-		      {
-			if (size->cst)
-			  pedwarn_with_location(ad->location, "ANSI C forbids array `%s' whose size can't be evaluated", printname);
-			else
-			  pedwarn_with_location(ad->location, "ANSI C forbids variable-size array `%s'", printname);
-		      }
-
-
-		    size->cst = NULL; /* Not usefully constant, don't confuse
-					 the array type */
-		  }
+		  check_array_size(size, printname);
 	      }
 
 	    /* Build the array type itself, then merge any constancy or
@@ -1149,10 +1121,8 @@ static declarator finish_function_declarator(function_declarator fd)
 	    }
 	  else if (!vp->ddecl->isused)
 	    {
-	      const char *pname = vp->ddecl->name;
-
-	      if (!pname)
-		pname = "((anonymous))";
+	      /* ok, so it's not really a field */
+	      const char *pname = nice_field_name(vp->ddecl->name);
 
 	      error_with_location(fd->location,
 		"parameter `%s' has just a forward declaration", pname);
@@ -2304,6 +2274,22 @@ void declarator_name(declarator d, const char **oname, const char **iname)
     }
 }
 
+const char *nice_declarator_name(declarator d)
+/* Returns: a user-friendly name for declarator d, allocated in 
+     current.fileregion if necessary
+*/
+{
+  const char *name, *iname;
+
+  declarator_name(d, &name, &iname);
+  if (!name)
+    return "type name";
+  else if (iname)
+    return make_intf_printname(iname, name);
+  else
+    return name;
+}
+
 dd_list check_parameter(data_declaration dd,
 			type_element elements, variable_decl vd)
 /* Returns: Attributes found while parsing the declarator */
@@ -2854,6 +2840,342 @@ static field_declaration *declare_field(tag_declaration tdecl,
   return &fdecl->next;
 }
 
+cval check_bitfield_width(field_declaration fdecl)
+{
+  expression w = fdecl->ast->arg1;
+  known_cst cwidth = w->cst;
+  cval bitwidth = cval_top;
+  bool printmsg;
+  const char *errormsg = NULL;
+
+  printmsg = check_constant_once(w);
+
+  if (!(cwidth && constant_integral(cwidth)))
+    errormsg = "bit-field `%s' width not an integer constant";
+  else
+    {
+      largest_uint width = constant_uint_value(cwidth);
+
+      if (pedantic && printmsg)
+	constant_overflow_warning(cwidth);
+
+      /* Detect and ignore out of range field width.  */
+      if (!type_unsigned(cwidth->type) && constant_sint_value(cwidth) < 0)
+	errormsg = "negative width in bit-field `%s'";
+      else if (width > type_size_int(fdecl->type) * BITSPERBYTE)
+	{
+	  /* Note that in this case the field gets handled as non-bitfield
+	     and compilation may be successful */
+	  if (printmsg)
+	    pedwarn_with_location(w->location,
+				  "width of `%s' exceeds its type",
+				  nice_field_name(fdecl->name));
+	}
+      else if (width == 0 && fdecl->name)
+	errormsg = "zero width for bit-field `%s'";
+      else
+	bitwidth = cwidth->cval;
+    }
+
+  if (printmsg && errormsg)
+    error_with_location(w->location, errormsg, nice_field_name(fdecl->name));
+
+  return bitwidth;
+}
+
+/* Finish definition of struct/union furnishing the fields and attribs.
+   Computes size and alignment of struct/union (see ASSUME: comments).
+   Returns t */
+void layout_struct(tag_declaration tdecl)
+{
+  cval offset = cval_zero, alignment = cval_bitsperbyte, size = cval_zero;
+  bool isunion = tdecl->kind == kind_union_ref;
+  field_declaration fdecl;
+  declaration dlist;
+  field_decl flist;
+  
+  // We scan all the fields of the struct (field), but we also need to scan
+  // the declaration of the struct to handle anonymous struct/union
+  // boundaries (maybe we should have saved markers?). To do the latter,
+  // we use fdecl/flist, where flist is the "current" list of fields
+  // (corresponding to, e.g., `int x, y, z;' in a struct) and fdecl is
+  // the declaration following the one being used in flist
+  fdecl = tdecl->fieldlist;
+  dlist = tdecl->ast->fields;
+  flist = NULL;
+  for (;;)
+    {
+      cval fsize, falign;
+
+      // Get the next data_decl in the struct
+      if (!flist)
+	{
+	  data_decl decl;
+
+	  if (!dlist)
+	    break;
+
+	  decl = CAST(data_decl, ignore_extensions(dlist));
+	  dlist = CAST(declaration, dlist->next);
+
+	  // Is this a struct/union we should merge in?
+	  if (decl->decls)
+	    flist = CAST(field_decl, decl->decls); // No.
+	  else
+	    {
+	      tag_declaration anon_tdecl = get_unnamed_tag_decl(decl);
+	      field_declaration anon_field;
+
+	      // No?
+	      if (!anon_tdecl || !anon_tdecl->defined || anon_tdecl->name)
+		continue;
+
+	      // Yes. Get size, alignment of struct/union
+	      fsize = cval_times(anon_tdecl->size, cval_bitsperbyte);
+	      falign = cval_times(anon_tdecl->alignment, cval_bitsperbyte);
+
+	      /* Adjust copied anonymous fields */
+	      offset = cval_align_to(offset, falign);
+	      for (anon_field = anon_tdecl->fieldlist; anon_field;
+		   anon_field = anon_field->next, fdecl = fdecl->next)
+		fdecl->offset = cval_add(anon_field->offset, offset);
+	    }
+	}
+
+      if (flist)
+	{
+	  /* decode field_decl field */
+	  type field_type = fdecl->type;
+	  cval bitwidth = cval_top;
+
+	  if (flist->arg1)
+	    bitwidth = check_bitfield_width(fdecl);
+
+	  fdecl->bitwidth = bitwidth;
+
+	  /* ASSUME: for bitfields we're assuming that:
+	     - alignment of record is forced to be at least that of the base
+	     (except for width 0 which just forces alignment of the current offset
+	     with the base type's alignment)
+	     - bit fields cannot span more units of alignment of their type
+	     than the type itself
+	     This is gcc's behaviour when PCC_BITFIELD_TYPE_MATTERS is defined */
+
+	  if (type_size_cc(field_type))
+	    fsize = cval_times(type_size(field_type), cval_bitsperbyte);
+	  else
+	    fsize = cval_top;
+
+	  /* don't care about alignment if no size (type_incomplete(field_type)
+	     is true, so we got an error above */
+	  falign = cval_times
+	    (type_has_size(field_type) ? type_alignment(field_type) : cval_top,
+	     cval_bitsperbyte);
+
+	  if (cval_istop(bitwidth)) /* regular field */
+	    offset = cval_align_to(offset, falign); 
+	  else if (cval_isunknown(bitwidth))
+	    {
+	      if (!cval_istop(offset))
+		offset = cval_unknown;
+	    }
+	  else if (!cval_boolvalue(bitwidth)) /* ie, 0 */
+	    {
+	      offset = cval_align_to(offset, falign);
+	      falign = cval_one; /* No structure alignment implications */
+	    }
+	  else
+	    {
+	      assert(cval_intcompare(bitwidth, cval_zero) > 0);
+	      if (target->pcc_bitfield_type_matters)
+		{
+		  /* This tests 
+		     ((offset + bitwidth + falign - 1) / falign -
+		     offset / falign) > fsize / falign
+		  */
+		  cval val1 = cval_sub(cval_add(cval_add(offset, bitwidth),
+						falign),
+				       cval_one);
+		  cval val2 = cval_sub(cval_divide(val1, falign),
+				       cval_divide(offset, falign));
+
+		  // if falign or offset are top or unknown, this will
+		  // contaminate val2 as appropriate
+		  if (!cval_knownvalue(val2))
+		    offset = val2;
+		  else if (cval_intcompare(val2, cval_divide(fsize, falign)) > 0)
+		    offset = cval_align_to(offset, falign);
+		}
+	    }
+
+	  fdecl->offset = offset;
+
+	  flist = CAST(field_decl, flist->next);
+	  fdecl = fdecl->next;
+	}
+
+      if (!isunion)
+	{
+	  offset = cval_add(offset, fsize);
+	  size = offset;
+	}
+      else
+	size = cval_max(fsize, size);
+
+      alignment = cval_lcm(alignment, falign); /* Note: GCC uses max. Must be hoping for powers of 2 */
+    }
+
+  /* ASSUME: see previous assume */
+  tdecl->size = cval_divide(cval_align_to(size, alignment), cval_bitsperbyte);
+  tdecl->alignment = cval_divide(alignment, cval_bitsperbyte);
+}
+
+/* Finish definition of struct/union furnishing the fields and attribs.
+   Computes size and alignment of struct/union (see ASSUME: comments).
+   Returns t */
+type_element finish_struct(type_element t, declaration fields,
+			   attribute attribs)
+{
+  tag_ref s = CAST(tag_ref, t);
+  tag_declaration tdecl = s->tdecl;
+  bool hasmembers = FALSE;
+  field_declaration *nextfield = &tdecl->fieldlist;
+  declaration fdecl;
+
+  s->fields = fields;
+  s->attributes = attribs;
+  handle_tag_attributes(attribs, tdecl);
+  tdecl->fields = new_env(parse_region, NULL);
+
+  scan_declaration (fdecl, fields)
+    {
+      /* Get real list of fields */
+      data_decl flist = CAST(data_decl, ignore_extensions(fdecl));
+      field_decl field;
+
+      if (!flist->decls) /* possibly a struct/union we should merge in */
+	{
+	  tag_declaration anon_tdecl = get_unnamed_tag_decl(flist);
+	  field_declaration anon_field;
+	  location floc = flist->location;
+
+	  if (!anon_tdecl)
+	    error_with_location(floc,
+	      "unnamed fields of type other than struct or union are not allowed");
+	  else if (!anon_tdecl->defined)
+	    error_with_location(floc, "anonymous field has incomplete type");
+	  else if (anon_tdecl->name)
+	    warning_with_location(floc, "declaration does not declare anything");
+	  else
+	    {
+	      /* Process alignment to this struct/union in "main" loop below */
+	      anon_tdecl->collapsed = TRUE;
+
+	      /* Copy fields */
+	      for (anon_field = anon_tdecl->fieldlist; anon_field;
+		   anon_field = anon_field->next)
+		{
+		  field_declaration fdecl = ralloc(parse_region, struct field_declaration);
+
+		  *fdecl = *anon_field;
+		  nextfield = declare_field(tdecl, fdecl, floc, nextfield);
+		  if (fdecl->name)
+		    hasmembers = TRUE;
+		}
+	    }
+	}
+      else
+	scan_field_decl (field, CAST(field_decl, flist->decls))
+	  {
+	    /* decode field_decl field */
+	    field_declaration fdecl;
+	    type field_type;
+	    const char *name;
+	    int class;
+	    scflags scf;
+	    const char *printname;
+	    bool defaulted_int;
+	    type tmpft;
+	    location floc = field->location;
+	    dd_list extra_attr;
+
+	    fdecl = ralloc(parse_region, struct field_declaration);
+
+	    parse_declarator(flist->modifiers, field->declarator,
+			     field->arg1 != NULL, FALSE,
+			     &class, &scf, NULL, &name, &tmpft,
+			     &defaulted_int, NULL, &extra_attr);
+	    field_type = tmpft;
+
+	    /* Grammar doesn't allow scspec: */
+	    assert(scf == 0 && class == 0);
+
+	    printname = nice_field_name(name);
+
+	    /* Support "flexible arrays" (y[] as field member) --
+	       simply make the size 0 which we already handle below */
+	    if (type_array(field_type) && !type_array_size(field_type))
+	      field_type = make_array_type(type_array_of(field_type),
+					   build_zero(parse_region, dummy_location));
+
+	    if (type_function(field_type))
+	      {
+		error_with_location(floc, "field `%s' declared as a function", printname);
+		field_type = make_pointer_type(field_type);
+	      }
+	    else if (type_void(field_type))
+	      {
+		error_with_location(floc, "field `%s' declared void", printname);
+		field_type = error_type;
+	      }
+	    else if (type_incomplete(field_type)) 
+	      {
+		error_with_location(floc, "field `%s' has incomplete type", printname);
+		field_type = error_type;
+	      }
+
+	    fdecl->type = field_type;
+	    handle_field_attributes(field->attributes, fdecl);
+	    handle_field_dd_attributes(extra_attr, fdecl);
+	    field_type = fdecl->type; /* attributes might change type */
+
+	    if (field->arg1)
+	      {
+		if (!type_integer(field_type))
+		  {
+		    error_with_location(floc, "bit-field `%s' has invalid type", printname);
+		    field->arg1 = NULL;
+		  }
+		else if (!(type_integer(field->arg1->type)))
+		  {
+		    error_with_location(floc, "bit-field `%s' width not an integer constant",
+					printname);
+		    field->arg1 = NULL;
+		  }
+	      }
+
+	    fdecl->ast = field;
+	    fdecl->name = name;
+	    nextfield = declare_field(tdecl, fdecl, floc, nextfield);
+	    if (name)
+	      hasmembers = TRUE;
+	  }
+    }
+
+  if (pedantic && !hasmembers)
+    pedwarn("%s has no %smembers",
+	    (s->kind == kind_union_ref ? "union" : "structure"),
+	    (fields ? "named " : ""));
+
+  tdecl->defined = TRUE;
+  tdecl->being_defined = FALSE;
+
+  layout_struct(tdecl);
+
+  return t;
+}
+
+#if 0
 /* Finish definition of struct/union furnishing the fields and attribs.
    Computes size and alignment of struct/union (see ASSUME: comments).
    Returns t */
@@ -2969,7 +3291,7 @@ type_element finish_struct(type_element t, declaration fields,
 	      /* Grammar doesn't allow scspec: */
 	      assert(scf == 0 && class == 0);
 
-	      printname = name ? name : "(anonymous)";
+	      printname = nice_field_name(name);
 
 	      /* Support "flexible arrays" (y[] as field member) --
 	         simply make the size 0 which we already handle below */
@@ -2999,13 +3321,15 @@ type_element finish_struct(type_element t, declaration fields,
 	      field_type = fdecl->type; /* attributes might change type */
 
 	      bitwidth = -1;
-	      if (field->arg1 && field->arg1->cst)
+	      if (field->arg1)
 		{
-		  known_cst cwidth = field->arg1->cst;
+		  known_cst cwidth;
 
 		  if (!type_integer(field_type))
 		    error_with_location(floc, "bit-field `%s' has invalid type", printname);
-		  else if (!(type_integer(field->arg1->type) && constant_integral(cwidth)))
+		  else if (!(type_integer(field->arg1->type) &&
+			     (cwidth = field->arg1->cst) &&
+			     constant_integral(cwidth)))
 		    error_with_location(floc, "bit-field `%s' width not an integer constant",
 					printname);
 		  else
@@ -3134,6 +3458,7 @@ type_element finish_struct(type_element t, declaration fields,
 
   return t;
 }
+#endif
 
 /* Return a reference to struct/union/enum (indicated by skind) type tag */
 type_element xref_tag(location l, AST_kind skind, word tag)
@@ -3150,6 +3475,146 @@ type_element xref_tag(location l, AST_kind skind, word tag)
 }
 
 static known_cst last_enum_value;
+
+void layout_enum_start(tag_declaration tdecl)
+{
+  last_enum_value = NULL;
+}
+
+void layout_enum_end(tag_declaration tdecl)
+{
+  declaration names = tdecl->ast->fields;
+  cval smallest, largest;
+  bool enum_isunsigned, enum_unknown = FALSE;
+  type type_smallest, type_largest, enum_reptype;
+  enumerator v, values = CAST(enumerator, names);
+
+  /* Pick a representation type for this enum, if not already done. */
+  if (tdecl->reptype && !type_unknown_int(tdecl->reptype))
+    return;
+
+  /* First, find largest and smallest values defined in this enum. */
+  if (!names)
+    smallest = largest = cval_zero;
+  else
+    {
+      smallest = largest = value_of_enumerator(values);
+
+      scan_enumerator (v, CAST(enumerator, values->next))
+	{
+	  cval vv = value_of_enumerator(v);
+
+	  if (cval_isunknown(vv))
+	    {
+	      enum_unknown = TRUE;
+	      break;
+	    }
+	  if (cval_intcompare(vv, largest) > 0)
+	    largest = vv;
+	  if (cval_intcompare(vv, smallest) < 0)
+	    smallest = vv;
+	}
+    }
+
+  if (enum_unknown)
+    enum_reptype = unknown_int_type;
+  else
+    {
+      /* Pick a type that will hold the smallest and largest values. */
+      enum_isunsigned = cval_intcompare(smallest, cval_zero) >= 0;
+      type_smallest = type_for_cval(smallest, enum_isunsigned);
+      type_largest = type_for_cval(largest, enum_isunsigned);
+      assert(type_smallest);
+      if (!type_largest)
+	{
+	  assert(!enum_isunsigned);
+	  warning("enumeration values exceed range of largest integer");
+	  type_largest = long_long_type;
+	}
+      if (type_size_int(type_smallest) > type_size_int(type_largest))
+	enum_reptype = type_smallest;
+      else
+	enum_reptype = type_largest;
+
+      /* We use int as the enum type if that fits, except if both:
+	 - the values fit in a (strictly) smaller type
+	 - the packed attribute was specified 
+      */
+      if (cval_inrange(smallest, int_type) && cval_inrange(largest, int_type) &&
+	  !(tdecl->packed && type_size_int(enum_reptype) < type_size_int(int_type)))
+	enum_reptype = int_type;
+    }
+
+  tdecl->reptype = enum_reptype;
+  tdecl->size = type_size(enum_reptype);
+  tdecl->alignment = type_alignment(enum_reptype);
+
+  /* Change type of all enum constants to enum_reptype */
+  scan_enumerator (v, values)
+    {
+      known_cst val = v->ddecl->value;
+
+      val->type = enum_reptype;
+      val->cval = cval_cast(val->cval, enum_reptype);
+    }
+}
+
+known_cst layout_enum_value(enumerator e)
+{
+  const char *name = e->cstring.data;
+  expression value = e->arg1;
+  known_cst cst = NULL;
+
+  // We're already done if we have a non-unknown type for e's value
+  if (e->ddecl && !type_unknown_int(e->ddecl->value->type))
+    return e->ddecl->value;
+
+  if (value)
+    {
+      cst = value->cst;
+      if (check_constant_once(value))
+	{
+	  if (!value->cst || !constant_integral(value->cst))
+	    {
+	      error("enumerator value for `%s' not integer constant", name);
+	      cst = NULL;
+	    }
+	}
+    }
+
+  if (!cst)
+    {
+      /* Last value + 1 */
+      if (last_enum_value)
+	{
+	  /* No clear logic anywhere to specify which type we should use
+	     (ANSI C must specify int, cf warning below) */
+	  type addtype = type_unsigned(last_enum_value->type) ?
+	    unsigned_long_long_type : long_long_type;
+
+	  cst = fold_add(addtype, last_enum_value, onecst);
+	}
+      else
+	cst = zerocst;
+    }
+
+  if (constant_integral(cst))
+    {
+      if (pedantic && !cval_inrange(cst->cval, int_type))
+	{
+	  pedwarn("ANSI C restricts enumerator values to range of `int'");
+	  cst = zerocst;
+	}
+
+      if (type_size_int(cst->type) < type_size_int(int_type))
+	cst->type =
+	  type_for_size(type_size(int_type),
+			flag_traditional && type_unsigned(cst->type));
+    }
+  last_enum_value = cst;
+
+  return cst;
+}
 
 /* Start definition of struct/union (indicated by skind) type tag. */
 type_element start_enum(location l, word tag)
@@ -3170,7 +3635,7 @@ type_element start_enum(location l, word tag)
   tref->tdecl = tdecl;
   tdecl->being_defined = TRUE;
   tdecl->packed = flag_short_enums;
-  last_enum_value = NULL;
+  layout_enum_start(tdecl);
 
   return CAST(type_element, tref);
 }
@@ -3182,10 +3647,6 @@ type_element finish_enum(type_element t, declaration names,
 {
   tag_ref s = CAST(tag_ref, t);
   tag_declaration tdecl = s->tdecl;
-  cval smallest, largest;
-  bool enum_isunsigned;
-  type type_smallest, type_largest, enum_reptype;
-  enumerator v, values = CAST(enumerator, names);
 
   s->fields = names;
   s->attributes = attribs;
@@ -3194,115 +3655,28 @@ type_element finish_enum(type_element t, declaration names,
   tdecl->defined = TRUE;
   tdecl->being_defined = FALSE;
 
-  /* Pick a representation type for this enum. */
-
-  /* First, find largest and smallest values defined in this enum. */
-  if (!names)
-    smallest = largest = cval_zero;
-  else
-    {
-      smallest = largest = value_of_enumerator(values);
-
-      scan_enumerator (v, CAST(enumerator, values->next))
-	{
-	  cval vv = value_of_enumerator(v);
-
-	  if (cval_intcompare(vv, largest) > 0)
-	    largest = vv;
-	  if (cval_intcompare(vv, smallest) < 0)
-	    smallest = vv;
-	}
-    }
-
-  /* Pick a type that will hold the smallest and largest values. */
-  enum_isunsigned = cval_intcompare(smallest, cval_zero) >= 0;
-  type_smallest = type_for_cval(smallest, enum_isunsigned);
-  type_largest = type_for_cval(largest, enum_isunsigned);
-  assert(type_smallest);
-  if (!type_largest)
-    {
-      assert(!enum_isunsigned);
-      warning("enumeration values exceed range of largest integer");
-      type_largest = long_long_type;
-    }
-  if (type_size(type_smallest) > type_size(type_largest))
-    enum_reptype = type_smallest;
-  else
-    enum_reptype = type_largest;
-
-  /* We use int as the enum type if that fits, except if both:
-     - the values fit in a (strictly) smaller type
-     - the packed attribute was specified 
-  */
-  if (cval_inrange(smallest, int_type) && cval_inrange(largest, int_type) &&
-      !(tdecl->packed && type_size(enum_reptype) < type_size(int_type)))
-    enum_reptype = int_type;
-
-  tdecl->reptype = enum_reptype;
-  tdecl->size_cc = TRUE;
-  tdecl->size = type_size(enum_reptype);
-  tdecl->alignment = type_alignment(enum_reptype);
-
-  /* Change type of all enum constants to enum_reptype */
-  scan_enumerator (v, values)
-    {
-      known_cst val = v->ddecl->value;
-
-      val->type = enum_reptype;
-      val->cval = cval_cast(val->cval, enum_reptype);
-    }
+  layout_enum_end(tdecl);
 
   return t;
 }
 
 declaration make_enumerator(location loc, cstring id, expression value)
 {
-  declaration ast = CAST(declaration, new_enumerator(parse_region, loc, id, value, NULL));
+  declaration ast;
   struct data_declaration tempdecl;
   data_declaration ddecl, old_decl;
-  known_cst cval = NULL;
 
+  if (value && !type_integer(value->type))
+    {
+      error("enumerator value for `%s' not integer constant", id.data);
+      value = NULL;
+    }
+  
+  ast = CAST(declaration, new_enumerator(parse_region, loc, id, value, NULL));
   init_data_declaration(&tempdecl, ast, id.data, int_type);
   tempdecl.kind = decl_constant;
   tempdecl.definition = ast;
-
-  if (value)
-    {
-      if (!type_integer(value->type) || !value->cst ||
-	  !constant_integral(value->cst))
-	error("enumerator value for `%s' not integer constant", id.data);
-      else
-	cval = value->cst;
-    }
-
-  if (!cval)
-    {
-      /* Last value + 1 */
-      if (last_enum_value)
-	{
-	  /* No clear logic anywhere to specify which type we should use
-	     (ANSI C must specify int, cf warning below) */
-	  type addtype = type_unsigned(last_enum_value->type) ?
-	    unsigned_long_long_type : long_long_type;
-
-	  cval = fold_add(addtype, last_enum_value, onecst);
-	}
-      else
-	cval = zerocst;
-    }
-
-  if (pedantic && !cval_inrange(cval->cval, int_type))
-    {
-      pedwarn("ANSI C restricts enumerator values to range of `int'");
-      cval = zerocst;
-    }
-
-  tempdecl.value = last_enum_value = cval;
-  if (type_size(cval->type) >= type_size(int_type))
-    tempdecl.value->type = cval->type;
-  else
-    tempdecl.value->type =
-      type_for_size(type_size(int_type), flag_traditional && type_unsigned(cval->type));
+  tempdecl.value = layout_enum_value(CAST(enumerator, ast));
 
   old_decl = lookup_id(id.data, TRUE);
 

@@ -25,6 +25,7 @@ Boston, MA 02111-1307, USA. */
 #include "semantics.h"
 #include "expr.h"
 #include "c-parse.h"
+#include "constants.h"
 
 void fail_in_atomic(const char *context)
 {
@@ -261,9 +262,10 @@ static statement containing_switch(label l)
 
 static void check_case_value(expression e)
 {
-  if (!e->cst || !(e->type == error_type || type_integer(e->type)))
-    error_with_location(e->location,
-			"case label does not reduce to an integer constant");
+  if (check_constant_once(e))
+    if (!e->cst || !(e->type == error_type || type_integer(e->type)))
+      error_with_location(e->location,
+			  "case label does not reduce to an integer constant");
 }
 
 void check_case(label label0)
