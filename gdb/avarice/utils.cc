@@ -66,10 +66,14 @@ void statusFlush()
 static void check_1(bool printUnixError, const char *fmt, va_list args)
 {
     int en = errno;
+#ifdef va_copy
     va_list copy_args;
 
     va_copy(copy_args, args);
     vstatusOut(fmt, copy_args);
+#else
+    vstatusOut(fmt, args);
+#endif
     if (printUnixError)
 	statusOut(": %s", strerror(en));
     statusOut("\n");

@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <termios.h>
 #include <fcntl.h>
 #include <string.h>
@@ -65,7 +66,7 @@ void initJtagPort(char *jtagDeviceName)
     oldtioValid = true;
     atexit(restoreSerialPort);
 
-    bzero(&newtio, sizeof(newtio));
+    memset(&newtio, 0, sizeof(newtio));
     newtio.c_cflag = B19200 | CS8 | CLOCAL | CREAD;
 
     // IGNPAR  : ignore bytes with parity errors

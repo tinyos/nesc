@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <termios.h>
 #include <fcntl.h>
 #include <string.h>

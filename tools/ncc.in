@@ -185,6 +185,7 @@ if (!$nostdinc) {
 
 if ($gcc eq "avr-gcc" && $cygwin) {
     # Yuck. Convert unix paths to windows paths
+    $ENV{"NCDIR"} = &winpath($ENV{"NCDIR"});
     @ARGV = @new_args;
     @new_args = ();
     for ($i = 0; $i <= $#ARGV; $i++) {
