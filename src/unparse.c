@@ -167,7 +167,7 @@ void output_quoted_wide(const wchar_t *s)
       else 
 	/* The "" at the end avoids confusion if the next character
 	   is '0'-'9', 'a'-'f' or 'A'-'F' */
-	output("\\x%x\"\"", *s);
+	output("\\x%lx\"\"", *s);
       s++;
     }
 }

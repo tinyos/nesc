@@ -315,9 +315,9 @@ static void push_declspec_stack(void)
   pstate.declspec_stack = news;
 }
 
-static nesc_decl parsed_nesc_decl;
+static node parse_tree;
 
-nesc_decl parse(void) deletes
+node parse(void) deletes
 {
   int result, old_errorcount = errorcount;
   struct parse_state old_pstate = pstate;
@@ -327,10 +327,10 @@ nesc_decl parse(void) deletes
   pstate.unevaluated_expression = 0;
   pstate.declspec_stack = NULL;
   pstate.ds_region = newsubregion(parse_region);
-  parsed_nesc_decl = NULL;
+  parse_tree = NULL;
   result = yyparse();
   if (result)
-    parsed_nesc_decl = NULL;
+    parse_tree = NULL;
   deleteregion_ptr(&pstate.ds_region);
 
   if (result != 0 && errorcount == old_errorcount)
@@ -338,7 +338,17 @@ nesc_decl parse(void) deletes
 
   pstate = old_pstate;
 
-  return parsed_nesc_decl;
+  return parse_tree;
+}
+
+static void set_nesc_parse_tree(void *tree)
+{
+  nesc_declaration cdecl = current.container;
+  nesc_decl nd = CAST(nesc_decl, tree);
+
+  nd->cdecl = cdecl;
+  cdecl->ast = nd;
+  parse_tree = CAST(node, nd);
 }
 
 void refuse_asm(asm_stmt s)
@@ -419,8 +429,10 @@ void yyprint();
 dispatch:
 	  DISPATCH_NESC interface { }
 	| DISPATCH_NESC component { }
-	| DISPATCH_C extdefs { cdecls = declaration_reverse($2); }
-	| DISPATCH_C { cdecls = NULL; }
+	| DISPATCH_C extdefs {
+	    declaration cdecls = declaration_reverse($2); 
+	    parse_tree = CAST(node, cdecls); }
+	| DISPATCH_C { parse_tree = NULL; }
 	;
 
 includes_list: 
@@ -441,16 +453,17 @@ include_list:
 
 interface: 
           includes_list
-	  INTERFACE 
-		{ $<u.docstring>$ = get_docstring(); 
-		  /* force matching kind in current nesc declaration */
-		  current.container->kind = l_interface; 
-		  current.container->env = current.env; 
+	  INTERFACE idword
+		{ 
+		  start_nesc_entity(l_interface, $3);
 		} 
-	  idword interface_parms '{' datadef_list '}' 
+	  interface_parms '{' datadef_list '}' 
 		{
-		  parsed_nesc_decl = CAST(nesc_decl, new_interface(pr, $2.location, $4, $<u.docstring>3, declaration_reverse($7)));
-		  if (current.container->abstract)
+		  interface intf = new_interface(pr, $2.location, $3, declaration_reverse($7));
+
+		  set_nesc_parse_tree(intf);
+
+		  if (intf->cdecl->abstract)
 		    poplevel();
 		}
 	;
@@ -527,30 +540,28 @@ component:
 	;
 
 module: 
-	  generic MODULE 
-	        { $<u.docstring>$ = get_docstring(); 
-		  /* force matching kind in current nesc declaration */
-	  	  current.container->kind = l_component; 
-		  current.container->env = current.env; 
+	  generic MODULE idword 
+	        { 
+		  start_nesc_entity(l_component, $3);
 		  current.container->abstract = $1; 
 		} 
-	  idword component_parms '{' requires_or_provides_list '}' imodule
+	  component_parms '{' requires_or_provides_list '}'
+	  imodule
 		{ 
-		  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $2.location, $4, $<u.docstring>3, $1, $5, rp_interface_reverse($7), $9));
+		  set_nesc_parse_tree(new_component(pr, $2.location, $3, $1, $5, rp_interface_reverse($7), $9));
 	        }
 	;
 
 configuration:
-	  generic CONFIGURATION
-	       { $<u.docstring>$ = get_docstring(); 
-		 /* force matching kind in current nesc declaration */
-		 current.container->kind = l_component; 
-		 current.container->env = current.env; 
-		 current.container->abstract = $1; 
-	       } 
-	  idword component_parms '{' requires_or_provides_list '}' iconfiguration
-	        { 
-		  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $2.location, $4, $<u.docstring>3, $1, $5, rp_interface_reverse($7), $9));
+	  generic CONFIGURATION idword
+		{ 
+		  start_nesc_entity(l_component, $3);
+		  current.container->abstract = $1; 
+		} 
+	  component_parms '{' requires_or_provides_list '}'
+	  iconfiguration
+		{ 
+		  set_nesc_parse_tree(new_component(pr, $2.location, $3, $1, $5, rp_interface_reverse($7), $9));
 	        }
         ;
 
@@ -618,7 +629,9 @@ requires_or_provides_list:
 
 requires_or_provides: 
 	  requires 
-	| provides ;
+	| provides 
+	/*| just_datadef { $$ = 0; }*/
+	;
 
 requires: 
 	  USES { current.component_requires = TRUE; } 

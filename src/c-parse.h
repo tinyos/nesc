@@ -96,7 +96,10 @@ extern region parse_region;
    a bug) */
 bool unevaluated_expression(void);
 
-nesc_decl parse(void) deletes;
+node parse(void) deletes;
+/* Effects: parses the file set up via set_input/start_lex
+   Returns: the file's parse tree (may be NULL in some error cases)
+*/
 
 declaration make_error_decl(void);
 

@@ -77,15 +77,16 @@ nesc_declaration require(source_language sl, location l, const char *name)
 
   if (sl != d->kind)
     {
+      /* Make a dummy declaration to make everyone happy */
+      nesc_decl nd = dummy_nesc_decl(sl, d->ast->location, name);
+
+      d = nd->cdecl;
+      build(nd);
+
       error_with_location(l, "expected %s `%s', but got %s %s",
 			  language_name(sl), name,
 			  d->kind == l_interface ? "an" : "a",
 			  language_name(d->kind));
-
-      /* Make a dummy declaration to make everyone happy */
-      d = new_nesc_declaration(parse_region, sl, name);
-      d->env = new_environment(parse_region, global_env, TRUE, FALSE);
-      build(d, dummy_nesc_decl(sl, d->ast->location, name));
     }
 
   return d;

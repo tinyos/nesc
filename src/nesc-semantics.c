@@ -58,10 +58,6 @@ char *basename(const char *path)
 }
 #endif
 
-interface the_interface;
-component the_component;
-declaration cdecls;
-
 bool nesc_attribute(attribute a)
 /* Returns: TRUE if a is a nesc-specific attribute
  */
@@ -168,16 +164,14 @@ const char *language_name(source_language l)
     }
 }
 
-nesc_decl compile(location loc, source_language l,
-		  const char *name, bool name_is_path,
-		  nesc_declaration container, environment parent_env)
+node compile(location loc, source_language l,
+	     const char *name, bool name_is_path)
 {
   const char *path =
     name_is_path ? name : find_nesc_file(parse_region, l, name);
   FILE *f = NULL;
+  node parse_tree = NULL;
   struct semantic_state old_semantic_state = current;
-  environment env;
-  nesc_decl nd = NULL;
 
   if (!path)
     error_with_location(loc, "%s %s not found", language_name(l), name);
@@ -189,43 +183,31 @@ nesc_decl compile(location loc, source_language l,
 
       if (!f)
 	error_with_location(loc, "failed to preprocess %s", path);
-    }
+      else
+	{
+	  set_input(f, path);
 
-  if (!f)
-    {
-      env = new_environment(parse_region, global_env, TRUE, FALSE);
-      if (container)
-	container->env = env;
-    }
-  else
-    {	
-      set_input(f, path);
+	  start_lex(l);
+	  start_semantics(l_c, NULL, NULL);
+	  current.fileregion = newregion();
+	  parse_tree = parse();
+	  deleteregion_ptr(&current.fileregion);
+	  end_input();
 
-      start_lex(l);
-      start_semantics(l, container, parent_env);
-      current.fileregion = newregion();
-      env = current.env;
-      if (container)
-	container->env = env;
-      nd = parse();
-      deleteregion_ptr(&current.fileregion);
-      end_input();
-
-      preprocess_file_end();
+	  preprocess_file_end();
+	}
     }
-  if (!nd && l != l_c)
-    nd = dummy_nesc_decl(l, new_location(path ? path : name, 0),
-			 container->name);
 
   current = old_semantic_state;
 
-  return nd;
+  return parse_tree;
 }
 
 nesc_decl dummy_nesc_decl(source_language sl, location loc, const char *name)
 {
   word wname = build_word(parse_region, name);
   nesc_decl nd;
+  nesc_declaration d = new_nesc_declaration(parse_region, sl, name);
 
   switch (sl)
     {
@@ -233,31 +215,31 @@ nesc_decl dummy_nesc_decl(source_language sl, location loc, const char *name)
       implementation impl = CAST(implementation,
 	new_module(parse_region, loc, NULL, NULL));
       nd = CAST(nesc_decl,
-	new_component(parse_region, dummy_location, wname, NULL, FALSE, NULL, NULL, impl));
+	new_component(parse_region, dummy_location, wname, FALSE, NULL, NULL, impl));
       break;
     }
     case l_interface:
       nd = CAST(nesc_decl,
-	new_interface(parse_region, loc, wname, NULL, NULL));
+	new_interface(parse_region, loc, wname, NULL));
       break;
     default:
       assert(0);
       nd = NULL;
       break;
     }
+  d->env = new_environment(parse_region, global_env, TRUE, FALSE);
+  d->ast = nd;
+  nd->cdecl = d;
+
   return nd;
 }
 
-void build(nesc_declaration decl, nesc_decl ast)
+void build(nesc_decl ast)
 {
   struct semantic_state old_semantic_state = current;
+  nesc_declaration decl = ast->cdecl;
 
   current.container = decl;
-  decl->ast = ast;
-
-  if (ast->docstring)
-    separate_short_docstring(ast->docstring, &decl->short_docstring,
-			     &decl->long_docstring);
 
   switch (decl->kind)
     {
@@ -279,26 +261,44 @@ nesc_declaration load(source_language sl, location l,
 {
   const char *element = name_is_path ? element_name(parse_region, name) : name;
   const char *actual_name;
-  nesc_declaration decl;
+  node ptree;
   nesc_decl ast;
 
-  decl = new_nesc_declaration(parse_region, sl, element);
-    
-  /* We don't get duplicates as we only load on demand */
-  nesc_declare(decl);
-
-  ast = compile(l, sl, name, name_is_path, decl, global_env);
+  ptree = compile(l, sl, name, name_is_path);
+  if (ptree)
+    ast = CAST(nesc_decl, ptree);
+  else
+    ast = dummy_nesc_decl(sl, new_location(name, 0), element);
 
   actual_name = ast->word1->cstring.data;
   if (strcmp(element, actual_name))
     error_with_location(ast->location,
 			"expected %s `%s', but got %s '%s'",
-			language_name(decl->kind),
+			language_name(ast->cdecl->kind),
 			element,
-			language_name(decl->kind),
+			language_name(ast->cdecl->kind),
 			actual_name);
 
-  build(decl, ast);
+  build(ast);
+
+  return ast->cdecl;
+}
+
+nesc_declaration start_nesc_entity(source_language sl, word name)
+{
+  nesc_declaration decl = new_nesc_declaration(parse_region, sl,
+					       name->cstring.data);
+  char *docstring = get_docstring();
+    
+  if (docstring)
+    separate_short_docstring(docstring, &decl->short_docstring,
+			     &decl->long_docstring);
+
+  /* We don't get duplicates as we only load on demand */
+  nesc_declare(decl);
+
+  start_semantics(sl, decl, global_env);
+  decl->env = current.env;
 
   return decl;
 }

@@ -23,7 +23,7 @@ $exe = $ARGV[0];
 open GCCV, "avr-gcc 2>&1 -v |";
 
 while (<GCCV>) {
-  $version = $1 if (/^gcc version ([0-9.]+)/);
+  $version = $1 if (/^gcc version ([^ \n]+)/);
   $noavrgcc = 1 if /command not found/;
 }
 if ($noavrgcc) {

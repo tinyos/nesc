@@ -137,7 +137,6 @@
 (deffield ids parameterised_identifier (init tree))
 (deffield external bool (init))
 (deffield ienv environment (init))
-(deffield docstring "char *" (init))
 (deffield designator designator (init tree))
 (deffield abstract bool (init))
 (deffield containing_atomic atomic_stmt ())
@@ -555,22 +554,22 @@ DDECL is the magic_string declaration for this string.")
 ;; the different kinds of files
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftype nesc_decl declaration (word1 docstring)
-  "a supertype for interface/component declarations of WORD1, with
-documentation string DOCSTRING")
+(deftype nesc_decl declaration (word1 cdecl)
+  "a supertype for interface/component declarations of WORD1
+CDECL is the declaration for this interface/component")
 
 (deftype interface nesc_decl (decls)
   "interface WORD1 { DECLS }")
 
 (deftype component nesc_decl (abstract parms rplist implementation)
   "ABSTRACT configuration/module WORD1 PARMS { RPLIST } IMPLEMENTATION
-If ABSTRACT is true, this is an abstract component, and PARMS is its
+If ABSTRACT is true, this is a generic component, and PARMS is its
 parameters.")
 
 (deftype implementation node (ienv cdecl)
   "a base type for module and configuration implementations
-CDECL is the declaration for this component
-IENV is the implementation's environment")
+IENV is the implementation's environment
+CDECL is the declaration for this component")
 
 (deftype configuration implementation (components connections)
   "configuration implementation { uses COMPONENTS; CONNECTIONS }'")

@@ -27,7 +27,6 @@ declaration all_cdecls;
 
 void load_c(location l, const char *name, bool name_is_path)
 {
-  cdecls = NULL;
-  compile(l, l_c, name, name_is_path, NULL, NULL);
-  all_cdecls = declaration_chain(all_cdecls, cdecls);
+  node cdecls = compile(l, l_c, name, name_is_path);
+  all_cdecls = declaration_chain(all_cdecls, CAST(declaration, cdecls));
 }
