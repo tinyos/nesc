@@ -40,16 +40,16 @@ static void dump_interface(void *entry);
 static void dump_interfacedef(void *entry);
 static void dump_tag(void *entry);
 
-static void select_components(nd_option opt, dd_list comps);
-static void select_interfaces(nd_option opt, dd_list comps);
-static void select_interfacedefs(nd_option opt, dd_list comps);
-static void select_tags(nd_option opt, dd_list comps);
+static void select_components(xml_list l, nd_option opt, dd_list comps);
+static void select_interfaces(xml_list l, nd_option opt, dd_list comps);
+static void select_interfacedefs(xml_list l, nd_option opt, dd_list comps);
+static void select_tags(xml_list l, nd_option opt, dd_list comps);
 
 /* lists */
 static struct {
   const char *name;
   bool (*addfilter)(void *entry);
-  void (*select)(nd_option opt, dd_list comps);
+  void (*select)(xml_list l, nd_option opt, dd_list comps);
   void (*dump)(void *entry);
   xml_list *referenced;
   xml_list l;
@@ -59,7 +59,6 @@ static struct {
   { "interfacedefs", ndecl_addfilter, select_interfacedefs, dump_interfacedef, &xl_interfacedefs },
   { "tags", tdecl_addfilter, select_tags, dump_tag, &xl_tags }
 };
-enum { dl_components, dl_interfaces, dl_interfacedefs, dl_tags };
 
 #define NLISTS (sizeof lists / sizeof *lists)
 
@@ -340,7 +339,7 @@ static void dump_list(const char *name, xml_list l,
 /* The toplevel requests supported -fnesc-dump */
 /* ------------------------------------------- */
 
-static void select_components(nd_option opt, dd_list comps)
+static void select_components(xml_list l, nd_option opt, dd_list comps)
 {
   dd_list_pos scan_components;
 
@@ -355,11 +354,11 @@ static void select_components(nd_option opt, dd_list comps)
       nesc_declaration comp = DD_GET(nesc_declaration, scan_components);
 
       if (dump_filter_ndecl(comp))
-	xml_list_add(lists[dl_components].l, comp);
+	xml_list_add(l, comp);
     }
 }
 
-static void process_component_interfaces(nesc_declaration comp)
+static void process_component_interfaces(xml_list l, nesc_declaration comp)
 {
   env_scanner scan;
   const char *name;
@@ -371,11 +370,11 @@ static void process_component_interfaces(nesc_declaration comp)
       data_declaration ddecl = decl;
 
       if (ddecl->kind == decl_interface_ref && dump_filter_ddecl(ddecl))
-	xml_list_add(lists[dl_interfaces].l, ddecl);
+	xml_list_add(l, ddecl);
     }
 }
 
-static void select_interfaces(nd_option opt, dd_list comps)
+static void select_interfaces(xml_list l, nd_option opt, dd_list comps)
 {
   dd_list_pos scan_components;
 
@@ -389,7 +388,7 @@ static void select_interfaces(nd_option opt, dd_list comps)
     {
       nesc_declaration comp = DD_GET(nesc_declaration, scan_components);
 
-      process_component_interfaces(comp);
+      process_component_interfaces(l, comp);
     }
 }
 
@@ -409,12 +408,12 @@ static void add_defs(int kind, xml_list l)
     }
 }
 
-static void select_interfacedefs(nd_option opt, dd_list comps)
+static void select_interfacedefs(xml_list l, nd_option opt, dd_list comps)
 {
-  add_defs(l_interface, lists[dl_interfacedefs].l);
+  add_defs(l_interface, l);
 }
 
-static void select_tags(nd_option opt, dd_list comps)
+static void select_tags(xml_list l, nd_option opt, dd_list comps)
 {
   env_scanner scan;
   const char *name;
@@ -426,7 +425,7 @@ static void select_tags(nd_option opt, dd_list comps)
       tag_declaration tdecl = decl;
 
       if (dump_filter_tdecl(tdecl))
-	xml_list_add(lists[dl_tags].l, tdecl);
+	xml_list_add(l, tdecl);
     }
 }
 
@@ -550,7 +549,7 @@ void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
       for (i = 0; i < NLISTS; i++)
 	if (!strcmp(opt->name, lists[i].name))
 	  {
-	    lists[i].select(opt, comps);
+	    lists[i].select(lists[i].l, opt, comps);
 	    break;
 	  }
 
