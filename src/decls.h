@@ -125,6 +125,7 @@ typedef struct data_declaration {
   bool suppress_definition;	/* Prevent code generation */
   bool uncallable;		/* Error if called */
   bool makeinline;		/* Mark this function inline when generating code */
+  gnode ig_node;		/* inline-graph node for this function */
   struct data_declaration *interface;	/* nesC: interface this cmd/event belongs to */
   typelist oldstyle_args; /* Type of arguments from old-style declaration */
   dd_list uses;			/* list of declarations of identifiers used */
