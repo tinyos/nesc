@@ -62,7 +62,7 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	    $gcc = $1;
 	    $strip = 1;
 	}
-	elsif (/^--mingw-gcc$/) {
+	elsif (/^-mingw-gcc$/) {
 	    $mingw_gcc = 1;
 	    $strip =1;
 	}
