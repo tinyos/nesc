@@ -26,7 +26,30 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-cpp.h"
 
 #include <errno.h>
+
+#ifdef HAVE_BASENAME
 #include <libgen.h>
+#else
+/* A trivial version, which should work for unix and cygwin, and for 
+   our purposes.
+   Does NOT handle trailing / properly (we're using it for files only)
+   (returns "" in that case)
+*/
+char *basename(const char *path)
+{
+  char *end;
+
+  if (!path || !*path)
+    return ".";
+
+  end = path + strlen(path);
+  while (end > path)
+    if (*--end == '/')
+      return end + 1;
+
+  return path;
+}
+#endif
 
 interface the_interface;
 component the_component;
@@ -88,7 +111,7 @@ bool ddecl_is_command_or_event(data_declaration decl)
 
 source_language pick_language_from_filename(const char *name)
 {
-  char *dot = strrchr(name, '.');
+  char *dot = strrchr(basename(name), '.');
 
   if (dot)
     {
@@ -109,9 +132,9 @@ const char *element_name(region r, const char *path)
   const char *base, *dot;
 
   base = basename(path);
-  dot = strrchr(path, '.');
+  dot = strrchr(base, '.');
 
-  if (dot && dot >= base)
+  if (dot)
     {
       /* Extract id */
       char *copy = rarrayalloc(r, dot - base + 1, char);

@@ -51,6 +51,7 @@ AC_CHECK_SIZEOF(long double)
 AC_FUNC_ALLOCA
 
 AC_REPLACE_FUNCS(strtold)
+AC_CHECK_FUNCS(basename)
 RC_CHECK_DECL(strtold, stdlib.h)
 
 AC_OUTPUT(
