@@ -3083,8 +3083,8 @@ void layout_struct(tag_declaration tdecl)
 		    offset = val2;
 		  else if (cval_intcompare(val2, cval_divide(fsize, falign)) > 0)
 		    offset = cval_align_to(offset, falign);
-		  fsize = bitwidth;
 		}
+	      fsize = bitwidth;
 	    }
 
 	  fdecl->offset = offset;
