@@ -1902,6 +1902,7 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   bool defaultp;
   char *short_docstring = NULL;
   char *long_docstring = NULL;
+  location doc_location = NULL;
   dd_list extra_attr;
 
   if (!nested)
@@ -1931,7 +1932,7 @@ bool start_function(type_element elements, declarator d, attribute attribs,
      incorrectly placed with a lower-down declaration (for example,
      attaching docs to a parameter in a function declaration, rather
      than the function itself.) */
-  get_latest_docstring( &short_docstring, &long_docstring );
+  get_latest_docstring( &short_docstring, &long_docstring, &doc_location );
 
 
   if (class == RID_AUTO)
@@ -2111,6 +2112,7 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   if( short_docstring ) {
     fdecl->ddecl->short_docstring = short_docstring;
     fdecl->ddecl->long_docstring = long_docstring;
+    fdecl->ddecl->doc_location = doc_location;
   }
 
   current.env = fdeclarator->env;
@@ -2333,13 +2335,13 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
   data_declaration ddecl = NULL, old_decl;
   char *short_docstring = NULL;
   char *long_docstring = NULL;
+  location doc_location = NULL;
 
   /* save any docstrings now.  This ensures that the docs aren't
      incorrectly placed with a lower-down declaration (for example,
      attaching docs to a parameter in a function declaration, rather
      than the function itself.) */
-  get_latest_docstring( &short_docstring, &long_docstring );
-
+  get_latest_docstring( &short_docstring, &long_docstring, &doc_location );
 
   if (current.env->parm_level)
     {
@@ -2617,6 +2619,7 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
     if( !vd->ddecl->short_docstring ) {
       vd->ddecl->short_docstring = short_docstring;
       vd->ddecl->long_docstring  = long_docstring;
+      vd->ddecl->doc_location  = doc_location;
     }
   }
 

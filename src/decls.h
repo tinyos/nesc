@@ -24,6 +24,7 @@ Boston, MA 02111-1307, USA. */
 
 #include "AST.h"
 #include "env.h"
+#include "c-lex.h"
 
 typedef struct environment *environment;
 
@@ -157,6 +158,7 @@ typedef struct data_declaration {
   /* For documentation comments */
   char *short_docstring;
   char *long_docstring;
+  location doc_location;
 
 } *data_declaration;
 

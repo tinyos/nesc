@@ -427,7 +427,7 @@ typedef enum {
   in_param
 } docstring_context;
 
-static void output_docstring(char *docstring)
+static void output_docstring(char *docstring, location loc)
 {
   char *pos = docstring;
   char *at;
@@ -485,9 +485,11 @@ static void output_docstring(char *docstring)
       pos += len;
     }
 
+    // output a warning, and print the bogus directive as-is
     else {
-      // FIXME: print correct file info
-      error("DOC WARNING: unknown directive @%*s\n",len,pos);
+      warning("%s:%ld:  Unknown documentation directive '@%.*s'\n",
+              loc->filename, loc->lineno, len, pos);
+      output("@");
     }
 
   }
@@ -525,7 +527,7 @@ static void print_navbar(FILE *f, navbar_mode mode, const char *srcfile, const c
   fprintf(f,"<font size=\"-1\">\n");
 
   if(mode == NAV_APP) fprintf(f,"Apps\n");
-  else fprintf(f,"<b><a href=\"apps_p.html\">Apps</a></b>\n");
+  else fprintf(f,"<b><font color=\"blue\"><a href=\"apps_p.html\">Apps</a></font></b>\n");
   fprintf(f, "%s\n", spaces);
 
   if(mode == NAV_COMP) fprintf(f,"Components\n");
@@ -584,7 +586,7 @@ static void print_short_variable_html(data_decl ddecl, variable_decl vd) {
   // show the description, if any 
   if( vd->ddecl->short_docstring ) { 
     output("        <br><menu>");
-    output_docstring(vd->ddecl->short_docstring);
+    output_docstring(vd->ddecl->short_docstring, vd->ddecl->doc_location);
     output("</menu>\n");
   }
   
@@ -713,14 +715,17 @@ static void print_function_html(function_decl fd, data_decl dd, variable_decl vd
   char *sdoc = NULL;
   char *ldoc = NULL;
   char *ifile = NULL;
+  location loc = NULL;
 
   // set up the description pointers
   if( fd ) {
     sdoc = fd->ddecl->short_docstring;
     ldoc = fd->ddecl->long_docstring;
+    loc  = fd->ddecl->doc_location;
   } else {
     sdoc = vd->ddecl->short_docstring;
     ldoc = vd->ddecl->long_docstring;
+    loc  = vd->ddecl->doc_location;
   }
 
 
@@ -752,7 +757,7 @@ static void print_function_html(function_decl fd, data_decl dd, variable_decl vd
 
     if(sdoc) {
       output("<menu>");
-      output_docstring(sdoc);
+      output_docstring(sdoc,loc);
       output("</menu><p>\n");
     }
     output("\n");
@@ -772,7 +777,7 @@ static void print_function_html(function_decl fd, data_decl dd, variable_decl vd
 
     assert(ldoc);  // should have checked in the caller
     output("<P><menu>");
-    output_docstring(ldoc);
+    output_docstring(ldoc,loc);
     output("</menu>");
     //output("<p><hr>\n");
   }
@@ -1443,11 +1448,12 @@ static void generate_component_html(nesc_declaration cdecl)
 ", cdecl->name);
   }  
 
-
-
   // print the overview documentation
   if( cdecl->short_docstring ) {
-    output("<p>\n%s\n<p>\n\n", cdecl->long_docstring ? cdecl->long_docstring : cdecl->short_docstring);
+    output("<p>\n");
+    if(cdecl->long_docstring)   output_docstring(cdecl->long_docstring, cdecl->ast->location);
+    else                        output_docstring(cdecl->short_docstring, cdecl->ast->location);
+    output("\n<p>\n\n");
   }
 
 
@@ -1660,7 +1666,10 @@ static void generate_interface_html(nesc_declaration idecl)
 ", idecl->name);
   }  
   if( idecl->short_docstring ) {
-    output("<p>\n%s\n<p>\n\n", idecl->long_docstring ? idecl->long_docstring : idecl->short_docstring);
+    output("<p>\n");
+    if(idecl->long_docstring)   output_docstring(idecl->long_docstring, idecl->ast->location);
+    else                        output_docstring(idecl->short_docstring, idecl->ast->location);
+    output("\n<p>\n\n");
   }
   
   // summary

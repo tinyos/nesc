@@ -287,18 +287,20 @@ static void add_to_docstring(int c)
 }
 
 /* copy out the current docstring, if any */
-void get_latest_docstring(char **short_s, char **long_s)
+void get_latest_docstring(char **short_s, char **long_s, struct location **loc)
 {
   char *str;
 
   str = get_docstring();
   separate_short_docstring(str, short_s, long_s);
+
+  *loc = ralloc(parse_region, struct location);
+  **loc = doc_location;
 }
 
 void separate_short_docstring(char *str, char **short_s, char **long_s)
 {
   char *dot;
-  int ret;
   assert(short_s != NULL);
   assert(long_s != NULL);
   

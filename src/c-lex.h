@@ -93,7 +93,7 @@ struct lex_state
  * Retrieve the latest code documentation string.  This is used to
  * place the documentation into the appropriate data_declaration.
  **/
-void get_latest_docstring(char **short_s, char **long_s);
+void get_latest_docstring(char **short_s, char **long_s, struct location **loc);
 char *get_docstring();
 void separate_short_docstring(char *str, char **short_s, char **long_s);
 
