@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = foreign
 
-SUBDIRS = src doc tools gdb
+SUBDIRS = src doc tools
 
 EXTRA_DIST =					\
 	COPYING					\

@@ -67,15 +67,9 @@ AC_SUBST(TOSDIR)
 AC_OUTPUT(
 	Makefile
 	doc/Makefile
-	gdb/Makefile
 	tools/Makefile
-	tools/mig
-	tools/ncg
-	tools/ncc
+	tools/nescc-mig
+	tools/nescc-ncg
 	tools/nescc
-	tools/nesdoc
-	tools/nccdiff
-	tools/avr-as/Makefile
-	tools/avr-as/make-avr-as
-	tools/avr-as/install-avr-as
+	tools/nescc-diff
 )
