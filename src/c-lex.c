@@ -249,6 +249,9 @@ static void init_c_docstring()
    multiple comment lines to be strung together into a single comment */
 static void init_cpp_docstring() 
 {
+  // FIXME
+  //fprintf(stderr, "init_cpp_docstring()  %s:%ld\n", input_file_stack->l.filename, input_file_stack->l.lineno);
+
   if(!in_cpp_docstring  || 
      prev_cpp_docstring_line + 1  !=  input_file_stack->l.lineno) {
     if(warn_unexpected_docstring  &&  char_array_length(docstring_array) != 0)
@@ -305,12 +308,24 @@ void separate_short_docstring(char *str, char **short_s, char **long_s)
     return;
   }
 
-  /* find the short string, if any */
+  /* find the first sentance */
   dot = strchr(str,'.');
+
+  /* check for non-whitespace after the first period. */
+  if(dot != NULL) {
+    dot += strspn(dot, " \t\n\r.");
+    if( *dot == '\0' ) 
+      dot = NULL;
+  }
+
+  /* short description only  */
   if(dot == NULL) {
     *short_s = str;
     *long_s = NULL;
-  } else {
+  } 
+
+  /* both short and long descriptions */
+  else {
     *dot = '\0';
     *short_s = rstrdup(parse_region, str);
     *dot = '.';
@@ -337,7 +352,7 @@ char *get_docstring() {
   prev_cpp_docstring_line = ULONG_MAX;
   char_array_reset(docstring_array);
   in_cpp_docstring = FALSE;
-
+  
   return str;
 }
 
