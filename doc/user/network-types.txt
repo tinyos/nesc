@@ -9,11 +9,11 @@ generates any necessary conversion code. For instance, the SurgeCmdMsg from
 the Surge application is defined and accessed as follows using network
 types:
 
-  typedef nw_struct {
-    nw_uint8_t type;
-    nw_union {
-      nw_uint32_t newrate;
-      nw_uint16_t focusaddr;
+  typedef nx_struct {
+    nx_uint8_t type;
+    nx_union {
+      nx_uint32_t newrate;
+      nx_uint16_t focusaddr;
     } args;
   } SurgeCmdMsg;
   ...
@@ -27,13 +27,13 @@ More formally, nesC includes three kinds of network types.
 
   o Network base types are similar to the fixed size in8_t, uint16_t, etc
     types. They include 8, 16, 32 and 64-bit signed and unsigned integers
-    denoted by the types nw_[u]int[8/16/32/64]_t.  
+    denoted by the types nx_[u]int[8/16/32/64]_t.  
 
   o Network array types are any array built from a network type, using 
-    the usual C syntax, e.g, nw_int16_t x[10]. 
+    the usual C syntax, e.g, nx_int16_t x[10]. 
 
   o Network structures are declared like C structures and unions, but 
-    using the nw_struct and nw_union keywords (as in the SurgeCmdMsg 
+    using the nx_struct and nx_union keywords (as in the SurgeCmdMsg 
     example above). A network structure can only contain network types
     as elements. 
 
@@ -55,14 +55,14 @@ Part 2: Implementation
 ======================
 
 In the generated C code for nesC programs using network types, we simply
-define a C type for each network base type, translate nw_struct and
-nw_union to struct and union and leave array types unchanged.
+define a C type for each network base type, translate nx_struct and
+nx_union to struct and union and leave array types unchanged.
 
 Reads and writes of network base types are replaced by calls to inline
 functions like NTOH32 in the example below.  For instance, the example
 from Surge becomes:
 
-  typedef struct { char data[4]; } nw_uint32_t;
+  typedef struct { char data[4]; } nx_uint32_t;
   static inline unsigned short NTOUH32(void *target) {
     unsigned char *base = target;
     return (unsigned long)base[3] << 24 |
@@ -71,10 +71,10 @@ from Surge becomes:
   }
   ...
   typedef struct {
-    nw_uint8_t type;
+    nx_uint8_t type;
     union {
-      nw_uint32_t newrate;
-      nw_uint16_t focusaddr;
+      nx_uint32_t newrate;
+      nx_uint16_t focusaddr;
     } args;
   } SurgeCmdMsg;
   ...
@@ -84,7 +84,7 @@ from Surge becomes:
   ...
 
 For this translation to be correct, a structure containing only characters
-(such as nw_uint32_t) should have no alignment restrictions, and the same
+(such as nx_uint32_t) should have no alignment restrictions, and the same
 must hold for structures containing such structures (e.g.,
 SurgeCmdMsg). This is true on many, but not all platforms: on ARM
 processors, all structures are aligned to 4-byte boundaries, and on

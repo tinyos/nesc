@@ -1,0 +1,126 @@
+How to build and use binary components
+======================================
+
+1) Binary Components
+--------------------
+
+nesC 1.2 allows you to build and use binary components. This is supported
+through a new way of definining components. A component "Foo" can be defined
+in file Foo.nc as:
+
+  component Foo {
+    provides interface A as X;
+    uses interface A as Y;
+  }
+
+Note that you say "component" rather than "module" or "configuration", and
+there is no implementation section. When generating the .o file for a
+nesC application including Foo, the nesC compiler will:
+
+- include references to external symbols for all provided commands and used
+  events of Foo
+
+- define external symbols (based on the application's wiring graph) for all
+  used events and provided commands of Foo
+
+- These symbols are named 'component-name$interface-name$command-or-event-name'
+
+In this example, if interface A is
+  interface A {
+    command int request();
+    event void done(int val);
+  }
+
+Then the generated .o file for an application including Foo will:
+  - use symbols named Foo$X$request, Foo$Y$done
+  - define symbols named Foo$X$done, Foo$Y$request
+
+2) Using binary components
+--------------------------
+
+Using a binary component is straightforward: just wire the binary component
+(e.g., Foo) into your application just as you would any other component. At
+some point, you will have to link your application with the binary
+component's definition. While this operation is beyond the scope of the
+nesC language itself, this might happen in one of the following ways:
+
+- The binary component is distributed in an object (.o) or library (.a)
+  file. You just link your application against this object or library as
+  you would any other. For instance:
+    ncc -target=mica2 MyApp.nc some-binary-component.o
+
+- The binary component is pre-installed in the mote's ROM. Some loader is
+  responsible for linking newly installed user applications with the
+  appropriate ROM entry points.
+
+3) Building binary components
+-----------------------------
+
+While the 'component' language feature appears to be designed for linking
+to externally created binary component, it can actually also be used to
+create them. An example will make this clear. Assume I want to build a
+binary component "Foo" from our example above.
+
+I have some implementation of Foo (in this case a module, but it could
+also be a configuration):
+
+  module FooImplementation {
+    provides interface A as X;
+    uses interface A as Y;
+  }
+  implementation {
+    // This does something mysterious to requests...
+    int x;
+
+    command int X.request() {
+      return call Y.request() + x;
+    }
+
+    event void Y.done(int val) {
+      x = val;
+    }
+  }
+
+I can build a binary version of Foo by compiling BuildBinaryFoo:
+
+  configuration BuildBinaryFoo { }
+  implementation {
+    components Foo, FooImplementation;
+
+    Foo.X -> FooImplementation.X;
+    Foo.Y <- FooImplementation.Y;
+  }
+
+where Foo is a *different* component from the one we saw earlier:
+
+  component Foo {
+    // Note that the uses, provides are reversed from the definition
+    // of Foo (and FooImplementation) above!
+    uses interface A as X;
+    provides interface A as Y;
+  }
+
+4) Warnings
+-----------
+
+Some issues you should be aware of when building and using binary components:
+
+- If a component (e.g., TimerC) is included in both your application and
+  the binary component definition, you will end up with two copies of TimerC.
+  This is a) wasteful, b) unlikely to work.
+
+  A binary component should include the strict minimum necessary, and should
+  express its dependencies on outside services through interfaces.
+
+- Compile with -DNESC_BUILD_BINARY when building binary components to avoid
+  having copies of the runtime support functions (TOS_post,
+  __nesc_atomic_start, __nesc_atomic_end) in your binary components. Note
+  that the necessary #ifdef's are only present from TinyOS 1.1.11 onwards.
+
+- The symbol names used in binary components include '$'. If you want to call
+  these from C code, you may have to include the -fdollars-in-identifiers
+  command-line flag. On some platforms (avr, msp430), the assembler does not
+  support '$' in symbol names. To avoid this, use  'nescc -gcc=<your-gcc>'
+  (e.g., 'nescc -gcc=avr-gcc') rather than avr-gcc or msp430-gcc to compile
+  your C code. nescc will invoke your-gcc, but with a custom assembler
+  which accepts '$'.
