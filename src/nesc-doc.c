@@ -2907,3 +2907,18 @@ void generate_docs(const char *filename, cgraph cg)
   }
 }
 
+
+// Support functions
+
+void set_doc_string(data_declaration ddecl, char *shortd, char *longd,
+		    location l)
+{
+  if (shortd)
+    {
+      if (warn_unexpected_docstring && ddecl->short_docstring)
+	warning("duplicate documentation string");
+      ddecl->short_docstring = shortd;
+      ddecl->long_docstring = longd;
+      ddecl->doc_location = l;
+    }
+}

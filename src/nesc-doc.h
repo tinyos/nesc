@@ -40,5 +40,7 @@ void generate_docs(const char *filename, cgraph cg);
 /* tell the doc generation to create the whole-app page */
 void doc_is_app(const bool val);
 
+void set_doc_string(data_declaration ddecl, char *shortd, char *longd,
+		    location l);
 
 #endif

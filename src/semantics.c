@@ -34,6 +34,7 @@ Boston, MA 02111-1307, USA. */
 #include "nesc-component.h"
 #include "nesc-interface.h"
 #include "nesc-semantics.h"
+#include "nesc-doc.h"
 #include "nesc-cpp.h"
 #include "machine.h"
 #include "attributes.h"
@@ -721,6 +722,13 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	  break;
 	case kind_typeof_expr:
 	  newtype = CAST(typeof_expr, spec)->arg1->type;
+	  if (type_generic(newtype) ||
+	      (type_functional(newtype) && !type_function(newtype)))
+	    {
+	      error_with_location(spec->location,
+				  "expression does not have a valid type");
+	      newtype = error_type;
+	    }
 	  break;
 	case kind_struct_ref: case kind_union_ref: case kind_enum_ref:
 	  newtype = make_tagged_type(CAST(tag_ref, spec)->tdecl);
@@ -2081,15 +2089,7 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   fdecl->ddecl = ddecl;
   fdecl->fdeclarator = fdeclarator;
 
-  /* fill in doc strings. NOTE: the assertion guarantees that we don't
-     overwrite doc strings */
-  assert( fdecl->ddecl );
-  assert( !fdecl->ddecl->short_docstring || !short_docstring );
-  if( short_docstring ) {
-    fdecl->ddecl->short_docstring = short_docstring;
-    fdecl->ddecl->long_docstring = long_docstring;
-    fdecl->ddecl->doc_location = doc_location;
-  }
+  set_doc_string(fdecl->ddecl, short_docstring, long_docstring, doc_location);
 
   /* save environments */
   current.env = fdeclarator->env;
@@ -2379,7 +2379,7 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
       bool defaulted_int;
       type var_type;
       bool different_binding_level = FALSE;
-      function_declarator fdeclarator;
+      function_declarator fdeclarator = NULL;
 
       parse_declarator(elements, d, FALSE, FALSE,
 		       &class, &scf, NULL, &name, &var_type,
@@ -2456,7 +2456,6 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
 	     declare_interface_ref */
 	  bool nested = !current.env->global_level && class == RID_AUTO;
 
-	  assert(fdeclarator);
 	  if (initialised)
 	    error("function `%s' is initialized like a variable",
 		  printname);
@@ -2475,7 +2474,7 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
 	      && (class == RID_STATIC || class == RID_INLINE))
 	    pedwarn("invalid storage class for function `%s'", name);
 
-	  if (fdeclarator->gparms)
+	  if (fdeclarator && fdeclarator->gparms)
 	    {
 	      if (current.language == l_interface)
 		error("generic parameters not allowed in interfaces");
@@ -2595,17 +2594,7 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
   assert(ddecl);
   vd->ddecl = ddecl;
 
-  /* fill in doc strings.  NOTE: the check is done here, to make sure we don't overwrite an old docstring */
-  if( vd->ddecl ) {
-    /* we should never end up loosing documentation comments!! */
-    assert( !vd->ddecl->short_docstring || !short_docstring );
-    if( !vd->ddecl->short_docstring ) {
-      vd->ddecl->short_docstring = short_docstring;
-      vd->ddecl->long_docstring  = long_docstring;
-      vd->ddecl->doc_location  = doc_location;
-    }
-  }
-
+  set_doc_string(vd->ddecl, short_docstring, long_docstring, doc_location);
 
   return CAST(declaration, vd);
 }
@@ -2697,14 +2686,6 @@ declaration declare_parameter(declarator d, type_element elements,
     }
 
   vd->ddecl = ddecl;
-
-  /* fill in doc strings.  NOTE: the check is done here, to make sure we don't overwrite an old docstring */
-  /*
-    FIXME: do I need this stuff?
-    if( vd->ddecl && !vd->ddecl->short_docstring )
-    get_latest_docstring( &vd->ddecl->short_docstring, &vd->ddecl->long_docstring );
-  */
-
 
   return CAST(declaration, dd);
 }

@@ -372,7 +372,7 @@ static void c_decode_option(char *p)
 static void rcc_aborting(int s)
 {
   signal(SIGABRT, 0);
-  fprintf(stderr, "nesC: Internal error. Please send a bug report to David Gay at dgay@intel-research.net\n");
+  fprintf(stderr, "nesC: Internal error. Please send a bug report to the nesC bug mailing list\nat nescc-bugs@lists.sourceforge.net\n");
   if (getenv("RCCDEBUG"))
     abort();
   else
