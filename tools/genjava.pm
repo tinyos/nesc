@@ -240,6 +240,13 @@ sub gen() {
 	      }
 	  }
 
+  	  print "    /**\n";
+	  print "     * Return the size, in bits, of the field: $field\n";
+	  print "     */\n";
+	  print "    public static int size\u$javafield() {\n";
+	  print "        return $$abitsize[0] * $$amax[0];\n";
+	  print "    }\n\n";
+
 	} else {
 	  # For non-arrays
   	  print "    /**\n";
