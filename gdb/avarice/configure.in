@@ -32,4 +32,4 @@ if test -z "$pathperl" ; then
   AC_MSG_ERROR(I can't find perl); 
 fi
 
-AC_OUTPUT(Makefile autoconf.h ice-gdb)
+AC_OUTPUT(Makefile ice-gdb)
