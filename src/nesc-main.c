@@ -111,17 +111,20 @@ static void connect(location loc, nesc_declaration cdecl,
 	dd_add_last(regionof(modules), modules, cdecl);
       else
 	{
-	  component_ref comp;
 	  configuration c = CAST(configuration, cdecl->impl);
+	  declaration d;
 
-	  scan_component_ref (comp, c->components)
-	    {
-	      push_instance(comp->cdecl);
-	      if (comp->cdecl->original)
-		instantiate(comp->cdecl, comp->args);
-	      connect(comp->location, comp->cdecl, cg, modules, components);
-	      pop_instance();
-	    }
+	  scan_declaration (d, c->decls)
+	    if (is_component_ref(d))
+	      {
+		component_ref comp = CAST(component_ref, d);
+
+		push_instance(comp->cdecl);
+		if (comp->cdecl->original)
+		  instantiate(comp->cdecl, comp->args);
+		connect(comp->location, comp->cdecl, cg, modules, components);
+		pop_instance();
+	      }
 	}
     }
 }

@@ -47,6 +47,7 @@ Boston, MA 02111-1307, USA. */
 #include "nesc-semantics.h"
 #include "nesc-interface.h"
 #include "nesc-component.h"
+#include "nesc-configuration.h"
 #include "nesc-module.h"
 #include "nesc-env.h"
 #include "nesc-c.h"
@@ -216,11 +217,12 @@ void yyerror();
 %type <u.decl> parameterised_interface_list parameterised_interface
 %type <u.decl> parameterised_interfaces 
 %type <u.decl> interface_parms interface_parm_list interface_parm
-%type <u.decl> component_parms
+%type <u.decl> component_parms 
 %type <u.decl> template_parms template_parmlist template_parm
 %type <u.iref> interface_ref interface_type
-%type <u.cref> component_ref component_ref2 component_list uses cuses
-%type <u.conn> connection connection_list
+%type <u.cref> component_ref component_ref2 component_list cuses
+%type <u.conn> connection
+%type <u.decl> configuration_decl configuration_decls
 %type <u.ep> endpoint
 %type <u.pid> parameterised_identifier
 %type <u.impl> iconfiguration imodule
@@ -562,6 +564,7 @@ configuration:
 		{ 
 		  start_nesc_entity(l_component, $3);
 		  current.container->abstract = $1; 
+		  current.container->configuration = TRUE;
 		} 
 	  component_parms '{' requires_or_provides_list '}'
 	  iconfiguration
@@ -699,15 +702,10 @@ typelist:
 iconfiguration:
 	  IMPLEMENTATION { $<u.env>$ = start_implementation(); } 
 	  '{'
-	  uses
-	  connection_list
+	  configuration_decls
 	  '}'
-		{ $$ = CAST(implementation, new_configuration(pr, $1.location, $<u.env>2, component_ref_reverse($4), connection_reverse($5)));
+		{ $$ = CAST(implementation, new_configuration(pr, $1.location, $<u.env>2, declaration_reverse($4)));
 		}
-	;
-
-uses:     /* empty */ { $$ = NULL; }
-	| uses cuses { $$ = component_ref_chain($2, $1); }
 	;
 
 cuses:    COMPONENTS component_list ';' { $$ = $2; }
@@ -719,8 +717,8 @@ component_list:
 	;
 
 component_ref: 
-	  component_ref2
-	| component_ref2 AS idword { $$ = $1; $$->word2 = $3; }
+	  component_ref2 { $$ = require_component($1, NULL); }
+	| component_ref2 AS idword { $$ = require_component($1, $3); }
 	;
 
 component_ref2: 
@@ -751,9 +749,15 @@ generic_type:
 	  typename { $$ = make_type_argument($1); }
 	;
 
-connection_list: 
-	  connection_list connection { $$ = connection_chain($2, $1); }
+configuration_decls: 
+	  configuration_decls configuration_decl { $$ = declaration_chain($2, $1); }
 	| /* empty */ { $$ = NULL; }
+	;
+
+configuration_decl:
+	  connection { $$ = CAST(declaration, $1); }
+	| just_datadef
+	| cuses { $$ = CAST(declaration, $1); }
 	;
 
 connection:
@@ -780,7 +784,6 @@ parameterised_identifier:
 	| idword '[' nonnull_exprlist ']'
 	  { $$ = new_parameterised_identifier(pr, $1->location, $1, $3); }
 	;
-
 
 imodule:  IMPLEMENTATION { $<u.env>$ = start_implementation(); } '{' extdefs '}' 
 		{ 
@@ -809,9 +812,6 @@ extdef:
 		{ $$ = make_extension_decl($1.i, $1.location, $2); }
 	;
 
-just_datadef: 
-	  { $<u.telement>$ = NULL; } datadef { $$ = $2; } ;
-
 datadef:
 	  setspecs notype_initdecls ';'
 		{ if (pedantic)
@@ -820,7 +820,11 @@ datadef:
 		    warning("data definition has no type or storage class"); 
 
 		  $$ = make_data_decl(NULL, $2); }
-        | declspecs_nots setspecs notype_initdecls ';'
+	| just_datadef
+	;
+
+just_datadef:
+          declspecs_nots setspecs notype_initdecls ';'
 		{ $$ = make_data_decl($1, $3); }
 	| declspecs_ts setspecs initdecls ';'
 		{ $$ = make_data_decl($1, $3); }
@@ -834,6 +838,8 @@ datadef:
 		    pedwarn("ANSI C does not allow extra `;' outside of a function");
 		  $$ = NULL; }
 	;
+
+
 
 fndef:
 	  declspecs_ts setspecs declarator fndef2 { $$ = $4; }

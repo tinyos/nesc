@@ -219,6 +219,10 @@ type make_interface_type(data_declaration itype);
 bool type_interface(type t);
 data_declaration type_iref(type t);
 
+type make_component_type(data_declaration ctype);
+bool type_component(type t);
+data_declaration type_cref(type t);
+
 /* Similar to functions, but different to avoid surprising behaviour... */
 bool type_command(type t);
 bool type_event(type t);

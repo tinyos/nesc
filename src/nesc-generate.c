@@ -1017,6 +1017,9 @@ void prt_nesc_typedefs(nesc_declaration comp)
   /* Only module interface type arguments are used in output */
   if (is_module(comp->impl))
     prt_nesc_interface_typedefs(comp);
+  else
+    /* Print declarations found in configurations */
+    prt_toplevel_declarations(CAST(configuration, comp->impl)->decls);
 }
 
 static void prt_nido_resolver(variable_decl vd)

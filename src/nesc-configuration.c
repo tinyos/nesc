@@ -540,79 +540,98 @@ static void process_component_connection(cgraph cg, connection conn,
 
 static void process_connections(configuration c)
 {
-  connection conn;
+  declaration decl;
   struct endp p1, p2;
   cgraph cg = c->cdecl->connections;
 
-  scan_connection (conn, c->connections)
-    if (lookup_endpoint(c->ienv, conn->ep1, &p1) &&
-	lookup_endpoint(c->ienv, conn->ep2, &p2))
+  scan_declaration (decl, c->decls)
+    if (is_connection(decl))
       {
-	/* There are a lot of kinds of connections here.
-	   lookup_endpoint has already resolved pseudo-interfaces to functions
-	   (c is component, i is interface, f is function, X is = or <-)
-	   c X c, c X i, i X c, c X f, f X c, i X i, i X f, f X i, f X f
+	connection conn = CAST(connection, decl);
 
-	   We first resolve the c X c case, which can lead to multiple
-	   connections, then handle all remaining cases in process_connection
-	*/
-	if (!p1.interface && !p2.interface && !p1.function && !p2.function)
-	  process_component_connection(cg, conn, p1, p2);
-	else
-	  process_connection(cg, conn, p1, p2);
+	if (lookup_endpoint(c->ienv, conn->ep1, &p1) &&
+	    lookup_endpoint(c->ienv, conn->ep2, &p2))
+	  {
+	    /* There are a lot of kinds of connections here.
+	       lookup_endpoint has already resolved pseudo-interfaces to functions
+	       (c is component, i is interface, f is function, X is = or <-)
+	       c X c, c X i, i X c, c X f, f X c, i X i, i X f, f X i, f X f
+
+	       We first resolve the c X c case, which can lead to multiple
+	       connections, then handle all remaining cases in process_connection
+	    */
+	    if (!p1.interface && !p2.interface && !p1.function && !p2.function)
+	      process_component_connection(cg, conn, p1, p2);
+	    else
+	      process_connection(cg, conn, p1, p2);
+	  }
       }
 }
 
-static void require_components(region r, configuration c)
+component_ref require_component(component_ref comp, word as)
 {
-  component_ref comp;
+  struct data_declaration tempdecl;
+  data_declaration old_decl, ddecl;
+  const char *cname = comp->word1->cstring.data;
+  const char *asname = (as ? as : comp->word1)->cstring.data;
 
-  scan_component_ref (comp, c->components)
+  comp->word2 = as;
+
+  comp->cdecl = require(l_component, comp->location, cname);
+
+  init_data_declaration(&tempdecl, CAST(declaration, comp), asname,
+			void_type);
+  tempdecl.kind = decl_component_ref;
+
+  /* Avoid duplicates in implementation *or* specification env */
+  old_decl = lookup_id(asname, TRUE);
+  if (!old_decl)
+    old_decl = env_lookup(current.env->parent->id_env, asname, TRUE);
+  if (old_decl)
+    error_with_location(comp->location, "redefinition of `%s'", asname);
+  ddecl = declare(current.env, &tempdecl, FALSE);
+
+  /* If the component is abstract, we make a copy of its specification
+     so that we produce an accurate connection graph. We don't
+     actually instantiate the component until later.
+     This copy is "abstract" (will need further copying) if we are
+     processing an abstract configuration */
+  if (comp->cdecl->abstract)
     {
-      struct data_declaration tempdecl;
-      data_declaration old_decl, ddecl;
-      const char *cname = comp->word1->cstring.data;
-      const char *asname =
-	(comp->word2 ? comp->word2 : comp->word1)->cstring.data;
-
-      comp->cdecl = require(l_component, comp->location, cname);
-
-      init_data_declaration(&tempdecl, CAST(declaration, comp), asname,
-			    void_type);
-      tempdecl.kind = decl_component_ref;
-
-      current.env = c->ienv;
-      old_decl = lookup_id(asname, TRUE);
-      if (!old_decl)
-	{
-	  current.env = c->ienv->parent;
-	  old_decl = lookup_id(asname, TRUE);
-	}
-      if (old_decl)
-	error_with_location(comp->location, "redefinition of `%s'", asname);
-      ddecl = declare(c->ienv, &tempdecl, FALSE);
-
-      /* If the component is abstract, we make a copy of its specification
-	 so that we produce an accurate connection graph. We don't
-	 actually instantiate the component until later.
-         This copy is "abstract" (will need further copying) if we are
-	 processing an abstract configuration */
-      if (comp->cdecl->abstract)
-	{
-	  comp->cdecl = specification_copy(r, comp, c->cdecl->abstract);
-	  if (!comp->abstract)
-	    error_with_location(comp->location, "abstract component `%s' requires instantiation arguments", cname);
-	  else
-	    check_abstract_arguments("component", ddecl, comp->cdecl->parameters, comp->args);
-	}
+      comp->cdecl = specification_copy(parse_region, comp,
+				       current.container->abstract);
+      if (!comp->abstract)
+	error_with_location(comp->location, "abstract component `%s' requires instantiation arguments", cname);
       else
-	{
-	  if (comp->abstract)
-	    error_with_location(comp->location, "component `%s' is not abstract", cname);
-	}
-
-      ddecl->ctype = comp->cdecl;
+	check_abstract_arguments("component", ddecl, comp->cdecl->parameters, comp->args);
     }
+  else
+    {
+      if (comp->abstract)
+	error_with_location(comp->location, "component `%s' is not abstract", cname);
+    }
+
+  ddecl->type = make_component_type(ddecl);
+  ddecl->ctype = comp->cdecl;
+
+  return comp;
+}
+
+expression make_component_deref(location loc, expression object, cstring field)
+{
+  expression result;
+  data_declaration cref = type_cref(object->type);
+  data_declaration fdecl = env_lookup(cref->ctype->env->id_env, field.data, TRUE);
+  if (!fdecl)
+    {
+      error("component's specification has no element named `%s'", field.data);
+      fdecl = bad_decl;
+    }
+  result = CAST(expression, new_component_deref(parse_region, loc, object, field, fdecl));
+  result->type = fdecl->type;
+  result->cst = fold_identifier(result, fdecl, 0);
+
+  return CAST(expression, result);
 }
 
 struct cfc_data
@@ -677,7 +696,6 @@ void process_configuration(configuration c)
 {
   int old_errorcount = errorcount;
 
-  require_components(parse_region, c);
   process_connections(c);
 
   /* Don't give error messages for missing connections if we found

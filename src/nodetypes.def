@@ -127,8 +127,6 @@
 
 ;; nesc fields
 (deffield call_kind nesc_call_kind (init))
-(deffield components component_ref (init tree))
-(deffield connections connection (init tree))
 (deffield implementation implementation (init tree))
 (deffield required bool (init))
 (deffield ep1 endpoint (init tree))
@@ -570,8 +568,9 @@ parameters.")
 IENV is the implementation's environment
 CDECL is the declaration for this component")
 
-(deftype configuration implementation (components connections)
-  "configuration implementation { uses COMPONENTS; CONNECTIONS }'")
+(deftype configuration implementation (decls)
+  "configuration implementation { DECLS }
+where DECLS include regular declarations, component_refs and connections")
 
 (deftype module implementation (decls)
   "module implementation { DECLS }'")
@@ -599,7 +598,7 @@ ABSTRACT is true for abstract component instantiations, false otherwise
 ARGS is the argument list for abstract component instantiations
 CDECL is filled in to point to the loaded component")
 
-(deftype connection node (ep1 ep2)
+(deftype connection declaration (ep1 ep2)
   "A connection between interfaces EP1 and EP2")
 
 (defnode rp_connection connection
@@ -635,6 +634,11 @@ For now at least, DECLARATOR is always an identifier_declarator")
 (deftype interface_deref unary (cstring ddecl)
   "ARG1.CSTRING where ARG1 is an interface_ref.
 DDECL is the command or event's declaration")
+
+(deftype component_deref unary (cstring ddecl)
+  "ARG1.CSTRING where ARG1 is a component_ref.
+component_deref is *not* used for references to typedefed types in components.
+DDECL is the specification element's declaration")
 
 (deftype atomic_stmt statement (stmt)
   "ATOMIC stmt

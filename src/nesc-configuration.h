@@ -20,6 +20,8 @@ Boston, MA 02111-1307, USA.  */
 
 void process_configuration(configuration c);
 
+component_ref require_component(component_ref comp, word as);
+expression make_component_deref(location loc, expression object, cstring field);;
 void check_generic_arguments(expression args, typelist gparms);
 struct endp;
 typelist endpoint_args(struct endp *p);

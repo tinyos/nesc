@@ -30,6 +30,7 @@ Boston, MA 02111-1307, USA. */
 #include "stmt.h"
 #include "AST_utils.h"
 #include "nesc-module.h"
+#include "nesc-configuration.h"
 #include "nesc-component.h"
 #include "nesc-semantics.h"
 
@@ -720,6 +721,15 @@ expression make_label_address(location loc, id_label label)
   return result;
 }
 
+static void check_sizealign(const char *kind, type stype)
+{
+  if (type_command(stype) || type_event(stype) ||
+      type_interface(stype) || type_component(stype))
+    error("%s applied to a command, event, interface or component", kind);
+  else if (type_incomplete(stype))
+    error("%s applied to an incomplete type", kind);
+}
+
 void check_sizeof(expression result, type stype)
 {
   if (type_function(stype))
@@ -732,8 +742,8 @@ void check_sizeof(expression result, type stype)
       if (pedantic || warn_pointer_arith)
 	pedwarn("sizeof applied to a void type");
     }
-  else if (type_incomplete(stype))
-    error("sizeof applied to an incomplete type");
+  else
+    check_sizealign("sizeof", stype);
 
   result->type = size_t_type;
   result->cst = fold_sizeof(result, stype);
@@ -753,23 +763,25 @@ expression make_sizeof_type(location loc, asttype t)
   return result;
 }
 
+void check_alignof(expression result, type stype)
+{
+  check_sizealign("__alignof__", stype);
+
+  result->type = size_t_type;
+  result->cst = fold_sizeof(result, stype);
+}
+
 expression make_alignof_expr(location loc, expression e)
 {
   expression result = CAST(expression, new_alignof_expr(parse_region, loc, e));
-
-  result->type = size_t_type;
-  result->cst = fold_alignof(result, e->type);
-
+  check_alignof(result, e->type);
   return result;
 }
 
 expression make_alignof_type(location loc, asttype t)
 {
   expression result = CAST(expression, new_alignof_type(parse_region, loc, t));
-
-  result->type = size_t_type;
-  result->cst = fold_alignof(result, t->type);
-
+  check_alignof(result, t->type);
   return result;
 }
 
@@ -1598,6 +1610,8 @@ expression make_field_ref(location loc, expression object, cstring field)
 
   if (type_interface(otype))
     return make_interface_deref(loc, object, field);
+  if (type_component(otype))
+    return make_component_deref(loc, object, field);
 
   result = new_field_ref(parse_region, loc, object, field);
   result->type = error_type;

@@ -44,6 +44,8 @@ typedef struct nesc_declaration {
 					or interface */
 
   /* for components */
+  bool configuration;		/* TRUE for configurations, FALSE for modules
+				   (needed before impl is set) */
   implementation impl;
   struct cgraph *connections;
   dd_list local_statics;	/* Local static variables (for nido) */

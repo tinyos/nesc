@@ -31,7 +31,8 @@ Boston, MA 02111-1307, USA. */
 struct type
 {
   enum { tk_primitive, tk_complex, tk_tagged, tk_error, tk_void,
-	 tk_pointer, tk_function, tk_array, tk_iref, tk_variable } kind;
+	 tk_pointer, tk_function, tk_array, tk_iref, tk_variable,
+	 tk_cref } kind;
   type_quals qualifiers;
   data_declaration combiner;
 
@@ -108,6 +109,9 @@ struct type
 
     /* tk_iref */
     data_declaration iref;
+
+    /* tk_cref */
+    data_declaration cref;
 
     /* tk_variable */
     data_declaration tdecl;
@@ -1093,6 +1097,9 @@ bool type_compatible_unqualified(type t1, type t2)
     case tk_iref:
       return interface_equal(t1->u.iref->itype, t2->u.iref->itype);
 
+    case tk_cref:
+      return t1->u.cref == t2->u.cref;
+
     case tk_variable:
       return t1->u.tdecl == t2->u.tdecl;
 
@@ -1853,6 +1860,31 @@ data_declaration type_iref(type t)
   return t->u.iref;
 }
 
+type make_component_type(data_declaration ctype)
+{
+  type nt = new_type(tk_cref);
+  nt->u.cref = ctype;
+
+  /* These are not yet stored, but I'll assume they might be like
+     pointers some day... */
+  /* ASSUME: all pointers are the same */
+  nt->size = make_type_cval(target->tptr.size);
+  nt->alignment = make_type_cval(target->tptr.align);
+
+  return nt;
+}
+
+bool type_component(type t)
+{
+  return t->kind == tk_cref;
+}
+
+data_declaration type_cref(type t)
+{
+  assert(type_component(t));
+  return t->u.cref;
+}
+
 bool type_functional(type t)
 {
   return t->kind == tk_function && t->u.fn.fkind != tkf_generic;
@@ -1959,6 +1991,11 @@ type instantiate_type(type t)
     case tk_iref:
       if (t->u.iref->instantiation)
 	newt = make_interface_type(t->u.iref->instantiation);
+      break;
+
+    case tk_cref:
+      if (t->u.cref->instantiation)
+	newt = make_component_type(t->u.cref->instantiation);
       break;
 
     case tk_variable:
@@ -2118,7 +2155,7 @@ static void split_type_name(region r, type t, const char **prefix,
       basic = add_qualifiers(r, t->qualifiers, basic);
       break;
     }
-    default: /* for bugs, tk_error tk_iref */
+    default: /* for bugs, tk_error tk_iref tk_cref */
       basic = "error";
       break;
     }

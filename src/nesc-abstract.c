@@ -40,6 +40,7 @@ static AST_walker clone_walker;
    enumerator
    function_decl
    identifier
+   component_deref
    interface_deref
    typename
    variable_decl
@@ -252,9 +253,20 @@ static AST_walker_result clone_identifier(AST_walker spec, void *data,
 }
 
 static AST_walker_result clone_interface_deref(AST_walker spec, void *data,
-					     interface_deref *n)
+					       interface_deref *n)
 {
   interface_deref new = clone(data, n);
+
+  new->type = instantiate_type(new->type);
+  forward(&new->ddecl);
+
+  return aw_walk;
+}
+
+static AST_walker_result clone_component_deref(AST_walker spec, void *data,
+					       component_deref *n)
+{
+  component_deref new = clone(data, n);
 
   new->type = instantiate_type(new->type);
   forward(&new->ddecl);
@@ -553,6 +565,7 @@ static void init_clone(void)
   AST_walker_handle(clone_walker, kind_field_ref, clone_field_ref);
   AST_walker_handle(clone_walker, kind_identifier, clone_identifier);
   AST_walker_handle(clone_walker, kind_interface_deref, clone_interface_deref);
+  AST_walker_handle(clone_walker, kind_component_deref, clone_component_deref);
 
   AST_walker_handle(clone_walker, kind_asttype, clone_asttype);
   AST_walker_handle(clone_walker, kind_function_decl, clone_function_decl);
@@ -595,7 +608,11 @@ void set_parameter_values(nesc_declaration cdecl, expression args)
 	      /* We can assume the type is arithmetic (for now at least)
 		 (see declare_template_parameter) */
 	      if (!args->cst)
-		error_with_location(l, "component arguments must be constants");
+		{
+		  /* avoid duplicate error messages */
+		  if (args->type != error_type)
+		    error_with_location(l, "component arguments must be constants");
+		}
 	      else if (type_integer(vd->ddecl->type))
 		{
 		  if (!constant_integral(args->cst))
@@ -818,16 +835,19 @@ static bool fold_components(nesc_declaration cdecl, int pass)
     ;
   else
     {
-      component_ref comp;
+      declaration d;
       configuration c = CAST(configuration, cdecl->impl);
 
       check_cg(cdecl->connections);
 
-      scan_component_ref (comp, c->components)
-	{
-	  set_parameter_values(comp->cdecl, comp->args);
-	  done = fold_components(comp->cdecl, pass) && done;
-	}
+      scan_declaration (d, c->decls)
+	if (is_component_ref(d))
+	  {
+	    component_ref comp = CAST(component_ref, d);
+
+	    set_parameter_values(comp->cdecl, comp->args);
+	    done = fold_components(comp->cdecl, pass) && done;
+	  }
     }
   return done;
 }

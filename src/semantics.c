@@ -2479,6 +2479,12 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
 	      var_type = error_type;
 	    }
 	}
+      else if (current.language == l_implementation &&
+	       current.container->configuration)
+	{
+	  if (class != RID_TYPEDEF)
+	    error("only types and constants can be declared in configurations");
+	}
       else if (class == RID_COMMAND || class == RID_EVENT)
 	{
 	  if (current.language == l_implementation)
@@ -3738,5 +3744,6 @@ void start_semantics(source_language l, nesc_declaration container,
   current.pending_invalid_xref = NULL;
   current.container = container;
   current.in_atomic = NULL;
+  current.spec_section = spec_normal;
 }
 

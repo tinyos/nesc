@@ -137,6 +137,9 @@ static AST_walker_result folder_expression(AST_walker spec, void *data,
 	  }
       break;
     }
+    case kind_component_deref:
+      c = fold_identifier(e, CAST(component_deref, e)->ddecl, d->pass);
+      break;
     default:
       if (is_binary(e))
 	c = fold_binary(e->type, e);
