@@ -35,7 +35,7 @@ void doc_use_graphviz(const bool use);
 
 
 /* actually generate docs */
-void generate_docs(cgraph cg);
+void generate_docs(const char *filename, cgraph cg);
 
 
 

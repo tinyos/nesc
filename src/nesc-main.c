@@ -128,7 +128,7 @@ void nesc_compile(const char *filename, const char *target_name)
 	      {
 		connect_graphs(parse_region, program, &cg, &modules, &components);
 		generate_c_code(program, target_name, cg, modules);
-		generate_docs(cg);
+                generate_docs(filename, cg);
 	      }
 	  }
 	break;
@@ -136,7 +136,7 @@ void nesc_compile(const char *filename, const char *target_name)
     case l_interface:
       /* just does syntax/semantic checking */
       load_interface(&toplevel, filename, TRUE);
-      generate_docs(NULL);
+      generate_docs(filename, NULL);
       dump_msg_layout();
       break;
     case l_c:

@@ -660,7 +660,6 @@ static bool connection_already_printed(dhash_table table,
     ep2->interface = ep2->function->interface;
 
 
-
   // sort out which is the "requires" side, and which is the "provides" side
   {
     // use interface->required to determine the direction of
@@ -842,9 +841,9 @@ static void print_cg_html(const char *component_name, const char *component_file
 
             // print the edge info
             fprintf(func_file, "    %s -> %s [label = \"%s.%s\"];\n", 
-                    ep1->component ? ep1->component->name : "C_code", 
-                    ep2->component ? ep2->component->name : "C_code", 
-                    ep2->interface ? ep2->interface->name : "C_code", 
+                    ep1->component ? ep1->component->ctype->name : "C_code", 
+                    ep2->component ? ep2->component->ctype->name : "C_code", 
+                    ep2->interface ? ep2->interface->itype->name : "C_code", 
                     ep2->function->name);
           }
 
@@ -1368,7 +1367,7 @@ static int index_entry_comparator(const void *va, const void *vb) {
 /**
  * add an entry to the list
  **/
-static void insert_entry(file_index *fi, char *docfile) {
+static void insert_entry(file_index *fi, char *docfile, char *suffix) {
   char *p;
   index_entry *e = &( fi->ent[fi->num++] );
 
@@ -1377,10 +1376,8 @@ static void insert_entry(file_index *fi, char *docfile) {
   strcpy(e->path, docfile);
 
   // chop off the suffix
-  p = e->path + strlen(e->path) - 1;
-  while(*p != '.') p--;
-  p--;
-  while(*p != '.') p--;
+  p = e->path + strlen(e->path) - strlen(suffix);
+  assert( *p == '.' );
   *p = '\0'; p--;
 
   // separate out the name
@@ -1502,12 +1499,20 @@ static void generate_index_html() {
         while(p > dent->d_name  &&  *p != '.') p--;
 
         // add to the appropriate list
-        if( !strcmp(p,".ti.html") )
-          insert_entry(&iface, dent->d_name);
-        else if( !strcmp(p,".td.html") )
-          insert_entry(&comp, dent->d_name);
-        else if( !strcmp(p,".app.html") )
-          insert_entry(&app, dent->d_name);
+        if( !strcmp(p,".ti.html") ) {
+          insert_entry(&iface, dent->d_name, ".ti.html");
+          continue;
+        }
+        if( !strcmp(p,".td.html") ) {
+          insert_entry(&comp, dent->d_name, ".td.html");
+          continue;
+        }
+
+        // scan back one more, for app files
+        p--;
+        while(p > dent->d_name  &&  *p != '.') p--;
+        if( !strcmp(p,".td.app.html") )
+          insert_entry(&app, dent->d_name, ".td.app.html");
       }
     }
 
@@ -1539,9 +1544,9 @@ static void generate_index_html() {
 //////////////////////////////////////////////////
 // Create whole-app description page
 //////////////////////////////////////////////////
-static void generate_app_page(cgraph cg) 
+static void generate_app_page(const char *filename, cgraph cg) 
 {
-  char *appname;
+  char *appname, *p;
   char *fname, *basename;
   FILE *f;
 
@@ -1552,29 +1557,50 @@ static void generate_app_page(cgraph cg)
   if( errorcount ) 
     return;
 
-  // figure out the app name
-  appname = "apps.Blink";
+  // return, if the component is NULL
+  if( cg == NULL )
+    return;
 
-  fname = rstralloc( doc_region, strlen(appname)+strlen(".app.html")+1 );  assert(fname);
-  *fname = '\0';
-  strcat(fname, appname);
-  strcat(fname, ".app.html");
-
-  basename = rstralloc( doc_region, strlen(appname)+strlen(".app")+1 );  assert(basename);
-  *basename = '\0';
-  strcat(basename, appname);
-  strcat(basename, ".app");
+  // figure out the app name from the main file name
+  appname = doc_filename_with_ext(filename, "");
+  p = appname + strlen(appname) - 1;
+  while(p > appname  &&  *p != '.') p--;
+  *p = '\0';
+  while(p > appname  &&  *p != '.') p--;
+  if(*p == '.') p++;
+  appname = p;
   
+
+  // create names for the output files
+  //basename = doc_filename_with_ext(filename, ".app");
+  basename = rstralloc(doc_region, strlen(filename) + strlen(".app") + 1);
+  strcpy(basename, filename);
+  strcat(basename, ".app");
+
+  // generate the file
+  fname    = doc_filename_with_ext(filename, ".app.html");
   f = open_outfile(fname); assert(f);
+
+  fprintf(f, "<html>\n");
+  fprintf(f, "<head><title>App: %s</title></head>\n", appname);
+  fprintf(f, "<body>\n");
+  fprintf(f, "<h1 align=\"center\">App: %s</h1>\n", appname);
+
   print_cg_html(appname, basename, cg);
+
+  fprintf(f, "</body>\n");
+  fprintf(f, "</html>\n");
+
   close_outfile(f);
+
 }
+
 
 
 //////////////////////////////////////////////////
 // Generate all docs
 //////////////////////////////////////////////////
-void generate_docs(cgraph cg)
+void generate_docs(const char *filename, cgraph cg)
 {
   char old_wd[1024];
 
@@ -1633,14 +1659,11 @@ void generate_docs(cgraph cg)
   }
 
   // generate whole-app wiring page
-  generate_app_page(cg);
+  generate_app_page(filename,cg);
 
 
   // generate index files
-  {
-    generate_index_html();
-  }
-
+  generate_index_html();
   
 
   // cleanup
