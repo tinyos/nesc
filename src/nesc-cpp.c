@@ -128,7 +128,7 @@ FILE *preprocess(const char *filename, source_language l)
   if ((cpp_pid = fork()) == 0)
     {
       char **argv;
-      int nargs = 10 + path_argv_count + saved_options_count, arg = 0, i;
+      int nargs = 11 + path_argv_count + saved_options_count, arg = 0, i;
       struct cpp_option *saved;
       int destfd = creat(cpp_dest, 0666);
       region filename_region = newregion();
@@ -151,6 +151,7 @@ FILE *preprocess(const char *filename, source_language l)
       arg += saved_options_count;
 
       argv[arg++] = "-E";
+      argv[arg++] = "-C";
 
       /* For C files, we define keywords away (kwd_macros) and ask cpp
 	 to output macros */

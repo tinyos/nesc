@@ -386,7 +386,7 @@ static void skip_cpp_comment(void)
 	case EOF:
 	  return;
 	case '\n':
-	  input_file_stack->l.lineno++;
+	  UNGETC(check_newline());
 	  return;
 	}
       
