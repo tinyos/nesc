@@ -475,7 +475,6 @@ void prt_data_decl(data_decl d)
 	}
 
       prt_type_elements(d->modifiers, !first);
-      prt_type_elements(CAST(type_element, d->attributes), !first);
       first = FALSE;
       prt_variable_decl(vdd);
       outputln(";");
@@ -513,7 +512,7 @@ void prt_function_decl(function_decl d)
   if (d->ddecl->isused && !d->ddecl->suppress_definition)
     {
       static_hack(d->ddecl);
-      prt_declarator(d->declarator, d->qualifiers, d->attributes, d->ddecl,
+      prt_declarator(d->declarator, d->modifiers, d->attributes, d->ddecl,
 		     psd_print_default);
       outputln(";");
     }
@@ -528,7 +527,7 @@ void prt_function_body(function_decl d)
       current.function_decl = d;
 
       static_hack(d->ddecl);
-      prt_declarator(d->declarator, d->qualifiers, d->attributes, d->ddecl,
+      prt_declarator(d->declarator, d->modifiers, d->attributes, d->ddecl,
 		     psd_print_default);
       startline();
       prt_parameter_declarations(d->old_parms);
@@ -559,7 +558,9 @@ void prt_declarator(declarator d, type_element elements, attribute attributes,
 {
   prt_type_elements(elements, FALSE);
   prt_type_elements(CAST(type_element, attributes), FALSE);
-  prt_simple_declarator(d, ddecl, options & ~psd_not_star);
+  prt_simple_declarator(d, ddecl,
+			(options | psd_need_paren_for_qual)
+			& ~psd_need_paren_for_star);
 }
 
 void prt_ddecl_full_name(data_declaration ddecl, psd_options options)
@@ -600,7 +601,9 @@ void prt_simple_declarator(declarator d, data_declaration ddecl,
 	{
 	  function_declarator fd = CAST(function_declarator, d);
 
-	  prt_simple_declarator(fd->declarator, ddecl, options | psd_not_star);
+	  prt_simple_declarator(fd->declarator, ddecl,
+				options | psd_need_paren_for_star |
+				psd_need_paren_for_qual);
 	  prt_parameters(fd->gparms ? fd->gparms :
 			 ddecl ? ddecl_get_gparms(ddecl) : NULL,
 			 fd->parms,
@@ -611,7 +614,9 @@ void prt_simple_declarator(declarator d, data_declaration ddecl,
 	{
 	  array_declarator ad = CAST(array_declarator, d);
 
-	  prt_simple_declarator(ad->declarator, ddecl, options | psd_not_star);
+	  prt_simple_declarator(ad->declarator, ddecl,
+				options | psd_need_paren_for_star |
+				psd_need_paren_for_qual);
 	  if (!ad->arg1)
 	    output("[]");
 	  else
@@ -623,18 +628,31 @@ void prt_simple_declarator(declarator d, data_declaration ddecl,
 	    }
 	  break;
 	}
+      case kind_qualified_declarator:
+	{
+	  qualified_declarator qd = CAST(qualified_declarator, d);
+
+	  set_location(qd->modifiers->location);
+	  if (options & psd_need_paren_for_qual)
+	    output("(");
+	  prt_type_elements(qd->modifiers, FALSE);
+	  prt_simple_declarator(qd->declarator, ddecl,
+				options & ~psd_need_paren_for_qual);
+	  if (options & psd_need_paren_for_qual)
+	    output(")");
+	  break;
+	}
       case kind_pointer_declarator:
 	{
 	  pointer_declarator pd = CAST(pointer_declarator, d);
 
-	  if (pd->qualifiers)
-	    set_location(pd->qualifiers->location);
-	  if (options & psd_not_star)
+	  if (options & psd_need_paren_for_star)
 	    output("(");
 	  output("*");
-	  prt_type_elements(pd->qualifiers, FALSE);
-	  prt_simple_declarator(pd->declarator, ddecl, options & ~psd_not_star);
-	  if (options & psd_not_star)
+	  prt_simple_declarator(pd->declarator, ddecl,
+				options & ~(psd_need_paren_for_star |
+					    psd_need_paren_for_qual));
+	  if (options & psd_need_paren_for_star)
 	    output(")");
 	  break;
 	}
@@ -647,9 +665,11 @@ void prt_simple_declarator(declarator d, data_declaration ddecl,
 	else
 	  output_stripped_cstring(CAST(identifier_declarator, d)->cstring);
 	break;
+
       case kind_interface_ref_declarator:
 	prt_simple_declarator(CAST(interface_ref_declarator, d)->declarator,
-			      ddecl, options | psd_not_star);
+			      ddecl, options | psd_need_paren_for_star |
+			      psd_need_paren_for_qual);
 	break;
 
       default: assert(0); break;
@@ -838,7 +858,6 @@ void prt_field_data_decl(data_decl d)
   declaration fd;
 
   prt_type_elements(d->modifiers, FALSE);
-  prt_type_elements(CAST(type_element, d->attributes), FALSE);
 
   scan_declaration (fd, d->decls)
     {
@@ -929,7 +948,6 @@ bool prt_parameter(declaration parm, bool first, bool lastforward,
 	  output("; ");
 	else if (!first)
 	  output(", ");
-	prt_type_elements(CAST(type_element, dd->attributes), FALSE);
 	prt_declarator(vd->declarator, dd->modifiers, vd->attributes,
 		       vd->ddecl, options);
 

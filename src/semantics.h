@@ -83,8 +83,7 @@ void split_type_elements(type_element tlist, type_element *declspecs,
    Returns the declaration for the variable.
 */
 declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
-		       bool initialised, attribute extra_attributes,
-		       attribute attributes);
+		       bool initialised, attribute attributes);
 
 /* Finish definition of decl, furnishing the optional initialiser init.
    Returns decl */
@@ -95,7 +94,6 @@ declaration finish_decl(declaration decl, expression init);
    Returns the declaration for the parameter.
 */
 declaration declare_parameter(declarator d, type_element elements,
-			      attribute extra_attributes,
 			      attribute attributes,
 			      bool generic);
 
@@ -130,8 +128,7 @@ type_element finish_enum(type_element t, declaration names,
    Returns the declaration for the field.
 */
 declaration make_field(declarator d, expression bitfield,
-		       type_element elements, attribute extra_attributes,
-		       attribute attributes);
+		       type_element elements, attribute attributes);
 
 declaration make_enumerator(location loc, cstring id, expression value);
 

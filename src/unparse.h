@@ -70,11 +70,12 @@ void prt_expression(expression e, int context_priority);
 void prt_type_elements(type_element elements, bool duplicate);
 
 typedef enum {
-  psd_not_star = 1,
-  psd_rename_parameters = 2,
-  psd_rename_identifier = 4,
-  psd_print_default = 8,
-  psd_skip_container = 16
+  psd_need_paren_for_star = 1,
+  psd_need_paren_for_qual = 2,
+  psd_rename_parameters = 4,
+  psd_rename_identifier = 8,
+  psd_print_default = 16,
+  psd_skip_container = 32
 } psd_options;
 
 void prt_declarator(declarator d, type_element elements, attribute attributes,

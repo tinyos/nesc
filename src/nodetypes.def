@@ -186,8 +186,8 @@ NEXT_LABEL points to the next case or default label of a switch
 (deftype asm_decl declaration (asm_stmt)
   "Asm statement STMT at the top level of a file (GCC)")
 
-(deftype data_decl declaration (modifiers attributes decls)
-  "The declaration MODIFIERS ATTRIBUTES DECLS;
+(deftype data_decl declaration (modifiers decls)
+  "The declaration MODIFIERS DECLS;
 DECLS is a list")
 
 (deftype extension_decl declaration (decl)
@@ -202,7 +202,7 @@ DECLS is a list")
 (deftype oldidentifier_decl declaration (cstring ddecl)
   "CSTRING in an old-style parameter list")
 
-(deftype function_decl declaration (declarator qualifiers attributes old_parms stmt
+(deftype function_decl declaration (declarator modifiers attributes old_parms stmt
 				    parent_function ddecl fdeclarator
 				    declared_type undeclared_variables
 				    base_labels scoped_labels current_loop
@@ -216,7 +216,7 @@ identifier node that implicitly declared the function")
 
 (deftype variable_decl declaration (declarator attributes arg1 asm_stmt
 				    ddecl declared_type forward)
-  "Declaration of ATTRIBUTES ASM_STMT DECLARATOR = ARG1.
+  "Declaration of DECLARATOR ASM_STMT ATTRIBUTES = ARG1.
 ATTRIBUTES is a list. ASM_STMT is optional (GCC specific).
 ARG1 is an optional initialiser.
 DDECL points to the declaration for this item.
@@ -225,7 +225,7 @@ in DDECL->TYPE)
 FORWARD is true for parameters that are forward declarations")
 
 (deftype field_decl declaration (declarator attributes arg1)
-  "Declaration of field QUALIFIERS ATTRIBUTES DECLARATOR : ARG1.
+  "Declaration of field DECLARATOR ATTRIBUTES : ARG1.
 QUALIFIERS and ATTRIBUTEES are lists. ARG1 is an optional bitfield specifier")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -283,8 +283,13 @@ the nested DECLARATOR")
 ENV is the environment for parms
 GPARMS is the list of declarations of generic parameters (commands, events only)")
 
-(deftype pointer_declarator nested_declarator (qualifiers)
-  "Pointer declarator *QUALIFIERS DECLARATOR")
+(deftype pointer_declarator nested_declarator ()
+  "Pointer declarator *DECLARATOR")
+
+(deftype qualified_declarator nested_declarator (modifiers)
+  "Declarator MODIFIERS DECLARATOR. The MODIFIERS are qualifiers
+or attributes.
+Note: MODIFIERS is never NULL")
 
 (deftype array_declarator nested_declarator (arg1)
   "Array declarator DECLARATOR[ARG1]. ARG1 is optional")
@@ -574,7 +579,7 @@ Legal if exactly one of EP1 and EP2 are interfaces of the component")
 (deftype generic_call expression (arg1 args)
   "ARG1[ARGS]. ARGS is a list of expressions, ARG1 is a generic function")
 
-(deftype interface_ref_declarator declarator (word1 declarator)
+(deftype interface_ref_declarator nested_declarator (word1)
   "WORD1 . DECLARATOR in a declarator (for defining commands, events in component
 implementations
 For now at least, DECLARATOR is always an identifier_declarator")

@@ -40,7 +40,6 @@ static void prt_nesc_function_hdr(data_declaration fn_decl,
 
   output("static ");
   prt_type_elements(fn_dd->modifiers, FALSE);
-  prt_type_elements(CAST(type_element, fn_dd->attributes), FALSE);
 
   prt_declarator(ifn_vd->declarator, NULL, ifn_vd->attributes, fn_decl, 
 		 psd_rename_parameters | options);

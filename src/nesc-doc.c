@@ -386,7 +386,6 @@ static void print_short_variable_html(data_decl ddecl, variable_decl vd) {
 
   // FIXME: did this fix the variable declaration printing?
   prt_type_elements(ddecl->modifiers, FALSE); 
-  prt_type_elements(CAST(type_element, ddecl->attributes), FALSE);
 
   prt_declarator(vd->declarator, NULL, vd->attributes, vd->ddecl, psd_skip_container);
 
@@ -437,10 +436,9 @@ static void print_func_return(function_decl fd, data_decl dd, variable_decl vd)
 {
   check_print_func_args(fd, dd, vd, NULL, NULL);
   if(fd) {
-    prt_declarator(NULL, fd->qualifiers, fd->attributes, fd->ddecl, psd_skip_container);
+    prt_declarator(NULL, fd->modifiers, fd->attributes, fd->ddecl, psd_skip_container);
   } else {
     prt_type_elements(dd->modifiers, FALSE); 
-    prt_type_elements(CAST(type_element, dd->attributes), FALSE);
   }
 }
 
@@ -453,7 +451,7 @@ static void print_func_name(function_decl fd, data_decl dd, variable_decl vd)
   data_declaration ddecl; 
 
   check_print_func_args(fd, dd, vd, &fdr, &ddecl);
-  prt_simple_declarator(fdr->declarator, ddecl, psd_skip_container | psd_not_star);
+  prt_simple_declarator(fdr->declarator, ddecl, psd_skip_container | psd_need_paren_for_star | psd_need_paren_for_qual);
   
 }
 

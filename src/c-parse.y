@@ -20,11 +20,8 @@ along with nesC; see the file COPYING.  If not, write to
 the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA. */
 
-/* This is a version of c-parse.y with all but one conflict removed, at the
-   price of the removal of most attribute syntax and of some error
-   recovery. It is mostly intended to make grammar experimentation easier
-   (it's hard to tell if a grammar change is causing problems when there
-   are 46 s/r conflicts) */
+/* This is a version of c-parse.y with two conflicts and supporting the gcc3
+   attribute syntax. It is a partial merge of the gcc 3 grammar */
 
 /* This file defines the grammar of C */
 /* To whomever it may concern: I have heard that such a thing was once
@@ -32,6 +29,7 @@ Boston, MA 02111-1307, USA. */
 
 %pure_parser
 
+%expect 2
 
 %{
 #include <stdio.h>
@@ -272,8 +270,7 @@ struct parse_state
 
   /* List of types and structure classes of the current declaration.  */
   type_element declspecs;
-  attribute prefix_attributes;
-  attribute all_prefix_attributes;
+  attribute attributes;
 
   /* >0 if currently parsing an expression that will not be evaluated (argument
      to alignof, sizeof. Currently not typeof though that could be considered
@@ -291,8 +288,7 @@ bool unevaluated_expression(void)
 static void pop_declspec_stack(void) deletes
 {
   pstate.declspecs = pstate.declspec_stack->declspecs;
-  pstate.all_prefix_attributes = 
-    pstate.prefix_attributes = pstate.declspec_stack->attributes;
+  pstate.attributes = pstate.declspec_stack->attributes;
   pstate.declspec_stack = pstate.declspec_stack->next;
 }
 
@@ -302,7 +298,7 @@ static void push_declspec_stack(void)
 
   news = ralloc(pstate.ds_region, struct spec_stack);
   news->declspecs = pstate.declspecs;
-  news->attributes = pstate.prefix_attributes;
+  news->attributes = pstate.attributes;
   news->next = pstate.declspec_stack;
   pstate.declspec_stack = news;
 }
@@ -313,7 +309,7 @@ void parse(void) deletes
   struct parse_state old_pstate = pstate;
 
   pstate.declspecs = NULL;
-  pstate.all_prefix_attributes = pstate.prefix_attributes = NULL;
+  pstate.attributes = NULL;
   pstate.unevaluated_expression = 0;
   pstate.declspec_stack = NULL;
   pstate.ds_region = newsubregion(parse_region);
@@ -326,11 +322,26 @@ void parse(void) deletes
   pstate = old_pstate;
 }
 
-/* Simple build functions */
-declaration make_data_decl(location l, declaration decls)
+void refuse_asm(asm_stmt s)
 {
-  data_decl dd = new_data_decl(parse_region, l, pstate.declspecs,
-			       pstate.all_prefix_attributes, decls);
+  if (s)
+    error_with_location(s->location, "unexpected asm statement");
+}
+
+/* Merge the attributes in front of a declaration (but which aren't part
+   of the declspecs) with the attributes after the declaration.
+   We're pretending they all came after */
+attribute prefix_attr(attribute post_attr)
+{
+  return attribute_chain(pstate.attributes, post_attr);
+}
+
+/* Simple build functions */
+declaration make_data_decl(type_element modifiers, declaration decls)
+{
+  location l = modifiers ? modifiers->location : decls->location;
+
+  data_decl dd = new_data_decl(parse_region, l, modifiers, decls);
 
   pop_declspec_stack();
 
@@ -353,9 +364,19 @@ word make_cword(location l, const char *s)
   return new_word(pr, l, str2cstring(pr, s));
 }
 
+declarator make_qualified_declarator(location l, declarator d, type_element quals)
+{
+  if (quals)
+    return CAST(declarator, new_qualified_declarator(pr, l, d, quals));
+  else
+    return d;
+}
+
 declarator make_pointer_declarator(location l, declarator d, type_element quals)
 {
-  return CAST(declarator, new_pointer_declarator(pr, l, d, quals));
+  d = make_qualified_declarator(l, d, quals);
+
+  return CAST(declarator, new_pointer_declarator(pr, l, d));
 }
 
 declarator make_identifier_declarator(location l, cstring id)
@@ -430,7 +451,7 @@ parameter:
    		{ 
 		  declarator id =
 		    make_identifier_declarator($2.location, $2.id);
-		  $$ = declare_parameter(id, $1, NULL, NULL, TRUE);
+		  $$ = declare_parameter(id, $1, NULL, TRUE);
 		}
 	;
 
@@ -610,14 +631,14 @@ datadef:
 		  else if (!flag_traditional)
 		    warning("data definition has no type or storage class"); 
 
-		  $$ = make_data_decl($2->location, $2); }
+		  $$ = make_data_decl(NULL, $2); }
         | declspecs_nots setspecs notype_initdecls ';'
-		{ $$ = make_data_decl($1->location, $3); }
+		{ $$ = make_data_decl($1, $3); }
 	| declspecs_ts setspecs initdecls ';'
-		{ $$ = make_data_decl($1->location, $3); }
+		{ $$ = make_data_decl($1, $3); }
 	| declspecs setspecs ';'
 	  	{ shadow_tag($1); 
-	    	  $$ = make_data_decl($1->location, NULL); }
+	    	  $$ = make_data_decl($1, NULL); }
 	| error ';' { $$ = make_error_decl(); }
 	| error '}' { $$ = make_error_decl(); }
 	| ';'
@@ -635,9 +656,8 @@ fndef:
 fndef2:	  maybeasm maybe_attribute
 		{ 
 		  /* maybeasm is only here to avoid a s/r conflict */
-		  if ($1)
-		    error_with_location($1->location,
-		    			"unexpected asm statement");
+		  refuse_asm($1);
+
 		  /* $0 refers to the declarator that precedes fndef2
 		     in fndef (we can't just save it in an action, as that
 		     causes s/r and r/r conflicts) */
@@ -1000,12 +1020,12 @@ datadecls:
    style parm.  */
 datadecl:
 	  declspecs_ts_nosa setspecs initdecls ';'
-		{ $$ = make_data_decl($1->location, $3); }
+		{ $$ = make_data_decl($1, $3); }
 	| declspecs_nots_nosa setspecs notype_initdecls ';'
-		{ $$ = make_data_decl($1->location, $3); }
+		{ $$ = make_data_decl($1, $3); }
 	| declspecs_ts_nosa setspecs ';'
 		{ shadow_tag_warned($1, 1);
-		  $$ = make_data_decl($1->location, NULL);
+		  $$ = make_data_decl($1, NULL);
 		  pedwarn("empty declaration"); }
 	| declspecs_nots_nosa ';'
 		{ pedwarn("empty declaration"); 
@@ -1031,25 +1051,23 @@ setspecs: /* empty */
 		{ 
 		  push_declspec_stack();
 		  pending_xref_error();
-		  split_type_elements($<u.telement>0,
-				      &pstate.declspecs, &pstate.prefix_attributes);
-		  pstate.all_prefix_attributes = pstate.prefix_attributes;
+		  pstate.declspecs = $<u.telement>0;
+		  pstate.attributes = NULL;
 		}
 	;
 
-/* Possibly attributes after a comma, which should reset all_prefix_attributes
-   to prefix_attributes with these ones chained on the front.  */
+/* Possibly attributes after a comma, which should be saved in
+   pstate.attributes */
 maybe_resetattrs:
 	  maybe_attribute
-		{ pstate.all_prefix_attributes = 
-		    attribute_chain($1, pstate.prefix_attributes); }
+		{ pstate.attributes = $1; }
 	;
 
 decl:
 	  declspecs_ts setspecs initdecls ';'
-		{ $$ = make_data_decl($1->location, $3); }
+		{ $$ = make_data_decl($1, $3); }
 	| declspecs_nots setspecs notype_initdecls ';'
-		{ $$ = make_data_decl($1->location, $3); }
+		{ $$ = make_data_decl($1, $3); }
 	| declspecs_ts setspecs nested_function
 		{ $$ = $3;
 		  pop_declspec_stack(); }
@@ -1058,7 +1076,7 @@ decl:
 		  pop_declspec_stack(); }
 	| declspecs setspecs ';'
 		{ shadow_tag($1);
-		  $$ = make_data_decl($1->location, NULL); }
+		  $$ = make_data_decl($1, NULL); }
 	| extension decl
 		{ $$ = make_extension_decl($1.i, $1.location, $2); }
 	;
@@ -1460,26 +1478,26 @@ maybeasm:
 initdcl:
 	  declarator maybeasm maybe_attribute '='
 		{ $<u.decl>$ = start_decl($1, $2, pstate.declspecs, 1,
-					$3, pstate.all_prefix_attributes); }
+					  prefix_attr($3)); }
 	  init
 /* Note how the declaration of the variable is in effect while its init is parsed! */
 		{ $$ = finish_decl($<u.decl>5, $6); }
 	| declarator maybeasm maybe_attribute
 		{ declaration d = start_decl($1, $2, pstate.declspecs, 0,
-					     $3, pstate.all_prefix_attributes);
+					     prefix_attr($3));
 		  $$ = finish_decl(d, NULL); }
 	;
 
 notype_initdcl:
 	  notype_declarator maybeasm maybe_attribute '='
 		{ $<u.decl>$ = start_decl($1, $2, pstate.declspecs, 1,
-					 $3, pstate.all_prefix_attributes); }
+					 prefix_attr($3)); }
 	  init
 /* Note how the declaration of the variable is in effect while its init is parsed! */
 		{ $$ = finish_decl($<u.decl>5, $6); }
 	| notype_declarator maybeasm maybe_attribute
 		{ declaration d = start_decl($1, $2, pstate.declspecs, 0,
-					     $3, pstate.all_prefix_attributes);
+					     prefix_attr($3));
 		  $$ = finish_decl(d, NULL); }
 	;
 maybe_attribute:
@@ -1590,9 +1608,12 @@ initelt:
 	;
 
 nested_function:
-	  declarator
-		{ if (!start_function(pstate.declspecs, $1,
-				      pstate.all_prefix_attributes, 1))
+	  declarator maybeasm maybe_attribute
+		{ 
+		  /* maybeasm is only here to avoid a s/r conflict */
+		  refuse_asm($2);
+
+		  if (!start_function(pstate.declspecs, $1, $3, 1))
 		    {
 		      YYERROR1;
 		    }
@@ -1606,13 +1627,16 @@ nested_function:
    There followed a repeated execution of that same rule,
    which called YYERROR1 again, and so on.  */
 	  compstmt
-		{ $$ = finish_function($5); }
+		{ $$ = finish_function($7); }
 	;
 
 notype_nested_function:
-	  notype_declarator
-		{ if (!start_function(pstate.declspecs, $1,
-				      pstate.all_prefix_attributes, 1))
+	  notype_declarator maybeasm maybe_attribute
+		{ 
+		  /* maybeasm is only here to avoid a s/r conflict */
+		  refuse_asm($2);
+
+		  if (!start_function(pstate.declspecs, $1, $3, 1))
 		    {
 		      YYERROR1;
 		    }
@@ -1626,7 +1650,7 @@ notype_nested_function:
    There followed a repeated execution of that same rule,
    which called YYERROR1 again, and so on.  */
 	  compstmt
-		{ $$ = finish_function($5); }
+		{ $$ = finish_function($7); }
 	;
 
 /* Any kind of declarator (thus, all declarators allowed
@@ -1644,8 +1668,8 @@ after_type_declarator:
 		{ $$ = finish_array_or_fn_declarator($1, $2); }
         | '*' maybe_type_quals_attrs after_type_declarator
 		{ $$ = make_pointer_declarator($1.location, $3, $2); }
-	| '(' after_type_declarator ')'
-		{ $$ = $2; }
+	| '(' maybe_attribute after_type_declarator ')'
+		{ $$ = make_qualified_declarator($1.location, $3, CAST(type_element, $2)); }
 	| TYPENAME { $$ = make_identifier_declarator($1.location, $1.id); }
 	| TYPENAME '.' identifier 
 		{
@@ -1675,8 +1699,8 @@ notype_declarator:
 		{ $$ = finish_array_or_fn_declarator($1, $2); }
 	| '*' maybe_type_quals_attrs notype_declarator
 		{ $$ = make_pointer_declarator($1.location, $3, $2); }
-	| '(' notype_declarator ')'
-		{ $$ = $2; }
+	| '(' maybe_attribute notype_declarator ')'
+		{ $$ = make_qualified_declarator($1.location, $3, CAST(type_element, $2)); }
 	| IDENTIFIER 
 		{ $$ = make_identifier_declarator($1.location, $1.id); }
 	| IDENTIFIER '.' identifier
@@ -1768,19 +1792,19 @@ component_decl_list2:
 
 component_decl:
 	  declspecs_nosc_ts setspecs components
-		{ $$ = make_data_decl($1->location, declaration_reverse($3)); }
+		{ $$ = make_data_decl($1, declaration_reverse($3)); }
 	| declspecs_nosc_ts setspecs
 		{ if (pedantic)
 		    pedwarn("ISO C doesn't support unnamed structs/unions");
 
-		  $$ = make_data_decl($1->location, NULL); }
+		  $$ = make_data_decl($1, NULL); }
 	| declspecs_nosc_nots setspecs components_notype
-		{ $$ = make_data_decl($1->location, declaration_reverse($3)); }
+		{ $$ = make_data_decl($1, declaration_reverse($3)); }
 	| declspecs_nosc_nots setspecs
 		{ if (pedantic)
 		    pedwarn("ANSI C forbids member declarations with no members");
 		  shadow_tag($1);
-		  $$ = make_data_decl($1->location, NULL); }
+		  $$ = make_data_decl($1, NULL); }
 	| error
 		{ $$ = make_error_decl(); }
 	| extension component_decl
@@ -1804,25 +1828,25 @@ components_notype:
 component_declarator:
 	  declarator maybe_attribute
 		{ $$ = make_field($1, NULL, pstate.declspecs,
-				  $2, pstate.all_prefix_attributes); }
+				  prefix_attr($2)); }
 	| declarator ':' expr_no_commas maybe_attribute
 		{ $$ = make_field($1, $3, pstate.declspecs,
-				  $4, pstate.all_prefix_attributes); }
+				  prefix_attr($4)); }
 	| ':' expr_no_commas maybe_attribute
 		{ $$ = make_field(NULL, $2, pstate.declspecs,
-				  $3, pstate.all_prefix_attributes); }
+				  prefix_attr($3)); }
 	;
 
 component_notype_declarator:
 	  notype_declarator maybe_attribute
 		{ $$ = make_field($1, NULL, pstate.declspecs,
-				  $2, pstate.all_prefix_attributes); }
+				  prefix_attr($2)); }
 	| notype_declarator ':' expr_no_commas maybe_attribute
 		{ $$ = make_field($1, $3, pstate.declspecs,
-				  $4, pstate.all_prefix_attributes); }
+				  prefix_attr($4)); }
 	| ':' expr_no_commas maybe_attribute
 		{ $$ = make_field(NULL, $2, pstate.declspecs,
-				  $3, pstate.all_prefix_attributes); }
+				  prefix_attr($3)); }
 	;
 
 enumlist:
@@ -1873,8 +1897,8 @@ absdcl1_ea:
 	;
 
 direct_absdcl1:
-	  '(' absdcl1 ')'
-		{ $$ = $2; }
+	  '(' maybe_attribute absdcl1 ')'
+		{ $$ = make_qualified_declarator($1.location, $3, CAST(type_element, $2)); }
 	| direct_absdcl1 array_or_absfn_declarator
 		{ $$ = finish_array_or_fn_declarator($1, $2); }
 	| array_or_absfn_declarator 
@@ -2270,27 +2294,23 @@ parms:
 /* A single parameter declaration or parameter type name,
    as found in a parmlist.  */
 parm:
-	  declspecs_ts setspecs parm_declarator maybe_attribute
-		{ $$ = declare_parameter($3, pstate.declspecs, $4,
-					 pstate.all_prefix_attributes, FALSE);
-		  pop_declspec_stack(); }
-	| declspecs_ts setspecs notype_declarator maybe_attribute
-		{ $$ = declare_parameter($3, pstate.declspecs, $4,
-					 pstate.all_prefix_attributes, FALSE);
-		  pop_declspec_stack(); }
-	| declspecs_ts setspecs absdcl
-		{ $$ = declare_parameter($3, pstate.declspecs, NULL,
-					 pstate.all_prefix_attributes, FALSE);
-		pop_declspec_stack(); }
-	| declspecs_nots setspecs notype_declarator maybe_attribute
-		{ $$ = declare_parameter($3, pstate.declspecs, $4,
-					 pstate.all_prefix_attributes, FALSE);
-		  pop_declspec_stack(); }
-	| declspecs_nots setspecs absdcl
-		{ $$ = declare_parameter($3, pstate.declspecs, NULL,
-					 pstate.all_prefix_attributes, FALSE);
-		  pop_declspec_stack(); }
+	  declspecs_ts xreferror parm_declarator maybe_attribute
+		{ $$ = declare_parameter($3, $1, $4, FALSE); }
+	| declspecs_ts xreferror notype_declarator maybe_attribute
+		{ $$ = declare_parameter($3, $1, $4, FALSE); }
+	| declspecs_ts xreferror absdcl
+		{ $$ = declare_parameter($3, $1, NULL, FALSE); }
+	| declspecs_ts xreferror absdcl1_noea attributes
+		{ $$ = declare_parameter($3, $1, $4, FALSE); }
+	| declspecs_nots xreferror notype_declarator maybe_attribute
+		{ $$ = declare_parameter($3, $1, $4, FALSE); }
+	| declspecs_nots xreferror absdcl
+		{ $$ = declare_parameter($3, $1, NULL, FALSE); }
+	| declspecs_nots xreferror absdcl1_noea attributes 
+		{ $$ = declare_parameter($3, $1, $4, FALSE); }
 	;
+
+xreferror: { pending_xref_error(); } ;
 
 /* This is used in a function definition
    where either a parmlist or an identifier list is ok.

@@ -44,8 +44,9 @@ declarator make_interface_ref_declarator(location l, cstring w1, cstring w2)
     new_identifier_declarator(parse_region, l, w2);
 
   return CAST(declarator,
-    new_interface_ref_declarator(parse_region, l,
-				 make_word(l, w1), CAST(declarator, id)));
+	      new_interface_ref_declarator(parse_region, l,
+					   CAST(declarator, id),
+					   make_word(l, w1)));
 }
 
 expression make_interface_deref(location loc, expression object, cstring field)

@@ -1387,7 +1387,7 @@ static declaration parameter2ast(region r, location loc, type t)
   type2ast(r, loc, t, NULL, &tdeclarator, &tmodifiers);
   vd = new_variable_decl(r, loc, tdeclarator, NULL, NULL, NULL, NULL);
   vd->declared_type = t;
-  dd = new_data_decl(r, loc, tmodifiers, NULL, CAST(declaration, vd));
+  dd = new_data_decl(r, loc, tmodifiers, CAST(declaration, vd));
 
   return CAST(declaration, dd);
 }
@@ -1421,8 +1421,11 @@ void type2ast(region r, location loc, type t, declarator inside,
       *d = inside;
       break;
     case tk_pointer:
+      if (qualifiers)
+	inside = CAST(declarator,
+		      new_qualified_declarator(r, loc, inside, qualifiers));
       inside = CAST(declarator,
-		    new_pointer_declarator(r, loc, inside, qualifiers));
+		    new_pointer_declarator(r, loc, inside));
       type2ast(r, loc, t->u.pointsto, inside, d, modifiers);
       break;
     case tk_array:

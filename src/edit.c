@@ -56,7 +56,7 @@ data_decl build_declaration(region r, type t, const char *name)
   type2ast(r, dummy_location, t, CAST(declarator, id), &tdeclarator, &tmodifiers);
   vd = new_variable_decl(r, dummy_location, tdeclarator, NULL, NULL, NULL, NULL);
   vd->declared_type = t;
-  dd = new_data_decl(r, dummy_location, tmodifiers, NULL, CAST(declaration, vd));
+  dd = new_data_decl(r, dummy_location, tmodifiers, CAST(declaration, vd));
 
   return dd;
 }

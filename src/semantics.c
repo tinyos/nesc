@@ -495,6 +495,16 @@ bool new_style(declaration parameters)
   return parameters && !is_oldidentifier_decl(parameters);
 }
 
+static dd_list push_attribute(dd_list al, attribute attr)
+{
+  /* pstate.ds_region would be good, but isn't quite accessible */
+  if (!al)
+    al = dd_new_list(parse_region);
+  dd_add_last(parse_region, al, attr);
+
+  return al;
+}
+
 static void check_duplicate_rid(int specbits, rid rspec)
 {
   if (specbits & 1 << rspec->id)
@@ -521,17 +531,27 @@ static void check_legal_qualifiers(location l, type_quals quals)
   /* Placeholder for checks for any extra qualifiers */
 }
 
-static type_quals parse_qualifiers(location l, type_element qlist)
+static type_quals parse_qualifiers(location l, type_element qlist,
+				   dd_list *oattributes)
 {
-  qualifier q;
+  type_element q;
   type_quals tqs = no_qualifiers;
 
-  /* Actually qlist is a list of qualifier */
-  scan_qualifier (q, CAST(qualifier, qlist))
-    {
-      check_duplicate_qualifiers1(q->location, q->id, tqs);
-      tqs |= q->id;
-    }
+  scan_type_element (q, qlist)
+    if (is_qualifier(q))
+      {
+	qualifier qq = CAST(qualifier, q);
+
+	check_duplicate_qualifiers1(qq->location, qq->id, tqs);
+	tqs |= qq->id;
+      }
+    else if (is_attribute(q))
+      {
+	/* currently we don't handle any attributes on types. If we did,
+	   there would be a test here to see if q was a type attribute.
+	   If it were, then we wouldn't do the next statement */
+	*oattributes = push_attribute(*oattributes, CAST(attribute, q));
+      }
   check_legal_qualifiers(l, tqs);
   return tqs;
 }
@@ -553,7 +573,8 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 		      int *oclass, bool *oinlinep, bool *odefaultp,
 		      const char **ointf, const char **oname,
 		      type *ot, bool *owarn_defaulted_int,
-		      function_declarator *ofunction_declarator)
+		      function_declarator *ofunction_declarator,
+		      dd_list *oattributes)
 {
   location loc = d ? d->location : modifiers->location;
   int specbits = 0, nclasses = 0;
@@ -563,6 +584,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
   type_element spec;
   type t = NULL;
   bool modified;
+  dd_list attributes = NULL;
 
   *owarn_defaulted_int = FALSE;
 
@@ -643,6 +665,9 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	  break;
 	case kind_struct_ref: case kind_union_ref: case kind_enum_ref:
 	  newtype = make_tagged_type(CAST(tag_ref, spec)->tdecl);
+	  break;
+	case kind_attribute:
+	  attributes = push_attribute(attributes, CAST(attribute, spec));
 	  break;
 	default: assert(0); break;
 	}
@@ -900,7 +925,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	case kind_function_declarator:
 	  {
 	    function_declarator fd = CAST(function_declarator, d);
-	    type_quals fnquals = parse_qualifiers(fd->location, fd->qualifiers);
+	    type_quals fnquals = parse_qualifiers(fd->location, fd->qualifiers, NULL);
 	    bool newstyle;
 
 	    d = fd->declarator;
@@ -985,8 +1010,16 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	    pointer_declarator pd = CAST(pointer_declarator, d);
 
 	    d = pd->declarator;
-	    t = make_qualified_type(make_pointer_type(t),
-				    parse_qualifiers(pd->location, pd->qualifiers));
+	    t = make_pointer_type(t);
+	    break;
+	  }
+
+	case kind_qualified_declarator:
+	  {
+	    qualified_declarator qd = CAST(qualified_declarator, d);
+
+	    d = qd->declarator;
+	    t = make_qualified_type(t, parse_qualifiers(qd->location, qd->modifiers, &attributes));
 	    break;
 	  }
 
@@ -1009,6 +1042,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
     }
 
   *ot = t;
+  *oattributes = attributes;
 }
 
 static declarator finish_function_declarator(function_declarator fd)
@@ -1587,10 +1621,29 @@ void handle_attributes(attribute alist, data_declaration ddecl,
     handle_attribute(alist, ddecl, fdecl, tdecl);
 }
 
+void handle_dd_attributes(dd_list alist, data_declaration ddecl, 
+			  field_declaration fdecl, tag_declaration tdecl)
+{
+  dd_list_pos attr;
+
+  if (alist)
+    dd_scan (attr, alist)
+      handle_attribute(DD_GET(attribute, attr), ddecl, fdecl, tdecl);
+}
+
 void ignored_attributes(attribute alist)
 {
   scan_attribute (alist, alist)
     ignored_attribute(alist);
+}
+
+void ignored_dd_attributes(dd_list alist)
+{
+  dd_list_pos attr;
+
+  if (alist)
+    dd_scan (attr, alist)
+      ignored_attribute(DD_GET(attribute, attr));
 }
 
 bool is_doublecharstar(type t)
@@ -1849,13 +1902,14 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   bool defaultp;
   char *short_docstring = NULL;
   char *long_docstring = NULL;
-
+  dd_list extra_attr;
 
   if (!nested)
     assert(current.env->global_level && current.function_decl == NULL);
 
   parse_declarator(elements, d, FALSE, TRUE, &class, &inlinep, &defaultp,
-		   &intf, &name, &function_type, &defaulted_int, &fdeclarator);
+		   &intf, &name, &function_type, &defaulted_int, &fdeclarator,
+		   &extra_attr);
 
   actual_function_type = type_generic(function_type) ?
     type_function_return_type(function_type) : function_type;
@@ -1952,6 +2006,7 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   tempdecl.definition = tempdecl.ast;
 
   handle_attributes(attribs, &tempdecl, NULL, NULL);
+  handle_dd_attributes(extra_attr, &tempdecl, NULL, NULL);
 
   if (intf)
     {
@@ -2204,32 +2259,28 @@ const char *declarator_name(declarator d)
 	{
 	case kind_identifier_declarator:
 	  return CAST(identifier_declarator, d)->cstring.data;
-	case kind_function_declarator:
-	  d = CAST(function_declarator, d)->declarator; break;
-	case kind_array_declarator:
-	  d = CAST(array_declarator, d)->declarator; break;
-	case kind_pointer_declarator:
-	  d = CAST(pointer_declarator, d)->declarator; break;
-	case kind_interface_ref_declarator:
-	  d = CAST(interface_ref_declarator, d)->declarator; break;
-	default: assert(0);
+	default:
+	  d = CAST(nested_declarator, d)->declarator;
+	  break;
 	}
     }
   return NULL;
 }
 
-void check_parameter(data_declaration dd,
-		     type_element elements, variable_decl vd)
+dd_list check_parameter(data_declaration dd,
+			type_element elements, variable_decl vd)
+/* Returns: Attributes found while parsing the declarator */
 {
   int class;
   bool inlinep;
   const char *name, *printname;
   bool defaulted_int;
   type parm_type;
+  dd_list extra_attr;
 
   parse_declarator(elements, vd->declarator, FALSE, FALSE,
 		   &class, &inlinep, NULL, NULL, &name, &parm_type,
-		   &defaulted_int, NULL);
+		   &defaulted_int, NULL, &extra_attr);
   vd->declared_type = parm_type;
   printname = name ? name : "type name";
 
@@ -2262,20 +2313,22 @@ void check_parameter(data_declaration dd,
   dd->isused = TRUE;
   dd->vtype = class == RID_REGISTER ? variable_register : variable_normal;
   dd->islocal = dd->isparameter = TRUE;
+
+  return extra_attr;
 }
 
-/* Start definition of variable 'elements d' with attributes
-   extra_attributes and attributes, asm specification astmt.
+/* Start definition of variable 'elements d' with attributes attributes, 
+   asm specification astmt.
    If initialised is true, the variable has an initialiser.
    Returns the declaration for the variable.
 */
 declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
-		       bool initialised, attribute extra_attributes,
-		       attribute attributes)
+		       bool initialised, attribute attributes)
 {
   variable_decl vd = 
-    new_variable_decl(parse_region, d->location, d, extra_attributes, NULL,
+    new_variable_decl(parse_region, d->location, d, attributes, NULL,
 		      astmt, NULL);
+  dd_list extra_attr;
   struct data_declaration tempdecl;
   data_declaration ddecl = NULL, old_decl;
   char *short_docstring = NULL;
@@ -2290,10 +2343,10 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
 
   if (current.env->parm_level)
     {
-      check_parameter(&tempdecl, elements, vd);
+      extra_attr = check_parameter(&tempdecl, elements, vd);
 
-      handle_attributes(extra_attributes, &tempdecl, NULL, NULL);
       handle_attributes(attributes, &tempdecl, NULL, NULL);
+      handle_dd_attributes(extra_attr, &tempdecl, NULL, NULL);
 
       if (type_void(tempdecl.type))
 	{
@@ -2349,7 +2402,7 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
 
       parse_declarator(elements, d, FALSE, FALSE,
 		       &class, &inlinep, NULL, NULL, &name, &var_type,
-		       &defaulted_int, &fdeclarator);
+		       &defaulted_int, &fdeclarator, &extra_attr);
       vd->declared_type = var_type;
       printname = name ? name : "type name";
 
@@ -2522,8 +2575,8 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
 	  !current.env->global_level && !tempdecl.in_system_header)
 	warning("nested extern declaration of `%s'", printname);
 
-      handle_attributes(extra_attributes, &tempdecl, NULL, NULL);
       handle_attributes(attributes, &tempdecl, NULL, NULL);
+      handle_dd_attributes(extra_attr, &tempdecl, NULL, NULL);
 
       old_decl = lookup_id(name, !tempdecl.Cname);
       /* Check the global environment if declaring something with file
@@ -2605,12 +2658,11 @@ declaration finish_decl(declaration decl, expression init)
 }
 
 /* Create definition of function parameter 'elements d' with attributes
-   extra_attributes and attributes.
+   attributes.
    Returns the declaration for the parameter.
 */
 declaration declare_parameter(declarator d, type_element elements,
-			      attribute extra_attributes, attribute attributes,
-			      bool generic)
+			      attribute attributes, bool generic)
 {
   /* There must be at least a declarator or some form of type specification */
   location l =
@@ -2618,12 +2670,12 @@ declaration declare_parameter(declarator d, type_element elements,
   variable_decl vd =
     new_variable_decl(parse_region, l, d, attributes, NULL, NULL, NULL);
   data_decl dd =
-    new_data_decl(parse_region, l, elements, extra_attributes,
-		  CAST(declaration, vd));
+    new_data_decl(parse_region, l, elements, CAST(declaration, vd));
   data_declaration ddecl = NULL, old_decl = NULL;
   struct data_declaration tempdecl;
+  dd_list extra_attr;
 
-  check_parameter(&tempdecl, elements, vd);
+  extra_attr = check_parameter(&tempdecl, elements, vd);
 
   if (tempdecl.name)
     old_decl = lookup_id(tempdecl.name, TRUE);
@@ -2649,12 +2701,12 @@ declaration declare_parameter(declarator d, type_element elements,
 	check_generic_parameter_type(l, ddecl);
 
 
-      handle_attributes(extra_attributes, ddecl, NULL, NULL);
       handle_attributes(attributes, ddecl, NULL, NULL);
+      handle_dd_attributes(extra_attr, ddecl, NULL, NULL);
     }
   else
     {
-      ignored_attributes(extra_attributes);
+      ignored_dd_attributes(extra_attr);
       ignored_attributes(attributes);
     }
 
@@ -2894,13 +2946,14 @@ type_element finish_struct(type_element t, declaration fields,
 	      bool defaulted_int;
 	      type tmpft;
 	      location floc = field->location;
+	      dd_list extra_attr;
 
 	      fdecl = ralloc(parse_region, struct field_declaration);
 
 	      parse_declarator(flist->modifiers, field->declarator,
 			       field->arg1 != NULL, FALSE,
 			       &class, &inlinep, NULL, NULL, &name, &tmpft,
-			       &defaulted_int, NULL);
+			       &defaulted_int, NULL, &extra_attr);
 	      field_type = tmpft;
 
 	      printname = name ? name : "(anonymous)";
@@ -2923,7 +2976,7 @@ type_element finish_struct(type_element t, declaration fields,
 
 	      fdecl->type = field_type;
 	      handle_attributes(field->attributes, NULL, fdecl, NULL);
-	      handle_attributes(flist->attributes, NULL, fdecl, NULL);
+	      handle_dd_attributes(extra_attr, NULL, fdecl, NULL);
 	      field_type = fdecl->type; /* attributes might change type */
 
 	      bitwidth = -1;
@@ -3242,20 +3295,19 @@ declaration make_enumerator(location loc, cstring id, expression value)
 }
 
 /* Create declaration of field 'elements d : bitfield' with attributes
-   extra_attributes and attributes.
+   attributes.
    d can be NULL, bitfield can be NULL, but not both at the same time.
    Returns the declaration for the field.
 */
 declaration make_field(declarator d, expression bitfield,
-		       type_element elements, attribute extra_attributes,
-		       attribute attributes)
+		       type_element elements, attribute attributes)
 {
   /* We get at least one of a declarator or a bitfield */
   location l = d ? d->location : bitfield->location;
 
   return
     CAST(declaration,
-	 new_field_decl(parse_region, l, d, extra_attributes, bitfield));
+	 new_field_decl(parse_region, l, d, attributes, bitfield));
 }
 
 
@@ -3268,10 +3320,11 @@ asttype make_type(type_element elements, declarator d)
   const char *name;
   bool defaulted_int;
   asttype t = new_asttype(parse_region, l, d, elements);
+  dd_list extra_attr;
 
   parse_declarator(t->qualifiers, t->declarator, FALSE, FALSE,
 		   &class, &inlinep, NULL, NULL, &name, 
-		   &t->type, &defaulted_int, NULL);
+		   &t->type, &defaulted_int, NULL, &extra_attr);
   assert(t->type && !(defaulted_int || inlinep || class || name));
 
   return t;

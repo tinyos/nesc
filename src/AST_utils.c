@@ -37,14 +37,9 @@ function_declarator get_fdeclarator(declarator d)
 	return CAST(function_declarator, d);
       case kind_identifier_declarator:
 	return NULL;
-      case kind_array_declarator:
-	d = CAST(array_declarator, d)->declarator;
-	break;
-      case kind_pointer_declarator:
-	d = CAST(pointer_declarator, d)->declarator;
-	break;
       default:
-	assert(0); return NULL;
+	d = CAST(nested_declarator, d)->declarator;
+	break;
       }
 }
 

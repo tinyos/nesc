@@ -1434,7 +1434,7 @@ expression make_offsetof(location loc, asttype t, dd_list fields)
 
       /* Build ((size_t)&((t *)0)->fields) */
       ptr_to_t_d = CAST(declarator,
-	new_pointer_declarator(parse_region, loc, t->declarator, NULL));
+	new_pointer_declarator(parse_region, loc, t->declarator));
       t = make_type(t->qualifiers, ptr_to_t_d);
       cast = make_cast(loc, t, zero);
       fieldref = make_dereference(loc, cast);
