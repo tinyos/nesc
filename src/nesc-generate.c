@@ -229,12 +229,8 @@ void prt_ncf_direct_calls(struct connections *c,
     }
 }
 
-int condition_compare(const void *p1, const void *p2)
+static int constant_expression_list_compare(expression arg1, expression arg2)
 {
-  struct full_connection *const *c1 = p1, *const *c2 = p2;
-  expression arg1, arg2;
-
-  arg1 = (*c1)->cond; arg2 = (*c2)->cond;
   while (arg1)
     {
       largest_int uval1, uval2;
@@ -254,6 +250,13 @@ int condition_compare(const void *p1, const void *p2)
   assert(!arg2);
 
   return 0;
+}
+
+static int condition_compare(const void *p1, const void *p2)
+{
+ struct full_connection *const *c1 = p1, *const *c2 = p2;
+
+  return constant_expression_list_compare((*c1)->cond, (*c2)->cond);
 }
 
 static void prt_ncf_condition(struct connections *c, expression cond)
@@ -429,6 +432,16 @@ static bool find_reachable_functions(struct connections *c, gnode n,
       /* First set of arguments is a condition if 'called' is generic */
       if (c->called->gparms && !gcond)
 	gcond = ep->args;
+      else if (gargs)
+	{
+	  /* We already have some arguments, so this is a condition again.
+	     If the condition doesn't match gargs, then the call is
+	     filtered out. If they do match, we set gargs to null (we're
+	     back to a non-parameterised call) */
+	  if (constant_expression_list_compare(gargs, ep->args) != 0)
+	    return FALSE;
+	  gargs = NULL;
+	}
       else
 	{
 	  assert(!gargs);
