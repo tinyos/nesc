@@ -1,4 +1,3 @@
-includes nx;
 module t1 { }
 implementation {
   nw_struct fun {
