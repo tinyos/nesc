@@ -172,9 +172,7 @@ void compile(location loc, source_language l,
   const char *path =
     name_is_path ? name : find_nesc_file(parse_region, l, name);
   FILE *f = NULL;
-  struct semantic_state old_semantic_state;
-
-  old_semantic_state = current;
+  struct semantic_state old_semantic_state = current;
 
   if (!path)
     error_with_location(loc, "%s %s not found", language_name(l), name);
@@ -231,6 +229,9 @@ nesc_decl dummy_nesc_decl(source_language sl, const char *name)
 
 void build(nesc_declaration decl, nesc_decl ast)
 {
+  struct semantic_state old_semantic_state = current;
+
+  current.container = decl;
   decl->ast = ast;
 
   if (ast->docstring)
@@ -248,6 +249,8 @@ void build(nesc_declaration decl, nesc_decl ast)
     default:
       assert(0);
     }
+
+  current = old_semantic_state;
 }
 
 nesc_declaration load(source_language sl, location l,
