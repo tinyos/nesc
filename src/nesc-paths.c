@@ -83,9 +83,14 @@ static char *canonicalise(region r, const char *path, int len)
 static void add_dir(region r, const char *path, int len)
 {
   struct path *np = ralloc(r, struct path);
+  int l;
+
   np->next = searchpath;
   searchpath = np;
   np->dirname = canonicalise(r, path, len);
+  l = strlen(np->dirname);
+  if (l > maxdirlen)
+    maxdirlen = l;
 }
 
 void add_nesc_dir(const char *path)
@@ -133,14 +138,9 @@ static void build_search_path(region r, const char *pathlist)
 
       while ((colon = strchr(pathlist, ':')))
 	{
-	  int l;
-
 	  *colon = '\0';
 	  add_dir(r, pathlist, colon - pathlist);
 	  pathlist = colon + 1;
-	  l = strlen(searchpath->dirname);
-	  if (l > maxdirlen)
-	    maxdirlen = l;
 	}
       add_dir(r, pathlist, strlen(pathlist));
     }

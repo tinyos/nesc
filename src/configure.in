@@ -32,6 +32,20 @@ AM_INIT_AUTOMAKE(nesc, 0.1)
 
 : ${CFLAGS=-g}
 
+AC_CANONICAL_HOST
+AC_MSG_CHECKING(for darwin)
+case $host in
+  *-*-darwin*)
+    CPPFLAGS=-traditional-cpp
+    CFLAGS="$CFLAGS -Wno-long-double"
+    AC_MSG_RESULT(yes)
+    ;;
+  *)
+    AC_MSG_RESULT(no)
+esac
+AC_SUBST(CPPFLAGS)
+AC_SUBST(CFLAGS)
+
 AC_PROG_CC
 AC_PROG_RANLIB
 AC_PROG_MAKE_SET

@@ -269,6 +269,10 @@ static void preprocess_setargs(void *data, const char **argv)
       argv[arg++] = "-x";
       argv[arg++] = "c";
     }
+#ifdef __APPLE_CC__
+  /* The default preprocessor is amazingly broken */
+  argv[arg++] = "-traditional-cpp";
+#endif
   argv[arg++] = "-imacros";
   argv[arg++] = fix_filename(filename_region, cpp_macros);
   argv[arg++] = fix_filename(filename_region, closure->filename);
@@ -280,7 +284,7 @@ FILE *preprocess(const char *filename, source_language l)
 {
   struct preprocess_args_closure closure;
   char *cpp_dest = rstrdup(parse_region, "/tmp/nesccppsXXXXXX");
-  int nargs = 11 + path_argv_count + saved_options_count;
+  int nargs = 12 + path_argv_count + saved_options_count;
   FILE *output;
 
   closure.l = l;
