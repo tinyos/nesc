@@ -20,6 +20,9 @@ Boston, MA 02111-1307, USA.  */
 
 void process_configuration(configuration c);
 
+void check_generic_arguments(expression args, typelist gparms);
+struct endp;
+typelist endpoint_args(struct endp *p);
 void component_scan(data_declaration cref, env_scanner *scan);
 
 #endif

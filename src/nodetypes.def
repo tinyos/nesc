@@ -132,6 +132,7 @@
 (deffield ep1 endpoint (init tree))
 (deffield ep2 endpoint (init tree))
 (deffield ids parameterised_identifier (init tree))
+(deffield newid parameterised_identifier ())
 (deffield external bool (init))
 (deffield ienv environment (init))
 (deffield docstring "char *" (init))
@@ -600,8 +601,10 @@ Legal if exactly one of EP1 and EP2 are interfaces of the component")
 (deftype endpoint node (ids)
   "a list of parameterised_identifier in IDS")
 
-(deftype parameterised_identifier node (word1 args)
-  "WORD1[ARGS] if ARGS != null, just WORD1 otherwise")
+(deftype parameterised_identifier node (word1 args newid)
+  "WORD1[ARGS] if ARGS != null, just WORD1 otherwise
+NEWID is used during abstract configuration instantiation to point to the
+new instantiation of a parameterised_identifier node")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; types for extensions to the regular C syntax

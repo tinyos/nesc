@@ -493,30 +493,30 @@ static bool find_reachable_functions(struct connections *c, gnode n,
 {
   endp ep = NODE_GET(endp, n);
 
-  if (ep->args)
+  if (ep->args_node)
     {
       /* First set of arguments is a condition if 'called' is generic */
       if (c->called->gparms && !gcond)
-	gcond = ep->args;
+	gcond = ep->args_node->args;
       else if (gargs)
 	{
 	  /* We already have some arguments, so this is a condition again.
 	     If the condition doesn't match gargs, then the call is
 	     filtered out. If they do match, we set gargs to null (we're
 	     back to a non-parameterised call) */
-	  if (constant_expression_list_compare(gargs, ep->args) != 0)
+	  if (constant_expression_list_compare(gargs, ep->args_node->args) != 0)
 	    return FALSE;
 	  gargs = NULL;
 	}
       else
 	{
 	  assert(!gargs);
-	  gargs = ep->args;
+	  gargs = ep->args_node->args;
 	}
     }
   if (graph_node_markedp(n))
     return TRUE;
-  else if (!ep->args && ep->function->defined &&
+  else if (!ep->args_node && ep->function->defined &&
 	   is_module(((nesc_declaration)ep->function->container)->impl))
     {
       full_connection target = new_full_connection(c->r, ep, gcond, gargs);

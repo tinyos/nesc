@@ -22,6 +22,7 @@ Boston, MA 02111-1307, USA.  */
 #include "c-parse.h"
 #include "nesc-component.h"
 #include "nesc-semantics.h"
+#include "nesc-configuration.h"
 #include "AST_walk.h"
 #include "semantics.h"
 #include "constants.h"
@@ -127,6 +128,18 @@ static AST_walker_result clone_interface_deref(AST_walker spec, void *data,
   interface_deref new = CAST(interface_deref, AST_clone(data, CAST(node, *n)));
 
   forward(&new->ddecl);
+  *n = new;
+
+  return aw_walk;
+}
+
+static AST_walker_result clone_parameterised_identifier
+  (AST_walker spec, void *data, parameterised_identifier *n)
+{
+  parameterised_identifier new =
+    CAST(parameterised_identifier, AST_clone(data, CAST(node, *n)));
+
+  (*n)->newid = new; /* Save ptr to new node */
   *n = new;
 
   return aw_walk;
@@ -260,6 +273,8 @@ static void instantiate_endp(endp ep)
     ep->interface = ep->interface->instantiation;
   if (ep->function->instantiation)
     ep->function = ep->function->instantiation;
+  if (ep->args_node)
+    ep->args_node = ep->args_node->newid;
 }
 
 static void instantiate_cg(cgraph copy, cgraph original)
@@ -271,8 +286,7 @@ static void instantiate_cg(cgraph copy, cgraph original)
   gnode n;
   gedge connection;
 
-  /* Add all edges from original to copy, but with updated
-     ddecls */
+  /* Add all edges from original to copy, but with updated ddecls */
   graph_scan_nodes (n, orig_g)
     {
       struct endp from = *NODE_GET(endp, n);
@@ -320,10 +334,10 @@ static AST_walker_result clone_configuration(AST_walker spec, void *data,
 
   *n = new;
 
-  /* Copy the components, further instantiating any abstract ones */
-  AST_walk_list(spec, data, CASTPTR(node, &new->components));
+  /* Copy the components and connections */
+  AST_walk_children(spec, data, CAST(node, new));
 
-  /* We don't copy the connections, instead we copy the connection graph
+  /* Copy the connection graph
      (note that comp->connections was initialised to an "empty" graph */
   instantiate_cg(comp->connections, original_component(comp)->connections);
 
@@ -344,6 +358,8 @@ static void init_clone(void)
   AST_walker_handle(clone_walker, kind_function_decl, clone_function_decl);
   AST_walker_handle(clone_walker, kind_identifier, clone_identifier);
   AST_walker_handle(clone_walker, kind_interface_deref, clone_interface_deref);
+  AST_walker_handle(clone_walker, kind_parameterised_identifier,
+		    clone_parameterised_identifier);
   AST_walker_handle(clone_walker, kind_variable_decl, clone_variable_decl);
   AST_walker_handle(clone_walker, kind_typename, clone_typename);
   AST_walker_handle(clone_walker, kind_enumerator, clone_enumerator);
@@ -552,6 +568,22 @@ static void check_parameter_values(nesc_declaration cdecl, expression args)
     }
 }
 
+static void check_cg(cgraph connections)
+/* Effects: Checks constants used in the connections graph
+ */
+{
+  ggraph g = cgraph_graph(connections);
+  gnode n;
+
+  graph_scan_nodes (n, g)
+    {
+      endp ep = NODE_GET(endp, n);
+
+      if (ep->args_node)
+	check_generic_arguments(ep->args_node->args, endpoint_args(ep));
+    }
+}
+
 static void check_constant_uses_components(nesc_declaration cdecl)
 {
   if (!cdecl->folded)
@@ -568,6 +600,7 @@ static void check_constant_uses_components(nesc_declaration cdecl)
       component_ref comp;
       configuration c = CAST(configuration, cdecl->impl);
 
+      check_cg(cdecl->connections);
       scan_component_ref (comp, c->components)
 	{
 	  current.container = cdecl;

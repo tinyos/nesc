@@ -46,9 +46,9 @@ static void connect_function(cgraph cg, struct endp from, struct endp to)
 
   graph_add_edge(gfrom, gto, NULL);
   /* If an endpoint has args, we must also connect the node w/o args */
-  if (from.args)
+  if (from.args_node)
     graph_add_edge(fn_lookup(cg, from.function), gfrom, NULL);
-  if (to.args)
+  if (to.args_node)
     graph_add_edge(gto, fn_lookup(cg, to.function), NULL);
 }
 
@@ -56,7 +56,7 @@ static type endpoint_type(endp p)
 {
   type t = NULL;
 
-  if (p->args)
+  if (p->args_node)
     {
       if (p->function)
 	t = type_function_return_type(p->function->type);
@@ -78,6 +78,21 @@ static type endpoint_type(endp p)
 	}
     }
   return t;
+}
+
+typelist endpoint_args(endp p)
+{
+  if (p->function)
+    {
+      type t = p->function->type;
+
+      if (type_generic(t))
+	return type_function_arguments(t);
+    }
+  else if (p->interface)
+    return p->interface->gparms;
+
+  return NULL;
 }
 
 static void connect_interface(cgraph cg, struct endp from, struct endp to,
@@ -215,7 +230,7 @@ int match_function_component(bool eqconnection,
 }
 
 
-static void check_generic_arguments(expression args, typelist gparms)
+void check_generic_arguments(expression args, typelist gparms)
 {
   expression arg;
   typelist_scanner scan_gparms;
@@ -254,7 +269,7 @@ static bool lookup_endpoint(environment configuration_env, endpoint ep,
   environment lookup_env = configuration_env;
 
   lep->component = lep->interface = lep->function = NULL;
-  lep->args = NULL;
+  lep->args_node = NULL;
 
   scan_parameterised_identifier (pid, ep->ids)
     {
@@ -287,7 +302,7 @@ static bool lookup_endpoint(environment configuration_env, endpoint ep,
 	    {
 	      if (pid->next)
 		error_with_location(l, "arguments must be specified last");
-	      lep->args = args;
+	      lep->args_node = pid;
 	    }
 
 	  switch (d->kind)
@@ -323,22 +338,12 @@ static bool lookup_endpoint(environment configuration_env, endpoint ep,
     }
 
   /* Check generic arguments */
-  if (lep->args)
+  if (lep->args_node)
     {
-      typelist gparms = NULL;
-
-      if (lep->function)
-	{
-	  type t = lep->function->type;
-
-	  if (type_generic(t))
-	    gparms = type_function_arguments(t);
-	}
-      else if (lep->interface)
-	gparms = lep->interface->gparms;
+      typelist gparms = endpoint_args(lep);
 
       if (gparms)
-	check_generic_arguments(lep->args, gparms);
+	check_generic_arguments(lep->args_node->args, gparms);
       else
 	error_with_location(ep->location, "endpoint is not a parameterised interface");
     }

@@ -23,11 +23,13 @@ Boston, MA 02111-1307, USA.  */
 struct endp
 {
   data_declaration component, interface, function;
-  expression args; /* list of args for the interface if not NULL.
-		      If no errors have been reported, then
-		        constant_integral(e->cst) || constant_unknown(e->cst)
-		      for all expressions e in args
-		   */
+
+  /* args_node->args is the list of args for the interface if not NULL.
+     If no errors have been reported, then
+       constant_integral(e->cst) || constant_unknown(e->cst)
+     for all expressions e in the list
+  */
+  parameterised_identifier args_node; 
 };
 
 typedef struct endp *endp;

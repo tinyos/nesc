@@ -242,7 +242,7 @@ void beg_iterator(data_declaration fndecl, void *data)
   node.component = NULL;
   node.interface = fndecl->interface;
   node.function = fndecl;
-  node.args = NULL;
+  node.args_node = NULL;
   endpoint_lookup(d->cg, &node);
 }
 
