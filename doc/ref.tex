@@ -466,6 +466,7 @@ radio and serial port networking).
 \end{itemize}
 
 \subsection{Bare Commands and Events}
+\label{sec:bare}
 
 Commands or events can be included directly as specification elements by
 including a standard C function declaration with
@@ -1520,6 +1521,117 @@ component's specification or implementation are processed).
 \section{Miscellaneous}
 \label{sec:misc}
 
+\subsection{Constant Folding in \nesc}
+\label{sec:constant-folding}
+
+There are two extensions to C's constant folding (see A.7.19 in
+\cite{kandr}) in \nesc: \emph{constant functions} and \emph{unknown
+constants}. \emph{Constant Functions} are functions provided by the \nesc
+language which return a compile-time constant. The definition of \nesc's
+constant functions is given in Section~\ref{sec:constant-functions}. An
+\emph{unknown constant} is a constant whose value is not yet known, e.g.,
+non-type parameters to generic components are unknown constants. Unknown
+constants allow the definition of a generic component to be (mostly, see
+below) checked for correctness before its arguments' values are known.
+
+An expression involving an unknown constant is considered a constant
+expression if the resulting expression is constant irrespective of the
+unknown constant's value, with the following exceptions: $a / b$ and $a \%
+b$ can assume that $b$ is not zero. Constant expressions involving unknown
+constants are re-checked once the values of constant expressions become
+known.\footnote{The time at which the value of unknown constants become
+known is unspecified by this language definition.} As a result, the
+following generic component definition is legal:
+\begin{quote}
+\begin{verbatim}
+generic module A(int n) { }
+implementation {
+  int s = 20 / n;
+}
+\end{verbatim}
+\end{quote}
+but the following instantiation will report a compile-time error:
+\begin{quote}
+\begin{verbatim}
+ configuration B { }
+implementation {
+  components new A(0) as MyA;
+}
+\end{verbatim}
+\end{quote}
+
+\subsection{Compile-time Constant Functions}
+\label{sec:constant-functions}
+
+\nesc currently has two constant functions:
+\begin{itemize}
+\item 
+\code{unsigned int unique(char *identifier)} \\ Returns: each call to
+\code{unique} with the same \code{identifier} string returns a different
+value. The expansion of \code{unique} calls happens after generic component
+instantiation (Section~\ref{sec:load-component}): calls to \code{unique} in
+generic components return a different value in each instantiation. The
+range of values returned by \code{unique($s$)} is $0 .. n-1$, where $n$ is
+the number of different values returned by \code{unique($s$)}. For
+purposes of checking constant expressions, \code{unique($s$)} behaves
+as if it were an unknown constant.
+
+The intended use of \code{unique} is for passing a unique integer
+to parameterised interface instances, so that a component providing
+a parameterised interface can uniquely identify the various components
+connected to that interface.
+
+\item \code{unsigned int uniqueCount(char *identifier)} \\ Returns:
+\code{uniqueCount($s$)} returns one more than the largest value returned by
+any of the calls to \code{unique($s$)}, or 0 if there are no calls to
+\code{unique($s$)}. For purposes of checking constant expressions,
+\code{uniqueCount($s$)} behaves as if it were an unknown constant.
+
+The intended use of \code{uniqueCount} is for dimensioning arrays (or other
+data structures) which will be indexed using the numbers returned by
+\kw{unique}. For instance, a \kw{Timer} service that identifies its clients
+(and hence each independent timer) via a parameterised interface and
+\kw{unique} can use \kw{uniqueCount} to allocate the correct number of
+timer data structures.
+
+\end{itemize}
+
+In the following example:
+\begin{quote}
+\begin{verbatim}
+generic module A() { }
+implementation {
+  int x = unique("A");
+  int y = uniqueCount("A");
+}
+configuration B { }
+implementation {
+  components new A() as A1, new A() as A2;
+}
+\end{verbatim}
+\end{quote}
+\code{B.A1.y = B.A2.y = 2} and either \code{B.A1.x = 0, B.A2.x = 1} or
+\code{B.A1.x = 1, B.A2.x = 0}.
+
+\subsection{Type Parameters and C Type Checking}
+\label{sec:type-parameters}
+
+Generic interface and component definitions can have type
+parameters. Syntaxically, type parameters behave the same as \kw{typedef}'d
+identifiers. When a generic component or interface is instantiated, the
+type parameter will be replaced with the argument type, which cannot be
+incomplete, of function or of array type. The size and alignment of a type
+parameter are an unknown constant (Section~\ref{sec:constant-folding}).
+The rules for assignment and type equivalence for a type parameter $t$ are
+simple: a value of type $t$ is assignable to an lvalue of type $t$ (extends
+A.7.17 in~\cite{kandr}) and type $t$ is only equivalent to itself (extends
+A.8.10 in~\cite{kandr}).
+
+
+\begin{itemize}
+\item To build new 
+\end{itemize}
+
 \subsection{Functions with no arguments, old-style C declarations}
 \label{sec:misc-void}
 
@@ -1640,38 +1752,6 @@ in the C global scope (\code{C}), so that the linker can find it. It
 also declares that \code{main} can be called even though there are no
 function calls to \code{main} anywhere in the program
 (\code{spontaneous}). 
-
-\subsection{Compile-time Constant Functions}
-
-\nesc has a new kind of constant expression: \emph{constant
-functions}. These are functions defined within the language which
-evaluate to a constant at compile-time.
-
-\nesc currently has two constant functions:
-\begin{itemize}
-\item 
-\code{unsigned int unique(char *identifier)} \\ Returns: if the program
-contains $n$ calls to \code{unique} with the same \code{identifier}
-string, each calls returns a different unsigned integer in the range
-$0 .. n-1$.
-
-The intended use of \code{unique} is for passing a unique integer
-to parameterised interface instances, so that a component providing
-a parameterised interface can uniquely identify the various components
-connected to that interface.
-
-\item \code{unsigned int uniqueCount(char *identifier)} \\ Returns: if the
-program contains $n$ calls to \code{unique} with the same \code{identifier}
-string, then \code{uniqueCount} will return $n$.
-
-The intended use of \code{uniqueCount} is for dimensioning arrays (or other
-data structures) which will be indexed using the numbers returned by
-\kw{unique}. For instance, a \kw{Timer} service that identifies its clients
-(and hence each independent timer) via a parameterised interface and
-\kw{unique} can use \kw{uniqueCount} to allocate the correct number of
-timer data structures.
-
-\end{itemize}
 
 \appendix
 
