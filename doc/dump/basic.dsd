@@ -211,7 +211,9 @@
     </declare>
   </if>
 
-  <m:doc>Array types include a number of elements</m:doc>
+  <m:doc>Array types include a number of elements. An unspecified number
+	of elements is represented as a non-constant value for the elements
+	 attribute.</m:doc>
   <if>
     <element name="nesc:type-array"/>
     <declare>

@@ -24,6 +24,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-cg.h"
 #include "semantics.h"
 #include "nesc-semantics.h"
+#include "nesc-component.h"
 #include "constants.h"
 
 dd_list/*nd_option*/ opts;
@@ -120,7 +121,15 @@ void dump_ddecl(data_declaration ddecl)
       indentedtag_start("constant");
       xml_attr_cval("cst", ddecl->value->cval);
       break;
-    case decl_function: indentedtag_start("function"); break;
+    case decl_function:
+      indentedtag_start("function");
+      switch (ddecl->ftype)
+	{
+	case function_event: xml_attr_noval("event"); break;
+	case function_command: xml_attr_noval("command"); break;
+	default: break;
+	}
+      break;
     case decl_typedef: indentedtag_start("typedef"); break;
     case decl_interface_ref:
       indentedtag_start("interface");
@@ -133,16 +142,42 @@ void dump_ddecl(data_declaration ddecl)
   xml_attr_ptr("ref", ddecl);
   xml_tag_end();
 
+  /* Symbols have either a nesC container, a containing function, containing
+     interface or none of these (global symbols) */
+  xstartline();
+  if (ddecl->container)
+    nxml_ndecl_ref(ddecl->container);
+  if (ddecl->container_function)
+    nxml_ddecl_ref(ddecl->container_function);
+
   nxml_type(ddecl->type);
   dump_attributes(ddecl->attributes);
 
   switch (ddecl->kind)
     {
-    case decl_interface_ref:
-      nxml_ndecl_ref(ddecl->container);
-      nxml_instance(ddecl->itype);
-      if (ddecl->gparms)
-	nxml_typelist("interface-parameters", ddecl->gparms);
+    case decl_interface_ref: 
+      {
+	env_scanner fns;
+	const char *fnname;
+	void *fnentry;
+	
+	nxml_instance(ddecl->itype);
+	if (ddecl->gparms)
+	  nxml_typelist("interface-parameters", ddecl->gparms);
+
+	indentedtag("interface-functions");
+	interface_scan(ddecl, &fns);
+	while (env_next(&fns, &fnname, &fnentry))
+	  {
+	    xstartline();
+	    nxml_ddecl_ref(fnentry);
+	  }
+	indentedtag_pop();
+	break;
+      }
+    case decl_function:
+      if (ddecl->interface)
+	nxml_ddecl_ref(ddecl->interface);
       break;
     default: break;
     }
@@ -245,6 +280,9 @@ static void dump_interface(void *entry)
 static void dump_interfacedef(void *entry)
 {
   nesc_declaration comp = entry;
+  env_scanner fns;
+  const char *fnname;
+  void *fnentry;
 
   indentedtag_start("interfacedef");
   xml_attr("qname", comp->name);
@@ -252,6 +290,14 @@ static void dump_interfacedef(void *entry)
 
   if (comp->abstract)
     dump_parameters("parameters", comp->parameters);
+
+  env_scan(comp->env->id_env, &fns);
+  while (env_next(&fns, &fnname, &fnentry))
+    {
+      data_declaration fndecl = fnentry;
+
+      dump_ddecl(fndecl);
+    }
 
   indentedtag_pop();
 }

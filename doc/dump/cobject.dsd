@@ -55,6 +55,7 @@
 
       <m:doc>Order of these elements is unimportant</m:doc>
       <contents><element name="nesc:instance"/></contents>
+      <contents><element name="nesc:interface-functions"/></contents>
       <contents>
         <m:doc>Present for parameterised interfaces</m:doc>
         <optional><element name="nesc:interface-parameters"/></optional>
@@ -72,9 +73,32 @@
   </if>
 
   <if>
+    <element name="nesc:interface-functions"/>
+    <declare>
+      <contents>
+        <sequence><element name="nesc:function-ref"/></sequence>
+      </contents>
+    </declare>
+  </if>
+
+  <if>
     <element name="nesc:constant"/>
     <declare>
       <required><attribute ref="nesc:cst"/></required>
+    </declare>
+  </if>
+
+  <if>
+    <element name="nesc:function"/>
+    <declare>
+      <m:doc>Can't have both. Could add rule.</m:doc>
+      <attribute name="command"><stringtype ref="nesc:empty"/></attribute>
+      <attribute name="event"><stringtype ref="nesc:empty"/></attribute>
+      <contents>
+        <m:doc>Present for commands and events from actual interfaces
+	  (but not for those from interface definitions)</m:doc>
+        <optional><element name="nesc:interface-ref"/></optional>
+      </contents>
     </declare>
   </if>
 
