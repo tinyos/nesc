@@ -32,12 +32,16 @@
     </declare>
   </if>
 
-  <m:doc>A reference to a component or to an interface definition</m:doc>
-  <if>
+  <boolexp id="nesc:ndecl-ref">
     <or>
       <element name="nesc:interfacedef-ref"/>
       <element name="nesc:component-ref"/>
     </or>
+  </boolexp>
+
+  <m:doc>A reference to a component or to an interface definition</m:doc>
+  <if>
+    <boolexp id="nesc:ndecl-ref"/>
     <declare>
       <required>
         <attribute name="qname"/>
@@ -47,6 +51,19 @@
 	  <element name="nesc:arguments"/>
 	</optional>
       </contents>
+    </declare>
+  </if>
+
+  <m:doc>An instance of a component or interface. If number attribute
+    is present, then this is an instance of a generic component.</m:doc>
+  <if>
+    <element name="nesc:instance"/>
+    <declare>
+      <attribute name="number"><stringtype ref="nesc:number"/></attribute>
+      <contents>
+        <optional><element name="nesc:arguments"/></optional>
+      </contents>
+      <contents><boolexp ref="nesc:ndecl-ref"/></contents>
     </declare>
   </if>
 

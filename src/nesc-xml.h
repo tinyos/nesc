@@ -67,10 +67,10 @@ extern xml_list xl_variables, xl_constants, xl_functions, xl_typedefs,
 
 void nxml_ddecl_ref(data_declaration ddecl);
 void nxml_tdecl_ref(tag_declaration tdecl);
-void nxml_ndefinition_ref(nesc_declaration ndecl);
-void nxml_ninstance_ref(nesc_declaration ndecl);
+void nxml_ndecl_ref(nesc_declaration ndecl);
 void nxml_value(ivalue value);
 void nxml_arguments(expression arguments);
+void nxml_instance(nesc_declaration ndecl);
 
 /* Incremental list creation support */
 xml_list new_xml_list(region r, bool *changed, bool (*addfilter)(void *entry));

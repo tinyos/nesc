@@ -355,7 +355,7 @@ void nxml_ddecl_ref(data_declaration ddecl)
   xml_tag_end_pop();
 }
 
-static void nxml_ndecl_start(nesc_declaration ndecl)
+void nxml_ndecl_ref(nesc_declaration ndecl)
 {
   if (ndecl->kind == l_interface)
     {
@@ -367,13 +367,6 @@ static void nxml_ndecl_start(nesc_declaration ndecl)
       xml_list_add(xl_components, ndecl);
       xml_tag_start("component-ref");
     }
-}
-
-void nxml_ninstance_ref(nesc_declaration ndecl)
-{
-  assert (ndecl->kind == l_component);
-
-  nxml_ndecl_start(ndecl);
   xml_attr("qname", ndecl->instance_name);
   //xml_attr_ptr("ref", ndecl);
   xml_tag_end_pop();
@@ -394,23 +387,20 @@ void nxml_arguments(expression arguments)
   indentedtag_pop();
 }
 
-void nxml_ndefinition_ref(nesc_declaration ndecl)
+void nxml_instance(nesc_declaration ndecl)
 {
   nesc_declaration orig = original_component(ndecl);
 
-  xstartline();
-  nxml_ndecl_start(orig);
-  xml_attr("qname", orig->name);
-  if (!ndecl->arguments)
-    xml_tag_end_pop();
-  else
-    {
-      xml_tag_end();
-      xindent();
-      nxml_arguments(ndecl->arguments);
-      xunindent(); xstartline(); xml_pop();
-    }
-  xnewline();
+  indentedtag_start("instance");
+  if (ndecl->kind == l_component && ndecl->original && !ndecl->abstract)
+    xml_attr_int("number", ndecl->instance_number);
+  xml_tag_end(); xnewline();
+
+  nxml_ndecl_ref(orig);
+  if (ndecl->arguments)
+    nxml_arguments(ndecl->arguments);
+
+  indentedtag_pop();
 }
 
 void nxml_tdecl_ref(tag_declaration tdecl)

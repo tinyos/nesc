@@ -22,7 +22,7 @@
 
       <m:doc>Order of these elements is unimportant</m:doc>
       <contents><element name="nesc:component-ref"/></contents>
-      <contents><element name="nesc:interfacedef-ref"/></contents>
+      <contents><element name="nesc:instance"/></contents>
       <contents><contenttype ref="nesc:attributes"/></contents>
       <contents>
         <m:doc>Present for parameterised interfaces</m:doc>

@@ -6,20 +6,13 @@
     <element name="nesc:components"/>
     <declare>
       <contents>
-        <repeat><boolexp ref="nesc:component"/></repeat>
+        <repeat><element name="nesc:component"/></repeat>
       </contents>
     </declare>
   </if>
 
-  <boolexp id="nesc:component">
-    <or>
-      <element name="nesc:configuration"/>
-      <element name="nesc:module"/>
-    </or>
-  </boolexp>
-
   <if>
-    <boolexp ref="nesc:component"/>
+    <element name="nesc:component"/>
     <declare>
       <required>
         <attribute name="qname"/>
@@ -33,17 +26,12 @@
         <m:doc>Present for generic components</m:doc>
         <optional><element name="nesc:parameters"/></optional>
       </contents>
+      <contents>
+        <or>
+	  <element name="nesc:configuration"/>
+	  <element name="nesc:module"/>
+	</or>
+      </contents>
     </declare>
   </if>
-
-  <if>
-    <element name="nesc:instance"/>
-    <declare>
-      <required>
-        <attribute name="instance"><stringtype ref="nesc:number"/></attribute>
-      </required>
-      <contents><element name="nesc:component-ref"/></contents>
-    </declare>
-  </if>
-
 </dsd>

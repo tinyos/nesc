@@ -168,24 +168,20 @@ static void dump_component(void *entry)
 {
   nesc_declaration comp = entry;
 
-  if (comp->configuration)
-    indentedtag_start("configuration");
-  else
-    indentedtag_start("module");
+  /* We're not supposed to dump partially instantiated components
+     (i.e., generic components created inside generic configurations) */
+  assert(!(comp->original && comp->abstract));
+
+  indentedtag_start("component");
   xml_attr("qname", comp->instance_name);
   xml_tag_end();
   xnewline();
 
-  if (comp->original && !comp->abstract)
-    {
-      indentedtag_start("instance");
-      xml_attr_int("number", comp->instance_number);
-      xml_tag_end();
-      nxml_ndefinition_ref(comp);
-      indentedtag_pop();
-    }
+  if (comp->original)
+    nxml_instance(comp);
   if (comp->abstract)
     dump_parameters("parameters", comp->parameters);
+  xml_qtag(comp->configuration ? "configuration" : "module");
   indentedtag_pop();
 }
 
@@ -232,8 +228,8 @@ static void dump_interface(void *entry)
   xml_attr_int("provided", !iref->required);
   xml_tag_end();
 
-  xstartline(); nxml_ninstance_ref(iref->container);
-  nxml_ndefinition_ref(iref->itype);
+  xstartline(); nxml_ndecl_ref(iref->container);
+  nxml_instance(iref->itype);
   dump_attributes(iref->attributes);
   if (iref->gparms)
     nxml_typelist("parameters", iref->gparms);
@@ -292,7 +288,7 @@ static void dump_tag(void *entry)
 
   if (tdecl->container)
     {
-      nxml_ninstance_ref(tdecl->container);
+      nxml_ndecl_ref(tdecl->container);
       xnewline();
     }
 #if 0
