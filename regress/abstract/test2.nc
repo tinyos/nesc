@@ -1,11 +1,12 @@
 abstract module test2(int x) {
   provides interface StdControl;
+  uses interface Leds;
 }
 implementation {
   int y = 0;
 
   command result_t StdControl.init() {
-    return y;
+    return call Leds.init() + y;
   }
 
   command result_t StdControl.start() {

@@ -1,6 +1,7 @@
 configuration test3 { }
 implementation {
-  components Main, test2;
+  components Main, test2(100) as fun, LedsC;
 
-  Main.StdControl -> test2;
+  Main.StdControl -> fun;
+  fun.Leds -> LedsC;
 }
