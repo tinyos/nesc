@@ -143,13 +143,11 @@ void declare_interface_ref(interface_ref iref, declaration gparms,
 
   if (idecl->abstract)
     {
-      if (check_abstract_arguments("interface", ddecl,
-				   idecl->parameters, iref->args))
-	{
-	  ddecl->itype = interface_copy(parse_region, iref,
-					current.container->abstract);
-	  ddecl->functions = ddecl->itype->env;
-	}
+      check_abstract_arguments("interface", ddecl,
+			       idecl->parameters, iref->args);
+      ddecl->itype = interface_copy(parse_region, iref,
+				    current.container->abstract);
+      ddecl->functions = ddecl->itype->env;
     }
   else
     copy_interface_functions(parse_region, current.container, ddecl,

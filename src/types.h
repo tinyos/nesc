@@ -261,5 +261,8 @@ const char *type_name(region r, type t);
 unsigned long type_hash(type t);
 
 bool type_contains(type parent, type child);
+
+bool type_charstar(type t);
+bool type_chararray(type t, bool no_size_allowed);
  
 #endif

@@ -427,10 +427,10 @@ declaration declare_template_parameter(declarator d, type_element elements,
 
   check_variable_scflags(scf, vd->location, "parameter", name);
 
-  /* For now at least, we only allow integer and floating point
-     arguments to templates */
-  if (!type_real(parm_type)) /* not allowing complex for now (part 2) */
-    error("only arithmetic types allowed as abstract component arguments");
+/* Allow real, integral and string types. Not allowing complex for now,
+   though it would be a trivial extension */
+  if (!(type_real(parm_type) || type_chararray(parm_type, TRUE))) 
+    error("only char [] and arithmetic types allowed as component arguments");
 
 #if 0
  XXX: Is this meaningful? (and if not, is it an error to have array or fn

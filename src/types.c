@@ -321,12 +321,12 @@ static type make_unknown_int()
   type nt = new_type(tk_primitive), ct;
 
   nt->u.primitive = tp_unknown_int;
-  nt->size = nt->alignment = cval_unknown;
+  nt->size = nt->alignment = cval_unknown_number;
   primitive_types[tp_unknown_int] = nt;
 
   ct = new_type(tk_complex);
   ct->u.primitive = tp_unknown_int;
-  ct->size = ct->alignment = cval_unknown;
+  ct->size = ct->alignment = cval_unknown_number;
   complex_types[tp_unknown_int] = ct;
 
   return nt;
@@ -1885,7 +1885,7 @@ type make_variable_type(data_declaration tdecl)
   nt->u.tdecl = tdecl;
 
   /* Type variables have unknown size and alignment */
-  nt->size = nt->alignment = cval_unknown;
+  nt->size = nt->alignment = cval_unknown_number;
 
   return nt;
 }
@@ -2248,3 +2248,15 @@ bool type_contains(type parent, type child)
     }
     }
 }
+
+bool type_charstar(type t)
+{
+  return type_pointer(t) && type_char(type_points_to(t));
+}
+
+bool type_chararray(type t, bool no_size_allowed)
+{
+  return type_array(t) && type_char(type_array_of(t)) &&
+    !(no_size_allowed && type_array_size(t));
+}
+

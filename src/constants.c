@@ -50,9 +50,16 @@ static known_cst new_known_cst(region r, type t, cval c)
   return kc;
 }
   
-known_cst make_unknown_cst(type t)
+known_cst make_unknown_cst(cval c, type t)
 {
-  return new_known_cst(parse_region, t, cval_unknown);
+  cval cst;
+
+  if (cval_isaddress(c))
+    cst = cval_unknown_address;
+  else
+    cst = cval_unknown_number;
+
+  return new_known_cst(parse_region, t, cst);
 }
 
 known_cst make_cst(cval c, type t)
@@ -240,20 +247,30 @@ known_cst fold_binary(type t, expression e)
   
   if (b->kind == kind_andand || b->kind == kind_oror)
     {
-      if (c1 && constant_knownbool(c1))
+      if (c1)
 	{
-	  bool c1val = constant_boolvalue(c1);
+	  if (constant_knownbool(c1))
+	    {
+	      bool c1val = constant_boolvalue(c1);
 
-	  if (b->kind == kind_andand ? !c1val : c1val)
-	    return make_signed_cst(b->kind == kind_oror, t);
+	      if (b->kind == kind_andand ? !c1val : c1val)
+		return make_signed_cst(c1val, t);
+	    }
+	  if (constant_unknown(c1))
+	    return make_unknown_cst(cval_unknown_number, t);
 	}
 
       if (c1 && c2)
 	{
 	  if (constant_knownbool(c2))
-	    return make_signed_cst(constant_boolvalue(c2), t);
-	  else
-	    return make_unknown_cst(t);
+	    {
+	      bool c2val = constant_boolvalue(c2);
+	      if (b->kind == kind_andand ? !c2val : c2val)
+		return make_signed_cst(c2val, t);
+	    }
+
+	  if (constant_unknown(c2))
+	    return make_unknown_cst(cval_unknown_number, t);
 	}
     }
   else if (c1 && c2)
@@ -327,19 +344,30 @@ known_cst fold_conditional(expression e)
   conditional c = CAST(conditional, e);
   known_cst cond = c->condition->cst;
 
-  if (cond && constant_knownbool(cond))
+  if (cond)
     {
-      expression value =
-	constant_boolvalue(cond) ? (c->arg1 ? c->arg1 : c->condition) : c->arg2;
+      expression arg1 = c->arg1 ? c->arg1 : c->condition;
 
-      e->static_address = value->static_address;
-      if (value->cst)
-	return cast_constant(value->cst, e->type);
-      else
-	return NULL;
+      if (constant_knownbool(cond))
+	{
+	  expression value = constant_boolvalue(cond) ? arg1 : c->arg2;
+
+	  e->static_address = value->static_address;
+	  if (value->cst)
+	    return cast_constant(value->cst, e->type);
+	  else
+	    return NULL;
+	}
+      else if (arg1->cst && c->arg2->cst)
+	{
+	  // XXX: Yuck.
+	  cval v1 = arg1->cst->cval, v2 = c->arg2->cst->cval;
+
+	  if (cval_isaddress(v1) != cval_isaddress(v2))
+	    return NULL;
+	  return make_unknown_cst(v1, e->type);
+	}
     }
-  else if (cond && (!c->arg1 || c->arg1->cst) && c->arg2->cst)
-    return make_unknown_cst(e->type);
 
   return NULL;
 }
@@ -359,7 +387,8 @@ known_cst fold_identifier(expression e, data_declaration decl, int pass)
   if (decl->kind == decl_constant)
     // We don't know template arg values at parse time
     return pass == 0 && decl->substitute ?
-      make_unknown_cst(e->type) :
+      make_unknown_cst(type_real(e->type) ? cval_unknown_number :
+		       cval_unknown_address, e->type) :
       decl->value;
   else
     return NULL;
@@ -390,7 +419,7 @@ known_cst foldaddress_field_ref(expression e)
     return NULL;
 
   if (constant_unknown(object))
-    return make_unknown_cst(object->type);
+    return make_unknown_cst(object->cval, object->type);
 
   return make_cst(cval_add(object->cval,
 			   cval_divide(fdecl->offset, cval_bitsperbyte)),
@@ -540,6 +569,7 @@ static void complex_print(FILE *f, known_cst c)
 void constant_print(FILE *f, known_cst c)
 /* Requires: (constant_integral(c) || constant_float(c)) &&
    	     type_arithmetic(c->type)
+	     or c denotes a string constant && type_chararray(c->type, FALSE)
    Effects: prints a parsable representable of c to f
  */
 {
@@ -555,6 +585,13 @@ void constant_print(FILE *f, known_cst c)
     {
       /* XXX: hacky version */
       fprintf(f, "%.20Le", constant_float_value(c));
+    }
+  else if (type_chararray(t, FALSE))
+    {
+      data_declaration ddecl = cval_ddecl(c->cval);
+
+      assert(ddecl && ddecl->kind == decl_magic_string);
+      printf("\"%ls\"", ddecl->chars);
     }
   else
     {

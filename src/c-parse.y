@@ -712,7 +712,7 @@ generic_arglist:
 
 generic_arg:
 	  expr_no_commas 
-		{ if (!$1->cst) error("argument to component not constant"); }
+		{ $$ = $1; $$->type = default_conversion_for_assignment($$); }
 	| generic_type
 	;
 

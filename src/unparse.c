@@ -607,17 +607,20 @@ void prt_declarator(declarator d, type_element elements, attribute attributes,
 			& ~psd_need_paren_for_star);
 }
 
+void prt_container(nesc_declaration container)
+{
+  if (container->original)
+    /* Put actual container name in a comment for human readers */
+    output("/*%s*/", container->instance_name);
+  output_stripped_string_dollar(container->name);
+}
+
 void prt_plain_ddecl(data_declaration ddecl, psd_options options)
 {
   if (!ddecl->Cname)
     {
       if (ddecl->container && !(options & psd_skip_container))
-	{
-	  if (ddecl->container->original)
-	    /* Put actual container name in a comment for human readers */
-	    output("/*%s*/", ddecl->container->instance_name);
-	  output_stripped_string_dollar(ddecl->container->name);
-	}
+	prt_container(ddecl->container);
       if (/*ddecl->kind == decl_function &&*/ ddecl->interface)
 	output_stripped_string_dollar(ddecl->interface->name);
       if ((options & psd_print_default) &&
@@ -802,14 +805,7 @@ void prt_typename(typename tname)
   data_declaration tdecl = tname->ddecl;
 
   set_location(tname->location);
-  if (!tdecl->Cname)
-    {
-      if (tdecl->container)
-	output_stripped_string_dollar(tdecl->container->name);
-      if (tdecl->interface)
-	output_stripped_string_dollar(tdecl->interface->name);
-    }
-  output_stripped_string(tdecl->name);
+  prt_plain_ddecl(tdecl, 0);
 }
 
 void prt_typeof_expr(typeof_expr texpr)
@@ -896,7 +892,7 @@ void prt_tag_ref(tag_ref tr, pte_options options)
   if (tr->word1)
     {
       if (tr->tdecl && tr->tdecl->container)
-	output_stripped_string_dollar(tr->tdecl->container->name);
+	prt_container(tr->tdecl->container);
       prt_word(tr->word1);
     }
   if (!(options & pte_duplicate) && tr->defined)

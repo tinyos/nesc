@@ -577,6 +577,15 @@ void set_parameter_values(nesc_declaration cdecl, expression args)
 	{
 	  variable_decl vd = CAST(variable_decl, CAST(data_decl, parm)->decls);
 
+	  if (!args)
+	    {
+	      vd->ddecl->value = make_unknown_cst(type_real(vd->ddecl->type) ?
+						  cval_unknown_number :
+						  cval_unknown_address,
+						  vd->ddecl->type);
+	      continue;
+	    }
+
 	  if (!is_type_argument(args) && check_constant_once(args))
 	    {
 	      location l = args->location;
@@ -597,8 +606,23 @@ void set_parameter_values(nesc_declaration cdecl, expression args)
 		  if (!constant_float(args->cst))
 		    error_with_location(l, "floating-point constant expected");
 		}
-	      else
-		assert(0);
+	      else if (type_chararray(vd->ddecl->type, FALSE))
+		{
+		  /* Check that it's an actual string */
+		  data_declaration sym;
+		  bool ok = FALSE;
+
+		  if (constant_address(args->cst))
+		    {
+		      sym = cval_ddecl(args->cst->cval);
+		      /* We don't want any offset to the string either
+			 (could lift this restriction) */
+		      ok = sym && sym->kind == decl_magic_string &&
+			cval_knownbool(args->cst->cval);
+		    }
+		  if (!ok)
+		    error_with_location(l, "string argument expected");
+		}
 	    }
 
 	  vd->ddecl->value = args->cst;
@@ -606,6 +630,12 @@ void set_parameter_values(nesc_declaration cdecl, expression args)
       else /* type */
 	{
 	  type_parm_decl td = CAST(type_parm_decl, parm);
+
+	  if (!args)
+	    {
+	      td->ddecl->type = error_type;
+	      continue;
+	    }
 
 	  td->ddecl->type = args->type;
 	  td->ddecl->initialiser = args;
@@ -815,12 +845,11 @@ void fold_program(nesc_declaration program)
   current.container = NULL;
 }
 
-bool check_abstract_arguments(const char *kind, data_declaration ddecl,
+void check_abstract_arguments(const char *kind, data_declaration ddecl,
 			      declaration parms, expression arglist)
 {
   location loc = ddecl->ast->location;
   int parmnum = 1;
-  int oldcount = errorcount;
 
   while (parms && arglist)
     {
@@ -836,8 +865,8 @@ bool check_abstract_arguments(const char *kind, data_declaration ddecl,
 	  else 
 	    {
 	      set_error_location(arglist->location);
-	      check_assignment(parmtype, default_conversion_for_assignment(arglist),
-			       arglist, NULL, ddecl, parmnum);
+	      check_assignment(parmtype, arglist->type, arglist, NULL,
+			       ddecl, parmnum);
 	    }
 	}
       else /* type argument */
@@ -863,10 +892,8 @@ bool check_abstract_arguments(const char *kind, data_declaration ddecl,
     error_with_location(loc, "too few arguments to %s `%s'",
 			kind, ddecl->name);
   else if (arglist)
-    error_with_location(loc, "too many arguments to component `%s'",
+    error_with_location(loc, "too many arguments to %s `%s'",
 			kind, ddecl->name);
-
-  return oldcount == errorcount;
 }
 
 static nesc_declaration 

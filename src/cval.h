@@ -26,11 +26,11 @@ Boston, MA 02111-1307, USA. */
    add, sub, times, divide, realpart, imagpart, conjugate
 */
 typedef struct {
-  /* we could add cval_address_unknown for symbols offset by some
-     unknown number (created from <address> +/- <unknown>) */
   enum {
     cval_variable,		    /* not a constant */
-    cval_unk, 			    /* some unknown number */
+    cval_unk_number,		    /* some unknown number */
+    cval_unk_address,		    /* an unknown symbol with unknown offset */
+    cval_address_unk_offset,        /* known symbol with unknown offset */
     cval_address,		    /* symbol with offset */
     cval_float, cval_float_complex, /* a (complex) floating point number */
     cval_uint, cval_uint_complex,   /* a (complex) unsigned number */
@@ -50,9 +50,9 @@ typedef struct {
       union {
 	largest_int si_i;
 	largest_uint ui_i;
-	struct {
-	  struct data_declaration *ddecl; /* for cval_address */
-	  struct label_declaration *ldecl;  /* for cval_address */
+	struct { /* for cval_address, cval_address_unk_offset */
+	  struct data_declaration *ddecl;
+	  struct label_declaration *ldecl;
 	};
       };
     };
@@ -68,7 +68,8 @@ typedef struct {
 } cval;
 
 extern cval cval_top; /* The non-constant value */
-extern cval cval_unknown; /* The unknown value */
+extern cval cval_unknown_number; /* The unknown number value */
+extern cval cval_unknown_address; /* The unknown address value */
 extern cval cval_zero; /* A zero value. Use cval_cast to make the desired 
 			  kind of constant */
 extern cval cval_one; /* A one value. Use cval_cast to make the desired 
@@ -92,17 +93,29 @@ cval make_cval_complex(cval r, cval i);
 cval make_cval_address(data_declaration ddecl, label_declaration ldecl,
 		       largest_int offset);
 
-/*bool cval_isunknown(cval c);*/
-#define cval_isunknown(c) ((c).kind == cval_unk)
+cval make_cval_address_unknown_offset(cval c);
+/* Requires: cval_isaddress(c)
+   Returns: a constant identical to c except that the offset is now unknowjn
+*/
+
+bool cval_isunknown(cval c);
+/* Return: TRUE if c is an unknown constant
+   (one of unknown_number, unknown_address, address_unknown_offset) */
+
+/*bool cval_isunknown_number(cval c);*/
+#define cval_isunknown_number(c) ((c).kind == cval_unk_number)
+/* Return: TRUE if c is an unknown constant */
+
+/*bool cval_isunknown_address(cval c);*/
+#define cval_isunknown_address(c) ((c).kind == cval_unk_address)
 /* Return: TRUE if c is an unknown constant */
 
 /*bool cval_istop(cval c);*/
 #define cval_istop(c) ((c).kind == cval_variable)
 /* Return: TRUE if c is not a constant */
 
-/*bool cval_isaddress(cval c);*/
-#define cval_isaddress(c) ((c).kind == cval_address)
-/* Return: TRUE if c is not a constant */
+bool cval_isaddress(cval c);
+/* Return: TRUE if c is an address constant (known or unknown) */
 
 bool cval_isinteger(cval c);
 /* Return: TRUE if c is an integer constant */
@@ -115,7 +128,8 @@ bool cval_iscomplex(cval c);
 
 bool cval_knownbool(cval c);
 /* Returns: TRUE if the truth-value of c can be determined (use cval_boolvalue
-   to get that value)
+     to get that value). Note that address values with offset 0 are known to
+     be true...
 */
 
 bool cval_boolvalue(cval c);
@@ -148,6 +162,12 @@ bool cval_isone(cval c);
 /* Returns: TRUE if c is 1 (FALSE for unknown constants)
    Requires: c not be cval_top
  */
+
+data_declaration cval_ddecl(cval c);
+/* Returns: c's declaration
+   Requires: cval_isaddress(c)  && !cval_isunknown_address(c) && 
+     c doesn't denote a label
+*/
 
 /* All of these functions will return cval_top if the result is not a
    constant expression */

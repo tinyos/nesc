@@ -45,7 +45,7 @@ void pop_instance(void);
 
 void init_abstract(void);
 
-bool check_abstract_arguments(const char *kind, data_declaration ddecl,
+void check_abstract_arguments(const char *kind, data_declaration ddecl,
 			      declaration parms, expression arglist);
 
 nesc_declaration interface_copy(region r, interface_ref iref,

@@ -33,7 +33,7 @@ struct known_cst {
   cval cval;
 };
 
-known_cst make_unknown_cst(type t);
+known_cst make_unknown_cst(cval c, type t);
 known_cst make_cst(cval c, type t);
 known_cst make_address_cst(data_declaration ddecl, label_declaration ldecl,
 			   largest_int offset, type t);

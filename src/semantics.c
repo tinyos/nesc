@@ -1616,12 +1616,7 @@ static void transparent_union_argument(data_declaration ddecl)
 
 bool is_doublecharstar(type t)
 {
-  if (!type_pointer(t))
-    return FALSE;
-  t = type_points_to(t);
-  if (!type_pointer(t))
-    return FALSE;
-  return type_equal_unqualified(type_points_to(t), char_type);
+  return type_pointer(t) && type_charstar(type_points_to(t));
 }
 
 void check_function(data_declaration dd, declaration fd, int class,
@@ -2852,7 +2847,7 @@ cval check_bitfield_width(field_declaration fdecl)
   printmsg = check_constant_once(w);
 
   if (cwidth && constant_unknown(cwidth))
-    bitwidth = cval_unknown;
+    bitwidth = cval_unknown_number;
   else if (!(cwidth && constant_integral(cwidth)))
     errormsg = "bit-field `%s' width not an integer constant";
   else
@@ -2983,7 +2978,7 @@ void layout_struct(tag_declaration tdecl)
 	  else if (cval_isunknown(bitwidth))
 	    {
 	      if (!cval_istop(offset))
-		offset = cval_unknown;
+		offset = cval_unknown_number;
 	    }
 	  else if (!cval_boolvalue(bitwidth)) /* ie, 0 */
 	    {
