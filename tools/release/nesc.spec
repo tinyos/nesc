@@ -1,7 +1,7 @@
 Summary: nesC compiler 
 Name: nesc
 BuildArchitectures: noarch
-Version: 1.1.1beta1
+Version: 1.1.1
 Release: 1
 License: Please see source
 Packager: TinyOS/NesC Group, UC Berkeley
