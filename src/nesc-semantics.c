@@ -67,6 +67,7 @@ bool nesc_attributep(gcc_attribute a)
   return !strcmp(name, "C") || 
     !strcmp(name, "spontaneous") ||
     !strcmp(name, "combine") ||
+    !strcmp(name, "nx_base") ||
     !strcmp(name, "hwevent") ||
     !strcmp(name, "atomic_hwevent");
 }
@@ -370,31 +371,30 @@ data_declaration get_function_ddecl(expression e)
   return NULL;
 }
 
-void handle_combine_attribute(location loc, const char *combiner, type *t)
+data_declaration declare_function(location loc, const char *name, type signature)
+/* Effects: If 'name' is already declared, check that it is a function with
+     the specified signature.
+     If it isn't declared, declare it as a function with the specified
+     signature.
+   Returns: data_declaration for the function, or NULL if an error was
+     reported to the user.
+*/
 {
-  data_declaration cdecl;
-  typelist combiner_args;
-  type combiner_sig;
+  data_declaration fdecl;
   bool ok = FALSE;
 
-  /* Build combiner signature */
-  combiner_args = new_typelist(parse_region);
-  typelist_append(combiner_args, *t);
-  typelist_append(combiner_args, *t);
-  combiner_sig = make_function_type(*t, combiner_args, FALSE, FALSE);
-
-  /* If combiner already declared, declaration should match combiner_sig.
-     If not, we declare it with signature combiner_sig */
-  cdecl = lookup_id(combiner, FALSE);
-  if (cdecl)
+  /* If function already declared, declaration should match signature.
+     If not, we declare it with given signature */
+  fdecl = lookup_id(name, FALSE);
+  if (fdecl)
     {
-      if (cdecl->kind != decl_function ||
-	  !(cdecl->ftype == function_normal || cdecl->ftype == function_static))
-	error_with_location(loc, "combiner `%s' is not a C function",
-			    combiner);
-      else if (!type_compatible_unqualified(cdecl->type, combiner_sig))
-	error_with_location(loc, "combiner `%s' does not have the right signature",
-			    combiner);
+      if (fdecl->kind != decl_function ||
+	  !(fdecl->ftype == function_normal || fdecl->ftype == function_static))
+	error_with_location(loc, "function `%s' is not a C function",
+			    name);
+      else if (!type_compatible_unqualified(fdecl->type, signature))
+	error_with_location(loc, "function `%s' does not have the right signature",
+			    name);
       else
 	ok = TRUE;
     }
@@ -403,19 +403,52 @@ void handle_combine_attribute(location loc, const char *combiner, type *t)
       struct data_declaration tempdecl;
       declaration dummy = make_error_decl();
 
-      /* Declare combiner as a function of arguments *t, *t returning *t */
+      /* Declare function  */
       dummy->location = loc;
-      init_data_declaration(&tempdecl, dummy, combiner, combiner_sig);
+      init_data_declaration(&tempdecl, dummy, name, signature);
       tempdecl.kind = decl_function;
       tempdecl.ftype = function_normal;
       tempdecl.isexternalscope = tempdecl.isfilescoperef = TRUE;
-      cdecl = declare(current.env, &tempdecl, FALSE);
+      fdecl = declare(current.env, &tempdecl, FALSE);
 
       ok = TRUE;
     }
+  return ok ? fdecl : NULL;
+}
 
-  if (ok)
+void handle_combine_attribute(location loc, const char *combiner, type *t)
+{
+  data_declaration cdecl = 
+    declare_function(loc, combiner,
+		     build_function_type(parse_region, *t, *t, *t, NULL));
+
+  if (cdecl)
     *t = make_combiner_type(*t, cdecl);
+}
+
+void handle_nxbase_attribute(location loc, const char *basename,
+			     data_declaration ddecl)
+{
+  region r = parse_region;
+  char *encoder_name, *decoder_name;
+  type t = ddecl->type;
+
+  encoder_name = rstralloc(r, strlen(basename) + 6);
+  sprintf(encoder_name, "hton_%s", basename);
+  decoder_name = rstralloc(r, strlen(basename) + 6);
+  sprintf(decoder_name, "ntoh_%s", basename);
+
+  ddecl->encoder = /* takes buffer and original value. returns original value */
+    declare_function(loc, encoder_name,
+		     build_function_type(r, t, ptr_void_type, t, NULL));
+
+  ddecl->decoder = /* takes buffer and returns decoded value */
+    declare_function(loc, decoder_name,
+		     build_function_type(r, t, ptr_void_type, NULL));
+
+  /* We do this even if we got an error, to ensure ddecl gets treated as
+     a network type. */
+  ddecl->basetype = t;
 }
 
 /* Create definition for template parameter 'elements d' with attributes

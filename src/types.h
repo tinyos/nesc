@@ -90,6 +90,8 @@ type make_array_type(type t, expression size);
    argtypes is NULL */
 type make_function_type(type t, typelist argtypes, bool varargs, bool oldstyle);
 
+type build_function_type(region r, type returns, ...);
+
 /* Return the tagged type whose declaration is d */
 type make_tagged_type(tag_declaration d);
 
@@ -153,15 +155,6 @@ bool type_long_long(type t);
 bool type_unsigned_long_long(type t);
 bool type_unknown_int(type t);
 bool type_long_double(type t);
-#ifdef NETWORK
-bool type_network_base_type(type t);
-bool type_network(type t);
-type type_network_platform_type(type t);
-/* Requires: type_network_base_type(t)
-   Returns: A non-network type with the same size and signedness as t
-     Note that such a type is platform-dependent
-*/
-#endif
 
 bool type_tagged(type t);
 bool type_integral(type t);	/* Does not include enum's */
@@ -251,6 +244,24 @@ type make_generic_type(type t, typelist argtypes);
 
 type make_combiner_type(type t, data_declaration combiner);
 data_declaration type_combiner(type t);
+
+type make_network_base_type(data_declaration def);
+/* Requires: def->kind == decl_typedef
+   Effects: Makes a network base type based on the typedef 'def'
+*/
+
+data_declaration type_network_base_decl(type t);
+/* Requires: type_network_base_type(t)
+   Returns: t's definition
+*/
+
+bool type_network_base_type(type t);
+bool type_network(type t);
+type type_network_platform_type(type t);
+/* Requires: type_network_base_type(t)
+   Returns: A non-network type with the same size and signedness as t
+     Note that such a type is platform-dependent
+*/
 
 /* Type variables */
 type make_variable_type(data_declaration tdecl);

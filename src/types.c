@@ -30,6 +30,7 @@ Boston, MA 02111-1307, USA. */
 #include "AST_utils.h"
 
 #include <stddef.h>
+#include <stdarg.h>
 
 struct type
 {
@@ -38,7 +39,7 @@ struct type
 	 tk_cref } kind;
   type_quals qualifiers;
   bool network;
-  data_declaration combiner;
+  data_declaration combiner, basedecl;
 
   /* size is not used for aggregate types
      (as the values may be discovered after the type is created)
@@ -70,9 +71,6 @@ struct type
 		default_conversion and type_default_conversion need revising.
 	   */
            tp_error,
-
-           tp_nint1, tp_nint2, tp_nint4, tp_nint8,
-           tp_nuint1, tp_nuint2, tp_nuint4, tp_nuint8,
 
 	   tp_int2, tp_uint2, tp_int4, tp_uint4, tp_int8, tp_uint8,
 
@@ -193,8 +191,7 @@ type float_type, double_type, long_double_type,
   unsigned_char_type, signed_char_type, void_type, ptr_void_type,
   size_t_type, ptrdiff_t_type, intptr_type,
   int2_type, uint2_type, int4_type, uint4_type, int8_type, uint8_type,
-  unknown_int_type, nint1_type, nint2_type, nint4_type, nint8_type, 
-  nuint1_type, nuint2_type, nuint4_type, nuint8_type, error_type;
+  unknown_int_type, error_type;
 
 static bool legal_array_size(cval c) 
 {
@@ -216,7 +213,7 @@ static type new_type(int kind)
   /*nt->qualifiers = 0;
     nt->network = FALSE;
     nt->size = nt->alignment = 0;
-    nt->combiner = NULL;*/
+    nt->combiner = nt->basedecl = NULL;*/
   nt->size = nt->alignment = cval_top;
   return nt;
 }
@@ -299,6 +296,27 @@ type make_function_type(type t, typelist argtypes, bool varargs,
   nt->size = nt->alignment = make_type_cval(1);
   return nt;
 }
+
+type build_function_type(region r, type returns, ...)
+{
+  va_list args;
+  typelist argtypes;
+
+  va_start(args, returns);
+  argtypes = new_typelist(r);
+
+  for (;;)
+    {
+      type onearg = va_arg(args, type);
+
+      if (!onearg)
+	break;
+      typelist_append(argtypes, onearg);
+    }
+
+  return make_function_type(returns, argtypes, FALSE, FALSE);
+}
+  
 
 /* Return the tagged type whose declaration is d */
 type make_tagged_type(tag_declaration d)
@@ -438,23 +456,6 @@ void init_types(void)
   unsigned_char_type = make_primitive(tp_unsigned_char, 1, target->int1_align);
   char_type = make_primitive(tp_char, 1, target->int1_align);
 
-  nint1_type = make_primitive(tp_nint1, 1, TRUE);
-  nint1_type->network = TRUE;
-  nint2_type = make_primitive(tp_nint2, 2, TRUE);
-  nint2_type->network = TRUE;
-  nint4_type = make_primitive(tp_nint4, 4, TRUE);
-  nint4_type->network = TRUE;
-  nint8_type = make_primitive(tp_nint8, 8, TRUE);
-  nint8_type->network = TRUE;
-  nuint1_type = make_primitive(tp_nuint1, 1, TRUE);
-  nuint1_type->network = TRUE;
-  nuint2_type = make_primitive(tp_nuint2, 2, TRUE);
-  nuint2_type->network = TRUE;
-  nuint4_type = make_primitive(tp_nuint4, 4, TRUE);
-  nuint4_type->network = TRUE;
-  nuint8_type = make_primitive(tp_nuint8, 8, TRUE);
-  nuint8_type->network = TRUE;
-
   int2_type = lookup_primitive(tp_int2, 2, target->int2_align, FALSE);
   uint2_type = lookup_primitive(tp_uint2, 2, target->int2_align, TRUE);
   int4_type = lookup_primitive(tp_int4, 4, target->int4_align, FALSE);
@@ -580,7 +581,6 @@ bool type_unsigned(type t)
       case tp_unsigned_long:
       case tp_unsigned_long_long:
       case tp_uint2: case tp_uint4: case tp_uint8:
-      case tp_nuint1: case tp_nuint2: case tp_nuint4: case tp_nuint8:
 	return TRUE;
       default: break;
       }
@@ -665,22 +665,6 @@ bool type_double(type t)
 bool type_long_double(type t)
 {
   return t->kind == tk_primitive && t->u.primitive == tp_long_double;
-}
-
-bool type_network_base_type(type t)
-{
-  return t->kind == tk_primitive && 
-    t->u.primitive >= tp_nint1 && t->u.primitive <= tp_nuint8;
-}
-
-type type_network_platform_type(type t)
-/* Requires: type_network_base_type(t)
-   Returns: A non-network type with the same size and signedness as t
-     Note that such a type is platform-dependent
-*/
-{
-  assert(type_network_base_type(t));
-  return type_for_size(type_size(t), type_unsigned(t));
 }
 
 bool type_char(type t)
@@ -1235,14 +1219,7 @@ static int common_primitive_type(type t1, type t2)
 	 tp_char/short/int/long/etc pair (as we only have tp_[u]int<n> if there
 	 is no corresponding integer type of the same size. So we can compare rank
 	 by comparing pk1 and pk2 */
-      /* Network base types: we may end up with a network base type and a
-	 regular type of the same size. We arbitrarily consider that the
-	 regular type "wins". 
-         We might, in the future, make default_conversion convert network
-         base types to the corresponding regular type. There doesn't seem
-         to be much advantage to that, though. */
-      assert(pk1 <= tp_nuint8 || pk2 <= tp_nuint8 ||
-	     !((pk1 < tp_char && pk2 >= tp_char) ||
+      assert(!((pk1 < tp_char && pk2 >= tp_char) ||
 	       (pk1 >= tp_char && pk2 < tp_char)));
 
       /* the higher rank wins, and if either of the types is unsigned, the
@@ -1454,10 +1431,6 @@ type make_unsigned_type(type t)
     case tp_int2: return qualify_type1(uint2_type, t);
     case tp_int4: return qualify_type1(uint4_type, t);
     case tp_int8: return qualify_type1(uint8_type, t);
-    case tp_nint1: return qualify_type1(nuint1_type, t);
-    case tp_nint2: return qualify_type1(nuint2_type, t);
-    case tp_nint4: return qualify_type1(nuint4_type, t);
-    case tp_nint8: return qualify_type1(nuint8_type, t);
     default: break;
     }
   assert(type_unsigned(t));
@@ -1535,14 +1508,6 @@ static type_element primitive2ast(region r, location loc, int primitive,
       keyword = RID_DOUBLE;
       rest = rid2ast(r, loc, RID_LONG, rest);
       break;
-    case tp_nint1: keyword = RID_NINT1; isunsigned = FALSE; break;
-    case tp_nint2: keyword = RID_NINT2; isunsigned = FALSE; break;
-    case tp_nint4: keyword = RID_NINT4; isunsigned = FALSE; break;
-    case tp_nint8: keyword = RID_NINT8; isunsigned = FALSE; break;
-    case tp_nuint1: keyword = RID_NUINT1; isunsigned = TRUE; break;
-    case tp_nuint2: keyword = RID_NUINT2; isunsigned = TRUE; break;
-    case tp_nuint4: keyword = RID_NUINT4; isunsigned = TRUE; break;
-    case tp_nuint8: keyword = RID_NUINT8; isunsigned = TRUE; break;
     default:
       assert(0);
       keyword = RID_INT; break;
@@ -1633,6 +1598,18 @@ void type2ast(region r, location loc, type t, declarator inside,
 {
   /* XXX: De-recursify */
   type_element qualifiers = qualifiers2ast(r, loc, t->qualifiers, NULL);
+
+  /* A network base type uses its typedef name (it is effectively a new
+     type, not a typedef) */
+  if (t->basedecl)
+    {
+      typename tname = new_typename(r, loc, t->basedecl);
+
+      tname->next = CAST(node, qualifiers);
+      *d = inside;
+      *modifiers = CAST(type_element, tname);
+      return;
+    }
 
   switch (t->kind)
     {
@@ -1997,6 +1974,41 @@ type make_combiner_type(type t, data_declaration combiner)
 data_declaration type_combiner(type t)
 {
   return t->combiner;
+}
+
+type make_network_base_type(data_declaration def)
+/* Requires: def->kind == decl_typedef
+   Effects: Makes a network base type based on the typedef 'def'
+*/
+{
+  type nt = copy_type(def->type);
+
+  nt->network = TRUE;
+  nt->basedecl = def;
+
+  return nt;
+}
+
+data_declaration type_network_base_decl(type t)
+/* Requires: type_network_base_type(t)
+   Returns: t's definition
+*/
+{
+  assert(type_network_base_type(t));
+  return t->basedecl;
+}
+
+bool type_network_base_type(type t)
+{
+  return t->basedecl != NULL;
+}
+
+type type_network_platform_type(type t)
+/* Requires: type_network_base_type(t)
+   Returns: t's non-network base type
+*/
+{
+  return type_network_base_decl(t)->basetype;
 }
 
 /* Type variables */

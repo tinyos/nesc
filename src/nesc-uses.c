@@ -30,6 +30,15 @@ dd_list nglobal_uses;
  */
 static data_declaration current_function;
 
+data_declaration using_function(data_declaration ddecl)
+{
+  data_declaration old = current_function;
+
+  current_function = ddecl;
+
+  return old;
+}
+
 context exe_context(context c)
 {
   return c & (c_atomic | c_executable | c_constant);
@@ -79,7 +88,7 @@ static iduse new_iduse(data_declaration id, use u)
   return i;
 }
 
-static void ddecl_used(data_declaration id, use u)
+void ddecl_used(data_declaration id, use u)
 {
   iduse i = new_iduse(id, u);
 

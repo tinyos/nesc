@@ -450,9 +450,6 @@ void prt_regionof(expression e);
 
 region unparse_region;
 
-#ifdef NETWORK
-void prt_network_routines();
-#endif
 void unparse_start(FILE *to, FILE *symbols)
 {
   of = to;
@@ -464,9 +461,6 @@ void unparse_start(FILE *to, FILE *symbols)
   indent_level = 0;
   function_separator = "$";
   unparse_region = newregion();
-#ifdef NETWORK
-  prt_network_routines();
-#endif
 }
 
 void unparse_end(void) deletes
@@ -675,6 +669,9 @@ void prt_data_decl(data_decl d)
 	       && !vdecl->isused && !vdecl->islocal))
 	    continue;
 	  if (use_nido && is_module_local_static(vdecl))
+	    continue;
+
+	  if (prt_network_typedef(d, vdd))
 	    continue;
 
 	  extraopts = prefix_decl(vdecl);

@@ -49,7 +49,7 @@ data_decl build_declaration(region r, struct environment *e,
   else if (type_function(t))
     t = make_pointer_type(t);
   /* Qualifiers must not be present on the temp (the qualifiers of t apply
-     to the original location we are building a temp for only) */
+     to the original location we are building a temp) */
   t = make_qualified_type(t, no_qualifiers);
 
   /* Build AST for the declaration */

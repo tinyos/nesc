@@ -24,6 +24,22 @@ Boston, MA 02111-1307, USA. */
 #include "c-parse.h"
 #include "edit.h"
 #include "unparse.h"
+#include "nesc-uses.h"
+
+static void xtox_used(data_declaration transcoderfn)
+{
+  ddecl_used(transcoderfn, new_use(dummy_location, c_executable | c_fncall));
+}
+
+static void hton_used(type t)
+{
+  xtox_used(type_network_base_decl(t)->encoder);
+}
+
+static void ntoh_used(type t)
+{
+  xtox_used(type_network_base_decl(t)->decoder);
+}
 
 static void validate_network_lvalue(expression e)
 {
@@ -45,11 +61,30 @@ static data_declaration add_network_temporary(function_decl fn, type t)
     return NULL;
 }
 
+static AST_walker_result network_expression(AST_walker spec, void *data,
+					    expression *n)
+{
+  expression e = *n;
+
+  if (e->type && type_network_base_type(e->type) &&
+      (e->context & c_read) && !(e->context & c_write))
+    ntoh_used(e->type);
+
+  return aw_walk;
+}
+
 static AST_walker_result network_assignment(AST_walker spec, void *data,
 					    assignment *n)
 {
   assignment a = *n;
   function_decl fn = data;
+
+  if (type_network_base_type(a->type))
+    {
+      if (a->kind != kind_assign) /* op= reads too */
+	ntoh_used(a->type);
+      hton_used(a->type);
+    }
 
   validate_network_lvalue(a->arg1);
   /* See problem/ugly hack comment in network_increment */
@@ -57,7 +92,7 @@ static AST_walker_result network_assignment(AST_walker spec, void *data,
     {
       /* op= needs a temp */
       if (a->kind != kind_assign)
-	a->temp1 = add_network_temporary(fn, make_pointer_type(a->type));
+	a->temp1 = add_network_temporary(fn, make_pointer_type(a->arg1->type));
     }
 
   return aw_walk;
@@ -68,6 +103,12 @@ static AST_walker_result network_increment(AST_walker spec, void *data,
 {
   increment i = *n;
   function_decl fn = data;
+
+  if (type_network_base_type(i->type))
+    {
+      ntoh_used(i->type);
+      hton_used(i->type);
+    }
 
   validate_network_lvalue(i->arg1);
 
@@ -92,7 +133,11 @@ static AST_walker_result network_increment(AST_walker spec, void *data,
 static AST_walker_result network_fdecl(AST_walker spec, void *data,
 				       function_decl *fd)
 {
+  data_declaration old = using_function((*fd)->ddecl);
+
   AST_walk_children(spec, *fd, CAST(node, *fd));
+  using_function(old);
+
   return aw_done;
 }
 
@@ -102,6 +147,7 @@ static AST_walker network_walker;
 static void init_network_walker(void)
 {
   network_walker = new_AST_walker(parse_region);
+  AST_walker_handle(network_walker, kind_expression, network_expression);
   AST_walker_handle(network_walker, kind_increment, network_increment);
   AST_walker_handle(network_walker, kind_assignment, network_assignment);
   AST_walker_handle(network_walker, kind_function_decl, network_fdecl);
@@ -114,158 +160,14 @@ void handle_network_types(declaration decls)
   AST_walk_list(network_walker, NULL, &n);
 }
 
-static void output_cvt(char *fmt, type t)
+static void output_hton(type t)
 {
-  output(fmt, type_unsigned(t) ? "U" : "",
-	 (int)type_size_int(t) * BITSPERBYTE);
+  output_string(type_network_base_decl(t)->encoder->name);
 }
 
-void output_hton(type t)
+static void output_ntoh(type t)
 {
-  output_cvt("%sHTON%d", t);
-}
-
-void output_ntoh(type t)
-{
-  output_cvt("NTO%sH%d", t);
-}
-
-static void prt_platform_type(type t)
-{
-  type platformt = type_network_platform_type(t);
-
-  output("typedef %s __nesc_nw_%sint%d_t;\n",
-	 type_name(unparse_region, platformt),
-	 type_unsigned(t) ? "u" : "",
-	 (int)type_size_int(t) * BITSPERBYTE);
-}
-
-void prt_network_routines(void)
-{
-  prt_platform_type(nint1_type); prt_platform_type(nuint1_type);
-  prt_platform_type(nint2_type); prt_platform_type(nuint2_type);
-  prt_platform_type(nint4_type); prt_platform_type(nuint4_type);
-  prt_platform_type(nint8_type); prt_platform_type(nuint8_type);
-
-  output(
-"/* Start internal network declarations*/\n"
-"#define nw_struct struct\n"
-"#define nw_union union\n"
-"\n"
-"/* Base types. All this code assumes char's are 8-bits */\n"
-"typedef struct nw_int8_t  { unsigned char data[1]; } __attribute__((packed)) nw_int8_t;\n"
-"typedef struct nw_int16_t { unsigned char data[2]; } __attribute__((packed)) nw_int16_t;\n"
-"typedef struct nw_int32_t { unsigned char data[4]; } __attribute__((packed)) nw_int32_t;\n"
-"typedef struct nw_int64_t { unsigned char data[8]; } __attribute__((packed)) nw_int64_t;\n"
-"typedef struct nw_uint8_t  { unsigned char data[1]; } __attribute__((packed)) nw_uint8_t;\n"
-"typedef struct nw_uint16_t { unsigned char data[2]; } __attribute__((packed)) nw_uint16_t;\n"
-"typedef struct nw_uint32_t { unsigned char data[4]; } __attribute__((packed)) nw_uint32_t;\n"
-"typedef struct nw_uint64_t { unsigned char data[8]; } __attribute__((packed)) nw_uint64_t;\n"
-"\n"
-"/* Network to host and host to network conversions.\n"
-"   Network representation is 2's complement little-endian.\n"
-"*/\n"
-"static inline __nesc_nw_uint8_t NTOUH8(void *source) {\n"
-"  unsigned char *base = source;\n"
-"  return (unsigned char)base[0];\n"
-"}\n"
-"static inline __nesc_nw_uint16_t NTOUH16(void *source) {\n"
-"  unsigned char *base = source;\n"
-"  return base[1] << 8 | base[0];\n"
-"}\n"
-"static inline __nesc_nw_uint32_t NTOUH32(void *source) {\n"
-"  unsigned char *base = source;\n"
-"  return (__nesc_nw_uint32_t)base[3] << 24 |\n"
-"         (__nesc_nw_uint32_t)base[2] << 16 |\n"
-"         base[1] << 8 | base[0];\n"
-"}\n"
-"static inline __nesc_nw_uint64_t NTOUH64(void *source) {\n"
-"  unsigned char *base = source;\n"
-"  return (__nesc_nw_uint64_t)base[7] << 56 |\n"
-"         (__nesc_nw_uint64_t)base[6] << 48 |\n"
-"         (__nesc_nw_uint64_t)base[5] << 40 |\n"
-"         (__nesc_nw_uint64_t)base[4] << 32 |\n"
-"         (__nesc_nw_uint64_t)base[3] << 24 |\n"
-"         (__nesc_nw_uint64_t)base[2] << 16 |\n"
-"         base[1] << 8  | base[0];\n"
-"}\n"
-"static inline __nesc_nw_int8_t NTOH8(void *source) {\n"
-"  return NTOUH8(source);\n"
-"}\n"
-"static inline __nesc_nw_int16_t NTOH16(void *source) {\n"
-"  return NTOUH16(source);\n"
-"}\n"
-"static inline __nesc_nw_int32_t NTOH32(void *source) {\n"
-"  return NTOUH32(source);\n"
-"}\n"
-"static inline __nesc_nw_int64_t NTOH64(void *source) {\n"
-"  return NTOUH64(source);\n"
-"}\n"
-"\n"
-"/* Host to network order assignment */\n"
-"static inline __nesc_nw_uint8_t UHTON8(void *target, __nesc_nw_uint8_t value) {\n"
-"  unsigned char *base = target;\n"
-"  base[0] = value;\n"
-"  return value;\n"
-"}\n"
-"static inline __nesc_nw_uint16_t UHTON16(void *target, __nesc_nw_uint16_t value) {\n"
-"  unsigned char *base = target;\n"
-"  base[0] = value;\n"
-"  base[1] = value >> 8;\n"
-"  return value;\n"
-"}\n"
-"static inline __nesc_nw_uint32_t UHTON32(void *target, __nesc_nw_uint32_t value) {\n"
-"  unsigned char *base = target;\n"
-"  base[0] = value;\n"
-"  base[1] = value >> 8;\n"
-"  base[2] = value >> 16;\n"
-"  base[3] = value >> 24;\n"
-"  return value;\n"
-"}\n"
-"static inline __nesc_nw_uint64_t UHTON64(void *target, __nesc_nw_uint64_t value) {\n"
-"  unsigned char *base = target;\n"
-"  base[0] = value;\n"
-"  base[1] = value >> 8;\n"
-"  base[2] = value >> 16;\n"
-"  base[3] = value >> 24;\n"
-"  base[4] = value >> 32;\n"
-"  base[5] = value >> 40;\n"
-"  base[6] = value >> 48;\n"
-"  base[7] = value >> 56;\n"
-"  return value;\n"
-"}\n"
-"static inline __nesc_nw_int8_t HTON8(void *target, __nesc_nw_int8_t value) {\n"
-"  unsigned char *base = target;\n"
-"  base[0] = value;\n"
-"  return value;\n"
-"}\n"
-"static inline __nesc_nw_int16_t HTON16(void *target, __nesc_nw_int16_t value) {\n"
-"  unsigned char *base = target;\n"
-"  base[0] = value;\n"
-"  base[1] = value >> 8;\n"
-"  return value;\n"
-"}\n"
-"static inline __nesc_nw_int32_t HTON32(void *target, __nesc_nw_int32_t value) {\n"
-"  unsigned char *base = target;\n"
-"  base[0] = value;\n"
-"  base[1] = value >> 8;\n"
-"  base[2] = value >> 16;\n"
-"  base[3] = value >> 24;\n"
-"  return value;\n"
-"}\n"
-"static inline __nesc_nw_int64_t HTON64(void *target, __nesc_nw_int64_t value) {\n"
-"  unsigned char *base = target;\n"
-"  base[0] = value;\n"
-"  base[1] = value >> 8;\n"
-"  base[2] = value >> 16;\n"
-"  base[3] = value >> 24;\n"
-"  base[4] = value >> 32;\n"
-"  base[5] = value >> 40;\n"
-"  base[6] = value >> 48;\n"
-"  base[7] = value >> 56;\n"
-"  return value;\n"
-"}\n"
-"\n");
+  output_string(type_network_base_decl(t)->decoder->name);
 }
 
 static bool prt_network_assignment(expression e)
@@ -381,6 +283,26 @@ bool prt_network_expression(expression e)
   return prt_network_read(e) ||
     prt_network_assignment(e) ||
     prt_network_increment(e);
+}
+
+bool prt_network_typedef(data_decl d, variable_decl vd)
+{
+  if (vd->ddecl->kind == decl_typedef && vd->ddecl->basetype)
+    {
+      /* A Network base type typedef */
+      type basetype = vd->ddecl->basetype;
+
+      if (!type_size_cc(basetype) && cval_isinteger(type_size(basetype)))
+	error_with_location(vd->location, "network base type `%s' is of unknown size", vd->ddecl->name);
+      else
+	{
+	  set_location(vd->location);
+	  output("typedef struct { char data[%d]; } __attribute__((packed)) %s;",
+		 (int)type_size_int(basetype), vd->ddecl->name);
+	}
+      return TRUE;
+    }
+  return FALSE;
 }
 
 void init_network(void)

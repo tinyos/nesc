@@ -715,6 +715,7 @@ static void mark_connected_function_list(cgraph cg,
 			      new_use(dummy_location, c_executable | c_fncall));
     }
 }
+
 static void mark_reachable_function(cgraph cg,
 				    data_declaration caller,
 				    data_declaration ddecl,

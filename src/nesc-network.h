@@ -20,9 +20,8 @@ Boston, MA 02111-1307, USA. */
 void handle_network_types(declaration decls);
 void init_network(void);
 
-void output_hton(type t);
-void output_ntoh(type t);
 void prt_network_routines(void);
 bool prt_network_expression(expression e);
+bool prt_network_typedef(data_decl d, variable_decl vd);
 
 #endif

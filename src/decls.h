@@ -222,6 +222,10 @@ struct data_declaration {
   char *short_docstring;
   char *long_docstring;
   location doc_location;
+
+  /* For typedefs of network base types */
+  data_declaration encoder, decoder; /* encoder and decoder functions */
+  type basetype;		/* underlying non-network type (e.g., uint8_t) */
 };
 
 struct label_declaration {

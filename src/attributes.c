@@ -129,6 +129,15 @@ void handle_gcc_decl_attribute(gcc_attribute attr, data_declaration ddecl)
     {
       ddecl->noinlinep = TRUE;
     }
+  else if (!strcmp(name, "nx_base") || !strcmp(name, "__nx_base_"))
+    {
+      if (ddecl->kind != decl_typedef)
+	error_with_location(attr->location, "`nx_base' attribute can only be applied to typedefs");
+      else if (!attr->word2 || attr->args)
+	error_with_location(attr->location, "wrong number of arguments specified for `nx_base' attribute");
+      else
+	handle_nxbase_attribute(attr->location, attr->word2->cstring.data, ddecl);
+    }
   else if (!(target->decl_attribute &&
 	     target->decl_attribute(attr, ddecl)) &&
 	   !handle_gcc_type_attribute(attr, &ddecl->type))

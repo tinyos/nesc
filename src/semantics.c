@@ -148,6 +148,8 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->call_contexts = 0;
   dd->printed = FALSE;
   dd->dumped = FALSE;
+  dd->encoder = dd->decoder = NULL;
+  dd->basetype = NULL;
 }
 
 data_declaration lookup_id(const char *s, bool this_level_only)
@@ -692,16 +694,6 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	      case RID_FLOAT: newtype = float_type; break;
 	      case RID_DOUBLE: newtype = double_type; break;
 	      case RID_VOID: newtype = void_type; break;
-#ifdef NETWORK
-              case RID_NINT1: newtype = nint1_type; break;
-              case RID_NINT2: newtype = nint2_type; break;
-              case RID_NINT4: newtype = nint4_type; break;
-              case RID_NINT8: newtype = nint8_type; break;
-              case RID_NUINT1: newtype = nuint1_type; break;
-              case RID_NUINT2: newtype = nuint2_type; break;
-              case RID_NUINT4: newtype = nuint4_type; break;
-              case RID_NUINT8: newtype = nuint8_type; break;
-#endif
 	      case RID_AUTO: case RID_STATIC: case RID_EXTERN:
 	      case RID_REGISTER: case RID_TYPEDEF: case RID_COMMAND:
 	      case RID_EVENT: case RID_TASK:
@@ -2689,6 +2681,10 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
     }
   assert(ddecl);
   vd->ddecl = ddecl;
+
+  /* XXX: Ugly hack. */
+  if (ddecl->basetype)
+    ddecl->type = make_network_base_type(ddecl);
 
   set_doc_string(vd->ddecl, short_docstring, long_docstring, doc_location);
 

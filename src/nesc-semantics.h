@@ -94,6 +94,14 @@ void handle_combine_attribute(location loc, const char *combiner, type *t);
      modifying *t as appropriate
  */
 
+void handle_nxbase_attribute(location loc, const char *fnbasename,
+			     data_declaration ddecl);
+/* Effects: handle network type attribute specifying functions 
+     ntoh_fnbasename and hton_fnbasename as the decoding and encoding
+     functions respectively.
+     Modifies ddecl to reflect it's status as a base network type.
+ */
+
 declaration declare_template_parameter(declarator d, type_element elements,
 				       attribute attributes);
 declaration declare_type_parameter(location l, cstring id);
