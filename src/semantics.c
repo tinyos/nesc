@@ -42,9 +42,8 @@ Boston, MA 02111-1307, USA. */
 typedef enum {
   scf_inline = 1,
   scf_default = 2,
-  scf_task_only = 4,
-  scf_uninterruptable = 8,
-  scf_norace = 16
+  scf_async = 4,
+  scf_norace = 8
 } scflags;
 
 /* Predefined __builtin_va_list type */
@@ -130,6 +129,8 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->defined = FALSE;
   dd->suppress_definition = FALSE;
   dd->uncallable = FALSE;
+  dd->async = FALSE;
+  dd->actual_async = FALSE;
   dd->required = FALSE;
   dd->itype = NULL;
   dd->isgeneric = FALSE;
@@ -591,11 +592,9 @@ scflags parse_scflags(int specbits)
     scf |= scf_inline;
   if (specbits & 1 << RID_DEFAULT)
     scf |= scf_default;
+  if (specbits & 1 << RID_ASYNC)
+    scf |= scf_async;
 #if 0
-  if (specbits & 1 << RID_TASK_ONLY)
-    scf |= scf_task_only;
-  if (specbits & 1 << RID_UNINTERRUPTABLE)
-    scf |= scf_uninterruptable;
   if (specbits & 1 << RID_NORACE)
     scf |= scf_norace;
 #endif
@@ -615,12 +614,8 @@ void check_variable_scflags(scflags scf,
       badqual = "inline";
       msg = pedwarn_with_location; /* this is what gcc does */
     }
-#if 0
-  if (scf & scf_task_only)
-    badqual = "task_only";
-  if (scf & scf_uninterruptable)
-    badqual = "uninterruptable";
-#endif
+  if (scf & scf_async)
+    badqual = "async";
 
   if (badqual)
     msg(l, "%s `%s' declared `%s'", kind, name, badqual);
@@ -1727,6 +1722,13 @@ void check_function(data_declaration dd, declaration fd, int class,
   dd->isinline = (scf & scf_inline) != 0;
   dd->isexterninline = dd->isinline && class == RID_EXTERN;
   dd->isfilescoperef = dd->isexterninline || isdeclaration;
+  if (scf & scf_async)
+    {
+      if (dd->ftype == function_command || dd->ftype == function_event)
+	dd->async = TRUE;
+      else
+	error("`async' is for commands and events only");
+    }
 }
 
 data_declaration declare_string(const char *name, bool wide, size_t length)
@@ -3450,6 +3452,7 @@ static char *rid_name_int(int id)
     case RID_COMPLEX: return "__complex";
     case RID_COMMAND: return "command";
     case RID_EVENT: return "event";
+    case RID_ASYNC: return "async";
     case RID_TASK: return "task";
     case RID_DEFAULT: return "default";
     default: assert(0); return NULL;

@@ -129,6 +129,9 @@ typedef struct data_declaration {
   bool defined;			/* nesC: true if defined, false if used */
   bool suppress_definition;	/* Prevent code generation */
   bool uncallable;		/* Error if called */
+  bool async;			/* True if async declared (cmd/event) or
+				   inferred (C function) */
+  bool actual_async;		/* Inferred value for async */
   bool makeinline;		/* Mark this function inline when generating code */
   gnode ig_node;		/* inline-graph node for this function */
   struct data_declaration *interface;	/* nesC: interface this cmd/event belongs to */

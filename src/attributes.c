@@ -74,6 +74,8 @@ void handle_decl_attribute(attribute attr, data_declaration ddecl)
       else
 	error_with_location(attr->location, "`spontaneous' attribute is for external functions only");
     }
+  else if (!strcmp(name, "signal") || !strcmp(name, "interrupt"))
+    ddecl->async = TRUE;
   else
     handle_type_attribute(attr, &ddecl->type);
   /*else

@@ -27,6 +27,7 @@ Boston, MA 02111-1307, USA.  */
 #include "edit.h"
 #include "semantics.h"
 #include "constants.h"
+#include "nesc-concurrency.h"
 
 static void prt_nesc_function_hdr(data_declaration fn_decl,
 				  psd_options options)
@@ -792,7 +793,14 @@ void generate_c_code(nesc_declaration program, const char *target_name,
 
   /* Then we set the 'isused' bit on all functions that are reachable
      from spontaneous_calls or global_uses */
-  callgraph =  mark_reachable_code();
+  callgraph = mark_reachable_code();
+
+#if 0
+  // Disabled for now
+  check_async(callgraph);
+#endif
+
+
   inline_functions(callgraph);
 
   /* Then we print the code. */

@@ -92,6 +92,8 @@ libparser_a_SOURCES =				\
 	nesc-cg.h				\
 	nesc-component.c			\
 	nesc-component.h			\
+	nesc-concurrency.c			\
+	nesc-concurrency.h			\
 	nesc-configuration.c			\
 	nesc-configuration.h			\
 	nesc-cpp.c				\

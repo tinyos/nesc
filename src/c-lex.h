@@ -64,6 +64,7 @@ enum rid
   RID_COMMAND,
   RID_EVENT,
   RID_TASK,
+  RID_ASYNC,
 
   RID_MAX
 };

@@ -196,9 +196,10 @@ void yyerror();
 /* the dispatching (fake) tokens */
 %token <u.itoken> DISPATCH_C DISPATCH_NESC
 
-/* tinyos reserved words */
-%token <u.itoken> ATOMIC USES INTERFACE COMPONENTS PROVIDES MODULE INCLUDES
-%token <u.itoken> CONFIGURATION AS TASTNIOP IMPLEMENTATION CALL SIGNAL POST
+/* nesC reserved words */
+%token <u.itoken> ATOMIC USES INTERFACE COMPONENTS PROVIDES MODULE 
+%token <u.itoken> INCLUDES CONFIGURATION AS TASTNIOP IMPLEMENTATION CALL 
+%token <u.itoken> SIGNAL POST
 
 %type <u.itoken> callkind
 %type <u.decl> datadef_list parameter_list parameter
