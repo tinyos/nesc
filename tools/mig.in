@@ -1,0 +1,109 @@
+#!/usr/bin/perl
+
+# This file is part of the nesC compiler.
+#    Copyright (C) 2002 Intel Corporation
+# 
+# The attached "nesC" software is provided to you under the terms and
+# conditions of the GNU General Public License Version 2 as published by the
+# Free Software Foundation.
+# 
+# nesC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with nesC; see the file COPYING.  If not, write to
+# the Free Software Foundation, 59 Temple Place - Suite 330,
+# Boston, MA 02111-1307, USA.
+
+$prefix = "@prefix@";
+$exec_prefix = "@exec_prefix@";
+$NCDIR = "@libdir@/ncc";
+
+push @INC, "$NCDIR";
+
+for ($i = 0; $i <= $#ARGV; $i++) {
+    $_ = $ARGV[$i];
+
+    if (/^-/) {
+	if (/^-I/) {
+	    ($i, $idir) = &extractarg($i);
+	    push @args, "-I$idir";
+	}
+	elsif (/^-target=.*/) {
+	    push @args, $_;
+	    $targetset = 1;
+	}
+	elsif (/^-java-classname=(.*)$/) {
+	    $java_classname = $1;
+	}
+	elsif (/^-java-extends=(.*)$/) {
+	    $java_extends = $1;
+	}
+	else {
+	    &usage("unknown option $_");
+	}
+    }
+    else {
+	&usage(0) if defined($message_type);
+	$message_type = $_ if defined($cfile) && !defined($message_type);
+	$cfile = $_ if defined($target) && !defined($cfile);
+	$target = $_ if !defined($target);
+    }
+}
+&usage("no target specified") if !defined($target);
+&usage("no message format file specified") if !defined($cfile);
+&usage("no message specified") if !defined($message_type);
+
+unshift @args, "-c";
+unshift @args, "ncc";
+push @args, "-fnesc-msg=$message_type";
+push @args, "-target=mica" if !$targetset;
+push @args, "-x";
+push @args, "nesc";
+push @args, $cfile;
+
+#print STDERR join(" ", @args), "\n";
+open(NESC, '-|', join(" ", @args)) or die "nesc1 not found";
+@lines = <NESC>;
+close NESC;
+
+if ($?) {
+    print STDERR "failed to parse message file $cfile\n";
+    exit 1;
+}
+
+require "gen$target.pm";
+&gen($classname, @lines);
+
+sub usage()
+{
+    my ($error) = @_;
+
+    print STDERR "$error\n\n" if $error;
+
+    print STDERR "Usage: $0 [options] target-language msg-format-file message-type\n";
+    print STDERR "  general options are\n";
+    print STDERR "    -I dir                            Add include directory\n\n";
+    print STDERR "    -target=NCC-TARGET                Select mote architecture\n";
+    print STDERR "                                      (default is mica, use pc with tossim)\n";
+    print STDERR "  target specific options are\n";
+    print STDERR "    java:\n";
+    print STDERR "      -java-classname=FULL-CLASS-NAME Select class name (required)\n";
+    print STDERR "      -java-extends=CLASS-NAME        Select class to extend\n";
+    print STDERR "                                      (default net.tinyos.message.Message)\n";
+    exit 2;
+}
+
+sub extractarg {
+    local ($i) = @_;
+
+    if (length($ARGV[$i]) == 2) {
+	$arg = $ARGV[++$i];
+    }
+    else {
+	$arg = substr($ARGV[$i], 2);
+    }
+    return ($i, $arg);
+}

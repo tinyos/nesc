@@ -68,3 +68,13 @@ if test "$rc_cv_$1_declared" = yes; then
 fi])
 
 
+dnl RC_FIX_EXEC(FILE)
+dnl
+dnl   If FILE is on the list of generated config files, turn on its
+dnl   user execute bit.  Intended for use in the EXTRA-CMDS argument
+dnl   to AC_OUTPUT or AC_OUTPUT_COMMANDS.
+dnl
+AC_DEFUN(RC_FIX_EXEC,[[
+case "$CONFIG_FILES" in
+  *$1*) chmod +x $1 ;;
+esac]])

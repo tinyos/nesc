@@ -26,10 +26,44 @@ AC_PREREQ(2.50)
 
 AC_INIT(nesc, 0.1)
 AC_CONFIG_AUX_DIR(config-aux)
+AC_CANONICAL_HOST
+
+AC_MSG_CHECKING(for cygwin)
+case $host in
+  *-*-cygwin*)
+    CYGWINHACKS=1
+    AC_MSG_RESULT(yes)
+    ;;
+  *)
+    AC_MSG_RESULT(no)
+esac
+AC_SUBST(CYGWINHACKS)
+
 AM_INIT_AUTOMAKE(nesc, 0.1)
 
 AC_CONFIG_SUBDIRS(src)
 
+AC_PATH_PROG(pathperl, perl)
+if test -z "$pathperl" ; then
+  AC_MSG_ERROR(I can't find perl); 
+fi
+
+if test "z$TOSDIR" = "z"; then
+  if test -d ../tos; then
+    TOSDIR=../tos
+  elif test -d ../../tos; then
+    TOSDIR=../../tos
+  else
+    TOSDIR=$HOME/nest/tos
+  fi
+fi
+TOSDIR=`(cd $TOSDIR;pwd)`
+AC_SUBST(TOSDIR)
+
 AC_OUTPUT(
 	Makefile
+	tools/Makefile
+	tools/mig
+	tools/ncc
+	tools/set-mote-id
 )

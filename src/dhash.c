@@ -34,8 +34,18 @@
 /* A (growable) hash table */
 
 #include <regions.h>
-#include <stdint.h>
 #include "dhash.h"
+
+#if HAVE_STDINT_H
+#include <stdint.h>
+typedef uint32_t uint32;
+typedef uint64_t uint64;
+#else
+/* let's be gcc-specific as a fallback */
+#include <limits.h>
+typedef unsigned int __attribute__ ((mode(__SI__))) uint32;
+typedef unsigned int __attribute__ ((mode(__DI__))) uint64;
+#endif
 
 struct dhash_table
 {
@@ -75,14 +85,14 @@ unsigned long dhash_used(dhash_table h)
 
 #define MAGIC 0.6180339987
 
-#define LLMAGIC ((uint64_t)(MAGIC * ((uint64_t)1 << 8 * sizeof(uint32_t))))
+#define LLMAGIC ((uint64)(MAGIC * ((uint64)1 << 8 * sizeof(uint32))))
 
 static unsigned long dhash(dhash_table h, void *x)
 {
-  uint32_t hval = h->hash(x);
-  uint32_t hash = hval * LLMAGIC;
+  uint32 hval = h->hash(x);
+  uint32 hash = hval * LLMAGIC;
 
-  return hash >> (8 * sizeof(uint32_t) - h->log2size);
+  return hash >> (8 * sizeof(uint32) - h->log2size);
 }
 
 void *dhlookup(dhash_table h, void *x)

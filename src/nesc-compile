@@ -25,9 +25,15 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	$nocompile = 1 if ($_ eq "-fsyntax-only");
 	if (/^-[WwvpfmD]/ || /^-pedantic/ || /^-ansi/) {
 	    push @nesc_args, $_ unless /^-fnesc-.*cfile=/;
+	    $target = $1 if /^-fnesc-target=(.*)/;
+	    $verbose = 1 if /^-v/;
 	}
 
-	if (/^-o/) {
+	if (/^-I/) {
+	    ($i, $idir) = &extractarg($i);
+	    push @nesc_args, "-I$idir";
+	}
+	elsif (/^-o/) {
 	    ($i, $objtarget) = &extractarg($i);
 	}
 	elsif (/^-fnesc-/) {
@@ -52,6 +58,8 @@ for ($i = 0; $i <= $#ARGV; $i++) {
     }
 }
 
+$target = "pc" if !defined($target);
+
 if ($source eq "") {
     printf STDERR "no source file specified\n";
     exit 2;
@@ -70,13 +78,7 @@ if ($objtarget eq "") {
     $objtarget =~ s/\.td$/.o/;
 }
 
-$asmtarget1 = $ctarget;
-$asmtarget1 =~ s/\.c$/.s/;
-
-$asmtarget2 = $objtarget;
-$asmtarget2 =~ s/\.o$/.s/;
-
-push @nesc_args, "-fnesc-no-debug";
+push @nesc_args, "-fnesc-no-debug" if $target eq "avr";
 push @nesc_args, $source;
 push @nesc_args, "-o";
 if ($nocompile) {
@@ -85,42 +87,59 @@ if ($nocompile) {
     push @nesc_args, $ctarget;
 }
 unshift @nesc_args, "nesc1";
-#print join(" ", @nesc_args), "\n";
-system @nesc_args;
 
+&vsystem(@nesc_args);
 if ($? != 0) {
     unlink $ctarget;
     exit 2;
 }
 exit 0 if $nocompile;
 
-push @gcc_args, "-o";
-push @gcc_args, $asmtarget1;
-push @gcc_args, "-S";
-push @gcc_args, $ctarget;
-unshift @gcc_args, "avr-gcc";
-system @gcc_args;
-unlink $ctarget if $delcfile;
-if ($? != 0) {
+if ($target eq "avr") {
+    $asmtarget1 = $ctarget;
+    $asmtarget1 =~ s/\.c$/.s/;
+
+    $asmtarget2 = $objtarget;
+    $asmtarget2 =~ s/\.o$/.s/;
+
+    push @gcc_args, "-o";
+    push @gcc_args, $asmtarget1;
+    push @gcc_args, "-S";
+    push @gcc_args, $ctarget;
+    unshift @gcc_args, "avr-gcc";
+    &vsystem(@gcc_args);
+    unlink $ctarget if $delcfile;
+    if ($? != 0) {
+	unlink $asmtarget1;
+	exit 2;
+    }
+    print STDERR "sed -e 's/\\\$/./g' $asmtarget1 > $asmtarget2\n" if $verbose;
+    open(SED, $asmtarget1);
+    open(OSED, ">$asmtarget2");
+    while (<SED>) {
+	s/\$/./g;
+	print OSED;
+    }
+    close SED;
+    close OSED;
     unlink $asmtarget1;
-    exit 2;
-}
-open(SED, $asmtarget1);
-open(OSED, ">$asmtarget2");
-while (<SED>) {
-    s/\$/./g;
-    print OSED;
-}
-close SED;
-close OSED;
-unlink $asmtarget1;
-system("avr-as", "-o", $objtarget, $asmtarget2);
-unlink $asmtarget2;
-if ($? != 0) {
-    exit 2;
+    &vsystem("avr-as", "-o", $objtarget, $asmtarget2);
+    unlink $asmtarget2;
 }
 else {
-    exit 0;
+    push @gcc_args, "-o";
+    push @gcc_args, $objtarget;
+    unshift @gcc_args, "gcc";
+    &vsystem(@gcc_args);
+    unlink $ctarget if $delcfile;
+}
+
+exit 2 if $?;
+exit 0;
+
+sub vsystem() {
+    print STDERR join(" ", @_), "\n" if $verbose;
+    system @_;
 }
 
 sub extractarg {

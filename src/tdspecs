@@ -3,4 +3,4 @@
 .ti: @nesc
 
 @nesc:
-perl -S nesc-compile %{m*} %{D*} %{a*} %{g*} %{O*} %{W*} %{w} %{pedantic*} %{std*} %{ansi} %{traditional} %{v} %{p*} %{f*} %{!fsyntax-only:%{!fnesc-cfile=*:-fnesc-tmpcfile=%g.c} %{c:%W{o*}%{!o*:-o %w%b%O}}%{!c:-o %d%w%u%O}} %{fsyntax-only:-o %j} %i 
+perl -S nesc-compile %{m*} %{D*} %{I*} %{a*} %{g*} %{O*} %{W*} %{w} %{pedantic*} %{std*} %{ansi} %{traditional} %{v} %{p*} %{f*} %{!fsyntax-only:%{!fnesc-cfile=*:-fnesc-tmpcfile=%g.c} %{c:%W{o*}%{!o*:-o %w%b%O}}%{!c:-o %d%w%u%O}} %{fsyntax-only:-o %j} %i 

@@ -38,11 +38,6 @@ typedef unsigned long long largest_uint;
 
 #define LARGEST_UINTBITS (SIZEOF_LONG_LONG * BITSPERBYTE)
 
-/* Should be somehow configurable at some point (via configure.in?)
-   Note that this should be consistent with the machine.h link too */
-#define TARGET_GCC "avr-gcc"
-
-
 /* Miscellaneous config */
 
 typedef unsigned char bool;

@@ -1,0 +1,113 @@
+#!@pathperl@
+# -*- perl -*-
+
+# This file is part of the nesC compiler.
+# 
+# This file is derived from the RC Compiler. It is thus
+#    Copyright (C) 2000-2001 The Regents of the University of California.
+# Changes for nesC are
+#    Copyright (C) 2002 Intel Corporation
+# 
+# The attached "nesC" software is provided to you under the terms and
+# conditions of the GNU General Public License Version 2 as published by the
+# Free Software Foundation.
+# 
+# nesC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with nesC; see the file COPYING.  If not, write to
+# the Free Software Foundation, 59 Temple Place - Suite 330,
+# Boston, MA 02111-1307, USA.
+
+# Configuration
+$cygwin = "@CYGWINHACKS@";
+$prefix = "@prefix@";
+$exec_prefix = "@exec_prefix@";
+$NCDIR = "@libdir@/ncc";
+$TOSDIR = "@TOSDIR@";
+
+# Runtime configuration
+$ENV{"PATH"} = "$NCDIR:$ENV{PATH}";
+
+# Have fun with the arguments
+
+for ($i = 0; $i <= $#ARGV; $i++) {
+    $strip = 0;
+    $_ = $ARGV[$i];
+    if (/^-/) {
+	if (/^-target=(.*)/) {
+	    &fail("multiple targets specified") if defined($target);
+	    $target = $1;
+	    $strip = 1;
+	}
+	elsif (/^-board=(.*)/) {
+	    push @boards, $1;
+	    $strip = 1;
+	}
+    } 
+
+    push @new_args, $_ if !$strip;
+}
+
+$target = "pc" if !defined($target);
+@boards = ("basicsb") if !defined(@boards);
+
+if ($target eq "pc") {
+    $gcc = "gcc";
+    push @new_args, "-fnesc-target=pc";
+}
+elsif ($target eq "mica") {
+    $gcc = "avr-gcc";
+    push @new_args, "-mmcu=atmega103";
+    push @new_args, "-fnesc-target=avr";
+}
+elsif ($target eq "rene2") {
+    $gcc = "avr-gcc";
+    push @new_args, "-mmcu=atmega163";
+    push @new_args, "-fnesc-target=avr";
+}
+else {
+    &fail("unknown target $target\n(known targets are pc, mica, rene2)");
+}
+
+unshift @new_args, map "-DBOARD_\U$_", @boards;
+unshift @new_args, "-DPLATFORM_\U$target";
+$tdspecs = "$NCDIR/tdspecs";
+if ($cygwin) {
+    $tdspecs = `cygpath -w $tdspecs`;
+    chop $tdspecs;
+}
+unshift @new_args, "-specs=$tdspecs";
+unshift @new_args, $gcc;
+
+push @new_args, "-I$TOSDIR/platform/$target";
+push @new_args, "-I$TOSDIR/interfaces";
+push @new_args, "-I$TOSDIR/system";
+push @new_args, "-I$TOSDIR/lib";
+push @new_args, "-I$TOSDIR/raw-C";
+push @new_args, map "-I$TOSDIR/sensorboards/$_", @boards;
+
+#print STDERR join(' ', @new_args), "\n";
+exec @new_args;
+print STDERR "Couldn't execute gcc\n";
+exit 2;
+
+sub extractarg {
+    local ($i) = @_;
+
+    if (length($ARGV[$i]) == 2) {
+	$arg = $ARGV[++$i];
+    }
+    else {
+	$arg = substr($ARGV[$i], 2);
+    }
+    return ($i, $arg);
+}
+
+sub fail {
+    print STDERR "$_[0]\n";
+    exit 2;
+}

@@ -44,8 +44,7 @@ static void build_include_argv(void)
   for (p = searchpath; p; p = p->next)
     if (p->dirname[0]) /* Skip "", current dir always searched anyway */
       {
-	n++;
-	bytes += strlen(p->dirname) + 3 /* -I */;
+	n += 2;
       }
 
   path_argv_count = n;
@@ -56,12 +55,8 @@ static void build_include_argv(void)
   for (p = searchpath; p; p = p->next)
     if (p->dirname[0])
       {
-	path_argv[n++] = pathdata;
-
-	*pathdata++ = '-';
-	*pathdata++ = 'I';
-	strcpy(pathdata, p->dirname);
-	pathdata += strlen(p->dirname) + 1;
+	path_argv[n++] = "-I";
+	path_argv[n++] = fix_filename(pathregion, p->dirname);
       }
 
 }
@@ -91,6 +86,11 @@ static void add_dir(region r, const char *path, int len)
   np->next = searchpath;
   searchpath = np;
   np->dirname = canonicalise(r, path, len);
+}
+
+void add_nesc_dir(const char *path)
+{
+  add_dir(pathregion, path, strlen(path));
 }
 
 static void reverse_searchpath(void)

@@ -53,4 +53,6 @@ unsigned long lcm(unsigned long x, unsigned long y);
 
 DECLARE_ARRAY(wchar_array, wchar_t)
 
+char *fix_filename(region r, const char *unix_filename);
+
 #endif

@@ -21,6 +21,7 @@ Boston, MA 02111-1307, USA.  */
 
 void init_nesc_paths_start(region r);
 void add_nesc_path(const char *path);
+void add_nesc_dir(const char *path);
 void init_nesc_paths_end(void);
 
 const char *find_nesc_file(region r, source_language l, const char *name);

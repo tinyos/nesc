@@ -94,3 +94,22 @@ unsigned long lcm(unsigned long x, unsigned long y)
 }
 
 DEFINE_ARRAY(wchar_array, wchar_t)
+
+#ifdef __CYGWIN32__
+#include <sys/cygwin.h>
+#include <w32api/windows.h>
+
+char *fix_filename(region r, const char *unix_filename)
+{
+  char winpath[MAX_PATH];
+
+  cygwin_conv_to_win32_path(unix_filename, winpath);
+  return rstrdup(r, winpath);
+}
+#else
+char *fix_filename(region r, const char *unix_filename)
+{
+  return rstrdup(r, unix_filename);
+}
+#endif
+

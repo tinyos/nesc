@@ -24,6 +24,7 @@ Boston, MA 02111-1307, USA.  */
 #include <errno.h>
 #include <fcntl.h>
 #include "nesc-paths.h"
+#include "machine.h"
 
 static region opt_region;
 
@@ -49,13 +50,8 @@ void save_option(const char *option)
   saved_options_count++;
 }
 
-#ifdef __CYGWIN32__
-static char tmpfile1[] = "nesccpp2XXXXXX";
-static char tmpfile2[] = "nesccpp1XXXXXX";
-#else
 static char tmpfile1[] = "/tmp/nesccpp2XXXXXX";
 static char tmpfile2[] = "/tmp/nesccpp1XXXXXX";
-#endif
 
 static char *nesc_keywords[] = {
 #define K(name, token, rid) #name,
@@ -130,6 +126,7 @@ FILE *preprocess(const char *filename)
       int nargs = 8 + path_argv_count + saved_options_count, arg = 0, i;
       struct cpp_option *saved;
       int destfd = creat(cpp_dest, 0666);
+      region filename_region = newregion();
 
       if (destfd < 0 || dup2(destfd, 1) < 0)
 	exit(2);
@@ -137,7 +134,7 @@ FILE *preprocess(const char *filename)
       close(destfd);
 
       argv = alloca(nargs * sizeof *argv);
-      argv[arg++] = TARGET_GCC;
+      argv[arg++] = (char *)target->gcc_compiler;
 
       rarraycopy(argv + arg, path_argv, path_argv_count, char *);
       arg += path_argv_count;
@@ -151,8 +148,8 @@ FILE *preprocess(const char *filename)
       argv[arg++] = "-E";
       argv[arg++] = "-dD";
       argv[arg++] = "-imacros";
-      argv[arg++] = cpp_macros;
-      argv[arg++] = (char *)filename;
+      argv[arg++] = fix_filename(filename_region, cpp_macros);
+      argv[arg++] = fix_filename(filename_region, filename);
       argv[arg++] = NULL;
       assert(arg <= nargs);
 
@@ -162,7 +159,7 @@ FILE *preprocess(const char *filename)
       fprintf(stderr, "\n");
 #endif
 
-      execvp(TARGET_GCC, argv);
+      execvp(target->gcc_compiler, argv);
       exit(2);
     }
 

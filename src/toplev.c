@@ -431,7 +431,16 @@ int region_main(int argc, char **argv) deletes
 	  if (str[0] == 'Y')
 	    str++;
 
-	  if (str[0] == 'D' || str[0] == 'm')
+	  if (str[0] == 'I')
+	    {
+	      if (str[1])
+		add_nesc_dir(str + 1);
+	      else if (i + 1 < argc)
+		add_nesc_dir(argv[++i]);
+	      else
+		error("argument to `-I' is missing");
+	    }
+	  else if (str[0] == 'D' || str[0] == 'm')
 	    save_option(argv[i]);
 	  else if (!strcmp (str, "dumpbase"))
 	    i++;

@@ -31,10 +31,14 @@ SUBDIRS = libcompat
 regiondir = libcompat
 endif
 
+ncclibdir=$(libdir)/ncc
+
 INCLUDES = $(regionflags) -I$(srcdir)/$(regiondir)
 
 noinst_LIBRARIES = libparser.a
-noinst_PROGRAMS = nesc1
+ncclib_PROGRAMS = nesc1
+ncclib_DATA = tdspecs
+ncclib_SCRIPTS = nesc-compile
 
 libregions = $(regiondir)/libregions.a
 
