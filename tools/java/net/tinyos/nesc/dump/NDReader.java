@@ -79,7 +79,7 @@ public class NDReader extends DefaultHandler
     }
 
     public NDElement parent() {
-	return activeElements.elementAt(activeElements.length() - 2);
+	return (NDElement)activeElements.elementAt(activeElements.size() - 2);
     }
 
     public void startElement(String uri, String localName, String qName,

@@ -18,7 +18,7 @@ public class WiringGraph
     protected Hashtable endpoints = new Hashtable();
 
     public WiringNode lookup(DataDefinition epDecl) {
-	WiringNode found = endpoints.get(epDecl);
+	WiringNode found = (WiringNode)endpoints.get(epDecl);
 
 	if (found == null) {
 	    found = new WiringNode(epDecl);

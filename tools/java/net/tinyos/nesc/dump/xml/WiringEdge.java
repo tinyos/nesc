@@ -25,31 +25,31 @@ public class WiringEdge
     }
 
     boolean followForward(WiringPosition position) {
-	if (position.arguments != null) {
+	if (position.args != null) {
 	    if (fromArgs != null) {
-		if (!compareArguments(fromArgs, position.arguments))
+		if (!compareArguments(fromArgs, position.args))
 		    return false;
-		position.arguments = toArgs;
+		position.args = toArgs;
 	    }
 	    /* else assert(toArgs == null); */
 	}
 	else
-	    position.arguments = toArgs;
+	    position.args = toArgs;
 	position.node = to;
 	return true;
     }
 
     boolean followBackward(WiringPosition position) {
-	if (position.arguments != null) {
+	if (position.args != null) {
 	    if (toArgs != null) {
-		if (!compareArguments(toArgs, position.arguments))
+		if (!compareArguments(toArgs, position.args))
 		    return false;
-		position.arguments = fromArgs;
+		position.args = fromArgs;
 	    }
 	    /* else assert(fromArgs == null); */
 	}
 	else
-	    position.arguments = fromArgs;
+	    position.args = fromArgs;
 	position.node = from;
 	return true;
     }

@@ -11,6 +11,7 @@
 
 package net.tinyos.nesc.dump.xml;
 
+import net.tinyos.nesc.dump.*;
 import org.xml.sax.*;
 import java.util.*;
 
@@ -30,6 +31,6 @@ public class NescDefinition extends Definition
 
     static synchronized Definition lookup(Attributes attrs, NDReader reader,
 					  String elementName) {
-	return defs.lookup(attrs.getValue("qname"), attrs, reader, elementName);
+	return defs.lookup(reader, attrs.getValue("qname"), attrs, elementName);
     }
 }

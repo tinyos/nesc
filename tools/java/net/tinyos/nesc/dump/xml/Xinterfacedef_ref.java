@@ -17,6 +17,6 @@ import org.xml.sax.*;
 public class Xinterfacedef_ref extends NDElement
 {
     public NDElement start(NDReader reader, Attributes attrs) {
-	return NescDefinition.lookup(reader, attrs, "interfacedef");
+	return NescDefinition.lookup(attrs, reader, "interfacedef");
     }
 }

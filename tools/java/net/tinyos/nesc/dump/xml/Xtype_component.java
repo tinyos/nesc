@@ -19,6 +19,6 @@ public class Xtype_component extends Type
 
     public void child(NDElement subElement) {
 	if (subElement instanceof Xinternal_component)
-	    component = (Xcomponent)subElement;
+	    component = (Xinternal_component)subElement;
     }
 }

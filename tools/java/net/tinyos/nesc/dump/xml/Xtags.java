@@ -18,7 +18,8 @@ public class Xtags extends NDList
 {
     public static LinkedList list;
 
-    public void end() {
+    public NDElement end() {
 	list = l;
+	return this;
     }
 }

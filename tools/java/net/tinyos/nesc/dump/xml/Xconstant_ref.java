@@ -16,7 +16,7 @@ import org.xml.sax.*;
 
 public class Xconstant_ref extends NDElement
 {
-    public NDElement start(NDReader reader, Attributess attrs) {
+    public NDElement start(NDReader reader, Attributes attrs) {
 	return DataDefinition.lookup(reader, attrs, "constant");
     }
 }

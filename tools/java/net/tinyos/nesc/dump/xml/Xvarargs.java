@@ -13,16 +13,6 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xwiring extends NDElement
+public class Xvarargs extends NDElement
 {
-    public static WiringGraph wg = new WiringGraph();
-
-    public void child(NDElement subElement) {
-	Xwire wire = (Xwire)subElement;
-
-	WiringNode from = wg.lookup(wire.from.entity);
-	WiringNode to = wg.lookup(wire.to.entity);
-
-	wg.addEdge(from, wire.from.arguments, to, wire.to.arguments);
-    }
 }

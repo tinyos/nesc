@@ -43,7 +43,7 @@ public class Xfield extends Definition
 	    bitSize = Constant.decode(s);
     }
 
-    static synchronized Definition lookup(NDReader reader, Attribute attrs) {
+    static synchronized Definition lookup(NDReader reader, Attributes attrs) {
 	return defs.lookup(reader, attrs.getValue("ref"), attrs, "field");
     }
 

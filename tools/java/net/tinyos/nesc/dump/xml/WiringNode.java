@@ -35,10 +35,10 @@ public class WiringNode
     }
 
     public ListIterator outgoingEdges() {
-	return outgoing.iterator();
+	return outgoing.listIterator();
     }
 
     public ListIterator incomingEdges() {
-	return incoming.iterator();
+	return incoming.listIterator();
     }
 }
