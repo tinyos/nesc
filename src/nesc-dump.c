@@ -24,6 +24,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-cg.h"
 #include "semantics.h"
 #include "nesc-semantics.h"
+#include "constants.h"
 
 dd_list/*nd_option*/ opts;
 region dump_region;
@@ -137,7 +138,7 @@ void dump_ddecl(data_declaration ddecl)
 
   switch (ddecl->kind)
     {
-    case decl_interface:
+    case decl_interface_ref:
       nxml_ndecl_ref(ddecl->container);
       nxml_instance(ddecl->itype);
       if (ddecl->gparms)
@@ -151,22 +152,23 @@ void dump_ddecl(data_declaration ddecl)
 
 static void dump_parameter(declaration parm)
 {
-  /* ignore (void) parameters */
+  data_declaration pdecl = NULL;
+
+  /* (void) parameters have a NULL ddecl, so will be ignored */
   if (is_data_decl(parm)) /* regular parameter */
     {
       data_decl data = CAST(data_decl, parm);
       variable_decl vdecl = CAST(variable_decl, data->decls);
 
-      if (!vdecl->ddecl)
-	return;
+      pdecl = vdecl->ddecl;
     }
   if (is_ellipsis_decl(parm))
     {
       xml_qtag("varargs");
       xnewline();
-      return;
     }
-  dump_ddecl(parm);
+  if (pdecl)
+    dump_ddecl(pdecl);
 }
 
 static void dump_parameters(const char *name, declaration parms)
