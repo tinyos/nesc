@@ -33,6 +33,12 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	elsif (/^-java-extends=(.*)$/) {
 	    $java_extends = $1;
 	}
+	elsif (/^-csharp-classname=(.*)$/) {
+	    $csharp_classname = $1;
+	}
+	elsif (/^-csharp-extends=(.*)$/) {
+	    $csharp_extends = $1;
+	}
 	elsif (/^-o/) {
 	    ($i, $ofile) = &extractarg($i);
 	}
@@ -111,7 +117,10 @@ sub usage()
     print STDERR "    java:\n";
     print STDERR "      -java-classname=FULL-CLASS-NAME Select class name (required)\n";
     print STDERR "      -java-extends=CLASS-NAME        Select class to extend\n";
-    print STDERR "                                      (default net.tinyos.message.Message)\n";
+    print STDERR "    csharp:\n";
+    print STDERR "      -csharp-classname=FULL-CLASS-NAME Select class name (required)\n";
+    print STDERR "      -csharp-extends=CLASS-NAME        Select class to extend\n";
+    print STDERR "                                      (default tinyos.message.Message)\n";
     exit 2;
 }
 
