@@ -52,7 +52,7 @@ static context use_context(context c)
   return c;
 }
 
-static use new_use(location l, context c)
+use new_use(location l, context c)
 {
   use u = ralloc(rr, struct use);
 
@@ -80,6 +80,8 @@ static void ddecl_used(data_declaration id, use u)
   if (!id->nuses)
     id->nuses = dd_new_list(rr);
   dd_add_last(rr, id->nuses, u);
+  id->use_summary |= u->c;
+
   if (current_function)
     {
       if (!current_function->fn_uses)
@@ -205,7 +207,8 @@ static void collect_uses_expr(expression expr, context c)
 	     CAST(identifier, fce->arg1)->ddecl->kind == decl_function) ||
 	    fce->va_arg_call))
 	{
-	  /*warning_with_location(fce->location, "call via function pointer");*/
+	  if (warn_fnptr)
+	    warning_with_location(fce->location, "call via function pointer");
 	  collect_uses_expr(fce->arg1, exe_c | c_read);
 	}
       else

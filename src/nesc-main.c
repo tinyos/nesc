@@ -33,6 +33,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-magic.h"
 #include "nesc-uses.h"
 #include "edit.h"
+#include "machine.h"
 
 /* The set of C files to require before loading the main component */
 struct ilist
@@ -109,6 +110,92 @@ static void connect_graphs(region r, nesc_declaration program,
   *components = dd_new_list(r);
 
   connect(program, *cg, *modules, *components);
+}
+
+bool nesc_option(char *p)
+{
+  /* Yes, using here strlen is evil. But who *really* cares? */
+  if (!strncmp (p, "-fnesc-nido-tosnodes=", strlen("-fnesc-nido-tosnodes=")))
+    {
+      nido_num_nodes = p + strlen("-fnesc-nido-tosnodes=");
+    }
+  else if (!strncmp (p, "-fnesc-include=", strlen("-fnesc-include=")))
+    {
+      add_nesc_include(p + strlen("-fnesc-include="));
+    }
+  else if (!strncmp (p, "-fnesc-path=", strlen("-fnesc-path=")))
+    {
+      add_nesc_path(p + strlen("-fnesc-path="));
+    }
+  else if (!strncmp (p, "-fnesc-msg=", strlen("-fnesc-msg=")))
+    {
+      select_nesc_msg(p + strlen("-fnesc-msg="));
+    }
+  else if (!strncmp (p, "-fnesc-target=", strlen("-fnesc-target=")))
+    {
+      char *target = p + strlen("-fnesc-target=");
+      if (!strcmp(target, "pc"))
+	use_nido = TRUE;
+      select_target(target);
+    }
+  else if (!strcmp (p, "-fnesc-no-debug"))
+    {
+      flag_no_debug = 1;
+    }
+  else if (!strcmp (p, "-fnesc-no-inline"))
+    {
+      flag_no_inline = 1;
+    }
+  else if (!strcmp (p, "-fnesc-verbose"))
+    {
+      flag_verbose = 2;
+    }
+  else if (!strcmp (p, "-fnesc-save-macros"))
+    {
+      flag_save_macros = 1;
+    }
+  else if (!strncmp (p, "-fnesc-docdir=", strlen("-fnesc-docdir=")))
+    {
+      doc_set_outdir(p + strlen("-fnesc-docdir="));
+    }
+  else if (!strncmp (p, "-fnesc-topdir=", strlen("-fnesc-topdir=")))
+    {
+      doc_add_topdir(p + strlen("-fnesc-topdir="));
+    }
+  else if (!strncmp (p, "-fnesc-is-app", strlen("-fnesc-is-app")))
+    {
+      doc_is_app(TRUE);
+    }
+  else if (!strncmp (p, "-fnesc-docs-use-graphviz", strlen("-fnesc-docs-use-graphviz")))
+    {
+      doc_use_graphviz(TRUE);
+    }
+  else if (!strcmp (p, "-Wnesc-docstring"))
+    warn_unexpected_docstring = 1;
+  else if (!strcmp (p, "-Wno-nesc-docstring"))
+    warn_unexpected_docstring = 0;
+  else if (!strcmp (p, "-Wnesc-fnptr"))
+    warn_fnptr = 1;
+  else if (!strcmp (p, "-Wno-nesc-fnptr"))
+    warn_fnptr = 0;
+  else if (!strcmp (p, "-Wnesc-data-race"))
+    warn_data_race = 1;
+  else if (!strcmp (p, "-Wno-nesc-data-race"))
+    warn_data_race = 0;
+  else if (!strcmp (p, "-Wnesc-async"))
+    warn_async = 1;
+  else if (!strcmp (p, "-Wno-nesc-async"))
+    warn_async = 0;
+  else if (!strcmp (p, "-Wnesc-combine"))
+    warn_no_combiner = 1;
+  else if (!strcmp (p, "-Wno-nesc-combine"))
+    warn_no_combiner = 0;
+  else if (!strcmp (p, "-Wnesc-all"))
+    warn_data_race = warn_fnptr = warn_async = warn_no_combiner = 1;
+  else
+    return FALSE;
+
+  return TRUE;
 }
 
 void nesc_compile(const char *filename, const char *target_name)

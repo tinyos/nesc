@@ -233,4 +233,16 @@ extern int flag_verbose;
 /* Warn if there are unexpected documentation strings in the code */
 extern int warn_unexpected_docstring;
 
+/* Warn when function pointers are used */
+extern int warn_fnptr;
+
+/* Warn when data races are detected */
+extern int warn_data_race;
+
+/* Warn when async keyword is violated */
+extern int warn_async;
+
+/* Warn when no combiner function and multiple fns called */
+extern int warn_no_combiner;
+
 #endif

@@ -235,6 +235,17 @@ char* nido_num_nodes;
 int flag_verbose;
 
 /* Warn if there are unexpected documentation strings in the code */
-int warn_unexpected_docstring = 0;
+int warn_unexpected_docstring;
 
+/* Warn when function pointers are used */
+int warn_fnptr;
+
+/* Warn when data races are detected */
+int warn_data_race;
+
+/* Warn when async keyword is violated */
+int warn_async;
+
+/* Warn when no combiner function and multiple fns called */
+int warn_no_combiner;
 

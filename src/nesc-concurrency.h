@@ -18,5 +18,6 @@ Boston, MA 02111-1307, USA.  */
 #ifndef NESC_CONCURRENCY_H
 
 void check_async(cgraph callgraph);
+void check_races(cgraph callgraph);
 
 #endif

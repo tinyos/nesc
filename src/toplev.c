@@ -68,6 +68,19 @@ static char *lang_options[] =
   "-fnesc-verbose",
   "-fnesc-include=",
 
+  /* nesC warnings */
+  "-Wnesc-docstring",
+  "-Wno-nesc-docstring",
+  "-Wnesc-fnptr",
+  "-Wnesc-no-fnptr",
+  "-Wnesc-data-race",
+  "-Wnesc-no-data-race",
+  "-Wnesc-async",
+  "-Wnesc-no-async",
+  "-Wnesc-combine",
+  "-Wnesc-no-combine",
+  "-Wnesc-all",
+
   "-ansi",
   "-fallow-single-precision",
 
@@ -156,9 +169,6 @@ static char *lang_options[] =
   "-Wno-undef",
   "-Wwrite-strings",
   "-Wno-write-strings",
-  "-Wunexpected-docstring",
-  "-Wno-unexpected-docstring",
-
   0
 };
 
@@ -190,62 +200,8 @@ static void pipe_closed (int signo)
 /* Decode the string P as a language-specific option for C. */
 static void c_decode_option(char *p)
 {
-  /* Yes, using here strlen is evil. But who *really* cares? */
-  if (!strncmp (p, "-fnesc-nido-tosnodes=", strlen("-fnesc-nido-tosnodes=")))
-    {
-      nido_num_nodes = p + strlen("-fnesc-nido-tosnodes=");
-    }
-  else if (!strncmp (p, "-fnesc-include=", strlen("-fnesc-include=")))
-    {
-      add_nesc_include(p + strlen("-fnesc-include="));
-    }
-  else if (!strncmp (p, "-fnesc-path=", strlen("-fnesc-path=")))
-    {
-      add_nesc_path(p + strlen("-fnesc-path="));
-    }
-  else if (!strncmp (p, "-fnesc-msg=", strlen("-fnesc-msg=")))
-    {
-      select_nesc_msg(p + strlen("-fnesc-msg="));
-    }
-  else if (!strncmp (p, "-fnesc-target=", strlen("-fnesc-target=")))
-    {
-      char *target = p + strlen("-fnesc-target=");
-      if (!strcmp(target, "pc"))
-	use_nido = TRUE;
-      select_target(target);
-    }
-  else if (!strcmp (p, "-fnesc-no-debug"))
-    {
-      flag_no_debug = 1;
-    }
-  else if (!strcmp (p, "-fnesc-no-inline"))
-    {
-      flag_no_inline = 1;
-    }
-  else if (!strcmp (p, "-fnesc-verbose"))
-    {
-      flag_verbose = 2;
-    }
-  else if (!strcmp (p, "-fnesc-save-macros"))
-    {
-      flag_save_macros = 1;
-    }
-  else if (!strncmp (p, "-fnesc-docdir=", strlen("-fnesc-docdir=")))
-    {
-      doc_set_outdir(p + strlen("-fnesc-docdir="));
-    }
-  else if (!strncmp (p, "-fnesc-topdir=", strlen("-fnesc-topdir=")))
-    {
-      doc_add_topdir(p + strlen("-fnesc-topdir="));
-    }
-  else if (!strncmp (p, "-fnesc-is-app", strlen("-fnesc-is-app")))
-    {
-      doc_is_app(TRUE);
-    }
-  else if (!strncmp (p, "-fnesc-docs-use-graphviz", strlen("-fnesc-docs-use-graphviz")))
-    {
-      doc_use_graphviz(TRUE);
-    }
+  if (nesc_option(p))
+    ;
   else if (!strcmp (p, "-ftraditional") || !strcmp (p, "-traditional"))
     {
       flag_traditional = 1;
@@ -390,10 +346,6 @@ static void c_decode_option(char *p)
     warn_multichar = 1;
   else if (!strcmp (p, "-Wno-multichar"))
     warn_multichar = 0;
-  else if (!strcmp (p, "-Wunexpected-docstring"))
-    warn_unexpected_docstring = 1;
-  else if (!strcmp (p, "-Wno-unexpected-docstring"))
-    warn_unexpected_docstring = 0;
   else if (!strcmp (p, "-Wall"))
     {
       /* We save the value of warn_uninitialized, since if they put

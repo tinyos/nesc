@@ -145,6 +145,8 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->magic_reduce = NULL;
   dd->makeinline = FALSE;
   dd->container_function = NULL;
+  dd->use_summary = 0;
+  dd->async_access = FALSE;
 }
 
 data_declaration lookup_id(const char *s, bool this_level_only)

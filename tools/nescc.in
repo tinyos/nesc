@@ -82,6 +82,27 @@ if ($print_version) {
     exit 0;
 }
 
+# Compute numeric version, assumes PACKAGE_VERSION is of the form a.b.cXXX
+# where XXX is any alphanumeric suffix, b, c are optional and between 0 and 9
+$_ = "@PACKAGE_VERSION@";
+if (/^(\d*)([a-zA-Z]\w*)?$/) {
+    $v_a = $1;
+    $v_b = 0;
+    $v_c = 0;
+} elsif (/^(\d*)\.(\d)([a-zA-Z]\w*)?$/) {
+    $v_a = $1;
+    $v_b = $2;
+    $v_c = 0;
+} elsif (/^(\d*)\.(\d)\.(\d)([a-zA-Z]\w*)?$/) {
+    $v_a = $1;
+    $v_b = $2;
+    $v_c = $3;
+}
+else {
+    &fail("Internal error: invalid version $_");
+}
+$numversion = $v_a * 100 + $v_b * 10 + $v_c;
+push @new_args, "-DNESC=$numversion";
 
 #
 # documentation generation options
@@ -176,4 +197,9 @@ sub winpath {
     chop $path;
 
     return $path;
+}
+
+sub fail {
+    print STDERR "$_[0]\n";
+    exit 2;
 }

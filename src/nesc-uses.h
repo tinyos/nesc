@@ -49,4 +49,6 @@ context exe_context(context c);
 
 void init_uses(void);
 
+use new_use(location l, context c);
+
 #endif

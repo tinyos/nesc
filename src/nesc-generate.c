@@ -160,21 +160,19 @@ static bool combiner_warning_printed;
 
 static void combine_warning(struct connections *c)
 {
-  if (!combiner_warning_printed)
+  if (warn_no_combiner && !combiner_warning_printed)
     {
       combiner_warning_printed = TRUE;
 
-#if 0
       /* Warnings to be enabled when result_t gets defined correctly */
       if (c->called->interface)
-	warning("uncombined call to %s.%s.%s",
-		c->called->container->name,
+	warning("calls to %s.%s in %s are uncombined",
 		c->called->interface->name,
-		c->called->name);
+		c->called->name,
+		c->called->container->name);
       else
-	warning("uncombined call to %s.%s",
-		c->called->container->name, c->called->name);
-#endif
+	warning("calls to %s in %s are uncombined",
+		c->called->name, c->called->container->name);
     }
 }
 
@@ -588,7 +586,8 @@ void find_connections(cgraph cg, nesc_declaration mod)
 
 static void mark_reachable_function(cgraph cg,
 				    data_declaration caller,
-				    data_declaration ddecl);
+				    data_declaration ddecl,
+				    use caller_use);
 
 static void mark_connected_function_list(cgraph cg,
 					 data_declaration caller,
@@ -600,16 +599,18 @@ static void mark_connected_function_list(cgraph cg,
     {
       full_connection conn = DD_GET(full_connection, connected);
 
-      mark_reachable_function(cg, caller, conn->ep->function);
+      mark_reachable_function(cg, caller, conn->ep->function,
+			      new_use(dummy_location, c_executable | c_call));
     }
 }
 static void mark_reachable_function(cgraph cg,
 				    data_declaration caller,
-				    data_declaration ddecl)
+				    data_declaration ddecl,
+				    use caller_use)
 {
   dd_list_pos use;
   if (caller && ddecl->kind == decl_function)
-    graph_add_edge(fn_lookup(cg, caller), fn_lookup(cg, ddecl), NULL);
+    graph_add_edge(fn_lookup(cg, caller), fn_lookup(cg, ddecl), caller_use);
 
   if (ddecl->isused)
     return;
@@ -640,7 +641,11 @@ static void mark_reachable_function(cgraph cg,
 
   if (ddecl->fn_uses)
     dd_scan (use, ddecl->fn_uses)
-      mark_reachable_function(cg, ddecl, DD_GET(iduse, use)->id);
+      {
+	iduse i = DD_GET(iduse, use);
+
+	mark_reachable_function(cg, ddecl, i->id, i->u);
+      }
 }
 
 static cgraph mark_reachable_code(void)
@@ -651,9 +656,9 @@ static cgraph mark_reachable_code(void)
   /* We use the connection graph type to represent our call graph */
 
   dd_scan (used, spontaneous_calls)
-    mark_reachable_function(cg, NULL, DD_GET(data_declaration, used));
+    mark_reachable_function(cg, NULL, DD_GET(data_declaration, used), NULL);
   dd_scan (used, nglobal_uses)
-    mark_reachable_function(cg, NULL, DD_GET(iduse, used)->id);
+    mark_reachable_function(cg, NULL, DD_GET(iduse, used)->id, NULL);
 
   return cg;
 }
@@ -803,11 +808,8 @@ void generate_c_code(nesc_declaration program, const char *target_name,
      from spontaneous_calls or global_uses */
   callgraph = mark_reachable_code();
 
-#if 0
-  // Disabled for now
   check_async(callgraph);
-#endif
-
+  check_races(callgraph);
 
   inline_functions(callgraph);
 

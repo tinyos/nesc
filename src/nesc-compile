@@ -48,7 +48,7 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	    }
 	}
 	elsif (!(/^-D/)) {
-	    if (!(/^-W(no-)?unexpected-docstring$/)) {
+	    if (!(/^-W(no-)?nesc/)) {
 		push @gcc_args, $_;
 	    }
 	}
