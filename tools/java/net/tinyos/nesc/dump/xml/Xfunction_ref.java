@@ -16,6 +16,6 @@ import org.xml.sax.*;
 public class Xfunction_ref extends NDElement
 {
     public NDElement start(NDReader reader, Attributes attrs) {
-	return DataDefinition.find(attrs, "function");
+	return DataDefinition.lookup(reader, attrs, "function");
     }
 }

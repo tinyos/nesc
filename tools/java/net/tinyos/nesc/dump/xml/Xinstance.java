@@ -13,23 +13,21 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xcomponent extends NescDefinition
+public class Xinstance extends NescDefinition
 {
-    public Xinstance instance;
-    public Xparameters parameters;
-    public Ximplementation implementation;
+    public long number;
+    public Xarguments arguments;
+    public NescDefinition parent;
 
     public NDElement start(Attributes attrs) {
-	return define(attrs);
+	number = numberDecode(attrs.getValue("number"), -1);
+	return this;
     }
 
     public void child(NDElement subElement) {
-	if (subElement instanceof Xinstance)
-	    instance = (Xinstance)subElement;
-	if (subElement instanceof Xparameters)
-	    parameters = (Xparameters)subElement;
-	if (subElement instanceof Ximplementation)
-	    implementation = (Ximplementation)subElement;
+	if (subElement instanceof Xarguments)
+	    arguments = (Xarguments)subElement;
+	if (subElement instanceof NescDefinition)
+	    parent = (NescDefinition)subElement;
     }
-
 }

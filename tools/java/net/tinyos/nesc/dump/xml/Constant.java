@@ -11,11 +11,15 @@
 
 package net.tinyos.nesc.dump.xml;
 
-import org.xml.sax.*;
-
-public class Xinterfacedef_ref extends NDElement
+public class Constant
 {
-    public NDElement start(NDReader reader, Attributes attrs) {
-	return NescDefinition.lookup(reader, attrs, "interfacedef");
+    public static Constant decode(String s) {
+	switch (s.charAt(0)) {
+	case 'I': return new IntegerConstant(s);
+	case 'F': return new FloatConstant(s);
+	case 'S': return new StringConstant(s);
+	case 'V': return new NonConstant();
+	case 'U': default: return new UnknownConstant();
+	}
     }
 }

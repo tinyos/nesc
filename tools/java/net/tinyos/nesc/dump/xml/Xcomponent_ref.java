@@ -16,6 +16,6 @@ import org.xml.sax.*;
 public class Xcomponent_ref extends NDElement
 {
     public NDElement start(NDReader reader, Attributes attrs) {
-	return NescDefinition.lookup(attrs, reader, "component");
+	return NescDefinition.lookup(reader, attrs, "component");
     }
 }

@@ -13,9 +13,19 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xinterfacedef_ref extends NDElement
+public class Xarray_element extends NDElement
 {
-    public NDElement start(NDReader reader, Attributes attrs) {
-	return NescDefinition.lookup(reader, attrs, "interfacedef");
+    public long from, to;
+    public Value value;
+
+    public NDElement start(Attributes attrs) {
+	from = numberDecode(attrs.getValue("from"), -1);
+	to = numberDecode(attrs.getValue("to"), -1);
+	return this;
+    }
+
+    public void child(NDElement subElement) {
+	if (subElement instanceof Value)
+	    value = (Value)subElement;
     }
 }

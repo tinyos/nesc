@@ -14,11 +14,11 @@ package net.tinyos.nesc.dump.xml;
 import org.xml.sax.*;
 import java.util.*;
 
-public class DataDefinition extends Definition
+public class TagDefinition extends Definition
 {
     static protected DefinitionTable defs;
 
-    public String name; /* not globally unique */
+    public String name; /* not globally unique, may be null */
     public String ref; /* globally unique */
 
     public void init(Attributes attrs) {

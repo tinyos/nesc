@@ -13,23 +13,21 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xcomponent extends NescDefinition
+public class Xtype_qualified extends Type
 {
-    public Xinstance instance;
-    public Xparameters parameters;
-    public Ximplementation implementation;
+    public Type subType;
+    public boolean qconst, qvolatile, qrestrict;
 
     public NDElement start(Attributes attrs) {
-	return define(attrs);
+	super.start(attrs);
+	qconst = boolDecode(attrs.getValue("const"));
+	qvolatile = boolDecode(attrs.getValue("volatile"));
+	qrestrict = boolDecode(attrs.getValue("__restrict"));
+	return this;
     }
 
     public void child(NDElement subElement) {
-	if (subElement instanceof Xinstance)
-	    instance = (Xinstance)subElement;
-	if (subElement instanceof Xparameters)
-	    parameters = (Xparameters)subElement;
-	if (subElement instanceof Ximplementation)
-	    implementation = (Ximplementation)subElement;
+	if (subElement instanceof Type)
+	    subType = (Type)subElement;
     }
-
 }

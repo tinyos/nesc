@@ -14,25 +14,24 @@ package net.tinyos.nesc.dump.xml;
 import org.xml.sax.*;
 import java.util.*;
 
-public class DataDefinition extends Definition
+public class Field extends Definition
 {
     static protected DefinitionTable defs;
 
-    public String name; /* not globally unique */
+    public String name; /* not unique */
     public String ref; /* globally unique */
+    public StructureDefinition container;
 
     public void init(Attributes attrs) {
 	ref = attrs.getValue("ref");
-	name = attrs.getValue("name");
-	/* ignoring scoped for now */
+	name = attrs.getValue("field");
     }
 
     synchronized Definition define(Attribute attrs) {
 	return defs.define(attrs.getValue("ref"), attrs, this);
     }
 
-    static synchronized Definition lookup(NDReader reader, Attribute attrs, 
-					  String elementName) {
-	return defs.lookup(reader, attrs.getValue("ref"), attrs, elementName);
+    static synchronized Definition lookup(NDReader reader, Attribute attrs) {
+	return defs.lookup(reader, attrs.getValue("ref"), attrs, "field");
     }
 }

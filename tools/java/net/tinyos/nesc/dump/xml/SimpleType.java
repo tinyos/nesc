@@ -13,9 +13,13 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xinterfacedef_ref extends NDElement
+public class SimpleType extends Type
 {
-    public NDElement start(NDReader reader, Attributes attrs) {
-	return NescDefinition.lookup(reader, attrs, "interfacedef");
+    public String cname; /* C name of type */
+
+    public NDElement start(Attributes attrs) {
+	super.start(attrs);
+	cname = attrs.getValue("cname");
+	return this;
     }
 }

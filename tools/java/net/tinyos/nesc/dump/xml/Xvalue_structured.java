@@ -13,9 +13,13 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xinterfacedef_ref extends NDElement
+public class Xvalue_structured extends Value
 {
-    public NDElement start(NDReader reader, Attributes attrs) {
-	return NescDefinition.lookup(reader, attrs, "interfacedef");
+    public LinkedList fields = new LinkedList();
+
+    public void child(NDElement subElement) {
+	super.child(subElement);
+	if (subElement instanceof Xstructured_element)
+	    fields.add(subElement);
     }
 }

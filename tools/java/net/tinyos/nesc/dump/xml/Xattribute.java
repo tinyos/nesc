@@ -13,9 +13,7 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xinterfacedef_ref extends NDElement
+/* Note: this is an attribute definition. See Xattribute_value for a use */
+public class Xattribute extends StructureDefinition
 {
-    public NDElement start(NDReader reader, Attributes attrs) {
-	return NescDefinition.lookup(reader, attrs, "interfacedef");
-    }
 }

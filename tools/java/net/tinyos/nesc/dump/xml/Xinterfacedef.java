@@ -13,9 +13,16 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xinterfacedef_ref extends NDElement
+public class Xinterfacedef extends NescDefinition
 {
-    public NDElement start(NDReader reader, Attributes attrs) {
-	return NescDefinition.lookup(reader, attrs, "interfacedef");
+    public Xparameters parameters;
+
+    public NDElement start(Attributes attrs) {
+	return define(attrs);
+    }
+
+    public void child(NDElement subElement) {
+	if (subElement instanceof Xparameters)
+	    parameters = (Xparameters)subElement;
     }
 }

@@ -33,4 +33,29 @@ abstract public class NDElement {
 
     public void whitespace() {
     }
+
+
+    static public long numberDecode(String s, long def) {
+	if (s != null) {
+	    try {
+		return Long.decode(s);
+	    }
+	    catch (NumberFormatException e) { }
+	}
+	return def;
+    }
+
+    static public long realDecode(String s, double def) {
+	if (s != null) {
+	    try {
+		return Double.decode(s);
+	    }
+	    catch (NumberFormatException e) { }
+	}
+	return def;
+    }
+
+    static public boolean boolDecode(String s) {
+	return s != null;
+    }
 }

@@ -18,7 +18,8 @@ class DefinitionTable
 {
     protected Hashtable allDefinitions;
 
-    synchronized Definition lookup(Object key, Attributes attrs, NDReader reader, String elementName) {
+    synchronized Definition lookup(NDReader reader, Object key,
+				   Attributes attrs, String elementName) {
 	Definition me = (Definition)allDefinitions.get(key);
 	if (me == null) {
 	    try {

@@ -13,9 +13,13 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xinterfacedef_ref extends NDElement
+public class Type extends NDElement
 {
-    public NDElement start(NDReader reader, Attributes attrs) {
-	return NescDefinition.lookup(reader, attrs, "interfacedef");
+    public Constant size, alignment;
+
+    public NDElement start(Attributes attrs) {
+	size = Constant.decode(attrs.getValue("size"));
+	alignment = Constant.decode(attrs.getValue("alignment"));
+	return this;
     }
 }
