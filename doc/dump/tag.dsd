@@ -17,6 +17,7 @@
       <element name="nesc:union"/>
       <element name="nesc:nw_struct"/>
       <element name="nesc:nw_union"/>
+      <element name="nesc:attribute"/>
       <element name="nesc:enum"/>
     </or>
   </boolexp>
@@ -47,6 +48,7 @@
       <element name="nesc:union"/>
       <element name="nesc:nw_struct"/>
       <element name="nesc:nw_union"/>
+      <element name="nesc:attribute"/>
     </or>
     <declare>
       <contents>

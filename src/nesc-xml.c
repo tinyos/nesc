@@ -324,6 +324,15 @@ void indentedtag_pop(void)
 xml_list xl_variables, xl_constants, xl_functions, xl_typedefs,
   xl_interfaces, xl_icomponents, xl_interfacedefs, xl_components, xl_tags;
 
+void nxml_simple_value(type t, cval val)
+{
+  indentedtag_start("value");
+  xml_attr_cval("cst", val); /* val can be cval_top */
+  xml_tag_end();
+  nxml_type(t);
+  indentedtag_pop();
+}
+
 void nxml_ddecl_ref(data_declaration ddecl)
 {
   xml_list l = NULL;
@@ -365,12 +374,12 @@ void nxml_ninstance_ref(nesc_declaration ndecl)
   assert (ndecl->kind == l_component);
 
   nxml_ndecl_start(ndecl);
-  xml_attr("name", ndecl->instance_name);
+  xml_attr("qname", ndecl->instance_name);
   //xml_attr_ptr("ref", ndecl);
   xml_tag_end_pop();
 }
 
-static void dump_arguments(expression arguments)
+void nxml_arguments(expression arguments)
 {
   expression arg;
 
@@ -379,18 +388,8 @@ static void dump_arguments(expression arguments)
     {
       if (is_type_argument(arg))
 	nxml_type(CAST(type_argument, arg)->asttype->type);
-      else if (arg->cst)
-	{
-	  xml_tag_start("constant");
-	  xml_attr_cval("value", arg->cst->cval);
-	  xml_tag_end_pop();
-	  xnewline();
-	}
-      else
-	{
-	  xml_qtag("unknown-value");
-	  xnewline();
-	}
+      else 
+	nxml_simple_value(arg->type, arg->cst ? arg->cst->cval : cval_top);
     }
   indentedtag_pop();
 }
@@ -401,14 +400,14 @@ void nxml_ndefinition_ref(nesc_declaration ndecl)
 
   xstartline();
   nxml_ndecl_start(orig);
-  xml_attr("name", orig->name);
+  xml_attr("qname", orig->name);
   if (!ndecl->arguments)
     xml_tag_end_pop();
   else
     {
       xml_tag_end();
       xindent();
-      dump_arguments(ndecl->arguments);
+      nxml_arguments(ndecl->arguments);
       xunindent(); xstartline(); xml_pop();
     }
   xnewline();
@@ -423,19 +422,14 @@ void nxml_tdecl_ref(tag_declaration tdecl)
   xml_tag_start(tag);
   if (tdecl->name)
     xml_attr("name", tdecl->name);
-  if (tdecl->container/* || tdecl->container_function*/)
-    xml_attr_noval("scoped");
+  xml_attr_bool("scoped", !!tdecl->container/* || tdecl->container_function*/);
   xml_attr_ptr("ref", tdecl);
   xml_tag_end_pop();
 }
 
 static void nxml_value_base(ivalue value)
 {
-  indentedtag_start("value-base");
-  xml_attr_cval("value", value->u.base.value);
-  xml_tag_end();
-  nxml_type(value->type);
-  indentedtag_pop();
+  nxml_simple_value(value->type, value->u.base.value);
 }
 
 static void nxml_value_array(ivalue value)

@@ -58,6 +58,7 @@
       <element name="nesc:union-ref"/>
       <element name="nesc:nw_struct-ref"/>
       <element name="nesc:nw_union-ref"/>
+      <element name="nesc:attribute-ref"/>
     </or>
   </boolexp>
 
@@ -326,7 +327,7 @@
 
   <m:doc>An attribute with its initialiser</m:doc>
   <if>
-    <element name="nesc:attribute"/>
+    <element name="nesc:attribute-value"/>
     <declare>
       <required><attribute name="name"/></required>
       <contents><element name="nesc:value-structured"/></contents>

@@ -15,7 +15,7 @@
 
   <m:doc>Attribute list.</m:doc>
   <contenttype id="nesc:attributes">
-    <repeat><element name="nesc:attribute"/></repeat>
+    <repeat><element name="nesc:attribute-value"/></repeat>
   </contenttype>
 
   <m:doc>Argument list</m:doc>

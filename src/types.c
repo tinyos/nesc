@@ -2227,10 +2227,8 @@ void nxml_type(type t)
       break;
     case tk_function: 
       xml_tag_start("type-function");
-      if (t->u.fn.oldstyle)
-	xml_attr_noval("oldstyle");
-      if (t->u.fn.varargs)
-	xml_attr_noval("varargs");
+      xml_attr_bool("oldstyle", t->u.fn.oldstyle);
+      xml_attr_bool("varargs", t->u.fn.varargs);
       break;
     case tk_tagged:
       xml_tag_start("type-tag");
@@ -2249,10 +2247,8 @@ void nxml_type(type t)
       break;
     }
 
-  if (type_size_cc(t))
-    xml_attr_cval("size", type_size(t));
-  if (type_has_size(t))
-    xml_attr_cval("alignment", type_alignment(t));
+  xml_attr_cval("size", type_size_cc(t) ? type_size(t) : cval_top);
+  xml_attr_cval("alignment", type_has_size(t) ? type_alignment(t) : cval_top);
 
   switch (t->kind)
     {
@@ -2284,11 +2280,9 @@ void nxml_type(type t)
 	  while ((argt = typelist_next(&scanargs)))
 	    nxml_type(argt);
 	}
-      xml_tag("returns");
-      xnewline(); xindent();
+      indentedtag("function-returns");
       nxml_type(t->u.fn.returns);
-      xunindent(); xml_pop();
-      xnewline();
+      indentedtag_pop();
       xunindent(); xml_pop();
       break;
     case tk_tagged:

@@ -98,7 +98,7 @@ static void dump_parameter(declaration parm)
     {
       data_declaration pdecl = CAST(type_parm_decl, parm)->ddecl;
 
-      xml_tag_start("type-parameter");
+      xml_tag_start("parameter-type");
       xml_attr_ptr("ref", pdecl);
       xml_tag_end_pop();
       xnewline();
@@ -133,6 +133,8 @@ static void dump_endp(const char *tag, endp ep)
 {
   xml_tag(tag);
   nxml_ddecl_ref(ep->function ? ep->function : ep->interface);
+  if (ep->args_node)
+    nxml_arguments(ep->args_node->args);
   xml_pop();
   xnewline();
 }
@@ -170,7 +172,7 @@ static void dump_component(void *entry)
     indentedtag_start("configuration");
   else
     indentedtag_start("module");
-  xml_attr("name", comp->instance_name);
+  xml_attr("qname", comp->instance_name);
   xml_tag_end();
   xnewline();
 
@@ -198,7 +200,7 @@ static void dump_attributes(dd_list/*nesc_attribute*/ attributes)
     {
       nesc_attribute attr = DD_GET(nesc_attribute, scan);
 
-      indentedtag_start("attribute");
+      indentedtag_start("attribute-value");
       xml_attr("name", attr->word1->cstring.data);
       xml_tag_end();
       nxml_value(attr->arg1->ivalue);
@@ -244,7 +246,7 @@ static void dump_interfacedef(void *entry)
   nesc_declaration comp = entry;
 
   indentedtag_start("interfacedef");
-  xml_attr("name", comp->name);
+  xml_attr("qname", comp->name);
   xml_tag_end();
 
   if (comp->abstract)
@@ -262,10 +264,8 @@ static void dump_field(field_declaration field)
   xml_attr_bool("packed", field->packed);
   xml_attr_cval("bit-offset", field->offset);
   if (cval_istop(field->bitwidth))
-    {
-      if (type_size_cc(field->type))
-	xml_attr_cval("size", type_size(field->type));
-    }
+    xml_attr_cval("size", type_size_cc(field->type) ?
+		  type_size(field->type) : cval_top);
   else
     xml_attr_cval("bit-size", field->bitwidth);
   xml_tag_end();
@@ -284,6 +284,7 @@ static void dump_tag(void *entry)
   xml_attr_ptr("ref", tdecl);
   xml_attr_bool("defined", tdecl->defined);
   xml_attr_bool("packed", tdecl->packed);
+  xml_attr_bool("scoped", !!tdecl->container/* || tdecl->container_function*/);
   xml_attr_cval("size", tdecl->size);
   xml_attr_cval("alignment", tdecl->alignment);
   xml_tag_end();
@@ -305,7 +306,7 @@ static void dump_tag(void *entry)
 
   if (tdecl->kind == kind_enum_ref)
     {
-      indentedtag("reptype");
+      indentedtag("enum-rep");
       nxml_type(tdecl->reptype);
       indentedtag_pop();
     }
@@ -577,9 +578,13 @@ void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
     xml_list_reset(lists[i].l);
 
   xml_start(stdout);
-  indentedtag("nesc");
+  indentedtag_start("nesc");
+  xml_attr("xmlns", "http://www.tinyos.net/nesC");
+  xml_tag_end(); xnewline();
+
   do_wiring(cg, userg);
   do_lists();
+
   indentedtag_pop();
   xml_end();
 
