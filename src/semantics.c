@@ -162,6 +162,7 @@ data_declaration declare(environment b, data_declaration from,
 	{
 	  /* Here to install a non-global value.  */
 	  data_declaration shadowed = lookup_id(dd->name, FALSE);
+	  char *warnstring = 0;
 
 	  /* Warn if shadowing an argument at the top level of the body.  */
 	  if (shadowed && shadowed->islocal
@@ -173,15 +174,13 @@ data_declaration declare(environment b, data_declaration from,
 	      && env_lookup(b->parent->id_env, dd->name, TRUE))
 	    {
 	      if (shadowed->isparameter)
-		pedwarn("declaration of `%s' shadows a parameter", dd->name);
+		warnstring = "declaration of `%s' shadows a parameter";
 	      else
-		pedwarn("declaration of `%s' shadows a symbol from the parameter list",
-			 dd->name);
+		warnstring = "declaration of `%s' shadows a symbol from the parameter list"; 
 	    }
 	  /* Maybe warn if shadowing something else.  */
 	  else if (warn_shadow && !ignore_shadow)
 	    {
-	      char *warnstring = 0;
 
 	      if (dd->isparameter
 		  && b->parent->parm_level)
@@ -198,8 +197,11 @@ data_declaration declare(environment b, data_declaration from,
 	      else if (shadowed)
 		warnstring = "declaration of `%s' shadows global declaration";
 
-	      if (warnstring)
-		(error_shadow ? error : warning)(warnstring, dd->name);
+	    }
+	  if (warnstring)
+	    {
+	      (error_shadow ? error : warning)(warnstring, dd->name);
+	      (error_shadow ? error_with_location : warning_with_location)(shadowed->ast->location, "location of shadowed declaration");
 	    }
 	}
 
