@@ -783,7 +783,7 @@ parameter value lists. Also, the semantics of \nesc guarantee that $L_P$
 has zero, one, or two elements (each element is a tuple of parameter
 values).
 
-If $F$ is a non-parameterised call, then:
+If $M.I.F$ is a non-parameterised call, then:
 \begin{itemize}
 \item If $S$ is empty and $M$ has no default defintion for $I.F$, a
 compile-time error occurs.
@@ -794,11 +794,11 @@ called in an arbitrary order. The parameterised elements receive
 the first element of $L_P$ as parameter values.
 \end{itemize}
 
-If $F$ is a parameterised call with parameter values $P$ (computed at
+If $M.I.F$ is a parameterised call with parameter values $P$ (computed at
 runtime in $M$), then $S$ is split into two sets: 
 \begin{itemize}
 \item $S_1 = \{ (X, ()) | (X, ()) \in S \}$ (these are the parameterised
-definitions connected directly to $F$). Note that $S_1$ can be computed
+definitions connected directly to $M.I.F$). Note that $S_1$ can be computed
 at compile-time.
 \item $S_2 = \{ (X, (L_P) | (X, (P) :: L_P) \in S \}$ (these are the calls
 whose condition, as specified in configurations, matches $P$). Note that
@@ -817,7 +817,7 @@ parameter values. The parameterised elements $(X, L_P)$ of $S_2$ receive
 the first element of $L_P$ as parameter values.
 \end{itemize}
 
-The result of $I.F$ is the result of one of the functions called (note that
+The result of $M.I.F$ is the result of one of the functions called (note that
 the rules above guarantee that at least one function will always be called).
 [we could change this to ``last function called'']
 
