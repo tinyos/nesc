@@ -1340,7 +1340,7 @@ expression make_compound_expr(location loc, statement block)
     {
       expression result = CAST(expression, new_compound_expr(parse_region, loc, block));
       compound_stmt bs = CAST(compound_stmt, block);
-      statement last_stmt = CAST(statement, last_node(CAST(node, bs->stmts)));
+      statement last_stmt = last_statement(bs->stmts);
 
       if (last_stmt && is_expression_stmt(last_stmt))
 	result->type = CAST(expression_stmt, last_stmt)->arg1->type;

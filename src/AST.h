@@ -41,8 +41,9 @@ typedef struct AST_node *noderef;
 #include "graph.h"
 #include "dhash.h"
 
-#include "AST_types.h"
 #include "c-lex.h"
+#include "AST_types.h"
+#include "AST_list_node.h"
 #include "config.h"
 #include "decls.h"
 #include "env.h"
@@ -53,34 +54,17 @@ typedef struct AST_node *noderef;
 enum { struct_type, union_type, enum_type };
 
 typedef enum { command_call, event_signal, post_task, normal_call } nesc_call_kind;
-
 #include "AST_defs.h"
 
-typedef struct AST_ast_generic
-{
-  AST_kind kind;
-} *ast_generic;
-
-#ifdef __GNUC__
-#define CAST(type, x) ({ast_generic tEmPcast = (ast_generic)(x); if (tEmPcast) assert(is_ ## type(tEmPcast)); (type)(tEmPcast); })
-#define CASTPTR(type, x) ({ast_generic *tEmPcast = (ast_generic *)(x); if (tEmPcast && *tEmPcast) assert(is_ ## type(*tEmPcast)); (type *)(tEmPcast); })
-#define CASTSRPTR(type, x) ({ast_generic *tEmPcast = (ast_generic *)(x); if (tEmPcast && *tEmPcast) assert(is_ ## type(*tEmPcast)); (type sameregion *)(tEmPcast); })
-#else
-/* Could also generate some code to make this safe */
-#define CAST(type, x) ((type)(x))
-#define CASTPTR(type, x) ((type *)(x))
-#define CASTSRPTR(type, x) ((type sameregion *)(x))
-#endif
+#define CAST AST_CAST
+#define CASTPTR AST_CASTPTR
+#define CASTSRPTR AST_CASTSRPTR
 
 unary newkind_unary(region r, AST_kind kind, location location, expression arg1);
 binary newkind_binary(region r, AST_kind kind, location location,
 		      expression arg1, expression arg2);
 tag_ref newkind_tag_ref(region r, AST_kind kind, location location, word word1, attribute attributes, declaration fields, bool defined);
-node last_node(node n);
-int chain_length(node n);
-node AST_chain(node l1, node l2);
 void insert_before(node sameregion *list, node before, node n);
-node ast_reverse(node l);
 
 void AST_set_parents(node n);
 void set_parent(node sameregion *nptr, node parent);

@@ -670,6 +670,11 @@ bool type_struct(type t)
   return t->kind == tk_tagged && t->u.tag->kind == kind_struct_ref;
 }
 
+bool type_attribute(type t)
+{
+  return t->kind == tk_tagged && t->u.tag->kind == kind_attribute_ref;
+}
+
 bool type_union(type t)
 {
   return t->kind == tk_tagged && t->u.tag->kind == kind_union_ref;
@@ -1360,7 +1365,7 @@ bool type_scalar(type t)
 
 bool type_aggregate(type t)
 {
-  return type_struct(t) || type_union(t);
+  return type_struct(t) || type_union(t) || type_attribute(t);
 }
 
 type make_unsigned_type(type t)

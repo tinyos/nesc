@@ -45,12 +45,14 @@ libregions = $(regiondir)/libregions.a
 libparser_a_SOURCES =				\
 	AST.c					\
 	AST.h					\
-	AST_defs.h				\
+	AST_list_node.h				\
 	AST_types.h				\
 	AST_utils.c				\
 	AST_utils.h				\
 	AST_walk.c				\
 	AST_walk.h				\
+	ND_list_nd_arg.h			\
+	ND_types.h				\
 	array.h					\
 	array.c					\
 	attributes.h				\
@@ -58,6 +60,7 @@ libparser_a_SOURCES =				\
 	c-gperf.h				\
 	c-lex.c					\
 	c-lex.h					\
+	c-lex-int.h				\
 	c-parse.h				\
 	c-parse.tab.h				\
 	c-parse.tab.c				\
@@ -88,10 +91,13 @@ libparser_a_SOURCES =				\
 	init.h					\
 	input.c					\
 	input.h					\
+	lex.nd.c				\
 	machine.c				\
 	machine.h				\
 	nesc-abstract.c				\
 	nesc-abstract.h				\
+	nesc-attributes.c			\
+	nesc-attributes.h			\
 	nesc-c.c				\
 	nesc-c.h				\
 	nesc-cg.c				\
@@ -107,6 +113,11 @@ libparser_a_SOURCES =				\
 	nesc-cpp.c				\
 	nesc-cpp.h				\
 	nesc-decls.h				\
+	nesc-dspec-int.h			\
+	nesc-dspec.tab.c			\
+	nesc-dspec.tab.h			\
+	nesc-dump.c				\
+	nesc-dump.h				\
 	nesc-env.c				\
 	nesc-env.h				\
 	nesc-generate.c				\
@@ -151,15 +162,25 @@ nesc1_SOURCES = toplev.c
 nesc1_LDADD = libparser.a $(libregions) -lm
 
 BUILT_SOURCES =					\
-	AST_defs.c				\
 	AST_defs.h				\
+	AST_list_node.c				\
+	AST_list_node.h				\
 	AST_parent.c				\
 	AST_print.c				\
+	AST_types.c				\
 	AST_types.h				\
 	AST_walk_children.c			\
+	ND_defs.h				\
+	ND_list_nd_arg.c			\
+	ND_list_nd_arg.h			\
+	ND_types.c				\
+	ND_types.h				\
 	c-gperf.h				\
 	c-parse.tab.c				\
-	c-parse.tab.h
+	c-parse.tab.h				\
+	lex.nd.c				\
+	nesc-dspec.tab.c			\
+	nesc-dspec.tab.h
 
 EXTRA_DIST = 					\
 	build-basics.el				\
@@ -176,11 +197,17 @@ EXTRA_DIST = 					\
 	AST_parent.c				\
 	AST_print.c				\
 	AST_walk_children.c			\
+	ND_defs.c				\
+	ND_defs.h				\
+	ND_types.h				\
 	machine/self.c				\
 	machine/avr.c				\
 	machine/env_machine.c			\
 	machine/msp430.c			\
 	machine/keil.c				\
+	nesc-dspec.def				\
+	nesc-dspec.l				\
+	nesc-dspec.y				\
 	tdspecs					\
 	nesc-compile				\
 	COPYING					\
@@ -188,6 +215,7 @@ EXTRA_DIST = 					\
 	.gdbinit
 
 BISON = bison
+FLEX = flex
 EMACS = emacs
 M4 = m4
 GPERF = gperf
@@ -195,8 +223,23 @@ GPERF = gperf
 $(srcdir)/c-parse.tab.c $(srcdir)/c-parse.tab.h: c-parse.y
 	$(BISON) $(BISONFLAGS) -dv $<
 
-$(srcdir)/AST_defs.c $(srcdir)/AST_defs.h $(srcdir)/AST_types.h: build-types.el nodetypes.def build-basics.el
-	cd $(srcdir) && $(EMACS) $(EMACSFLAGS) -batch -load build-types.el AST nodetypes.def
+$(srcdir)/nesc-dspec.tab.c $(srcdir)/nesc-dspec.tab.h: nesc-dspec.y
+	$(BISON) $(BISONFLAGS) -p nd -dv $<
+
+$(srcdir)/lex.nd.c: nesc-dspec.l
+	$(FLEX) -Pnd -s $<
+
+$(srcdir)/ND_types.c $(srcdir)/ND_types.h $(srcdir)/ND_defs.h: build-types.el nodetypes.def build-basics.el
+	cd $(srcdir) && $(EMACS) $(EMACSFLAGS) -batch -load build-types.el ND nesc-dspec.def 10000
+
+$(srcdir)/ND_list_nd_arg.c $(srcdir)/ND_list_nd_arg.h: build-list.el nodetypes.def build-basics.el
+	cd $(srcdir) && $(EMACS) $(EMACSFLAGS) -batch -load build-list.el ND nesc-dspec.def nd_arg
+
+$(srcdir)/AST_types.c $(srcdir)/AST_types.h $(srcdir)/AST_defs.h: build-types.el nodetypes.def build-basics.el
+	cd $(srcdir) && $(EMACS) $(EMACSFLAGS) -batch -load build-types.el AST nodetypes.def 42
+
+$(srcdir)/AST_list_node.c $(srcdir)/AST_list_node.h: build-list.el nodetypes.def build-basics.el
+	cd $(srcdir) && $(EMACS) $(EMACSFLAGS) -batch -load build-list.el AST nodetypes.def node
 
 $(srcdir)/AST_parent.c: build-parent.el nodetypes.def build-basics.el
 	cd $(srcdir) && $(EMACS) $(EMACSFLAGS) -batch -load build-parent.el AST nodetypes.def

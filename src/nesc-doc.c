@@ -1173,12 +1173,12 @@ static inline void check_print_func_args(function_decl fd, data_decl dd, variabl
     assert(fd==NULL);
     assert(dd);    
     assert(vd);
-    if (is_function_declarator((ast_generic)vd->declarator)) {
+    if (is_function_declarator(vd->declarator)) {
       if(fdr) *fdr = CAST(function_declarator, vd->declarator);
       if(ddecl) *ddecl = vd->ddecl;
     }
     // Chase down pointers if necessary.
-    else if (is_pointer_declarator((ast_generic)vd->declarator)) {
+    else if (is_pointer_declarator(vd->declarator)) {
       function_declarator fdcl = get_fdeclarator(vd->declarator);
       if(fdr) *fdr = fdcl;
       if(ddecl) *ddecl = vd->ddecl;

@@ -267,8 +267,11 @@ QUALIFIERS and ATTRIBUTEES are lists. ARG1 is an optional bitfield specifier")
 (deftype typeof_type type_element (asttype)
   "typeof(ASTTYPE)")
 
-(deftype attribute type_element (word1 word2 args)
-  "The attribute WORD1(WORD2, ARGS). word2 and args are optional")
+(deftype attribute type_element (word1)
+  "base type for gcc and nesc attributes")
+
+(deftype gcc_attribute attribute (word2 args)
+  "The (gcc) attribute WORD1(WORD2, ARGS). word2 and args are optional")
 
 (deftype rid type_element (id)
   "Storage class specifier, type specifier or type qualifier ID (see RID_xxx)")
@@ -286,6 +289,7 @@ DEFINED == FALSE => FIELDS == NULL
 
 TDECL points to the internal declaration node for this type")
 (defnode struct_ref tag_ref "A struct")
+(defnode attribute_ref tag_ref "An attribute definition")
 (defnode union_ref tag_ref "A union")
 (defnode enum_ref tag_ref "An enum")
 
@@ -650,6 +654,10 @@ with declaration DDECL. The typedef-name is in ddecl->name")
 (deftype atomic_stmt statement (stmt)
   "ATOMIC stmt
 An atomic_stmt is not made for lexically nested atomic statements")
+
+(deftype nesc_attribute attribute (args tdecl)
+  "@WORD1(ARGS), a nesC attribute. ARGS is an init_list.
+TDECL is the reference to the declaration of attribute WORD1")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; types for the polymorphic extensions

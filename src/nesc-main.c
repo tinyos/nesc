@@ -37,6 +37,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-uses.h"
 #include "nesc-abstract.h"
 #include "nesc-constants.h"
+#include "nesc-dump.h"
 #include "edit.h"
 #include "machine.h"
 
@@ -176,6 +177,10 @@ bool nesc_option(char *p)
   else if (!strcmp (p, "fnesc-csts"))
     {
       select_nesc_csts();
+    }
+  else if (!strncmp (p, "fnesc-dump=", strlen("fnesc-dump=")))
+    {
+      select_dump(p + strlen("fnesc-dump="));
     }
   else if (!strncmp (p, "fnesc-target=", strlen("fnesc-target=")))
     {
@@ -349,6 +354,11 @@ void nesc_compile(const char *filename, const char *target_name)
   if (layout_requested())
     {
       dump_msg_layout();
+      gencode = FALSE;
+    }
+  if (dump_selected())
+    {
+      dump_info();
       gencode = FALSE;
     }
   if (gencode)

@@ -377,7 +377,8 @@ void prt_type_element(type_element em, pte_options options);
 void prt_typename(typename tname);
 void prt_typeof_expr(typeof_expr texpr);
 void prt_typeof_type(typeof_type ttype);
-void prt_attribute(attribute a);
+void prt_gcc_attribute(gcc_attribute a);
+//void prt_nesc_attribute(nesc_attribute a);
 void prt_rid(rid r, pte_options options);
 void prt_qualifier(qualifier q);
 void prt_tag_ref(tag_ref sr, pte_options options);
@@ -954,7 +955,8 @@ void prt_type_element(type_element em, pte_options options)
       PRTCASE(typename, em);
       PRTCASE(typeof_expr, em);
       PRTCASE(typeof_type, em);
-      PRTCASE(attribute, em);
+      PRTCASE(gcc_attribute, em);
+      //PRTCASE(nesc_attribute, em);
       PRTCASE(qualifier, em);
     case kind_rid:
       prt_rid(CAST(rid, em), options);
@@ -992,9 +994,9 @@ void prt_typeof_type(typeof_type ttype)
   output(")");
 }
 
-void prt_attribute(attribute a)
+void prt_gcc_attribute(gcc_attribute a)
 {
-  if (!nesc_attribute(a))
+  if (!nesc_attributep(a))
     {
       set_location(a->location);
       output("__attribute((");
@@ -1048,10 +1050,12 @@ void prt_tag_ref(tag_ref tr, pte_options options)
   if (!tr->tdecl->collapsed)
     name_tag(tr->tdecl);
 
+  /* We just print attributes as structs, with a prefix on the name
+     (__nesc_attr_). They will be ignored by the C compiler. */
   set_location(tr->location);
   switch (tr->kind)
     {
-    case kind_struct_ref: output("struct "); break;
+    case kind_struct_ref: case kind_attribute_ref: output("struct "); break;
     case kind_union_ref: output("union "); break;
     case kind_enum_ref: output("enum "); break;
     default: assert(0);
@@ -1061,6 +1065,8 @@ void prt_tag_ref(tag_ref tr, pte_options options)
     {
       if (tr->tdecl && tr->tdecl->container)
 	prt_container(tr->tdecl->container);
+      if (tr->kind == kind_attribute_ref)
+	output("__nesc_attr_");
       prt_word(tr->word1);
     }
   if (!(options & pte_duplicate) && tr->defined)

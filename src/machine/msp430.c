@@ -1,4 +1,4 @@
-static bool msp430_decl_attribute(attribute attr, data_declaration ddecl)
+static bool msp430_decl_attribute(gcc_attribute attr, data_declaration ddecl)
 {
   const char *name = attr->word1->cstring.data;
 

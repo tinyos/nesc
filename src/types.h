@@ -164,6 +164,7 @@ bool type_array(type t);
 bool type_pointer(type t);
 bool type_enum(type t);
 bool type_struct(type t);
+bool type_attribute(type t); 	/* For internal use for @attributes */
 bool type_union(type t);
 bool type_integer(type t);	/* Does include enum's */
 bool type_unsigned(type t);

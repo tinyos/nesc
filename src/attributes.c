@@ -3,6 +3,7 @@
 #include "semantics.h"
 #include "nesc-semantics.h"
 #include "machine.h"
+#include "c-parse.h"
 
 /* Provide warnings about ignored attributes and attribute lists */
 
@@ -10,6 +11,11 @@ void ignored_attribute(attribute attr)
 {
   warning_with_location(attr->location, "`%s' attribute directive ignored",
 			attr->word1->cstring.data);
+}
+
+void ignored_gcc_attribute(gcc_attribute attr)
+{
+  ignored_attribute(CAST(attribute, attr));
 }
 
 void ignored_attributes(attribute alist)
@@ -44,7 +50,7 @@ static void transparent_union_argument(data_declaration ddecl)
     (ddecl->type, type_qualifiers(ddecl->type) | transparent_qualifier);
 }
 
-static bool require_function(attribute attr, data_declaration ddecl)
+static bool require_function(gcc_attribute attr, data_declaration ddecl)
 {
   if (ddecl->kind == decl_function && ddecl->ftype == function_normal)
     return TRUE;
@@ -53,7 +59,23 @@ static bool require_function(attribute attr, data_declaration ddecl)
   return FALSE;
 }
 
-void handle_decl_attribute(attribute attr, data_declaration ddecl)
+bool handle_gcc_type_attribute(gcc_attribute attr, type *t)
+{
+  const char *name = attr->word1->cstring.data;
+
+  if (!strcmp(name, "combine") || !strcmp(name, "__combine__"))
+    {
+      if (!attr->word2 || attr->args)
+	error_with_location(attr->location, "wrong number of arguments specified for `combine' attribute");
+      else
+	handle_combine_attribute(attr->location, attr->word2->cstring.data, t);
+      return TRUE;
+    }
+  else 
+    return target->type_attribute && target->type_attribute(attr, t);
+}
+
+void handle_gcc_decl_attribute(gcc_attribute attr, data_declaration ddecl)
 {
   const char *name = attr->word1->cstring.data;
 
@@ -69,7 +91,7 @@ void handle_decl_attribute(attribute attr, data_declaration ddecl)
       else if (ddecl->kind == decl_typedef && type_union(ddecl->type))
 	transparent_union_argument(ddecl);
       else
-	ignored_attribute(attr);
+	ignored_gcc_attribute(attr);
     }
   else if (!strcmp(name, "C"))
     {
@@ -109,12 +131,12 @@ void handle_decl_attribute(attribute attr, data_declaration ddecl)
     }
   else if (!(target->decl_attribute &&
 	     target->decl_attribute(attr, ddecl)) &&
-	   !handle_type_attribute(attr, &ddecl->type))
-    /*ignored_attribute(attr)*/;
+	   !handle_gcc_type_attribute(attr, &ddecl->type))
+    /*ignored_gcc_attribute(attr)*/;
 }
 
 /* Note: fdecl->bitwidth is not yet set when this is called */
-void handle_field_attribute(attribute attr, field_declaration fdecl)
+void handle_gcc_field_attribute(gcc_attribute attr, field_declaration fdecl)
 {
   const char *name = attr->word1->cstring.data;
 
@@ -122,10 +144,10 @@ void handle_field_attribute(attribute attr, field_declaration fdecl)
     fdecl->packed = TRUE;
   else if (!(target->field_attribute &&
 	     target->field_attribute(attr, fdecl)))
-    /*ignored_attribute(attr)*/;
+    /*ignored_gcc_attribute(attr)*/;
 }
 
-void handle_tag_attribute(attribute attr, tag_declaration tdecl)
+void handle_gcc_tag_attribute(gcc_attribute attr, tag_declaration tdecl)
 {
   const char *name = attr->word1->cstring.data;
 
@@ -141,29 +163,57 @@ void handle_tag_attribute(attribute attr, tag_declaration tdecl)
 	  /* XXX: Missing validity checks (need cst folding I think) */
 	}
       else
-	ignored_attribute(attr);
+	ignored_gcc_attribute(attr);
     }
   else if (!strcmp(name, "packed") || !strcmp(name, "__packed__"))
     tdecl->packed = TRUE;
   else if (!(target->tag_attribute &&
 	     target->tag_attribute(attr, tdecl)))
-    /*ignored_attribute(attr)*/;
+    /*ignored_gcc_attribute(attr)*/;
+}
+
+static void handle_nesc_attribute(attribute attr, dd_list *alist)
+{
+  assert(is_nesc_attribute(attr));
+  if (!*alist)
+    *alist = dd_new_list(parse_region);
+  dd_add_last(parse_region, *alist, attr);
+}
+
+void handle_decl_attribute(attribute attr, data_declaration ddecl)
+{
+  if (is_gcc_attribute(attr))
+    handle_gcc_decl_attribute(CAST(gcc_attribute, attr), ddecl);
+  else
+    handle_nesc_attribute(attr, &ddecl->attributes);
+}
+
+void handle_field_attribute(attribute attr, field_declaration fdecl)
+{
+  if (is_gcc_attribute(attr))
+    handle_gcc_field_attribute(CAST(gcc_attribute, attr), fdecl);
+  else
+    handle_nesc_attribute(attr, &fdecl->attributes);
+}
+
+void handle_tag_attribute(attribute attr, tag_declaration tdecl)
+{
+  if (is_gcc_attribute(attr))
+    handle_gcc_tag_attribute(CAST(gcc_attribute, attr), tdecl);
+  else
+    handle_nesc_attribute(attr, &tdecl->attributes);
 }
 
 bool handle_type_attribute(attribute attr, type *t)
 {
-  const char *name = attr->word1->cstring.data;
-
-  if (!strcmp(name, "combine") || !strcmp(name, "__combine__"))
+  if (is_gcc_attribute(attr))
+    return handle_gcc_type_attribute(CAST(gcc_attribute, attr), t);
+  else
     {
-      if (!attr->word2 || attr->args)
-	error_with_location(attr->location, "wrong number of arguments specified for `combine' attribute");
-      else
-	handle_combine_attribute(attr->location, attr->word2->cstring.data, t);
-      return TRUE;
+      /* No '@'-style type attributes */
+      ignored_attribute(attr);
+      return FALSE;
     }
-  else 
-    return target->type_attribute && target->type_attribute(attr, t);
 }
 
 /* Functions to handle regular and dd list of attributes */

@@ -340,8 +340,7 @@ void shadow_tag_warned(type_element elements, int warned)
     {
       AST_kind code = elem->kind;
 
-      if (code == kind_struct_ref || code == kind_union_ref ||
-	  code == kind_enum_ref)
+      if (is_tag_ref(elem))
 	{
 	  tag_ref tag = CAST(tag_ref, elem);
 	  word name = tag->word1;
@@ -433,6 +432,7 @@ const char *tagkind_name(int tagkind)
 {
   switch (tagkind)
     {
+    case kind_attribute_ref: return "attribute";
     case kind_struct_ref: return "struct";
     case kind_union_ref: return "union";
     case kind_enum_ref: return "enum";
@@ -762,7 +762,12 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	case kind_struct_ref: case kind_union_ref: case kind_enum_ref:
 	  newtype = make_tagged_type(CAST(tag_ref, spec)->tdecl);
 	  break;
-	case kind_attribute:
+	case kind_attribute_ref:
+	  error_with_location(spec->location,
+			      "attributes cannot be used as types");
+	  newtype = error_type;
+	  break;
+	case kind_gcc_attribute: case kind_nesc_attribute:
 	  attributes = push_attribute(attributes, CAST(attribute, spec));
 	  break;
 	default: assert(0); break;
@@ -2860,9 +2865,8 @@ type_element start_struct(location l, AST_kind skind, word tag)
     {
       if (tdecl->defined || tdecl->being_defined)
 	{
-	  error((skind == kind_union_ref ? "redefinition of `union %s'"
-		 : "redefinition of `struct %s'"),
-		tag->cstring.data);
+	  error("redefinition of `%s %s'",
+		tagkind_name(skind), tag->cstring.data);
 	  tdecl = declare_tag(tref);
 	}
     }
@@ -3241,7 +3245,7 @@ type_element finish_struct(type_element t, declaration fields,
 	  }
     }
 
-  if (pedantic && !hasmembers)
+  if (pedantic && s->kind != kind_attribute_ref && !hasmembers)
     pedwarn("%s has no %smembers",
 	    (s->kind == kind_union_ref ? "union" : "structure"),
 	    (fields ? "named " : ""));
@@ -3691,7 +3695,7 @@ void split_type_elements(type_element tlist, type_element *odeclspecs,
       tlist = CAST(type_element, tlist->next);
       te->next = NULL;
 
-      if (te->kind == kind_attribute)
+      if (is_attribute(te))
 	attributes = attribute_chain(attributes, CAST(attribute, te));
       else
 	declspecs = type_element_chain(declspecs, te);

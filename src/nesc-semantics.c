@@ -58,7 +58,7 @@ char *basename(const char *path)
 }
 #endif
 
-bool nesc_attribute(attribute a)
+bool nesc_attributep(gcc_attribute a)
 /* Returns: TRUE if a is a nesc-specific attribute
  */
 {

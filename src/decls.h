@@ -40,6 +40,10 @@ typedef struct field_declaration {
   struct field_declaration *next; /* Next field in struct/union */
   const char *name;		/* May be NULL for bitfields (if NULL, bitwidth == 0) */
   type type;
+
+  /* All '@'-style attributes attached to this declaration */
+  dd_list/*nesc_attribute*/ attributes;
+
   field_decl ast;
   cval bitwidth;		/* for bitfields, cval_top otherwise */
   cval offset;			/* in bits, not bytes. Can be cval_top if
@@ -57,6 +61,9 @@ typedef struct tag_declaration {
   const char *name; /* NULL for anonynous struct/union/enum */
   type reptype; /* The type used to represent an enum, NULL for struct
 		   and unions */
+  /* All '@'-style attributes attached to this declaration */
+  dd_list/*nesc_attribute*/ attributes;
+
   /* fields and fieldlist are only defined for structs/unions */
   env fields;
   field_declaration fieldlist;
@@ -99,6 +106,8 @@ struct data_declaration {
      a per-module numbering for commands/events */
   long id;
   context use_summary;
+  /* All '@'-style attributes attached to this declaration */
+  dd_list/*nesc_attribute*/ attributes;
  
   /* Regular C: For extern's shadowing globals in inner scopes */
   /* nesC commands/events: point to original interface declaration */

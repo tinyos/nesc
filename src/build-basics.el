@@ -19,6 +19,10 @@
 ; the Free Software Foundation, 59 Temple Place - Suite 330,
 ; Boston, MA 02111-1307, USA.
 
+; Utility functions
+(defun ins (&rest args)
+  (insert (apply #'format args)))
+
 (setq basename (car command-line-args-left))
 (setq nodedefs (cadr command-line-args-left))
 (setq command-line-args-left (cddr command-line-args-left))

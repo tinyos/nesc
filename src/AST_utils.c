@@ -120,7 +120,7 @@ expression ignore_fields(expression e)
 expression expression_of_stmt(compound_expr ce)
 {
   compound_stmt blk = CAST(compound_stmt, ce->stmt);
-  statement last_stmt = CAST(statement, last_node(CAST(node, blk->stmts)));
+  statement last_stmt = last_statement(blk->stmts);
 
   if (last_stmt && is_expression_stmt(last_stmt))
     {

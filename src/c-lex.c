@@ -25,6 +25,7 @@ Boston, MA 02111-1307, USA. */
 #include <setjmp.h>
 
 #include "c-lex.h"
+#include "c-lex-int.h"
 #include "c-parse.h"
 #include "c-parse.tab.h"
 #include "input.h"
@@ -1732,10 +1733,6 @@ static int lextoken(struct yystype *lvalp)
 
 	break;
       }
-
-    case '@': 
-      value = '*';
-      break;
 
     case '+':
     case '-':

@@ -29,7 +29,7 @@ Boston, MA 02111-1307, USA. */
 
 %pure_parser
 
-%expect 4
+
 
 %{
 #include <stdio.h>
@@ -39,6 +39,7 @@ Boston, MA 02111-1307, USA. */
 #include "parser.h"
 #include "c-parse.h"
 #include "c-lex.h"
+#include "c-lex-int.h"
 #include "semantics.h"
 #include "input.h"
 #include "expr.h"
@@ -51,6 +52,7 @@ Boston, MA 02111-1307, USA. */
 #include "nesc-module.h"
 #include "nesc-env.h"
 #include "nesc-c.h"
+#include "nesc-attributes.h"
 
 int yyparse(void) deletes;
 
@@ -136,7 +138,8 @@ void yyerror();
 
 %type <u.asm_operand> asm_operand asm_operands nonnull_asm_operands
 %type <u.asm_stmt> maybeasm
-%type <u.attribute> maybe_attribute attributes attribute attribute_list attrib
+%type <u.attribute> maybe_attribute attributes attribute attribute_list nattrib
+%type <u.gcc_attribute> attrib
 %type <u.constant> CONSTANT
 %type <u.decl> datadecl datadecls datadef decl decls extdef extdefs fndef
 %type <u.decl> initdecls initdecls_ notype_initdecls notype_initdecls_ fndef2
@@ -1707,30 +1710,39 @@ attributes:
 attribute:
 	  ATTRIBUTE '(' '(' attribute_list ')' ')'
 		{ $$ = $4; }
+	| '@' nattrib
+		{ $$ = $2; }
 	;
 
 attribute_list:
 	  attrib
-		{ $$ = $1; }
+		{ $$ = CAST(attribute, $1); }
 	| attribute_list ',' attrib
-		{ $$ = attribute_chain($3, $1); }
+		{ $$ = attribute_chain($1, CAST(attribute, $3)); }
 	;
- 
+
 attrib:
 	  /* empty */
 		{ $$ = NULL; }
 	| any_word
-		{ $$ = new_attribute(pr, $1->location, $1, NULL, NULL); }
+		{ $$ = new_gcc_attribute(pr, $1->location, $1, NULL, NULL); }
 	| any_word '(' IDENTIFIER ')'
-		{ $$ = new_attribute
+		{ $$ = new_gcc_attribute
 		    (pr, $1->location, $1, new_word(pr, $3.location, $3.id), NULL); }
 	| any_word '(' IDENTIFIER ',' nonnull_exprlist ')'
-		{ $$ = new_attribute
+		{ $$ = new_gcc_attribute
 		    (pr, $2.location, $1, new_word(pr, $3.location, $3.id), $5);
 		}
 	| any_word '(' exprlist ')'
-		{ $$ = new_attribute(pr, $2.location, $1, NULL, $3);
+		{ $$ = new_gcc_attribute(pr, $2.location, $1, NULL, $3);
 		}
+	;
+
+nattrib:
+	  idword '(' 
+		 { $<u.tdecl>$ = start_attribute_use($1); }
+	  initlist_maybe_comma ')' 
+		{ $$ = finish_attribute_use($1, $4, $<u.tdecl>3); }
 	;
 
 /* This still leaves out most reserved keywords,
@@ -1946,6 +1958,12 @@ structdef:
 		}
 	  component_decl_list '}' maybe_attribute 
 		{ $$ = finish_struct($<u.telement>4, $5, $7); }
+	| STRUCT '@' tag '{'
+		{ $$ = start_struct($1.location, kind_attribute_ref, $3);
+		  /* Start scope of tag before parsing components.  */
+		}
+	  component_decl_list '}' maybe_attribute 
+		{ $$ = finish_struct($<u.telement>5, $6, $8); }
 	| STRUCT '{' component_decl_list '}' maybe_attribute
 		{ $$ = finish_struct(start_struct($1.location, kind_struct_ref,
 						  NULL), $3, $5);
@@ -2166,7 +2184,7 @@ stmts:
 		  /* Add an empty statement to last label if stand-alone */
 		  if ($1.i)
 		    {
-		      statement last_label = CAST(statement, last_node(CAST(node, $1.stmt)));
+		      statement last_label = last_statement($1.stmt);
 
 		      chain_with_labels(last_label, CAST(statement, new_empty_stmt(pr, last_label->location)));
 		    }

@@ -22,46 +22,8 @@ Boston, MA 02111-1307, USA. */
 #include "parser.h"
 #include "semantics.h"
 
-node AST_chain(node l1, node l2)
-{
-  if (!l1) return l2;
-  last_node(l1)->next = l2;
-  return l1;
-}
-
-node last_node(node n)
-{
-  if (!n) return NULL;
-  while (n->next) n = n->next;
-  return n;
-}
-
-int chain_length(node n)
-{
-  int l = 0;
-
-  while (n) 
-    {
-      n = n->next;
-      l++;
-    }
-  return l;
-}
-
-node ast_reverse(node l)
-{
-  node last = NULL, next;
-
-  for (;;)
-    {
-      if (!l)
-	return last;
-      next = l->next;
-      l->next = last;
-      last = l;
-      l = next;
-    }
-}
+#include "AST_types.c"
+#include "AST_list_node.c"
 
 void insert_before(node sameregion *list, node before, node n)
 {
@@ -104,8 +66,6 @@ tag_ref newkind_tag_ref(region r, AST_kind kind, location location, word word1, 
 
   return obj;
 }
-
-#include "AST_defs.c"
 
 /* The separate static version of AST_set_parent allows the qualifier
    check optimiser to figure out a useful signature for this function */

@@ -30,6 +30,7 @@ struct yystype {
     asm_operand asm_operand;
     asm_stmt asm_stmt;
     attribute attribute;
+    gcc_attribute gcc_attribute;
     lexical_cst constant;
     string_cst string_cst;
     declaration decl;
@@ -56,6 +57,7 @@ struct yystype {
     environment env;
     dd_list fields;
     char *docstring;
+    tag_declaration tdecl;
     
     struct {
       location location;

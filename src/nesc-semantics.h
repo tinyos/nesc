@@ -53,7 +53,7 @@ declaration ddecl_get_gparms(data_declaration fndecl);
 
 bool ddecl_is_command_or_event(data_declaration decl);
 
-bool nesc_attribute(attribute a);
+bool nesc_attributep(gcc_attribute a);
 /* Returns: TRUE if a is a nesc-specific attribute
  */
 

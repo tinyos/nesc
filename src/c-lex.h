@@ -27,8 +27,6 @@ Boston, MA 02111-1307, USA. */
 
 typedef enum { l_c, l_interface, l_component, l_implementation } source_language;
 
-struct yystype;
-
 typedef struct location
 { 
   const char *filename;
@@ -75,9 +73,6 @@ enum rid
 
 #define NORID RID_UNUSED
 
-extern char *traditional token_buffer;	/* Pointer to token buffer.  */
-
-int yylex(struct yystype *lvalp);
 void init_lex(void);
 void start_lex(source_language l);
 int lex_getc(void);

@@ -1,0 +1,20 @@
+(deffield name "const char *" (init))
+(deffield str "const char *" (init))
+(deffield val largest_int (init))
+(deffield count int (init))
+(deffield args nd_arg (init tree))
+(deffield next nd_arg ())
+
+(deftype nd_option nil (name args count)
+  "the dump option NAME(ARGS).
+ARGS may be NULL
+COUNT is the number of elements in ARGS")
+
+(deftype nd_arg nil (next)
+  "supertype for arguments")
+
+(deftype nd_int nd_arg (val)
+  "an integer argument VAL")
+
+(deftype nd_token nd_arg (str)
+  "some token argument STR")

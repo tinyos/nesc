@@ -1155,7 +1155,7 @@ void process_init_element(expression value)
       if (value)
 	RESTORE_SPELLING_DEPTH (constructor_depth);
 
-      if (type_struct(constructor_type))
+      if (!type_union(constructor_type))
 	{
 	  if (constructor_fields)
 	    constructor_fields = skip_unnamed_bitfields(constructor_fields->next);
