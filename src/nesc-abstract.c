@@ -173,10 +173,13 @@ static void forward_tdecl(region r, tag_ref tref)
   if (!tdecl->container)
     return;
 
-  /* If already cloned, return */
+  /* If already cloned, use instance & return */
   if (tdecl->instantiation &&
       tdecl->instantiation->container == current.container)
-    return;
+    {
+      tref->tdecl = tdecl->instantiation;
+      return;
+    }
 
   copy = declare_tag(tref);
   tref->tdecl = copy;

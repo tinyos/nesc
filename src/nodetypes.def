@@ -640,6 +640,10 @@ DDECL is the command or event's declaration")
 component_deref is *not* used for references to typedefed types in components.
 DDECL is the specification element's declaration")
 
+(deftype component_typeref typename (cstring)
+  "CSTRING . typedef-name, a typedef-from-component-type 
+with declaration DDECL. The typedef-name is in ddecl->name")
+
 (deftype atomic_stmt statement (stmt)
   "ATOMIC stmt
 An atomic_stmt is not made for lexically nested atomic statements")

@@ -127,7 +127,8 @@ static char *traditional token_buffer;	/* Pointer to token buffer.
 static wchar_array string_array;
 static char_array docstring_array;
 
-static int language_token;
+static int token_s1, token_s2;
+static struct yystype token_l1, token_l2;
 
 static char *extend_token_buffer(char *);
 int check_newline(void);
@@ -200,14 +201,14 @@ start_lex (source_language l)
   input_file_stack->lex.end_of_file = 0;
   input_file_stack->lex.nextchar = -1;
   input_file_stack->lex.indent_level = 0;
-  language_token = -1;
+  token_s1 = token_s2 = -1;
 
   lex_ungetc(check_newline());
 
   switch (l)
     {
-    case l_interface: case l_component: language_token = DISPATCH_NESC; break;
-    case l_c: language_token = DISPATCH_C; break;
+    case l_interface: case l_component: token_s1 = DISPATCH_NESC; break;
+    case l_c: token_s1 = DISPATCH_C; break;
     default: assert(0); break;
     }
 }
@@ -1208,20 +1209,11 @@ yyerror (char *string)
 }
 
 
-int
-yylex(struct yystype *lvalp)
+static int lextoken(struct yystype *lvalp)
 {
   int c;
   int value;
   int wide_flag = 0;
-
-  /* Grammar selection hack */
-  if (language_token != -1)
-    {
-      int token = language_token;
-      language_token = -1;
-      return token;
-    }
 
   if (input_file_stack->lex.nextchar >= 0)
     c = input_file_stack->lex.nextchar, input_file_stack->lex.nextchar = -1;
@@ -1346,17 +1338,21 @@ yylex(struct yystype *lvalp)
 	 (or a typename).  */
       if (value == IDENTIFIER)
 	{
+	  data_declaration decl;
+
 	  lvalp->idtoken.location = last_location;
 	  lvalp->idtoken.id = make_token_cstring();
-	  lvalp->idtoken.decl = lookup_id(lvalp->idtoken.id.data, FALSE);
+	  decl = lookup_id(lvalp->idtoken.id.data, FALSE);
+	  lvalp->idtoken.decl = decl;
 
-	  if (lvalp->idtoken.decl)
-	    {
-	      if (lvalp->idtoken.decl->kind == decl_typedef)
-		value = TYPENAME;
-	      else if (lvalp->idtoken.decl->kind == decl_magic_string)
-		value = MAGIC_STRING;
-	    }
+	  if (decl)
+	    switch (decl->kind)
+	      {
+	      case decl_typedef: value = TYPENAME; break;
+	      case decl_magic_string: value = MAGIC_STRING; break;
+	      case decl_component_ref: value = COMPONENTREF; break;
+	      default: break;
+	      }
 	}
 
       break;
@@ -1888,6 +1884,58 @@ done:
 
   return value;
 }
+
+int
+yylex(struct yystype *lvalp)
+{
+  int token;
+
+  /* Two element token stack for use by hacks */
+  if (token_s1 != -1)
+    {
+      token = token_s1;
+      *lvalp = token_l1;
+
+      token_s1 = token_s2;
+      token_l1 = token_l2;
+      token_s2 = -1;
+    }
+  else
+    {
+      token = lextoken(lvalp);
+
+      /* Detect component-ref '.' identifier, where the
+	 identifier denotes a typedef in the referenced component --
+         we can't do this in the parser as the resulting grammer is not
+         context-free. So instead we detect it here, and mark the 
+	 component-ref as special. */
+      if (token == COMPONENTREF)
+	{
+	  token_s1 = lextoken(&token_l1);
+	  if (token_s1 == '.')
+	    {
+	      token_s2 = lextoken(&token_l2);
+
+	      if (token_s2 == IDENTIFIER ||
+		  token_s2 == TYPENAME ||
+		  token_s2 == MAGIC_STRING)
+		{
+		  data_declaration cref = lvalp->idtoken.decl;
+		  data_declaration fdecl = env_lookup(cref->ctype->env->id_env, token_l2.idtoken.id.data, TRUE);
+
+		  if (fdecl->kind == decl_typedef)
+		    token_l2.idtoken.decl = fdecl;
+		  else
+		    /* Not the special case, treat as regular identifier */
+		    token = IDENTIFIER;
+		}
+	    }
+	}
+    }
+
+  return token;
+}
+
 
 /* Sets the value of the 'yydebug' variable to VALUE.
    This is a function so we don't have to have YYDEBUG defined

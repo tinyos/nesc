@@ -874,6 +874,7 @@ void prt_type_element(type_element em, pte_options options)
 {
   switch (em->kind)
     {
+    case kind_component_typeref: /* fall through to prt_typename */
       PRTCASE(typename, em);
       PRTCASE(typeof_expr, em);
       PRTCASE(typeof_type, em);

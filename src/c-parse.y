@@ -74,6 +74,12 @@ void yyerror();
    but they can also serve as typespecs in declarations.  */
 %token TYPENAME
 
+/* An identifier that is declared as a component reference in the
+   current block, and which is going to be used to refer to a typedef
+   from the component via the component-ref '.' identifier syntax
+   (detected in the lexer) */
+%token COMPONENTREF
+
 /* Reserved words that specify storage class.
    yylval contains an IDENTIFIER_NODE which indicates which one.  */
 %token <u.itoken> SCSPEC
@@ -154,7 +160,8 @@ void yyerror();
 %type <u.expr> generic_type typelist
 %type <u.id_label> id_label maybe_label_decls label_decls label_decl
 %type <u.id_label> identifiers_or_typenames
-%type <idtoken> identifier IDENTIFIER TYPENAME MAGIC_STRING type_parm
+%type <idtoken> identifier type_parm
+%type <idtoken> IDENTIFIER TYPENAME MAGIC_STRING COMPONENTREF
 %type <u.iexpr> if_prefix
 %type <u.istmt> stmt_or_labels simple_if stmt_or_label
 %type <u.itoken> unop extension '~' '!' compstmt_start '{' ';'
@@ -1606,6 +1613,11 @@ type_spec_nonreserved_nonattr:
 		{ /* For a typedef name, record the meaning, not the name.
 		     In case of `foo foo, bar;'.  */
 		  $$ = CAST(type_element, new_typename(pr, $1.location, $1.decl)); }
+	| COMPONENTREF '.' identifier
+		{
+		  /* reference to a typedef from a component. */
+		  $$ = CAST(type_element, new_component_typeref(pr, $1.location, $3.decl, $1.id)); 
+		}
 	| TYPEOF '(' expr ')'
 		{ $$ = CAST(type_element, new_typeof_expr(pr, $1.location, $3)); }
 	| TYPEOF '(' typename ')'

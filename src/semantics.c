@@ -742,7 +742,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	    specquals |= id;
 	    break;
 	  }
-	case kind_typename:
+	case kind_typename: case kind_component_typeref:
 	  newtype = CAST(typename, spec)->ddecl->type;
 	  break;
 	case kind_typeof_type:
