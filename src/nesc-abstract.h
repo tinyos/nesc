@@ -28,6 +28,21 @@ void instantiate(nesc_declaration component);
 
 void fold_components(region r, nesc_declaration cdecl, expression args);
 
+void push_instance(nesc_declaration component);
+/* Effects: push (concrete) component on the stack and set its full instance
+     name.
+*/
+
+nesc_declaration abstract_recursion(void);
+/* Returns:  If the instance stack indicates the programmer has
+     created an instantiation loop, i.e., component Y (instance of
+     abstract component X) has caused the instantiation of the top-most
+     component (another instance of X).
+     Return Y if this is the case, NULL if not.
+*/
+
+void pop_instance(void);
+
 void init_abstract(void);
 
 #endif

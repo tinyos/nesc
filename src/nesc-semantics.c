@@ -456,3 +456,11 @@ declaration declare_template_parameter(declarator d, type_element elements,
 
   return CAST(declaration, dd);
 }
+
+nesc_declaration original_component(nesc_declaration c)
+{
+  while (c->original)
+    c = c->original;
+
+  return c;
+}

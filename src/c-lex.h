@@ -36,7 +36,7 @@ typedef struct location
   bool in_system_header;
 } *location;
 
-extern location last_location, dummy_location;
+extern location last_location, dummy_location, toplevel_location;
 
 enum rid
 {

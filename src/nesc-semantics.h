@@ -99,4 +99,6 @@ void handle_combine_attribute(location loc, const char *combiner, type *t);
 declaration declare_template_parameter(declarator d, type_element elements,
 				       attribute attributes);
 
+nesc_declaration original_component(nesc_declaration c);
+
 #endif

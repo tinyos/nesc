@@ -25,6 +25,7 @@ Boston, MA 02111-1307, USA. */
 #include "parser.h"
 #include "errors.h"
 #include "semantics.h"
+#include "nesc-semantics.h"
 #include "input.h"
 #include "flags.h"
 
@@ -91,6 +92,24 @@ void print_error_function(const char *file)
     }
 }
 
+/* Print the current component if it's changed */
+void print_current_nesc_instance(void)
+{
+  static nesc_declaration last_container;
+
+  if (last_container != current.container)
+    {
+      if (current.container)
+	fprintf(stderr, "In %s `%s':\n", 
+		language_name(current.container->kind),
+		current.container->instance_name);
+      else
+	fprintf(stderr, "In C file:\n");
+      last_container = current.container;
+    }
+}
+
+
 /* Prints out, if necessary, the name of the current function
   that caused an error.  Called from all error and warning functions.  */
 
@@ -112,6 +131,7 @@ void report_error_function(const char *file)
       fprintf (stderr, ":\n");
       last_error_tick = input_file_stack_tick;
     }
+  print_current_nesc_instance();
 
   print_error_function(file);
 }

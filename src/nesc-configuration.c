@@ -624,7 +624,7 @@ static void require_components(region r, configuration c)
 	 processing an abstract configuration */
       if (comp->cdecl->abstract)
 	{
-	  comp->cdecl = specification_copy(r, comp->cdecl, c->cdecl->abstract);
+	  comp->cdecl = specification_copy(r, comp, c->cdecl->abstract);
 	  if (!comp->abstract)
 	    error_with_location(comp->location, "abstract component `%s' requires instantiation arguments", cname);
 	  else

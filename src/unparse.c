@@ -562,6 +562,7 @@ void prt_function_body(function_decl d)
       /* We set current.function_decl because unparsing may produce error
 	 messages */
       current.function_decl = d;
+      current.container = d->ddecl->container;
 
       prefix_decl(d->ddecl);
       prt_declarator(d->declarator, d->modifiers, d->attributes, d->ddecl,

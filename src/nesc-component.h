@@ -37,11 +37,12 @@ void component_functions_iterate(nesc_declaration c,
 						  void *data),
 				 void *data);
 
-nesc_declaration specification_copy(region r, nesc_declaration component,
+nesc_declaration specification_copy(region r, component_ref cref,
 				    bool copy_is_abstract);
-/* Effects: Make a "shallow" copy of `component' (in region r), i.e., 
-     identical to component except that it has a copy of the specification
-     (including a copy of each interface instance)
+/* Effects: Make a "shallow" copy of component specified by `cref' in region r,
+     i.e., identical to cref->cdecl except that it has a copy of the
+     specification (including a copy of each interface instance)
+     The copy's instance_name is set to the name specified in cref (word2)
    Returns: The shallow copy
 */
 

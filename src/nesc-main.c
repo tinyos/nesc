@@ -83,10 +83,24 @@ static void connect_graph(cgraph master, cgraph component)
     }
 }
 
-static void connect(nesc_declaration cdecl,
+static void connect(location loc, nesc_declaration cdecl,
 		    cgraph cg, dd_list modules, dd_list components)
 {
-  if (!dd_find(components, cdecl))
+  nesc_declaration loop;
+
+  push_instance(cdecl);
+  if ((loop = abstract_recursion()))
+    {
+      /* We can help the programmer find the loop by showing the 
+	 instantiation path that causes it. loop's instance name is a prefix
+	 of cdecl's, the looping path is loop's abstract component name
+	 followed by the difference between loop's and cdecl's instance name.
+      */
+      error_with_location(loc, "component instantiation loop `%s%s'",
+			  original_component(loop)->name,
+			  cdecl->instance_name + strlen(loop->instance_name));
+    }
+  else if (!dd_find(components, cdecl))
     {
       dd_add_last(regionof(components), components, cdecl);
       connect_graph(cg, cdecl->connections);
@@ -103,10 +117,12 @@ static void connect(nesc_declaration cdecl,
 	      if (comp->cdecl->original)
 		instantiate(comp->cdecl);
 
-	      connect(comp->cdecl, cg, modules, components);
+	      connect(comp->location, comp->cdecl, cg, modules, components);
 	    }
 	}
     }
+
+  pop_instance();
 }
 
 static void connect_graphs(region r, nesc_declaration program,
@@ -116,7 +132,7 @@ static void connect_graphs(region r, nesc_declaration program,
   *modules = dd_new_list(r);
   *components = dd_new_list(r);
 
-  connect(program, *cg, *modules, *components);
+  connect(toplevel_location, program, *cg, *modules, *components);
 }
 
 bool nesc_option(char *p)
@@ -215,7 +231,6 @@ bool nesc_option(char *p)
 
 void nesc_compile(const char *filename, const char *target_name)
 {
-  struct location toplevel;
   struct ilist *includes;
 
   if (filename == NULL)
@@ -237,18 +252,14 @@ void nesc_compile(const char *filename, const char *target_name)
   init_abstract();
   init_nesc_constants();
 
-  toplevel.filename = "<commandline>";
-  toplevel.lineno = 0;
-  toplevel.in_system_header = FALSE;
-  
   for (includes = includelist; includes; includes = includes->next)
-    require_c(&toplevel, includes->name);
+    require_c(toplevel_location, includes->name);
 
   if (nesc_filename(filename))
     {
       /* We need to assume some language - it will get fixed once we
 	 see the actual file */
-      nesc_declaration program = load(l_component, &toplevel, filename, TRUE);
+      nesc_declaration program = load(l_component, toplevel_location, filename, TRUE);
 
       if (errorcount == 0)
 	{
@@ -260,10 +271,12 @@ void nesc_compile(const char *filename, const char *target_name)
 	      dd_list modules, components;
 
 	      connect_graphs(parse_region, program, &cg, &modules, &components);
+	      current.container = NULL;
 	      fold_constants_list(CAST(node, all_cdecls));
 	      fold_components(parse_region, program, NULL);
 
-	      generate_c_code(program, target_name, cg, modules);
+	      if (errorcount == 0)
+		generate_c_code(program, target_name, cg, modules);
 	    }
 	  generate_docs(filename, cg);
 	}
@@ -271,7 +284,7 @@ void nesc_compile(const char *filename, const char *target_name)
   else
     {
       /* load C file and extract any requested message formats */
-      load_c(&toplevel, filename, TRUE);
+      load_c(toplevel_location, filename, TRUE);
       if (errorcount == 0)
 	dump_msg_layout();
     }

@@ -28,7 +28,7 @@ Boston, MA 02111-1307, USA.  */
 
 static AST_walker clone_walker;
 
-/* ddecls in:
+/* data_declaration in:
    oldidentifier_decl: ignored as illegal in modules
    string
 
@@ -39,6 +39,12 @@ static AST_walker clone_walker;
    typename
    variable_decl
 */
+
+/* tag_declaration in:
+ */
+
+/* field_declaration in:
+ */
 
 static void forward(data_declaration *dd)
 {
@@ -298,7 +304,7 @@ static AST_walker_result clone_component_ref(AST_walker spec, void *data,
      configuration. */
   if (new->cdecl->abstract)
     {
-      new->cdecl = specification_copy(data, new->cdecl, FALSE);
+      new->cdecl = specification_copy(data, new, FALSE);
       set_specification_instantiations_shallow(new->cdecl);
     }
 
@@ -309,7 +315,7 @@ static AST_walker_result clone_configuration(AST_walker spec, void *data,
 					     configuration *n)
 {
   configuration new = CAST(configuration, AST_clone(data, CAST(node, *n)));
-  nesc_declaration comp = current.container, original;
+  nesc_declaration comp = current.container;
 
   *n = new;
 
@@ -318,10 +324,7 @@ static AST_walker_result clone_configuration(AST_walker spec, void *data,
 
   /* We don't copy the connections, instead we copy the connection graph
      (note that comp->connections was initialised to an "empty" graph */
-  original = comp;
-  while (original->original)
-    original = original->original;
-  instantiate_cg(comp->connections, original->connections);
+  instantiate_cg(comp->connections, original_component(comp)->connections);
 
   return aw_done;
 }
@@ -373,6 +376,110 @@ void instantiate(nesc_declaration component)
   AST_set_parents(CAST(node, component->impl));
 }
 
+/* Component stack handling, for error message and loop detection */
+
+struct instance_stack
+{
+  struct instance_stack *next;
+  nesc_declaration component;
+};
+
+static struct instance_stack *stack, *avail;
+
+static struct instance_stack *new_instance_stack(void)
+/* Returns: a new, cleared, instance_stack
+ */
+{
+  struct instance_stack *new;
+
+  if (avail)
+    {
+      new = avail;
+      avail = avail->next;
+      new->next = NULL;
+    }
+  else
+    new = ralloc(permanent, struct instance_stack);
+
+  return new;
+}
+
+static void free_instance_stack(struct instance_stack *is)
+{
+  is->next = avail;
+  is->component = NULL;
+  avail = is;
+}
+
+void push_instance(nesc_declaration component)
+/* Effects: push (concrete) component on the stack and set its full instance
+     name.
+*/
+{
+  struct instance_stack *new = new_instance_stack();
+
+  assert(!component->abstract);
+  if (component->original)
+    {
+      /* Instantiated component names is parent name (currently at the top
+	 of the stack) . name-in-configuration (currently in instance_name) */
+      const char *oldname = component->instance_name;
+      const char *parentname = stack->component->instance_name;
+      int namelen = strlen(parentname) + strlen(oldname) + 2;
+      char *newname;
+
+      newname = rstralloc(parse_region, namelen);
+      sprintf(newname, "%s.%s", parentname, oldname);
+      component->instance_name = newname;
+    }
+
+  new->next = stack;
+  stack = new;
+  new->component = component;
+
+  current.container = component;
+}
+
+nesc_declaration abstract_recursion(void)
+/* Returns:  If the instance stack indicates the programmer has
+     created an instantiation loop, i.e., component Y (instance of
+     abstract component X) has caused the instantiation of the top-most
+     component (another instance of X).
+     Return Y if this is the case, NULL if not.
+*/
+{
+  struct instance_stack *i;
+  nesc_declaration component = stack->component;
+
+  /* The case where component is not an instance falls through
+     naturally */
+  component = original_component(component);
+
+  for (i = stack->next; i; i = i->next)
+    {
+      /* If we hit a non-instance component there isn't a loop */
+      if (!i->component->original)
+	return NULL;
+
+      if (original_component(i->component) == component)
+	return i->component;
+    }
+  return NULL;
+}
+
+void pop_instance(void)
+{
+  struct instance_stack *top = stack;
+
+  stack = stack->next;
+  free_instance_stack(top);
+
+  if (stack)
+    current.container = stack->component;
+  else
+    current.container = NULL;
+}
+
 static void set_parameter_values(nesc_declaration cdecl, expression args)
 {
   data_decl parm;
@@ -397,6 +504,7 @@ void fold_components(region r, nesc_declaration cdecl, expression args)
 
   set_parameter_values(cdecl, args);
 
+  current.container = cdecl;
   fold_constants_list(CAST(node, cdecl->impl));
 
   if (is_module(cdecl->impl))

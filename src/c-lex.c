@@ -55,7 +55,7 @@ static int max_char_length = 1; /* Default value if not MULTIBYTE_CHARS */
 /* Location of last token. Used for location of error nodes */
 location last_location;
 
-location dummy_location;
+location dummy_location, toplevel_location;
 
 /* Location cache handling */
 static location last_allocated_location;
@@ -128,12 +128,17 @@ int check_newline(void);
 void
 init_lex (void)
 {
-  static struct location dummy;
+  static struct location dummy, toplevel;
 
   dummy.lineno = 0;
   dummy.filename = "<dummy>";
   dummy.in_system_header = FALSE;
   dummy_location = last_allocated_location = &dummy;
+
+  toplevel.filename = "<commandline>";
+  toplevel.lineno = 0;
+  toplevel.in_system_header = FALSE;
+  toplevel_location = &toplevel;
 
 #ifdef MULTIBYTE_CHARS
   /* Change to the native locale for multibyte conversions.  */

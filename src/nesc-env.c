@@ -51,7 +51,7 @@ nesc_declaration new_nesc_declaration(region r, source_language kind,
   nesc_declaration new = ralloc(r, struct nesc_declaration);
 
   new->kind = kind;
-  new->name = name;
+  new->name = new->instance_name = name;
   if (kind == l_component && use_nido)
     new->local_statics = dd_new_list(r);
 

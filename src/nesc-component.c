@@ -120,7 +120,7 @@ static void copy_interface_functions(region r, nesc_declaration container,
 
 static cgraph build_external_graph(region r, nesc_declaration cdecl);
 
-nesc_declaration specification_copy(region r, nesc_declaration component,
+nesc_declaration specification_copy(region r, component_ref cref,
 				    bool copy_is_abstract)
 /* Effects: Make a "shallow" copy of `component' (in region r), i.e., make
      a copy of the environment with copies of the original interfaces as
@@ -128,6 +128,7 @@ nesc_declaration specification_copy(region r, nesc_declaration component,
    Returns: The shallow copy
 */
 {
+  nesc_declaration component = cref->cdecl;
   nesc_declaration copy;
   environment envcopy;
   env_scanner scanenv;
@@ -143,6 +144,7 @@ nesc_declaration specification_copy(region r, nesc_declaration component,
   copy->long_docstring = component->long_docstring;
   copy->impl = component->impl;
   copy->abstract = copy_is_abstract;
+  copy->instance_name = cref->word2->cstring.data;
   if (!copy_is_abstract)
     {
       /* Give it a new name */

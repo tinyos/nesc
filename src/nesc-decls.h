@@ -20,7 +20,16 @@ Boston, MA 02111-1307, USA.  */
 
 typedef struct nesc_declaration {
   source_language kind; /* l_interface or l_component */
+  /* For source components, name and instance_name are the actual component 
+     name.
+     For concrete instances of abstract components, name is the
+     name to used in generated code, and instance_name is a 
+     user-friendly name (indicating the path through configurations that
+     led to this instance).
+
+     instance_name is used for error messages */
   const char *name;
+  const char *instance_name;
   nesc_decl ast;
   struct environment *env;
   char *short_docstring;  /* For documentation comments */
