@@ -49,7 +49,7 @@ typedef unsigned long long largest_uint;
 
 /* Miscellaneous config */
 
-typedef int bool;
+typedef unsigned char bool;
 
 #include "cstring.h"
 

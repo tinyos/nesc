@@ -1135,7 +1135,7 @@ attributes:
 
 attribute:
       ATTRIBUTE '(' '(' attribute_list ')' ')'
-		{ $$ = attribute_reverse($4); }
+		{ $$ = $4; }
 	;
 
 attribute_list:

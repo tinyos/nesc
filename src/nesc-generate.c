@@ -25,6 +25,7 @@ Boston, MA 02111-1307, USA.  */
 #include "AST_utils.h"
 #include "edit.h"
 #include "semantics.h"
+#include "constants.h"
 
 static void prt_nesc_function_hdr(data_declaration fn_decl,
 				  psd_options options)

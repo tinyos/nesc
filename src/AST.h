@@ -25,6 +25,7 @@ Boston, MA 02111-1307, USA. */
 typedef int id_declaration_list;
 typedef struct typelist *typelist;
 typedef struct type *type;
+typedef struct known_cst *known_cst;
 
 typedef struct edge *edge;
 

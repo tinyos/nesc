@@ -931,7 +931,7 @@ int function_compatible(type t1, type t2)
   return type_lists_compatible(args1, args2);
 }
 
-int type_compatible_unqualified(type t1, type t2)
+bool type_compatible_unqualified(type t1, type t2)
 {
   if (t1 == error_type || t2 == error_type)
     return 1;
@@ -980,7 +980,7 @@ int type_compatible_unqualified(type t1, type t2)
     }
 }
 
-int type_compatible(type t1, type t2)
+bool type_compatible(type t1, type t2)
 {
   /* Qualifiers must match.  */
   /* GCC appears to allow changes to restrict (see /usr/include/sys/stat.h

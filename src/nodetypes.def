@@ -139,7 +139,7 @@
 ;; Base types
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftype node nil (location type next parent parent_ptr)
+(deftype node nil (location next parent parent_ptr)
   "The common supertype of all AST nodes")
 
 (deftype declaration node ()
@@ -156,7 +156,7 @@ BREAK_DEST and CONTINUE_DEST: for for/while/do-while/switch statements
 the CFG node to which break or continue should go to")
 
 (deftype expression node (lvalue side_effects cst bitfield isregister
-				 static_address)
+			  type static_address)
   "Expression nodes are subtypes of this type.
 LVALUE is true if this expression can be used in a context requiring an lvalue.
 BITFIELD is true if this lvalue is a bitfield.
@@ -232,7 +232,7 @@ QUALIFIERS and ATTRIBUTEES are lists. ARG1 is an optional bitfield specifier")
 ;; Types and type elements
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftype asttype node (declarator qualifiers)
+(deftype asttype node (declarator qualifiers type)
   "The source-level type QUALIFIERS DECLARATOR")
 
 (deftype typename type_element (ddecl)
@@ -456,10 +456,6 @@ CALL_KIND is one of c_call, post_task, command_call or event_signal.")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(deftype known_cst expression (cval)
-  "A constant representable in CVAL. These do not appear as part of the
-AST (they show up in the cst and static_address fields of expressions).")
 
 (deftype lexical_cst expression (cstring)
   "A constant represented as in its unparsed lexical form CSTRING. These

@@ -25,6 +25,8 @@ Boston, MA 02111-1307, USA. */
 extern data_declaration gcc_builtin_classify_type, builtin_memcpy, builtin_memcmp,
   builtin_strcpy, builtin_strcmp, builtin_strlen;
 
+bool builtin_declaration(data_declaration dd);
+
 void builtins_init(void);
 
 #endif

@@ -40,7 +40,7 @@ struct dhash_table
 {
   region sameregion r;
   void **sameregion elements;
-  unsigned long size, used;
+  unsigned long size, used, log2size;
   int (*traditional compare)(void *key, void *y);
   unsigned long (*traditional hash)(void *x);
 };
@@ -54,6 +54,12 @@ dhash_table new_dhash_table(region r, unsigned long initial_size,
   h->r = r;
   h->elements = rarrayalloc(r, initial_size, void *);
   h->size = initial_size;
+  h->log2size = 0;
+  while (initial_size > 1)
+    {
+      h->log2size++;
+      initial_size >>= 1;
+    }
   h->used = 0;
   h->compare = compare;
   h->hash = hash;
@@ -66,10 +72,25 @@ unsigned long dhash_used(dhash_table h)
   return h->used;
 }
 
+#define MAGIC 0.6180339987
+
+#define LLMAGIC ((unsigned long long)(MAGIC * (1ULL << 8 * sizeof(unsigned long))))
+
+static unsigned long dhash(dhash_table h, void *x)
+{
+  unsigned long hval = h->hash(x);
+#if 1
+  unsigned long hash = hval * LLMAGIC;
+
+  return hash >> (8 * sizeof(unsigned long) - h->log2size);
+#else
+  return hval & (h->size - 1);
+#endif
+}
+
 void *dhlookup(dhash_table h, void *x)
 {
-  unsigned long hash = h->hash(x);
-  unsigned long i = hash & (h->size - 1);
+  unsigned long i = dhash(h, x);
 
   for (;;)
     {
@@ -87,7 +108,6 @@ void *dhlookup(dhash_table h, void *x)
 
 void dhadd(dhash_table h, void *x)
 {
-  unsigned long hash = h->hash(x);
   unsigned long i;
 
   h->used++;
@@ -98,14 +118,14 @@ void dhadd(dhash_table h, void *x)
 
       /* Grow hashtable */
       h->size *= 2;
+      h->log2size++;
       h->elements = rarrayalloc(h->r, h->size, void *);
 
       /* Rehash old entries */
       for (j = 0; j < oldsize; j++)
 	if (oldelements[j])
 	  {
-	    unsigned long newhash = h->hash(oldelements[j]);
-	    unsigned long newi = newhash & (h->size - 1);
+	    unsigned long newi = dhash(h, oldelements[j]);
 		    
 	    while (h->elements[newi])
 	      {
@@ -119,7 +139,7 @@ void dhadd(dhash_table h, void *x)
 	  }
     }
 
-  i = hash & (h->size - 1);
+  i = dhash(h, x);
 
   for (;;)
     {

@@ -35,3 +35,12 @@ void builtins_init(void)
   builtin_strcmp = lookup_global_id("strcmp");
   builtin_strlen = lookup_global_id("strlen");
 }
+
+bool builtin_declaration(data_declaration dd)
+/* Returns: TRUE if dd is a declaration for something builtin (i.e.,
+     starts with __builtin_
+*/
+{
+  return strncmp(dd->name, "__builtin_", 10) == 0;
+}
+

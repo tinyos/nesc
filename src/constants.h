@@ -28,6 +28,11 @@ Boston, MA 02111-1307, USA. */
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+struct known_cst {
+  type type;
+  cval cval;
+};
+
 known_cst make_unknown_cst(type t);
 known_cst make_cst(cval c, type t);
 known_cst make_address_cst(data_declaration ddecl, label_declaration ldecl,

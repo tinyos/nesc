@@ -30,6 +30,7 @@ Boston, MA 02111-1307, USA. */
 #include "stmt.h"
 #include "AST_utils.h"
 #include "constants.h"
+#include "builtins.h"
 #include "nesc-component.h"
 #include "nesc-interface.h"
 #include "nesc-semantics.h"
@@ -2037,14 +2038,15 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   return TRUE;
 }
 
-void implicit_decl_warning(identifier id)
+void implicit_decl_warning(data_declaration ddecl)
 {
-  const char *name = id->cstring.data;
+  if (builtin_declaration(ddecl))
+      return;
 
   if (current.language != l_c || mesg_implicit_function_declaration == 2)
-    error("implicit declaration of function `%s'", name);
+    error("implicit declaration of function `%s'", ddecl->name);
   else if (mesg_implicit_function_declaration == 1)
-    warning("implicit declaration of function `%s'", name);
+    warning("implicit declaration of function `%s'", ddecl->name);
 }
 
 data_declaration implicitly_declare(identifier fnid)
@@ -2064,7 +2066,7 @@ data_declaration implicitly_declare(identifier fnid)
   tempdecl.shadowed = lookup_global_id(tempdecl.name);
 
   if (!tempdecl.shadowed) /* warn once only */
-    implicit_decl_warning(fnid);
+    implicit_decl_warning(&tempdecl);
 
   return declare(current.env, &tempdecl, FALSE);
 }

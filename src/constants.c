@@ -38,23 +38,27 @@ Boston, MA 02111-1307, USA. */
 #include "cval.h"
 #include <stdlib.h>
 
+static known_cst new_known_cst(region r, type t, cval c)
+{
+  known_cst kc = ralloc(parse_region, struct known_cst);
+
+  kc->type = t;
+  kc->cval = c;
+
+  return kc;
+}
+  
 known_cst make_unknown_cst(type t)
 {
-  known_cst c = new_known_cst(parse_region, dummy_location, cval_unknown);
-  c->type = t;
-  return c;
+  return new_known_cst(parse_region, t, cval_unknown);
 }
 
 known_cst make_cst(cval c, type t)
 {
-  known_cst kc;
-
   if (cval_istop(c))
     return NULL;
 
-  kc = new_known_cst(parse_region, dummy_location, cval_cast(c, t));
-  kc->type = t;
-  return kc;
+  return new_known_cst(parse_region, t, cval_cast(c, t));
 }
 
 known_cst make_address_cst(data_declaration ddecl, label_declaration ldecl,
