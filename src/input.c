@@ -44,12 +44,18 @@ void set_input(FILE *f, const char *filename)
 
 void end_input(void)
 {
-  struct file_stack *p = input_file_stack;
-  input_file_stack = p->next;
+  FILE *f = input_file_stack->lex.finput;
 
-  if (p->lex.finput)
-    fclose(p->lex.finput);
-  free(p);
+  while (input_file_stack && input_file_stack->lex.finput == f)
+    {
+      struct file_stack *p = input_file_stack;
+      input_file_stack = p->next;
+
+      free(p);
+    }
+
+  if (f)
+    fclose(f);
   input_file_stack_tick++;
 }
 
