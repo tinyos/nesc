@@ -475,8 +475,8 @@ static bool synchroniseAt(uchar bitrate)
 static void startJtagLink(void)
 {
     static uchar bitrates[] =
-    { BIT_RATE_115200, BIT_RATE_57600, BIT_RATE_38400,
-      BIT_RATE_19200, BIT_RATE_9600 };
+    { BIT_RATE_115200, BIT_RATE_19200, BIT_RATE_57600, BIT_RATE_38400,
+      BIT_RATE_9600 };
 
     for (unsigned int i = 0; i < sizeof bitrates / sizeof *bitrates; i++)
 	if (synchroniseAt(bitrates[i]))
