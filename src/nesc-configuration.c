@@ -231,15 +231,16 @@ static void check_generic_arguments(expression args, typelist gparms)
 	  error_with_location(l, "too many arguments");
 	  return;
 	}
-      else 
+
+      if (!check_constant_once(arg))
+	continue;
+
+      if (!arg->cst || !constant_integral(arg->cst))
+	error_with_location(l, "constant expression expected");
+      else
 	{
-	  if (!arg->cst || !constant_integral(arg->cst))
-	    error_with_location(l, "constant expression expected");
-	  else
-	    {
-	      if (!cval_inrange(arg->cst->cval, gparm_type))
-		error_with_location(l, "constant out of range for argument type");
-	    }
+	  if (!cval_inrange(arg->cst->cval, gparm_type))
+	    error_with_location(l, "constant out of range for argument type");
 	}
     }
   if (typelist_next(&scan_gparms))

@@ -79,7 +79,7 @@ known_cst make_signed_cst(largest_int x, type t)
   return make_cst(make_cval_signed(x, t), t);
 }
 
-static known_cst cast_constant(known_cst c, type to)
+known_cst cast_constant(known_cst c, type to)
 {
   if (type_equal(c->type, to))
     return c;

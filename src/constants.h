@@ -40,6 +40,8 @@ known_cst make_address_cst(data_declaration ddecl, label_declaration ldecl,
 known_cst make_signed_cst(largest_int x, type t);
 known_cst make_unsigned_cst(largest_uint x, type t);
 
+known_cst cast_constant(known_cst c, type to);
+
 lexical_cst fold_lexical_int(type itype, location loc, cstring tok,
 			     bool iscomplex, largest_uint intvalue, bool overflow);
 lexical_cst fold_lexical_real(type realtype, location loc, cstring tok);

@@ -3554,12 +3554,7 @@ void layout_enum_end(tag_declaration tdecl)
 
   /* Change type of all enum constants to enum_reptype */
   scan_enumerator (v, values)
-    {
-      known_cst val = v->ddecl->value;
-
-      val->type = enum_reptype;
-      val->cval = cval_cast(val->cval, enum_reptype);
-    }
+    v->ddecl->value = cast_constant(v->ddecl->value, enum_reptype);
 }
 
 known_cst layout_enum_value(enumerator e)

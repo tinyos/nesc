@@ -23,9 +23,10 @@ Boston, MA 02111-1307, USA.  */
 struct endp
 {
   data_declaration component, interface, function;
-  expression args; /* args for the interface if not NULL.
+  expression args; /* list of args for the interface if not NULL.
 		      If no errors have been reported, then
-		      constant_integral(e->cst) for all expressions e in args
+		        constant_integral(e->cst) || constant_unknown(e->cst)
+		      for all expressions e in args
 		   */
 };
 
