@@ -119,6 +119,16 @@ elsif ($target eq "mica128") {
     push @new_args, ("-mmcu=atmega128", "-fnesc-target=avr");
     @commonplatforms = ("mica", "avrmote");
 }
+elsif ($target eq "mica2") {
+    $gcc = "avr-gcc";
+    push @new_args, ("-mmcu=atmega128", "-fnesc-target=avr");
+    @commonplatforms = ("mica128", "mica", "avrmote");
+}
+elsif ($target eq "mica2dot") {
+    $gcc = "avr-gcc";
+    push @new_args, ("-mmcu=atmega128", "-fnesc-target=avr");
+    @commonplatforms = ("mica2", "mica128", "mica", "avrmote");
+}
 elsif ($target eq "rene2") {
     $gcc = "avr-gcc";
     push @new_args, ("-mmcu=atmega163", "-fnesc-target=avr");
@@ -130,7 +140,7 @@ elsif ($target eq "motor") {
     @commonplatforms = ("avrmote");
 }
 else {
-    &fail("unknown target $target\n(known targets are pc, mica, mica128, rene2)");
+    &fail("unknown target $target\n(known targets are pc, mica, mica128, mica2, mica2dot, rene2)");
 }
 
 if ($print_version) {
