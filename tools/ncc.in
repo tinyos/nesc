@@ -103,12 +103,9 @@ do $platform_def;
 
 push @new_args, @opts;
 
-#
-# documentation generation options
-#
-# get the directory above TOSDIR
+# documentation: set the default topdir based on TOSDIR
 my ($tosparent) = ($TOSDIR =~ m!^(.*)/.*?$!);
-push @topdirs, $tosparent;
+unshift @new_args, "-topdir=$tosparent";
 
 unshift @new_args, "-fnesc-include=tos";
 unshift @new_args, map "-DBOARD_\U$_", @boards;
