@@ -24,10 +24,10 @@ Boston, MA 02111-1307, USA.  */
 
 declaration all_cdecls;
 
-void load_c(location l, const char *name)
+void load_c(location l, const char *name, bool name_is_path)
 {
   cdecls = NULL;
-  compile(l, l_c, name, NULL, NULL);
+  compile(l, l_c, name, name_is_path, NULL, NULL);
   preprocess_file_end();
   all_cdecls = declaration_chain(all_cdecls, cdecls);
 }

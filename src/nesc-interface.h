@@ -21,6 +21,7 @@ Boston, MA 02111-1307, USA.  */
 interface_declaration
 new_interface_declaration(region r, const char *name, nesc_decl ast, environment decls);
 
-interface_declaration load_interface(location l, const char *name);
+interface_declaration load_interface(location l, const char *name,
+				     bool name_is_path);
 
 #endif

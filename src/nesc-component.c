@@ -220,22 +220,24 @@ environment start_implementation(void)
   return current.env;
 }
 
-component_declaration load_component(location l, const char *name)
+component_declaration load_component(location l, const char *name,
+				     bool name_is_path)
 {
+  const char *element = name_is_path ? element_name(parse_region, name) : name;
   component_declaration cdecl =
-    new_component_declaration(parse_region, name, NULL, NULL, NULL);
+    new_component_declaration(parse_region, element, NULL, NULL, NULL);
   environment component_env;
 
   /* We don't get duplicates as we only load on demand */
   component_declare(cdecl);
 
   the_component = NULL;
-  component_env = compile(l, l_component, name, (nesc_declaration)cdecl,
-			  global_env);
+  component_env = compile(l, l_component, name, name_is_path,
+			  (nesc_declaration)cdecl, global_env);
 
   if (!the_component)
     {
-      word cname = build_word(parse_region, name);
+      word cname = build_word(parse_region, element);
       implementation impl = CAST(implementation, new_module(parse_region, dummy_location, NULL, NULL));
       the_component = new_component(parse_region, dummy_location, cname, NULL, impl);
     }

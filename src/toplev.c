@@ -53,6 +53,7 @@ static char *lang_options[] =
 {
   "-fnesc-path=",
   "-fnesc-no-debug",
+  "-fnesc-msg=",
 
   "-ansi",
   "-fallow-single-precision",

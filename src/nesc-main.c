@@ -22,8 +22,11 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-cg.h"
 #include "nesc-paths.h"
 #include "nesc-c.h"
+#include "nesc-interface.h"
+#include "nesc-component.h"
 #include "c-parse.h"
 #include "nesc-generate.h"
+#include "nesc-semantics.h"
 #include "nesc-cpp.h"
 
 /* Adds the component graph 'component' to the whole program graph 'master' */
@@ -80,10 +83,16 @@ static void connect_graphs(region r, component_declaration program,
   connect(program, *cg, *modules, *components);
 }
 
-void nesc_compile(const char *component_name, const char *target_name)
+void nesc_compile(const char *filename, const char *target_name)
 {
   struct location toplevel;
-  component_declaration program;
+  component_declaration program = NULL;
+  source_language l;
+
+  if (filename == NULL) {
+    fprintf(stderr, ("usage: nesc1 <filename>\n"));
+    return;
+  }
 
   parse_region = newregion();
   preprocess_init();
@@ -92,7 +101,6 @@ void nesc_compile(const char *component_name, const char *target_name)
   init_lex();
   init_semantics();
   init_nesc_env(parse_region);
-
   init_nesc_paths_end();
 
   toplevel.filename = "<commandline>";
@@ -100,18 +108,33 @@ void nesc_compile(const char *component_name, const char *target_name)
   toplevel.in_system_header = FALSE;
   
   require_c(&toplevel, "tos");
-  if (component_name == NULL) {
-    fprintf(stderr, ("usage: parser <component>\n"));
-    return;
-  }
-  program = require_component(&toplevel, component_name);
 
-  if (errorcount == 0)
+  l = pick_language_from_filename(filename);
+  switch (l)
     {
-      cgraph cg;
-      dd_list modules, components;
+    case l_component:
+      {
+	component_declaration program =
+	  load_component(&toplevel, filename, TRUE);
+	if (errorcount == 0)
+	  {
+	    cgraph cg;
+	    dd_list modules, components;
 
-      connect_graphs(parse_region, program, &cg, &modules, &components);
-      generate_c_code(program, target_name, cg, modules);
+	    connect_graphs(parse_region, program, &cg, &modules, &components);
+	    generate_c_code(program, target_name, cg, modules);
+	  }
+	break;
+      }
+    case l_interface:
+      /* just does syntax/semantic checking */
+      load_interface(&toplevel, filename, TRUE);
+      break;
+    case l_c:
+      /* idem */
+      load_c(&toplevel, filename, TRUE);
+      break;
+    default:
+      assert(0);
     }
 }

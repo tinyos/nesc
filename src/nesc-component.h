@@ -25,7 +25,8 @@ void make_implicit_interface(data_declaration fndecl,
 
 void check_generic_parameter_type(location l, data_declaration gparm);
 
-component_declaration load_component(location l, const char *name);
+component_declaration load_component(location l, const char *name,
+				     bool name_is_path);
 environment start_implementation(void);
 
 void interface_scan(data_declaration iref, env_scanner *scan);

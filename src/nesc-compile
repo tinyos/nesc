@@ -58,11 +58,6 @@ if ($source eq "") {
 }
 
 
-($cname, $cpath, $csuffix) = fileparse($source, "\.td");
-if ($csuffix ne ".td") {
-    printf STDERR "nesC components must end in .td\n";
-}
-
 if ($ctarget eq "") {
     # not a good choice, but we're normally invoked via gcc which gives 
     # us a -fnesc-cfile= option
@@ -81,9 +76,8 @@ $asmtarget1 =~ s/\.c$/.s/;
 $asmtarget2 = $objtarget;
 $asmtarget2 =~ s/\.o$/.s/;
 
-unshift @nesc_args, "-fnesc-path=$cpath";
 push @nesc_args, "-fnesc-no-debug";
-push @nesc_args, $cname;
+push @nesc_args, $source;
 push @nesc_args, "-o";
 if ($nocompile) {
     push @nesc_args, "/dev/null";
@@ -91,7 +85,7 @@ if ($nocompile) {
     push @nesc_args, $ctarget;
 }
 unshift @nesc_args, "nesc1";
-print join(" ", @nesc_args), "\n";
+#print join(" ", @nesc_args), "\n";
 system @nesc_args;
 
 if ($? != 0) {

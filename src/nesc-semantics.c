@@ -26,6 +26,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-cpp.h"
 
 #include <errno.h>
+#include <libgen.h>
 
 interface the_interface;
 component the_component;
@@ -85,7 +86,7 @@ bool ddecl_is_command_or_event(data_declaration decl)
     (decl->ftype == function_event || decl->ftype == function_command);
 }
 
-source_language pick_language_from_filename(char *name)
+source_language pick_language_from_filename(const char *name)
 {
   char *dot = strrchr(name, '.');
 
@@ -96,7 +97,32 @@ source_language pick_language_from_filename(char *name)
       if (!strcmp(dot, ".td"))
 	return l_component;
     }
-  return l_interface; /* default */
+  return l_c; /* default */
+}
+
+const char *element_name(region r, const char *path)
+/* Returns: Return the "identifier part"
+     of path, i.e., remove any directory and extension
+     The returned string is allocated in region r.
+*/
+{
+  const char *base, *dot;
+
+  base = basename(path);
+  dot = strrchr(path, '.');
+
+  if (dot && dot >= base)
+    {
+      /* Extract id */
+      char *copy = rarrayalloc(r, dot - base + 1, char);
+
+      memcpy(copy, base, dot - base);
+      copy[dot - base] = '\0';
+
+      return copy;
+    }
+  else
+    return rstrdup(r, base);
 }
 
 const char *language_name(source_language l)
@@ -124,10 +150,12 @@ void check_nesc_declaration(nesc_declaration nd, environment env, nesc_decl ast)
   nd->env = env;
 }
 
-environment compile(location loc, source_language l, const char *name,
+environment compile(location loc, source_language l,
+		    const char *name, bool name_is_path,
 		    nesc_declaration container, environment parent_env)
 {
-  const char *path = find_nesc_file(parse_region, l, name);
+  const char *path =
+    name_is_path ? name : find_nesc_file(parse_region, l, name);
   FILE *f = NULL;
   struct semantic_state old_semantic_state;
   environment env;

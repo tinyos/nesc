@@ -26,9 +26,16 @@ extern interface the_interface;
 extern component the_component;
 extern declaration cdecls;
 
-source_language pick_language_from_filename(char *name);
+source_language pick_language_from_filename(const char *name);
 
-environment compile(location loc, source_language l, const char *name,
+const char *element_name(region r, const char *path);
+/* Returns: Return the "identifier part"
+     of path, i.e., remove any directory and extension
+     The returned string is allocated in region r.
+*/
+
+environment compile(location loc, source_language l,
+		    const char *name, bool name_is_path,
 		    nesc_declaration container, struct environment *parent_env);
 
 void check_nesc_declaration(nesc_declaration nd, struct environment *env,

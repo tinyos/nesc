@@ -53,7 +53,7 @@ component_declaration require_component(location l, const char *name)
   if (d)
     return d;
 
-  return load_component(l, name);
+  return load_component(l, name, FALSE);
 }
 
 interface_declaration require_interface(location l, const char *name)
@@ -64,7 +64,7 @@ interface_declaration require_interface(location l, const char *name)
   if (d)
     return d;
 
-  return load_interface(l, name);
+  return load_interface(l, name, FALSE);
 }
 
 void require_c(location l, const char *name)
@@ -75,6 +75,6 @@ void require_c(location l, const char *name)
   if (!present)
     {
       env_add(nesc_c_env, name, &dummy);
-      load_c(l, name);
+      load_c(l, name, FALSE);
     }
 }
