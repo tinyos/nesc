@@ -81,4 +81,9 @@ const char *decl_printname(data_declaration ddecl);
      Any necessary memory is allocated in current.fileregion
 */
 
+data_declaration get_function_ddecl(expression e);
+/* Returns: If e denotes a specific function, return its data_declaration
+     Otherwise return NULL
+*/
+
 #endif

@@ -326,3 +326,20 @@ const char *decl_printname(data_declaration ddecl)
     return ddecl->name;
 }
 
+data_declaration get_function_ddecl(expression e)
+/* Returns: If e denotes a specific function, return its data_declaration
+     Otherwise return NULL
+*/
+{
+  if (is_identifier(e))
+    {
+      identifier id = CAST(identifier, e);
+
+      if (id->ddecl->kind == decl_function)
+	return id->ddecl;
+    }
+  else if (is_interface_deref(e))
+    return CAST(interface_deref, e)->ddecl;
+
+  return NULL;
+}

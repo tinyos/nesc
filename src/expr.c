@@ -53,15 +53,28 @@ static bool compatible_pointer_types(type tl, type tr)
 				    pedantic);
 }
 
+/* Function arguments are positive, interface parameters are negative.
+   Return appropriate string for messages for *parmnum, and set
+   *parmnum to its absolute value
+   */
+static const char *argtype(int *parmnum)
+{
+  if (*parmnum >= 0)
+    return "argument";
+  *parmnum = -*parmnum;
+  return "parameter";
+}
+
 static void warn_for_assignment(const char *msg, const char *opname,
 				data_declaration fdecl, int argnum)
 {
-  static char argstring[] = "passing arg %d of `%s'";
-  static char argnofun[] =  "passing arg %d";
+  static char argstring[] = "passing %s %d of `%s'";
+  static char argnofun[] =  "passing %s %d";
 
   if (opname == 0)
     {
       char *tmpname;
+      const char *argname = argtype(&argnum);
 
       if (fdecl)
 	{
@@ -69,13 +82,13 @@ static void warn_for_assignment(const char *msg, const char *opname,
 
 	  /* Function name is known; supply it.  */
 	  tmpname = (char *)alloca(strlen(function) + sizeof(argstring) + 25 /*%d*/ + 1);
-	  sprintf(tmpname, argstring, argnum, function);
+	  sprintf(tmpname, argstring, argname, argnum, function);
 	}
       else
 	{
 	  /* Function name unknown (call through ptr); just give arg number.  */
 	  tmpname = (char *)alloca(sizeof(argnofun) + 25 /*%d*/ + 1);
-	  sprintf(tmpname, argnofun, argnum);
+	  sprintf(tmpname, argnofun, argname, argnum);
 	}
       opname = tmpname;
     }
@@ -465,12 +478,16 @@ bool check_assignment(type lhstype, type rhstype, expression rhs,
     }
 
   if (!context)
-    if (fundecl)
-      error("incompatible type for argument %d of `%s'", parmnum,
-	    decl_printname(fundecl));
-    else
-      error("incompatible type for argument %d of indirect function call",
-	    parmnum);
+    {
+      const char *argname = argtype(&parmnum);
+
+      if (fundecl)
+	error("incompatible type for %s %d of `%s'", argname, parmnum,
+	      decl_printname(fundecl));
+      else
+	error("incompatible type for %s %d of indirect function call",
+	      argname, parmnum);
+    }
   else
     error("incompatible types in %s", context);
 
@@ -1254,11 +1271,12 @@ expression make_compound_expr(location loc, statement block)
 }
 
 bool check_arguments(type fntype, expression arglist,
-		     data_declaration fundecl)
+		     data_declaration fundecl, bool generic_call)
 {
   typelist_scanner parmtypes;
-  int parmnum = 1;
+  int parmstep = generic_call ? -1 : 1, parmnum = parmstep;
   type parmtype;
+  const char *argname;
   int old_errorcount = errorcount;
 
   if (!type_function_oldstyle(fntype))
@@ -1310,24 +1328,25 @@ bool check_arguments(type fntype, expression arglist,
 	      check_assignment(parmtype, default_conversion_for_assignment(arglist),
 			       arglist, NULL, fundecl, parmnum);
 	    }
-	  parmnum++;
+	  parmnum += parmstep;
 	  arglist = CAST(expression, arglist->next);
 	}
+      argname = argtype(&parmstep);
       if (parmtype)
 	{
 	  if (fundecl)
-	    error("too few arguments to function `%s'",
+	    error("too few %ss to function `%s'", argname, 
 		  decl_printname(fundecl));
 	  else
-	    error("too few arguments to function");
+	    error("too few %ss to function", argname);
 	}
       else if (arglist && !type_function_varargs(fntype))
 	{
 	  if (fundecl)
-	    error("too many arguments to function `%s'",
+	    error("too many %ss to function `%s'", argname,
 		  decl_printname(fundecl));
 	  else
-	    error("too many arguments to function");
+	    error("too many %ss to function", argname);
 	}
     }
 
@@ -1345,7 +1364,6 @@ expression make_function_call(location loc, expression fn, expression arglist)
 {
   expression result = CAST(expression, new_function_call(parse_region, loc, fn, arglist, NULL, c_call));
   type fntype = default_conversion(fn), rettype;
-  data_declaration fundecl;
   bool argumentsok;
 
   result->type = error_type;
@@ -1357,25 +1375,16 @@ expression make_function_call(location loc, expression fn, expression arglist)
        them into pointers to functions... */
     fntype = type_points_to(fntype);
 
-  if (!(type_functional(fntype)))
+  if (!type_functional(fntype))
     {
-      error("called object is not a function, command, event or task");
+      if (type_generic(fntype))
+	error("parameters missing in call to parameterised command or event");
+      else
+	error("called object is not a function, command, event or task");
       return result;
     }
 
-  fundecl = NULL;
-
-  if (is_identifier(fn))
-    {
-      identifier fnid = CAST(identifier, fn);
-
-      if (fnid->ddecl->kind == decl_function)
-	fundecl = fnid->ddecl;
-    }
-  else if (is_interface_deref(fn))
-    fundecl = CAST(interface_deref, fn)->ddecl;
-
-  argumentsok = check_arguments(fntype, arglist, fundecl);
+  argumentsok = check_arguments(fntype, arglist, get_function_ddecl(fn), FALSE);
 
   rettype = type_function_return_type(fntype);
   result->type = rettype;
@@ -1461,11 +1470,12 @@ expression make_offsetof(location loc, asttype t, dd_list fields)
 expression make_array_ref(location loc, expression array, expression index)
 {
   expression result = CAST(expression, new_array_ref(parse_region, loc, array, index));
-  type atype, itype = default_conversion(index);
+  type atype, itype;
 
   if (type_generic(array->type))
     return make_generic_call(loc, array, index);
 
+  itype = default_conversion(index);
   if (index->next)
     index = make_comma(index->location, index);
 

@@ -62,7 +62,7 @@ bool check_assignment(type lhstype, type rhstype, expression rhs,
 
 bool check_conversion(type to, type from);
 bool check_arguments(type fntype, expression arglist,
-		     data_declaration fundecl);
+		     data_declaration fundecl, bool generic_call);
 
 type default_conversion(expression e);
 type default_conversion_for_assignment(expression e);
