@@ -42,7 +42,9 @@ sub gen() {
     print " */\n\n";
 
     print "package $package;\n\n";
-
+    
+    print "import net.tinyos.message.Message;\n\n";
+    
     print "public class $java_classname extends $java_extends {\n\n";
 
     print "    /** The default size of this message type in bytes. */\n";
