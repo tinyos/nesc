@@ -183,8 +183,7 @@ environment compile(location loc, source_language l,
       f = preprocess(path, l);
 
       if (!f)
-	error_with_location(loc, "cannot open %s: %s",
-			    path, strerror(errno));
+	error_with_location(loc, "failed to preprocess %s", path);
     }
 
   if (!f)
