@@ -48,6 +48,9 @@ sub gen() {
     print "    /** The default size of this message type in bytes. */\n";
     print "    public static final int DEFAULT_MESSAGE_SIZE = $size;\n\n";
 
+    print "    /** The Active Message type associated with this message. */\n";
+    print "    public static final int AM_TYPE = $amtype;\n\n";
+
     print "    /** Create a new $java_classname of size $size. */\n";
     print "    public $java_classname() {\n";
     print "        super(DEFAULT_MESSAGE_SIZE);\n";
@@ -106,7 +109,7 @@ sub gen() {
     print "        super(msg, base_offset, data_length);\n";
     print "    }\n\n";
 
-# XXX MDW: Deprecated?>
+# XXX MDW: Deprecated
 #    print "    $java_classname(net.tinyos.message.ByteArray packet, int size) {\n";
 #    print "        this(size);\n";
 #    print "        dataSet(packet);\n";
@@ -118,7 +121,7 @@ sub gen() {
 
     print "    /** Return the Active Message type of this message (-1 if unknown). */\n";
     print "    public int amType() {\n";
-    print "        return $amtype;\n";
+    print "        return AM_TYPE;\n";
     print "    }\n\n";
 
     print "    /**\n";
