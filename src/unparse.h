@@ -28,7 +28,7 @@ void unparse_end(void) deletes;
 void enable_line_directives(void);
 void disable_line_directives(void);
 
-location output_location(void);
+struct location output_location(void);
 void output(char *format, ...) __attribute__((format (printf, 1, 2)));
 void outputln(char *format, ...) __attribute__((format (printf, 1, 2)));
 void newline(void);

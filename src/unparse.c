@@ -42,7 +42,7 @@ Boston, MA 02111-1307, USA. */
 static FILE *of;
 static bool no_line_directives;
 static int indent_level;
-static location output_loc;
+static struct location output_loc;
 static bool at_line_start;
 
 static region tempregion;
@@ -137,38 +137,38 @@ static void output_line_directive(location l, bool include_filename)
   if (include_filename)
     /* The filename doesn't need any quoting as the quotes were not stripped on
        input */
-    outputln("# %lu \"%s\"%s", l.lineno, l.filename,
-	     l.in_system_header ? " 3" : "");
+    outputln("# %lu \"%s\"%s", l->lineno, l->filename,
+	     l->in_system_header ? " 3" : "");
   else
-    outputln("#line %lu", l.lineno);
+    outputln("#line %lu", l->lineno);
 }
 
 static void set_location(location l)
 {
   /* Ignore dummy locations */
-  if (l.filename == dummy_location.filename || no_line_directives)
+  if (l->filename == dummy_location->filename || no_line_directives)
     return;
 
-  if ((l.filename != output_loc.filename &&
-       strcmp(l.filename, output_loc.filename)) ||
-      l.in_system_header != output_loc.in_system_header)
+  if ((l->filename != output_loc.filename &&
+       strcmp(l->filename, output_loc.filename)) ||
+      l->in_system_header != output_loc.in_system_header)
     output_line_directive(l, TRUE);
-  else if (output_loc.lineno != l.lineno)
+  else if (output_loc.lineno != l->lineno)
     {
       /* Just send some newlines for small changes */
-      if (output_loc.lineno < l.lineno && output_loc.lineno + 10 >= l.lineno)
+      if (output_loc.lineno < l->lineno && output_loc.lineno + 10 >= l->lineno)
 	{
-	  while (output_loc.lineno != l.lineno)
+	  while (output_loc.lineno != l->lineno)
 	    newline();
 	}
       else
 	output_line_directive(l, FALSE);
     }
 
-  output_loc = l;
+  output_loc = *l;
 }
 
-location output_location(void)
+struct location output_location(void)
 {
   return output_loc;
 }
@@ -260,7 +260,7 @@ void unparse_start(FILE *to)
 {
   tempregion = newregion();
   of = to;
-  output_loc = dummy_location;
+  output_loc = *dummy_location;
   at_line_start = TRUE;
   no_line_directives = FALSE;
   indent_level = 0;
@@ -284,7 +284,7 @@ void enable_line_directives(void)
     {
       no_line_directives = FALSE;
       /* Force #line on next output of some location */
-      output_loc = dummy_location;
+      output_loc = *dummy_location;
     }
 }
 

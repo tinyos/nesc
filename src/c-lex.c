@@ -53,6 +53,22 @@ location last_location;
 
 location dummy_location;
 
+/* Location cache handling */
+static location last_allocated_location;
+
+static location make_location(struct location l)
+{
+  if (l.lineno == last_allocated_location->lineno &&
+      l.filename == last_allocated_location->filename &&
+      l.in_system_header == last_allocated_location->in_system_header)
+    return last_allocated_location;
+
+  last_allocated_location = ralloc(parse_region, struct location);
+  *last_allocated_location = l;
+
+  return last_allocated_location;
+}
+
 static size_t int_type_size;
 
 /* Cause the `yydebug' variable to be defined.  */
@@ -104,7 +120,12 @@ int check_newline(void);
 void
 init_lex (void)
 {
-  dummy_location.filename = "<dummy>";
+  static struct location dummy;
+
+  dummy.lineno = 0;
+  dummy.filename = "<dummy>";
+  dummy.in_system_header = FALSE;
+  dummy_location = last_allocated_location = &dummy;
 
 #ifdef MULTIBYTE_CHARS
   /* Change to the native locale for multibyte conversions.  */
@@ -197,12 +218,11 @@ yyprint (file, yychar, yylval)
     }
 }
 
-/* Skip /*-style comment. Note that unlike C, nesC has nested /*-comments.
-   Hence this comment would be an error in nesC :-) */
+/* Skip / *-style comment. Note that unlike C, nesC has nested / *-comments. */
 static void skip_c_comment(void)
 {
   int last_c = 0, c, depth = 1;
-  location start = input_file_stack->l;
+  struct location start = input_file_stack->l;
 
   for (;;)
     {
@@ -211,7 +231,7 @@ static void skip_c_comment(void)
       switch (c)
 	{
 	case EOF:
-	  error_with_location(start, "unterminated comment");
+	  error_with_location(&start, "unterminated comment");
 	  return;
 	case '\n':
 	  input_file_stack->l.lineno++;
@@ -679,7 +699,7 @@ linenum:
 		  if (current_il != previous_il)
 		    {
 		      warning_with_location
-			(input_file_stack->l,
+			(&input_file_stack->l,
 			 "This file contains more `%c's than `%c's.",
 			 current_il > previous_il ? '{' : '}',
 			 current_il > previous_il ? '}' : '{');
@@ -993,7 +1013,6 @@ yylex(struct yystype *lvalp)
   int c;
   int value;
   int wide_flag = 0;
-  location loc;
 
   /* Grammar selection hack */
   if (language_token != -1)
@@ -1036,9 +1055,9 @@ yylex(struct yystype *lvalp)
   token_ptr = token_buffer;
   *token_ptr++ = c;
 
-  last_location = loc = input_file_stack->l;
+  last_location = make_location(input_file_stack->l);
 
-  lvalp->u.itoken.location = loc;
+  lvalp->u.itoken.location = last_location;
   lvalp->u.itoken.i = 0;
 
   switch (c)
@@ -1126,7 +1145,7 @@ yylex(struct yystype *lvalp)
 	 (or a typename).  */
       if (value == IDENTIFIER)
 	{
-	  lvalp->idtoken.location = loc;
+	  lvalp->idtoken.location = last_location;
 	  lvalp->idtoken.id = make_token_cstring();
 	  lvalp->idtoken.decl = lookup_id(lvalp->idtoken.id.data, FALSE);
 
@@ -1349,7 +1368,7 @@ yylex(struct yystype *lvalp)
 	    if (imag)
 	      ftype = make_complex_type(ftype);
 
-	    lvalp->u.constant = fold_lexical_real(ftype, loc, make_token_cstring());
+	    lvalp->u.constant = fold_lexical_real(ftype, last_location, make_token_cstring());
 	  }
 	else
 	  {
@@ -1407,7 +1426,7 @@ yylex(struct yystype *lvalp)
 	      itype = spec_unsigned ? unsigned_int_type : int_type;
 
 	    lvalp->u.constant =
-	      fold_lexical_int(itype, loc, make_token_cstring(),
+	      fold_lexical_int(itype, last_location, make_token_cstring(),
 			       spec_imag, cstvalue, overflow);
 	  }
 
@@ -1469,7 +1488,7 @@ yylex(struct yystype *lvalp)
 	else if (chars_seen != 1 && ! flag_traditional && warn_multichar)
 	  warning ("multi-character character constant");
 
-	lvalp->u.constant = fold_lexical_char(loc, make_token_cstring(),
+	lvalp->u.constant = fold_lexical_char(last_location, make_token_cstring(),
 					      wide_flag, result);
 
 	value = CONSTANT;
@@ -1510,7 +1529,7 @@ yylex(struct yystype *lvalp)
 	if (count < 0)
 	  error ("Unterminated string constant");
 
-	lvalp->u.string_cst = fold_lexical_string(loc, make_token_cstring(),
+	lvalp->u.string_cst = fold_lexical_string(last_location, make_token_cstring(),
 						  wide_flag, string_array);
 
 	value = STRING;

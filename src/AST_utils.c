@@ -44,7 +44,7 @@ function_declarator get_fdeclarator(declarator d)
 	d = CAST(pointer_declarator, d)->declarator;
 	break;
       default:
-	assert(0);
+	assert(0); return NULL;
       }
 }
 

@@ -28,7 +28,7 @@ Boston, MA 02111-1307, USA. */
 struct file_stack
   {
     struct file_stack *next;
-    location l;
+    struct location l;
     struct lex_state lex; /* internal info for lexer only */
   };
 

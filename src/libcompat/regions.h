@@ -34,6 +34,11 @@
 #ifndef REGIONS_H
 #define REGIONS_H
 
+#define deletes
+#define traditional
+#define sameregion
+#define parentptr
+
 #define RPAGELOG 13
 
 typedef struct region_ *region;

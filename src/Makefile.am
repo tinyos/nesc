@@ -29,7 +29,6 @@ regiondir = lib
 else
 SUBDIRS = libcompat
 regiondir = libcompat
-regionflags = -Ddeletes= -Dtraditional= -Dsameregion= -Dparentptr=
 endif
 
 INCLUDES = $(regionflags) -I$(srcdir)/$(regiondir)
@@ -81,6 +80,7 @@ libparser_a_SOURCES =				\
 	graph.h					\
 	input.c					\
 	input.h					\
+	machine.h				\
 	nesc-c.c				\
 	nesc-c.h				\
 	nesc-cg.c				\
@@ -130,8 +130,7 @@ BUILT_SOURCES =					\
 	AST_types.h				\
 	c-gperf.h				\
 	c-parse.tab.c				\
-	c-parse.tab.h				\
-	c-parse.output
+	c-parse.tab.h
 
 EXTRA_DIST = 					\
 	build-basics.el				\
@@ -141,8 +140,10 @@ EXTRA_DIST = 					\
 	c-parse.gperf				\
 	c-parse.y				\
 	config-aux				\
-	doc					\
-	nodetypes.def
+	nodetypes.def				\
+	AST_defs.c				\
+	AST_parent.c				\
+	AST_print.c
 
 BISON = bison
 EMACS = emacs

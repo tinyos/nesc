@@ -29,12 +29,12 @@ typedef enum { l_c, l_interface, l_component, l_implementation } source_language
 
 struct yystype;
 
-typedef struct
+typedef struct location
 { 
   const char *filename;
   unsigned long lineno;
   bool in_system_header;
-} location;
+} *location;
 
 extern location last_location, dummy_location;
 

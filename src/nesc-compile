@@ -91,6 +91,7 @@ if ($nocompile) {
     push @nesc_args, $ctarget;
 }
 unshift @nesc_args, "nesc1";
+print join(" ", @nesc_args);
 system @nesc_args;
 
 if ($? != 0) {

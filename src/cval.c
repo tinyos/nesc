@@ -43,7 +43,7 @@ void cval_init(void)
   cval_top.kind = cval_variable;
   cval_unknown.kind = cval_unk;
   cval_zero.kind = cval_sint;
-  cval_zero.si = 0;
+  cval_zero.r.si = 0;
   cval_zero.isize = type_size(int_type);
 }
 
@@ -53,7 +53,7 @@ cval make_cval_unsigned(largest_uint i, type t)
 
   assert(type_integral(t) && type_unsigned(t));
   c.kind = cval_uint;
-  c.ui = i;
+  c.r.ui = i;
   c.isize = type_size(t);
   return c;
 }
@@ -64,7 +64,7 @@ cval make_cval_signed(largest_int i, type t)
 
   assert(type_integral(t) && !type_unsigned(t));
   c.kind = cval_sint;
-  c.si = i;
+  c.r.si = i;
   c.isize = type_size(t);
   return c;
 }
@@ -90,12 +90,12 @@ cval make_cval_complex(cval r, cval i)
     case cval_uint:
       assert(r.isize == i.isize);
       r.kind = cval_uint_complex;
-      r.ui_i = i.ui;
+      r.c.ui_i = i.r.ui;
       return r;
     case cval_sint:
       assert(r.isize == i.isize);
       r.kind = cval_sint_complex;
-      r.si_i = i.si;
+      r.c.si_i = i.r.si;
       return r;
 
     default: abort(); return r;
@@ -109,8 +109,8 @@ cval make_cval_address(data_declaration ddecl, label_declaration ldecl,
 
   assert(!(ldecl && ddecl));
   c.kind = cval_address;
-  c.ddecl = ddecl;
-  c.ldecl = ldecl;
+  c.c.ddecl = ddecl;
+  c.c.ldecl = ldecl;
 
   return c;
 }
@@ -134,7 +134,7 @@ bool cval_knownbool(cval c)
   switch (c.kind) {
   default: case cval_variable: assert(0);
   case cval_unk: return FALSE;
-  case cval_address: return c.si == 0;
+  case cval_address: return c.r.si == 0;
   case cval_uint: case cval_sint: case cval_float:
   case cval_uint_complex: case cval_sint_complex: case cval_float_complex:
     return TRUE;
@@ -148,12 +148,12 @@ bool cval_boolvalue(cval c)
 {
   switch (c.kind) {
   default: assert(0);
-  case cval_address: assert(c.si == 0); return TRUE;
-  case cval_uint: return c.ui != 0;
-  case cval_sint: return c.si != 0;
+  case cval_address: assert(c.r.si == 0); return TRUE;
+  case cval_uint: return c.r.ui != 0;
+  case cval_sint: return c.r.si != 0;
   case cval_float: return c.d != 0;
-  case cval_uint_complex: return c.ui && c.ui_i;
-  case cval_sint_complex: return c.si && c.si_i;
+  case cval_uint_complex: return c.r.ui && c.c.ui_i;
+  case cval_sint_complex: return c.r.si && c.c.si_i;
   case cval_float_complex: return c.d && c.d_i;
   }
 }
@@ -180,8 +180,8 @@ largest_uint cval_uint_value(cval c)
 {
   switch (c.kind) {
   default: assert(0); return 0;
-  case cval_uint: return c.ui;    
-  case cval_sint: return c.si;
+  case cval_uint: return c.r.ui;
+  case cval_sint: return c.r.si;
   case cval_float: return c.d;
   }
 }
@@ -193,8 +193,8 @@ largest_int cval_sint_value(cval c)
 {
   switch (c.kind) {
   default: assert(0); return 0;
-  case cval_uint: return c.ui;    
-  case cval_sint: return c.si;
+  case cval_uint: return c.r.ui;    
+  case cval_sint: return c.r.si;
   case cval_float: return c.d;
   }
 }
@@ -206,8 +206,8 @@ long double cval_float_value(cval c)
 {
   switch (c.kind) {
   default: assert(0); return 0;
-  case cval_uint: return c.ui;    
-  case cval_sint: return c.si;
+  case cval_uint: return c.r.ui;    
+  case cval_sint: return c.r.si;
   case cval_float: return c.d;
   }
 }
@@ -220,11 +220,11 @@ bool cval_isone(cval c)
   switch (c.kind) {
   default: case cval_variable: assert(0);
   case cval_unk: case cval_address: return FALSE;
-  case cval_uint: return c.ui == 1;
-  case cval_sint: return c.si == 1;
+  case cval_uint: return c.r.ui == 1;
+  case cval_sint: return c.r.si == 1;
   case cval_float: return c.d == 1;
-  case cval_uint_complex: return c.ui == 1 && c.ui_i == 0;
-  case cval_sint_complex: return c.si == 1 && c.si_i == 0;
+  case cval_uint_complex: return c.r.ui == 1 && c.c.ui_i == 0;
+  case cval_sint_complex: return c.r.si == 1 && c.c.si_i == 0;
   case cval_float_complex: return c.d == 1 && c.d_i == 0;
   }
 }
@@ -304,9 +304,9 @@ cval cval_cast(cval c, type to)
 	case cval_sint: case cval_uint:
 	  c.kind = cval_float;
 	  /* Note that the cast is necessary otherwise it would cast to the common
-	     type of largest_int/largest_uint (largest_uint), so c.si would be
+	     type of largest_int/largest_uint (largest_uint), so c.r.si would be
 	     cast to unsigned. */
-	  c.d = c.kind == cval_sint ? (long double)c.si : (long double)c.ui;
+	  c.d = c.kind == cval_sint ? (long double)c.r.si : (long double)c.r.ui;
 	  return c;
 	case cval_float:
 	  if (type_float(to))
@@ -321,7 +321,6 @@ cval cval_cast(cval c, type to)
     {
       size_t tosize = type_size(to);
 
-      c.isize = tosize;
       switch (c.kind)
 	{
 	case cval_float:
@@ -331,12 +330,14 @@ cval cval_cast(cval c, type to)
 	  if (type_unsigned(to))
 	    {
 	      c.kind = cval_uint;
-	      c.ui = c.d;
+	      c.r.ui = c.d;
+	      c.isize = tosize;
 	    }
 	  else
 	    {
 	      c.kind = cval_sint;
-	      c.si = c.d;
+	      c.r.si = c.d;
+	      c.isize = tosize;
 	    }
 	  return c;
 
@@ -349,18 +350,19 @@ cval cval_cast(cval c, type to)
 	  return c;
 
 	case cval_uint: case cval_sint:
+	  c.isize = tosize;
 	  if (type_unsigned(to) || type_pointer(to))
 	    {
 	      if (c.kind == cval_sint)
-		c.ui = c.si;
-	      c.ui = truncate_unsigned(c.ui, tosize);
+		c.r.ui = c.r.si;
+	      c.r.ui = truncate_unsigned(c.r.ui, tosize);
 	      c.kind = cval_uint;
 	    }
 	  else
 	    {
 	      if (c.kind == cval_uint)
-		c.si = c.ui;
-	      c.si = truncate_signed(c.si, tosize);
+		c.r.si = c.r.ui;
+	      c.r.si = truncate_signed(c.r.si, tosize);
 	      c.kind = cval_sint;
 	    }
 	  return c;
@@ -384,16 +386,16 @@ cval cval_negate(cval c)
     {
     case cval_variable: return cval_top;
     case cval_unk: case cval_address: return cval_unknown;
-    case cval_sint: c.si = -c.si; return c; /* XXX: overflow */
-    case cval_uint: c.ui = truncate_unsigned(-c.ui, c.isize); return c;
+    case cval_sint: c.r.si = -c.r.si; return c; /* XXX: overflow */
+    case cval_uint: c.r.ui = truncate_unsigned(-c.r.ui, c.isize); return c;
     case cval_float: c.d = -c.d; return c;
     case cval_sint_complex:
-      c.si = -c.si;
-      c.si_i = -c.si_i; 
+      c.r.si = -c.r.si;
+      c.c.si_i = -c.c.si_i; 
       return c; /* XXX: overflow */
     case cval_uint_complex:
-      c.ui = truncate_unsigned(-c.ui, c.isize);
-      c.ui_i = truncate_unsigned(-c.ui_i, c.isize);
+      c.r.ui = truncate_unsigned(-c.r.ui, c.isize);
+      c.c.ui_i = truncate_unsigned(-c.c.ui_i, c.isize);
       return c;
     case cval_float_complex: c.d = -c.d; c.d_i = -c.d_i; return c;
     default: abort(); return cval_top;
@@ -406,8 +408,8 @@ cval cval_bitnot(cval c)
     {
     case cval_variable: return cval_top;
     case cval_unk: case cval_address: return cval_unknown;
-    case cval_sint: c.si = truncate_signed(~c.si, c.isize); return c;
-    case cval_uint: c.ui = truncate_unsigned(~c.ui, c.isize); return c;
+    case cval_sint: c.r.si = truncate_signed(~c.r.si, c.isize); return c;
+    case cval_uint: c.r.ui = truncate_unsigned(~c.r.ui, c.isize); return c;
     default: abort(); return cval_top;
     }
 }
@@ -419,10 +421,10 @@ cval cval_conjugate(cval c)
     case cval_variable: return cval_top;
     case cval_unk: return cval_unknown;
     case cval_sint_complex:
-      c.si_i = -c.si_i; 
+      c.c.si_i = -c.c.si_i; 
       return c; /* XXX: overflow */
     case cval_uint_complex:
-      c.ui_i = truncate_unsigned(-c.ui_i, c.isize);
+      c.c.ui_i = truncate_unsigned(-c.c.ui_i, c.isize);
       return c;
     case cval_float_complex: c.d_i = -c.d_i; return c;
     default: abort(); return cval_top;
@@ -449,11 +451,11 @@ cval cval_imagpart(cval c)
     {
     case cval_variable: return cval_top;
     case cval_unk: return cval_unknown;
-    case cval_sint_complex: c.kind = cval_sint; c.si = c.si_i; return c;
-    case cval_uint_complex: c.kind = cval_uint; c.ui = c.ui_i; return c;
+    case cval_sint_complex: c.kind = cval_sint; c.r.si = c.c.si_i; return c;
+    case cval_uint_complex: c.kind = cval_uint; c.r.ui = c.c.ui_i; return c;
     case cval_float_complex: c.kind = cval_float; c.d = c.d_i; return c;
-    case cval_sint: c.si = 0; return c;
-    case cval_uint: c.ui = 0; return c;
+    case cval_sint: c.r.si = 0; return c;
+    case cval_uint: c.r.ui = 0; return c;
     case cval_float: c.d = 0; return c;
     default: abort(); return cval_top;
     }
@@ -485,19 +487,19 @@ cval cval_add(cval c1, cval c2)
       switch (c2.kind)
 	{
 	case cval_address: return cval_unknown;
-	case cval_sint: c1.si = truncate_signed(c1.si + c2.si, c1.isize); return c1;
-	case cval_uint: c1.si = truncate_signed(c1.si + c2.ui, c1.isize); return c1;
+	case cval_sint: c1.r.si = truncate_signed(c1.r.si + c2.r.si, c1.isize); return c1;
+	case cval_uint: c1.r.si = truncate_signed(c1.r.si + c2.r.ui, c1.isize); return c1;
 	default: assert(0); return c1;
 	}
 
     case cval_sint:
       assert(c2.kind == cval_sint && c1.isize == c2.isize);
-      c1.si = truncate_signed(c1.si + c2.si, c1.isize);
+      c1.r.si = truncate_signed(c1.r.si + c2.r.si, c1.isize);
       return c1;
       
     case cval_uint:
       assert(c2.kind == cval_uint && c1.isize == c2.isize);
-      c1.ui = truncate_unsigned(c1.ui + c2.ui, c1.isize);
+      c1.r.ui = truncate_unsigned(c1.r.ui + c2.r.ui, c1.isize);
       return c1;
       
     case cval_float_complex:
@@ -508,14 +510,14 @@ cval cval_add(cval c1, cval c2)
 
     case cval_sint_complex:
       assert(c2.kind == cval_sint_complex && c1.isize == c2.isize);
-      c1.si = truncate_signed(c1.si + c2.si, c1.isize);
-      c1.si_i = truncate_signed(c1.si_i + c2.si_i, c1.isize);
+      c1.r.si = truncate_signed(c1.r.si + c2.r.si, c1.isize);
+      c1.c.si_i = truncate_signed(c1.c.si_i + c2.c.si_i, c1.isize);
       return c1;
       
     case cval_uint_complex:
       assert(c2.kind == cval_uint_complex && c1.isize == c2.isize);
-      c1.ui = truncate_unsigned(c1.ui + c2.ui, c1.isize);
-      c1.ui_i = truncate_unsigned(c1.ui_i + c2.ui_i, c1.isize);
+      c1.r.ui = truncate_unsigned(c1.r.ui + c2.r.ui, c1.isize);
+      c1.c.ui_i = truncate_unsigned(c1.c.ui_i + c2.c.ui_i, c1.isize);
       return c1;
       
     default:
@@ -543,14 +545,14 @@ cval cval_sub(cval c1, cval c2)
       switch (c2.kind)
 	{
 	case cval_address: 
-	  if (c1.ddecl != c2.ddecl || c1.ldecl != c2.ldecl)
+	  if (c1.c.ddecl != c2.c.ddecl || c1.c.ldecl != c2.c.ldecl)
 	    return cval_unknown; /* Difference of different symbols */
 	  c1.kind = cval_sint;
-	  c1.si = truncate_signed(c1.si - c2.si, c1.isize);
+	  c1.r.si = truncate_signed(c1.r.si - c2.r.si, c1.isize);
 	  return c1;
 
-	case cval_sint: c1.si = truncate_signed(c1.si - c2.si, c1.isize); return c1;
-	case cval_uint: c1.si = truncate_signed(c1.si - c2.ui, c1.isize); return c1;
+	case cval_sint: c1.r.si = truncate_signed(c1.r.si - c2.r.si, c1.isize); return c1;
+	case cval_uint: c1.r.si = truncate_signed(c1.r.si - c2.r.ui, c1.isize); return c1;
 	default: assert(0); return c1;
 	}
 
@@ -558,14 +560,14 @@ cval cval_sub(cval c1, cval c2)
       if (c2.kind == cval_address)
 	return cval_unknown;
       assert(c2.kind == cval_sint && c1.isize == c2.isize);
-      c1.si = truncate_signed(c1.si - c2.si, c1.isize);
+      c1.r.si = truncate_signed(c1.r.si - c2.r.si, c1.isize);
       return c1;
       
     case cval_uint:
       if (c2.kind == cval_address)
 	return cval_unknown;
       assert(c2.kind == cval_uint && c1.isize == c2.isize);
-      c1.ui = truncate_unsigned(c1.ui - c2.ui, c1.isize);
+      c1.r.ui = truncate_unsigned(c1.r.ui - c2.r.ui, c1.isize);
       return c1;
       
     case cval_float_complex:
@@ -576,14 +578,14 @@ cval cval_sub(cval c1, cval c2)
 
     case cval_sint_complex:
       assert(c2.kind == cval_sint_complex && c1.isize == c2.isize);
-      c1.si = truncate_signed(c1.si - c2.si, c1.isize);
-      c1.si_i = truncate_signed(c1.si_i - c2.si_i, c1.isize);
+      c1.r.si = truncate_signed(c1.r.si - c2.r.si, c1.isize);
+      c1.c.si_i = truncate_signed(c1.c.si_i - c2.c.si_i, c1.isize);
       return c1;
       
     case cval_uint_complex:
       assert(c2.kind == cval_uint_complex && c1.isize == c2.isize);
-      c1.ui = truncate_unsigned(c1.ui - c2.ui, c1.isize);
-      c1.ui_i = truncate_unsigned(c1.ui_i - c2.ui_i, c1.isize);
+      c1.r.ui = truncate_unsigned(c1.r.ui - c2.r.ui, c1.isize);
+      c1.c.ui_i = truncate_unsigned(c1.c.ui_i - c2.c.ui_i, c1.isize);
       return c1;
       
     default:
@@ -632,12 +634,12 @@ cval cval_times(cval c1, cval c2)
 
     case cval_sint:
       assert(c2.kind == cval_sint && c1.isize == c2.isize);
-      c1.si = truncate_signed(c1.si * c2.si, c1.isize);
+      c1.r.si = truncate_signed(c1.r.si * c2.r.si, c1.isize);
       return c1;
       
     case cval_uint:
       assert(c2.kind == cval_uint && c1.isize == c2.isize);
-      c1.ui = truncate_unsigned(c1.ui * c2.ui, c1.isize);
+      c1.r.ui = truncate_unsigned(c1.r.ui * c2.r.ui, c1.isize);
       return c1;
       
     default:
@@ -686,19 +688,19 @@ cval cval_divide(cval c1, cval c2)
       if (c2.kind == cval_address)
 	return cval_unknown;
       assert(c2.kind == cval_sint && c1.isize == c2.isize);
-      if (c2.si == 0)
+      if (c2.r.si == 0)
 	return cval_top;
       /* Note that signed division can overflow (MININT / -1). */
-      c1.si = truncate_signed(c1.si / c2.si, c1.isize);
+      c1.r.si = truncate_signed(c1.r.si / c2.r.si, c1.isize);
       return c1;
       
     case cval_uint:
       if (c2.kind == cval_address)
 	return cval_unknown;
       assert(c2.kind == cval_uint && c1.isize == c2.isize);
-      if (c2.ui == 0)
+      if (c2.r.ui == 0)
 	return cval_top;
-      c1.ui /= c2.ui;
+      c1.r.ui /= c2.r.ui;
       return c1;
       
     default:
@@ -728,16 +730,16 @@ cval cval_modulo(cval c1, cval c2)
 
     case cval_sint:
       assert(c2.kind == cval_sint && c1.isize == c2.isize);
-      if (c2.si == 0)
+      if (c2.r.si == 0)
 	return cval_top;
-      c1.si = truncate_signed(c1.si % c2.si, c1.isize);
+      c1.r.si = truncate_signed(c1.r.si % c2.r.si, c1.isize);
       return c1;
       
     case cval_uint:
       assert(c2.kind == cval_uint && c1.isize == c2.isize);
-      if (c2.ui == 0)
+      if (c2.r.ui == 0)
 	return cval_top;
-      c1.ui %= c2.ui;
+      c1.r.ui %= c2.r.ui;
       return c1;
       
     default:
@@ -759,11 +761,11 @@ cval cval_modulo(cval c1, cval c2)
   switch (c1.kind) \
     { \
     case cval_sint: \
-      c1.si = truncate_signed(c1.si OP c2.si, c1.isize); \
+      c1.r.si = truncate_signed(c1.r.si OP c2.r.si, c1.isize); \
       return c1; \
        \
     case cval_uint: \
-      c1.ui = truncate_signed(c1.ui OP c2.ui, c1.isize); \
+      c1.r.ui = truncate_signed(c1.r.ui OP c2.r.ui, c1.isize); \
       return c1; \
        \
     default: \
@@ -799,12 +801,12 @@ cval cval_bitxor(cval c1, cval c2) CVAL_BITOP(^)
  \
     case cval_sint: \
       assert(c2.kind == cval_sint && c1.isize == c2.isize); \
-      res = c1.si OP c2.si; \
+      res = c1.r.si OP c2.r.si; \
       break; \
        \
     case cval_uint: \
       assert(c2.kind == cval_uint && c1.isize == c2.isize); \
-      res = c1.ui OP c2.ui; \
+      res = c1.r.ui OP c2.r.ui; \
       break; \
        \
     default: \
@@ -872,8 +874,8 @@ bool cval_inrange(cval c, type t)
 {
   switch (c.kind)
     {
-    case cval_sint: return sint_inrange(c.si, t);
-    case cval_uint: return uint_inrange(c.ui, t);
+    case cval_sint: return sint_inrange(c.r.si, t);
+    case cval_uint: return uint_inrange(c.r.ui, t);
     default: abort(); return FALSE;
     }
 }
@@ -890,28 +892,28 @@ largest_int cval_intcompare(cval c1, cval c2)
       switch (c2.kind)
 	{
 	case cval_sint:
-	  return c1.si - c2.si;
+	  return c1.r.si - c2.r.si;
 	case cval_uint:
-	  /* can't use c1.si < c2.ui because of implicit conversion */
-	  if (c1.si < 0 || c1.si < c2.ui)
+	  /* can't use c1.r.si < c2.r.ui because of implicit conversion */
+	  if (c1.r.si < 0 || c1.r.si < c2.r.ui)
 	    return -1;
-	  return c1.si - c2.ui; /* common type is largest_uint */
+	  return c1.r.si - c2.r.ui; /* common type is largest_uint */
 	default: abort(); return 0;
 	}
     case cval_uint:
       switch (c2.kind)
 	{
 	case cval_sint:
-	  if (c2.si < 0 || c1.ui < c2.si)
+	  if (c2.r.si < 0 || c1.r.ui < c2.r.si)
 	    return 1;
 	  /* result might overflow so compare with 0 */
-	  return (c1.ui - c2.si) > 0; /* common type is largest_uint */
+	  return (c1.r.ui - c2.r.si) > 0; /* common type is largest_uint */
 	case cval_uint:
 	  /* We do the cases because the result might overflow
 	     largest_int */
-	  if (c1.ui < c2.ui)
+	  if (c1.r.ui < c2.r.ui)
 	    return -1;
-	  if (c1.ui > c2.ui)
+	  if (c1.r.ui > c2.r.ui)
 	    return 1;
 	  return 0;
 	default: abort(); return 0;

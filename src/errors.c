@@ -137,7 +137,7 @@ void verror_with_file_and_line(const char *filename, int lineno,
 /* Report error msg at l */
 void verror_with_location(location l, const char *format, va_list args)
 {
-  verror_with_file_and_line(l.filename, l.lineno, format, args);
+  verror_with_file_and_line(l->filename, l->lineno, format, args);
 }
 
 /* Report error msg at decl */
@@ -149,7 +149,7 @@ void verror_with_decl(declaration d, const char *format, va_list args)
 /* Report error msg at current filename, lineno */
 void verror(const char *format, va_list args)
 {
-  verror_with_location(input_file_stack->l, format, args);
+  verror_with_location(&input_file_stack->l, format, args);
 }
 
 /* Report error msg at current filename, lineno */
@@ -215,7 +215,7 @@ void vwarning_with_file_and_line(const char *filename, int lineno,
 /* Report warning msg at l */
 void vwarning_with_location(location l, const char *format, va_list args)
 {
-  vwarning_with_file_and_line(l.filename, l.lineno, format, args);
+  vwarning_with_file_and_line(l->filename, l->lineno, format, args);
 }
 
 /* Report warning msg at decl */
@@ -227,7 +227,7 @@ void vwarning_with_decl(declaration d, const char *format, va_list args)
 /* Report warning msg at current filename, lineno */
 void vwarning(const char *format, va_list args)
 {
-  vwarning_with_location(input_file_stack->l, format, args);
+  vwarning_with_location(&input_file_stack->l, format, args);
 }
 
 /* Report warning msg at current filename, lineno */

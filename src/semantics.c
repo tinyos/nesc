@@ -101,7 +101,7 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->isfilescoperef = FALSE;
   dd->needsmemory = FALSE;
   dd->isused = FALSE;
-  dd->in_system_header = ast->location.in_system_header;
+  dd->in_system_header = ast->location->in_system_header;
   dd->ftype = 0;
   dd->isinline = FALSE;
   dd->isexterninline = FALSE;

@@ -81,14 +81,14 @@ static void connect_graphs(region r, component_declaration program,
 
 void nesc_compile(const char *component_name, const char *target_name)
 {
-  location toplevel;
+  struct location toplevel;
   component_declaration program;
 
   parse_region = newregion();
   init_types();
   cval_init();
-  init_semantics();
   init_lex();
+  init_semantics();
   init_nesc_env(parse_region);
 
   init_nesc_paths_end();
@@ -97,12 +97,12 @@ void nesc_compile(const char *component_name, const char *target_name)
   toplevel.lineno = 0;
   toplevel.in_system_header = FALSE;
   
-  require_c(toplevel, "tos");
+  require_c(&toplevel, "tos");
   if (component_name == NULL) {
     fprintf(stderr, ("usage: parser <component>\n"));
     return;
   }
-  program = require_component(toplevel, component_name);
+  program = require_component(&toplevel, component_name);
 
   if (errorcount == 0)
     {
