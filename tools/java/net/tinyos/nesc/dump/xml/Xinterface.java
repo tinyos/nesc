@@ -15,11 +15,21 @@ import org.xml.sax.*;
 
 public class Xinterface extends DataDefinition
 {
-    boolean provided;
+    public boolean provided;
+    public Xinstance instance;
+    public LinkedList/*Type*/ parameters; /* null for non-parameterised interfaces */
 
     public NDElement start(Attributes attrs) {
-	Xinterface me = (Xinterface)define(attrs);
+	Xinterface me = (Xinterface)super.start(attrs);
 	me.provided = attrs.getValue("provided").equals("1");
 	return me;
+    }
+
+    public void child(NDElement subElement) {
+	super.child(subElement);
+	if (subElement instanceof Xinstance)
+	    instance = (Xinstance)subElement;
+	if (subElement instanceof Xinterface_parameters)
+	    parameters = ((Xinterface_parameters)subElement).l;
     }
 }

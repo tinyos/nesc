@@ -13,6 +13,15 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xfunction extends DataDefinition implements Container
+public class Xattribute_value extends NDElement
 {
+    public Xattribute attribute;
+    public Value value;
+
+    public void child(NDElement subElement) {
+	if (subElement instanceof Xattribute)
+	    attribute = (Xattribute)subElement;
+	if (subElement instanceof Value)
+	    value = (Value)subElement;
+    }
 }

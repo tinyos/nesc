@@ -13,6 +13,7 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xfunction extends DataDefinition implements Container
+/* Component declaration inside a configuration */
+public class Xinternal_component extends DataDefinitionb
 {
 }

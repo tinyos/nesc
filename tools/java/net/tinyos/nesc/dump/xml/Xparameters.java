@@ -13,6 +13,15 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xfunction extends DataDefinition implements Container
+public class Xparameters extends NDList
 {
+    public boolean varargs;
+
+    public void child(NDElement subElement) {
+	if (subElement instanceof Xvarargs)
+	    varargs = true;
+	else
+	    super.child(subElement);
+    }
+    
 }

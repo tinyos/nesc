@@ -17,10 +17,6 @@ public class Xinterfacedef extends NescDefinition
 {
     public Xparameters parameters;
 
-    public NDElement start(Attributes attrs) {
-	return define(attrs);
-    }
-
     public void child(NDElement subElement) {
 	if (subElement instanceof Xparameters)
 	    parameters = (Xparameters)subElement;

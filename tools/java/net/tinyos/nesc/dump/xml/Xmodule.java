@@ -13,6 +13,6 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xmodule extends Component
+public class Xmodule extends Implementation
 {
 }

@@ -14,12 +14,14 @@ package net.tinyos.nesc.dump.xml;
 import org.xml.sax.*;
 import java.util.*;
 
-public class TagDefinition extends Definition
+public class TagDefinition extends CDefinition
 {
     static protected DefinitionTable defs;
 
     public String name; /* not globally unique, may be null */
     public String ref; /* globally unique */
+    public Constant size, alignment;
+    public boolean defined, packed;
 
     public void init(Attributes attrs) {
 	ref = attrs.getValue("ref");
@@ -27,8 +29,13 @@ public class TagDefinition extends Definition
 	/* ignoring scoped for now */
     }
 
-    synchronized Definition define(Attribute attrs) {
-	return defs.define(attrs.getValue("ref"), attrs, this);
+    public synchronized NDElement start(Attribute attrs) {
+	TagDefinition me = (TagDefinition)defs.define(attrs.getValue("ref"), attrs, this);
+	me.size = Constant.decode(attrs.getValue("size"));
+	me.alignment = Constant.decode(attrs.getValue("alignment"));
+	me.defined = boolDecode(attrs.getValue("defined"));
+	me.packed = boolDecode(attrs.getValue("packed"));
+	return me;
     }
 
     static synchronized Definition lookup(NDReader reader, Attribute attrs, 

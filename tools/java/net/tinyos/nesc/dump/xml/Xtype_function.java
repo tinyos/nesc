@@ -13,13 +13,23 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xenum extends TagDefinition
+public class Xtype_function extends Type
 {
-    public Type repType;
+    public LinkedList/*Type*/ parameters; /* null for oldstyle */
+    public Type returns;
+    public boolean varargs, oldstyle;
+
+    public NDElement start(Attributes attrs) {
+	super.start(attrs);
+	varargs = boolDecode(attrs.getValue("varargs"));
+	oldstyle = boolDecode(attrs.getValue("oldstyle"));
+	return this;
+    }
 
     public void child(NDElement subElement) {
-	super.child(subElement);
 	if (subElement instanceof Type)
-	    repType = (Type)subElement;
+	    returns = (Type)subElement;
+	if (subElement instanceof Xfunction_parameters)
+	    parameters = ((Xfunction_parameters)subElement).l;
     }
 }

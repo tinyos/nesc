@@ -24,8 +24,16 @@ abstract public class NDElement {
     public void child(NDElement subElement) {
     }
 
+    public void child(NDReader reader, NDElement subElement) {
+	return child(subElement);
+    }
+
     public NDElement end() {
 	return this;
+    }
+
+    public NDElement end(NDReader reader) {
+	return end();
     }
 
     public void characters(char[] ch, int start, int length) {

@@ -13,12 +13,6 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Component extends NDElement
+public class Xfrom extends Endpoint
 {
-    String name;
-
-    public NDElement start(Attributes attrs) {
-	name = attrs.getValue("name");
-	return this;
-    }
 }

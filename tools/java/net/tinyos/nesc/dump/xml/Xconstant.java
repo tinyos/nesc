@@ -15,4 +15,11 @@ import org.xml.sax.*;
 
 public class Xconstant extends DataDefinition
 {
+    public Constant value;
+
+    public NDElement start(Attributes attrs) {
+	Xconstant me = (Xconstant)super.start(attrs);
+	me.value = Constant.decode(attrs.getValue("cst"));
+	return me;
+    }
 }

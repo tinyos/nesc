@@ -14,25 +14,33 @@ package net.tinyos.nesc.dump.xml;
 import org.xml.sax.*;
 import java.util.*;
 
-public class DataDefinition extends Definition
+public class DataDefinition extends CDefinition
 {
     static protected DefinitionTable defs;
 
     public String name; /* not globally unique */
     public String ref; /* globally unique */
+    public Type type;
 
+    /* for reference handling */
     public void init(Attributes attrs) {
 	ref = attrs.getValue("ref");
 	name = attrs.getValue("name");
 	/* ignoring scoped for now */
     }
 
-    synchronized Definition define(Attribute attrs) {
+    public synchronized NDElement start(Attribute attrs) {
 	return defs.define(attrs.getValue("ref"), attrs, this);
     }
 
     static synchronized Definition lookup(NDReader reader, Attribute attrs, 
 					  String elementName) {
 	return defs.lookup(reader, attrs.getValue("ref"), attrs, elementName);
+    }
+
+    public void child(NDElement subElement) {
+	super.child(subElement);
+	if (subElement instanceof Type)
+	    type = (Type)subElement;
     }
 }

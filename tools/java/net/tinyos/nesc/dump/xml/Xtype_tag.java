@@ -13,6 +13,12 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xfunction extends DataDefinition implements Container
+public class Xtype_tag extends Type
 {
+    public TagDefinition tag;
+
+    public void child(NDElement subElement) {
+	if (subElement instanceof TagDefinition)
+	    tag = (TagDefinition)subElement;
+    }
 }

@@ -12,7 +12,15 @@
 package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
+import java.util.*;
 
-public class Xfunction extends DataDefinition implements Container
+public class CDefinition extends Definition
 {
+    public Container container;
+
+    public void child(NDElement subElement) {
+	super.child(subElement);
+	if (subElement instanceof Container)
+	    container = (Container)subElement;
+    }
 }

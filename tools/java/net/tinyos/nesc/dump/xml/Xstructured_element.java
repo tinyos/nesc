@@ -19,7 +19,7 @@ public class Xstructured_element extends NDElement
     public Value value;
 
     public NDElement start(NDReader reader, Attributes attrs) {
-	field = Field.lookup(reader, attrs);
+	field = Xfield.lookup(reader, attrs);
 	return this;
     }
 

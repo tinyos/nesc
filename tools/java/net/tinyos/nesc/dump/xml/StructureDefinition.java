@@ -15,4 +15,11 @@ import org.xml.sax.*;
 
 public class StructureDefinition extends TagDefinition
 {
+    public LinkedList fields = new LinkedList();
+
+    public void child(NDElement subElement) {
+	super.child(subElement);
+	if (subElement instanceof Xfield)
+	    fields.add(subElement);
+    }
 }

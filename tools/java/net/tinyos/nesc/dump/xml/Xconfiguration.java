@@ -13,6 +13,6 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xconfiguration extends Component
+public class Xconfiguration extends Implementation
 {
 }

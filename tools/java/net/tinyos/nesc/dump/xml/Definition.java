@@ -17,6 +17,15 @@ import java.util.*;
 abstract public class Definition extends NDElement
 {
     public boolean definitionAvailable;
+    public LinkedList/*Xattribute_value*/ attributes;
 
     abstract public void init(Attributes attrs);
+
+    public void child(NDElement subElement) {
+	if (subElement instanceof Xattribute_value) {
+	    if (attributes == null)
+		attributes = new LinkedList();
+	    attributes.add(subElement);
+	}
+    }
 }

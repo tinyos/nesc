@@ -13,6 +13,6 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xfunction extends DataDefinition implements Container
+public class Xinterfaces extends NDList
 {
 }

@@ -13,6 +13,16 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xfunction extends DataDefinition implements Container
+public class Xwire extends NDElement
 {
+    public Endpoint from, to;
+
+    public void child(NDElement subElement) {
+	super.child(subElement);
+	if (subElement instanceof Xfrom)
+	    from = (Xfrom)subElement;
+	if (subElement instanceof Xto)
+	    to = (Xto)subElement;
+    }
+    
 }

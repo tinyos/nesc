@@ -24,7 +24,7 @@ public class NescDefinition extends Definition
 	qname = attrs.getValue("qname");
     }
 
-    synchronized Definition define(Attribute attrs) {
+    public synchronized NDElement start(Attribute attrs) {
 	return defs.define(attrs.getValue("qname"), attrs, this);
     }
 

@@ -13,6 +13,12 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xfunction extends DataDefinition implements Container
+public class Xtype_interface extends Type
 {
+    public Xinterface interface;
+
+    public void child(NDElement subElement) {
+	if (subElement instanceof Xinterface)
+	    interface = (Xinterface)subElement;
+    }
 }

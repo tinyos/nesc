@@ -12,13 +12,7 @@
 package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
-import java.util.*;
 
-public class Xcomponents extends NDElement
+public class Xcomponents extends NDList
 {
-    LinkedList l = new LinkedList();
-
-    public void child(NDElement subElement) {
-	l.add(subElement);
-    }
 }
