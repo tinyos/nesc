@@ -80,6 +80,8 @@ if ($objtarget eq "") {
     $objtarget = $source;
     $objtarget =~ s/\.td$/.o/ unless $asmonly;
     $objtarget =~ s/\.td$/.s/ if $asmonly;
+    $objtarget =~ s/\.nc$/.o/ unless $asmonly;
+    $objtarget =~ s/\.nc$/.s/ if $asmonly;
 }
 
 push @nesc_args, "-fnesc-no-debug" if $target eq "avr";

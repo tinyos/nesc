@@ -2015,6 +2015,8 @@ static void generate_index_html() {
         p--;
         while(p > dent->d_name  &&  *p != '.') p--;
 
+	// XXX MDW: This is broken with respect to .nc
+
         // add to the appropriate list
         if( !strcmp(p,".ti.html") ) {
           insert_entry(&iface, dent->d_name, ".ti.html");

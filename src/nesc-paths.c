@@ -179,8 +179,8 @@ const char *find_nesc_file(region r, source_language l, const char *name)
   strcpy(filename, name);
   switch (l)
     {
-    case l_interface: strcat(filename, ".ti"); break;
-    case l_component: strcat(filename, ".td"); break;
+    case l_interface: strcat(filename, ".nc"); break;
+    case l_component: strcat(filename, ".nc"); break;
     case l_c: strcat(filename, ".h"); break;
     default: assert(0); break;
     }
