@@ -15,10 +15,12 @@ along with nesC; see the file COPYING.  If not, write to
 the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
+#include <ctype.h>
 #include "parser.h"
 #include "nesc-xml.h"
 #include "semantics.h"
 #include "nesc-semantics.h"
+#include "constants.h"
 
 /* Pick an indentation amount */
 #define INDENT 2
@@ -95,7 +97,7 @@ void xqputs(const char *s)
       switch (*s)
 	{
 	case '\n': case '"': case '<': case '&': 
-	  fprintf(xml_file, "&#%d;", (unsigned char)*s);
+	  xprintf("&#%d;", (unsigned char)*s);
 	  break;
 	default:
 	  putc(*s, xml_file);
@@ -104,6 +106,21 @@ void xqputs(const char *s)
       s++;
     }
 }
+
+void xwqputs(const wchar_t *s)
+{
+  /* Output a wide-char string quoted to match XML AttValue rules */
+  while (*s)
+    {
+      if ((unsigned char)*s == *s && isprint(*s) &&
+	  !(*s == '"' || *s == '<' || *s == '&'))
+	putc(*s, xml_file);
+      else 
+	xprintf("&#%d;", *s);
+      s++;
+    }
+}
+
 
 void xputs(const char *s)
 {
@@ -191,11 +208,40 @@ void xml_attr_bool(const char *name, bool val)
 
 void xml_attr_cval(const char *name, cval val)
 {
-  if (cval_isinteger(val))
-    /* XXX: deal with signed vs unsigned cvals */
-    xml_attr_int(name, cval_sint_value(val));
+  bool unknown = FALSE;
+
+  xprintf(" %s=\"", name);
+
+  if (cval_isunsigned(val))
+    xprintf("I:%llu", cval_uint_value(val));
+  else if (cval_isinteger(val))
+    xprintf("I:%lld", cval_sint_value(val));
+  else if (cval_isunknown(val))
+    unknown = TRUE;
+  else if (cval_isfloating(val))
+    /* XXX: hacky version */
+    xprintf("F:%.20Le", cval_float_value(val));
+  else if (cval_isaddress(val))
+    {
+      data_declaration ddecl = cval_ddecl(val);
+
+      /* XXX: We don't (yet) support strings with an offset */
+      if (ddecl && ddecl->kind == decl_magic_string && cval_knownbool(val))
+	{
+	  xputs("S:");
+	  xwqputs(ddecl->chars);
+	}
+      else
+	unknown = TRUE;
+    }
+  else if (cval_istop(val))
+    xputs("V:");
   else
-    xml_attr(name, "unknown");
+    unknown = TRUE;
+
+  if (unknown)
+    xputs("U:");
+  putc('"', xml_file);
 }
 
 
@@ -212,6 +258,31 @@ void xml_end(void)
 {
   deleteregion_ptr(&xml_region);
   xml_file = NULL;
+}
+
+/* Convenient shortcuts */
+
+void indentedtag_start(const char *name)
+{
+  xstartline();
+  xml_tag_start(name);
+  xindent();
+}
+
+void indentedtag(const char *name)
+{
+  xstartline();
+  xml_tag(name);
+  xindent();
+  xnewline();
+}
+
+void indentedtag_pop(void)
+{
+  xstartline();
+  xunindent();
+  xml_pop();
+  xnewline();
 }
 
 /* Standard nesC xml elements */
@@ -247,21 +318,37 @@ static void dump_arguments(expression arguments, dhash_table tags)
 {
   expression arg;
 
+  indentedtag("arguments");
   scan_expression (arg, arguments)
     {
       if (is_type_argument(arg))
 	nxml_type(CAST(type_argument, arg)->asttype->type, tags);
+      else if (arg->cst)
+	{
+	  xml_tag_start("constant");
+	  xml_attr_cval("value", arg->cst->cval);
+	  xml_tag_end_pop();
+	  xnewline();
+	}
       else
 	{
-	  xml_qtag("oops");
+	  xml_qtag("unknown-value");
 	  xnewline();
 	}
     }
+  indentedtag_pop();
 }
 
-void nxml_ndefinition_ref(nesc_declaration ndecl, dhash_table tags)
+void nxml_ndefinition_ref(nesc_declaration ndecl, dhash_table defs,
+			  dhash_table tags)
 {
   nesc_declaration orig = original_component(ndecl);
+
+  if (defs && !orig->dumped)
+    {
+      dhadd(defs, orig);
+      orig->dumped = TRUE;
+    }
 
   xstartline();
   if (orig->kind == l_interface)

@@ -181,6 +181,11 @@ bool cval_isinteger(cval c)
   return c.kind == cval_sint || c.kind == cval_uint;
 }
 
+bool cval_isunsigned(cval c)
+{
+  return c.kind == cval_uint;
+}
+
 bool cval_isfloating(cval c)
 {
   return c.kind == cval_float;
@@ -1124,6 +1129,16 @@ data_declaration cval_ddecl(cval c)
      c doesn't denote a label
 */
 {
-  assert(cval_isaddress(c) && !cval_isunknown_address(c) && c.ddecl);
+  assert(cval_isaddress(c) && !cval_isunknown_address(c));
   return c.ddecl;
 }
+
+label_declaration cval_ldecl(cval c)
+/* Returns: c's declaration, or NULL if c denotes a variable
+   Requires: cval_isaddress(c)  && !cval_isunknown_address(c)
+*/
+{
+  assert(cval_isaddress(c) && !cval_isunknown_address(c));
+  return c.ldecl;
+}
+

@@ -95,7 +95,7 @@ cval make_cval_address(data_declaration ddecl, label_declaration ldecl,
 
 cval make_cval_address_unknown_offset(cval c);
 /* Requires: cval_isaddress(c)
-   Returns: a constant identical to c except that the offset is now unknowjn
+   Returns: a constant identical to c except that the offset is now unknown
 */
 
 bool cval_isunknown(cval c);
@@ -119,6 +119,9 @@ bool cval_isaddress(cval c);
 
 bool cval_isinteger(cval c);
 /* Return: TRUE if c is an integer constant */
+
+bool cval_isunsigned(cval c);
+/* Return: TRUE if c is an unsigned integer constant */
 
 bool cval_isfloating(cval c);
 /* Return: TRUE if c is a floating-point constant */
@@ -164,9 +167,13 @@ bool cval_isone(cval c);
  */
 
 data_declaration cval_ddecl(cval c);
-/* Returns: c's declaration
-   Requires: cval_isaddress(c)  && !cval_isunknown_address(c) && 
-     c doesn't denote a label
+/* Returns: c's declaration, or NULL if c denotes a label
+   Requires: cval_isaddress(c)  && !cval_isunknown_address(c)
+*/
+
+label_declaration cval_ldecl(cval c);
+/* Returns: c's declaration, or NULL if c denotes a variable
+   Requires: cval_isaddress(c)  && !cval_isunknown_address(c)
 */
 
 /* All of these functions will return cval_top if the result is not a

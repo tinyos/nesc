@@ -38,6 +38,7 @@ typedef struct nesc_declaration {
 
   bool abstract;		/* true for abstract components and
 				   generic interfaces */
+  bool dumped;			/* true if already added to dump list */
   declaration parameters;	/* Parameters for generic components and
 				   interfaces */
   expression arguments;		/* Arguments for instantiations of generic 

@@ -2182,14 +2182,6 @@ const char *type_name(region r, type t)
     return prefix;
 }
 
-static void xtype_attr(const char *name, cval c)
-{
-  if (cval_isinteger(c))
-    /* XXX: in theory, should deal with issues related to whether the
-       value is signed or unsigned. In practice, won't arise. */
-    xml_attr_int(name, cval_sint_value(c));
-}
-
 void nxml_type(type t, dhash_table tags)
 {
   type_quals quals = type_qualifiers(t) & (const_qualifier | volatile_qualifier | restrict_qualifier);
@@ -2198,14 +2190,13 @@ void nxml_type(type t, dhash_table tags)
 
   if (quals)
     {
-      xml_tag_start("type-qualified");
+      indentedtag_start("type-qualified");
 #define Q(name, kind, tq, val) \
       if (quals & val) xml_attr_noval(# name);
 #include "qualifiers.h"
 #undef Q
       xml_tag_end();
       xnewline();
-      xindent();
     }
     
   switch (t->kind)
@@ -2232,7 +2223,7 @@ void nxml_type(type t, dhash_table tags)
       break;
     case tk_array:
       xml_tag_start("type-array");
-      xtype_attr("elements", type_array_size_cval(t));
+      xml_attr_cval("elements", type_array_size_cval(t));
       break;
     case tk_function: 
       xml_tag_start("type-function");
@@ -2264,9 +2255,9 @@ void nxml_type(type t, dhash_table tags)
     }
 
   if (type_size_cc(t))
-    xtype_attr("size", type_size(t));
+    xml_attr_cval("size", type_size(t));
   if (type_has_size(t))
-    xtype_attr("alignment", type_alignment(t));
+    xml_attr_cval("alignment", type_alignment(t));
 
   switch (t->kind)
     {
@@ -2329,10 +2320,7 @@ void nxml_type(type t, dhash_table tags)
   xnewline();
 
   if (quals)
-    {
-      xunindent(); xml_pop();
-      xnewline();   
-    }
+    indentedtag_pop();
 }
 
 

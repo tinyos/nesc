@@ -29,6 +29,7 @@ void xstartline_noindent(void);
 void xvprintf(char *format, va_list args);
 void xprintf(char *format, ...);
 void xqputs(const char *s);
+void xwqputs(const wchar_t *s);
 void xputs(const char *s);
 
 /* Tag/attribute handling */
@@ -47,10 +48,16 @@ void xml_attr_cval(const char *name, cval val);
 void xml_start(FILE *f);
 void xml_end(void);
 
+/* Convenient shortcuts */
+void indentedtag_start(const char *name);
+void indentedtag(const char *name);
+void indentedtag_pop(void);
+
 /* Standard nesC xml elements */
 void nxml_ddecl_ref(data_declaration ddecl);
 void nxml_tdecl_ref(tag_declaration tdecl);
-void nxml_ndefinition_ref(nesc_declaration ndecl, dhash_table tags);
+void nxml_ndefinition_ref(nesc_declaration ndecl, dhash_table defs,
+			  dhash_table tags);
 void nxml_ninstance_ref(nesc_declaration ndecl);
 
 #endif
