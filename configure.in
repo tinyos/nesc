@@ -53,8 +53,10 @@ if test "z$TOSDIR" = "z"; then
     TOSDIR=../tos
   elif test -d ../../tos; then
     TOSDIR=../../tos
-  else
+  elif test -d $HOME/nest/tos; then
     TOSDIR=$HOME/nest/tos
+  else
+    AC_MSG_ERROR(I can't find the tos directory);
   fi
 fi
 TOSDIR=`(cd $TOSDIR;pwd)`
