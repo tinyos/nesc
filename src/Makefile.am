@@ -80,6 +80,7 @@ libparser_a_SOURCES =				\
 	graph.h					\
 	input.c					\
 	input.h					\
+	machine.c				\
 	machine.h				\
 	nesc-c.c				\
 	nesc-c.h				\
@@ -98,6 +99,7 @@ libparser_a_SOURCES =				\
 	nesc-generate.h				\
 	nesc-interface.c			\
 	nesc-interface.h			\
+	nesc-keywords.h				\
 	nesc-main.c				\
 	nesc-main.h				\
 	nesc-module.c				\
@@ -147,6 +149,8 @@ EXTRA_DIST = 					\
 	AST_defs.c				\
 	AST_parent.c				\
 	AST_print.c				\
+	machine/self.c				\
+	machine/avr.c				\
 	tdspecs					\
 	nesc-compile				\
 	.gdbinit

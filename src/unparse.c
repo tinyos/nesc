@@ -125,10 +125,37 @@ void outputln(char *format, ...)
   newline();
 }
 
+#define STRIP_PREFIX "__nesc_keyword_"
+#define STRIP_PREFIX_LEN (sizeof(STRIP_PREFIX) - 1)
+
+static void output_stripped_cstring(cstring s)
+{
+  output_indent_if_needed();
+  if (strncmp(s.data, STRIP_PREFIX, STRIP_PREFIX_LEN) == 0)
+    fwrite(s.data + STRIP_PREFIX_LEN, s.length - STRIP_PREFIX_LEN, 1, of);
+  else
+    fwrite(s.data, s.length, 1, of);
+}
+
 static void output_cstring(cstring s)
 {
   output_indent_if_needed();
   fwrite(s.data, s.length, 1, of);
+}
+
+static void output_stripped_string(const char *s)
+{
+  output_indent_if_needed();
+  if (strncmp(s, STRIP_PREFIX, STRIP_PREFIX_LEN) == 0)
+    fputs(s + STRIP_PREFIX_LEN, of);
+  else
+    fputs(s, of);
+}
+
+static void output_stripped_string_dollar(const char *s)
+{
+  output_stripped_string(s);
+  output("$");
 }
 
 static void output_line_directive(location l, bool include_filename)
@@ -472,16 +499,16 @@ void prt_ddecl_full_name(data_declaration ddecl, psd_options options)
   if (!ddecl->Cname)
     {
       if (ddecl->container)
-	output("%s$", ddecl->container->name);
+	output_stripped_string_dollar(ddecl->container->name);
       if (ddecl->kind == decl_function && ddecl->interface)
-	output("%s$", ddecl->interface->name);
+	output_stripped_string_dollar(ddecl->interface->name);
       if ((options & psd_print_default) &&
 	  (!ddecl->defined && ddecl->kind == decl_function &&
 	   (ddecl->ftype == function_event ||
 	    ddecl->ftype == function_command)))
 	output("default$");
     }
-  output("%s", ddecl->name);
+  output_stripped_string(ddecl->name);
 }
 
 void prt_simple_declarator(declarator d, data_declaration ddecl,
@@ -539,7 +566,7 @@ void prt_simple_declarator(declarator d, data_declaration ddecl,
 	else if (ddecl)
 	  prt_ddecl_full_name(ddecl, options);
 	else
-	  output("%s", CAST(identifier_declarator, d)->cstring.data);
+	  output_stripped_cstring(CAST(identifier_declarator, d)->cstring);
 	break;
       case kind_interface_ref_declarator:
 	prt_simple_declarator(CAST(interface_ref_declarator, d)->declarator,
@@ -586,8 +613,8 @@ void prt_typename(typename tname)
 
   set_location(tname->location);
   if (tdecl->container && !tdecl->Cname)
-    output("%s$", tdecl->container->name);
-  output("%s", tdecl->name);
+    output_stripped_string_dollar(tdecl->container->name);
+  output_stripped_string(tdecl->name);
 }
 
 void prt_typeof_expr(typeof_expr texpr)
@@ -660,7 +687,7 @@ void prt_tag_ref(tag_ref tr, bool duplicate)
   if (tr->word1)
     {
       if (tr->tdecl && tr->tdecl->container)
-	output("%s$", tr->tdecl->container->name);
+	output_stripped_string_dollar(tr->tdecl->container->name);
       prt_word(tr->word1);
     }
   if (!duplicate && tr->defined)
@@ -755,9 +782,9 @@ void prt_enumerator(enumerator ed, tag_declaration tdecl)
   set_location(ed->location);
 
   if (tdecl && tdecl->container)
-    output("%s$", tdecl->container->name);
+    output_stripped_string_dollar(tdecl->container->name);
 
-  output_cstring(ed->cstring);
+  output_stripped_cstring(ed->cstring);
   if (ed->arg1)
     {
       output(" = ");
@@ -803,7 +830,7 @@ bool prt_parameter(declaration parm, bool first, bool lastforward,
       if (!first)
 	output(", ");
       set_location(parm->location);
-      output_cstring(CAST(oldidentifier_decl, parm)->cstring);
+      output_stripped_cstring(CAST(oldidentifier_decl, parm)->cstring);
       return FALSE;
     case kind_ellipsis_decl:
       if (!first)
@@ -838,7 +865,7 @@ void prt_asttype(asttype t)
 void prt_word(word w)
 {
   set_location(w->location);
-  output_cstring(w->cstring);
+  output_stripped_cstring(w->cstring);
 }
 
 void prt_expressions(expression elist, bool isfirst)
@@ -975,9 +1002,9 @@ void prt_identifier(identifier e, int context_priority)
 
   set_location(e->location);
   if (decl->container && !decl->Cname)
-    output("%s$", decl->container->name);
+    output_stripped_string_dollar(decl->container->name);
 
-  output_cstring(e->cstring);
+  output_stripped_cstring(e->cstring);
 }
 
 void prt_compound_expr(compound_expr e, int context_priority)
@@ -1061,7 +1088,7 @@ void prt_field_ref(field_ref e, int context_priority)
       prt_expression(e->arg1, P_CALL);
       output(".");
     }
-  output_cstring(e->cstring);
+  output_stripped_cstring(e->cstring);
 }
 
 void prt_interface_deref(interface_deref e, int context_priority)
@@ -1075,7 +1102,7 @@ void prt_interface_deref(interface_deref e, int context_priority)
 
   prt_expression(e->arg1, P_CALL);
   output("$");
-  output_cstring(e->cstring);
+  output_stripped_cstring(e->cstring);
 }
 
 void prt_unary(unary e, int context_priority)
@@ -1586,7 +1613,7 @@ void prt_label(label l)
 void prt_id_label(id_label l)
 {
   set_location(l->location);
-  output_cstring(l->cstring);
+  output_stripped_cstring(l->cstring);
 }
 
 void prt_case_label(case_label l)

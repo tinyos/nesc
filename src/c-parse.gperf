@@ -85,23 +85,8 @@ unsigned, TYPESPEC, RID_UNSIGNED
 void, TYPESPEC, RID_VOID
 while, WHILE, NORID
 
-as, AS, NORID
-call, CALL, NORID
-command, SCSPEC, RID_COMMAND
-configuration, CONFIGURATION, NORID
-defines, DEFINES, NORID
-event, SCSPEC, RID_EVENT
-implementation, IMPLEMENTATION, NORID
-interface, INTERFACE, NORID
-module, MODULE, NORID
-post, POST, NORID
-provides, PROVIDES, NORID
-requires, REQUIRES, NORID
-signal, SIGNAL, NORID
-task, SCSPEC, RID_TASK
-uses, USES, NORID
-includes, INCLUDES, NORID
-
+define(K, `$1, $2, $3')
+include(nesc-keywords.h)
 
 define(Q, `$1, $2, $3')
 include(qualifiers.h)

@@ -2953,11 +2953,10 @@ type_element finish_struct(type_element t, declaration fields,
 	    }
 	  else if (bitwidth > 0)
 	    {
-#ifdef PCC_BITFIELD_TYPE_MATTERS
-	      if (((offset + bitwidth + falign - 1) / falign - offset / falign)
-		  > fsize / falign)
-		offset = align_to(offset, falign);
-#endif
+	      if (target->pcc_bitfield_type_matters)
+		if (((offset + bitwidth + falign - 1) / falign - offset / falign)
+		    > fsize / falign)
+		  offset = align_to(offset, falign);
 	    }
 	  else /* regular field */
 	    {

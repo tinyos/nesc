@@ -57,6 +57,12 @@ static char tmpfile1[] = "/tmp/nesccpp2XXXXXX";
 static char tmpfile2[] = "/tmp/nesccpp1XXXXXX";
 #endif
 
+static char *nesc_keywords[] = {
+#define K(name, token, rid) #name,
+#include "nesc-keywords.h"
+NULL
+};
+
 static char *cpp_macros, *cpp_dest;
 static FILE *macros_file;
 
@@ -79,6 +85,24 @@ void preprocess_cleanup(void)
   unlink(tmpfile2);
 }
 
+void create_nesc_keyword_macros(const char *macro_filename)
+{
+  FILE *mf = fopen(macro_filename, "w");
+  int i;
+
+  if (!mf) 
+    {
+      fprintf(stderr, "couldn't create temporary file - aborting\n");
+      exit(2);
+    }
+
+  for (i = 0; nesc_keywords[i]; i++) 
+    fprintf(mf, "#define %s __nesc_keyword_%s\n",
+	    nesc_keywords[i], nesc_keywords[i]);
+
+  fclose(mf);
+}
+
 void preprocess_init(void)
 {
   atexit(preprocess_cleanup);
@@ -88,6 +112,12 @@ void preprocess_init(void)
 
   cpp_macros = tmpfile1;
   cpp_dest = tmpfile2;
+
+  /* For now, I'm just predefining the nesc-keyword-renaming macros.
+     If we want to preprocess components, we'll have to put these
+     macros in a special file used only for preprocessing .h files.
+  */
+  create_nesc_keyword_macros(cpp_macros);
 }
 
 FILE *preprocess(const char *filename)

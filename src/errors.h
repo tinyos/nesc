@@ -24,7 +24,7 @@ Boston, MA 02111-1307, USA. */
 #define ERRORS_H
 
 /* Name of program invoked, sans directories.  */
-extern char *progname;
+extern const char *progname;
 
 extern int errorcount;
 extern int warningcount;

@@ -1,44 +1,25 @@
 #ifndef MACHINE_H
 #define MACHINE_H
 
-/* Basic pointer sizes and alignments for the AVR */
-#undef PCC_BITFIELD_TYPE_MATTERS
+typedef struct {
+  size_t size, align;
+} machine_type_spec;
 
-/* The size of pointers */
-#define MACHINE_PTR_SIZE 2
-#define MACHINE_PTR_ALIGN 1
+typedef struct {
+  const char *machine_name;
 
-#define MACHINE_FLOAT_SIZE 4
-#define MACHINE_FLOAT_ALIGN 1
+  bool pcc_bitfield_type_matters;
+  machine_type_spec tptr, tfloat, tdouble, tlong_double, tshort, tint,
+    tlong, tlong_long;
+  size_t int1_align, int2_align, int4_align, int8_align;
+  size_t wchar_t_size, size_t_size;
+  bool char_signed, wchar_t_signed;
 
-#define MACHINE_DOUBLE_SIZE 4
-#define MACHINE_DOUBLE_ALIGN 1
+  const char *gcc_compiler;
+} machine_spec;
 
-#define MACHINE_LONG_DOUBLE_SIZE 4
-#define MACHINE_LONG_DOUBLE_ALIGN 1
+extern machine_spec *target;
 
-#define MACHINE_INT1_ALIGN 1
-#define MACHINE_INT2_ALIGN 1
-#define MACHINE_INT4_ALIGN 1
-#define MACHINE_INT8_ALIGN 1
-
-#define MACHINE_SHORT_SIZE 2
-#define MACHINE_SHORT_ALIGN 1
-
-#define MACHINE_INT_SIZE 2
-#define MACHINE_INT_ALIGN 1
-
-#define MACHINE_LONG_SIZE 4
-#define MACHINE_LONG_ALIGN 1
-
-#define MACHINE_LONG_LONG_SIZE 8
-#define MACHINE_LONG_LONG_ALIGN 1
-
-#define MACHINE_CHAR_SIGNED TRUE
-
-#define MACHINE_WCHAR_T_SIZE 2
-#define MACHINE_WCHAR_T_SIGNED TRUE
-
-#define MACHINE_SIZE_T_SIZE 2
+bool select_target(const char *targetname);
 
 #endif

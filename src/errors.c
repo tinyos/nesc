@@ -28,8 +28,8 @@ Boston, MA 02111-1307, USA. */
 #include "input.h"
 #include "flags.h"
 
-/* Name of program invoked, sans directories.  */
-char *progname;
+/* Name of program invoked (from argv[0]).  */
+const char *progname;
 
 int errorcount;
 int warningcount;
@@ -149,7 +149,15 @@ void verror_with_decl(declaration d, const char *format, va_list args)
 /* Report error msg at current filename, lineno */
 void verror(const char *format, va_list args)
 {
-  verror_with_location(&input_file_stack->l, format, args);
+  if (input_file_stack)
+    verror_with_location(&input_file_stack->l, format, args);
+  else
+    {
+      count_error(FALSE);
+      fprintf(stderr, "%s: ", progname);
+      vfprintf(stderr, format, args);
+      putc('\n', stderr); 
+   }
 }
 
 /* Report error msg at current filename, lineno */
@@ -227,7 +235,14 @@ void vwarning_with_decl(declaration d, const char *format, va_list args)
 /* Report warning msg at current filename, lineno */
 void vwarning(const char *format, va_list args)
 {
-  vwarning_with_location(&input_file_stack->l, format, args);
+  if (input_file_stack)
+    vwarning_with_location(&input_file_stack->l, format, args);
+  else if (count_error(TRUE))
+    {
+      fprintf(stderr, "%s: warning: ", progname);
+      vfprintf(stderr, format, args);
+      putc('\n', stderr); 
+   }
 }
 
 /* Report warning msg at current filename, lineno */

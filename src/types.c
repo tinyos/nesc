@@ -234,8 +234,8 @@ type make_pointer_type(type t)
   nt->u.pointsto = t;
 
   /* ASSUME: all pointers are the same */
-  nt->size = MACHINE_PTR_SIZE;
-  nt->alignment = MACHINE_PTR_ALIGN;
+  nt->size = target->tptr.size;
+  nt->alignment = target->tptr.align;
 
   return nt;
 }
@@ -335,42 +335,42 @@ void init_types(void)
   types_region = newregion();
 
   float_type = make_primitive
-    (tp_float, MACHINE_FLOAT_SIZE, MACHINE_FLOAT_ALIGN);
+    (tp_float, target->tfloat.size, target->tfloat.align);
   double_type = make_primitive
-    (tp_double, MACHINE_DOUBLE_SIZE, MACHINE_DOUBLE_ALIGN);
+    (tp_double, target->tdouble.size, target->tdouble.align);
   long_double_type = make_primitive
-    (tp_long_double, MACHINE_LONG_DOUBLE_SIZE, MACHINE_LONG_DOUBLE_ALIGN);
+    (tp_long_double, target->tlong_double.size, target->tlong_double.align);
 
   short_type = make_primitive
-    (tp_short, MACHINE_SHORT_SIZE, MACHINE_SHORT_ALIGN);
+    (tp_short, target->tshort.size, target->tshort.align);
   unsigned_short_type = make_primitive
-    (tp_unsigned_short, MACHINE_SHORT_SIZE, MACHINE_SHORT_ALIGN);
+    (tp_unsigned_short, target->tshort.size, target->tshort.align);
 
   int_type = make_primitive
-    (tp_int, MACHINE_INT_SIZE, MACHINE_INT_ALIGN);
+    (tp_int, target->tint.size, target->tint.align);
   unsigned_int_type = make_primitive
-    (tp_unsigned_int, MACHINE_INT_SIZE, MACHINE_INT_ALIGN);
+    (tp_unsigned_int, target->tint.size, target->tint.align);
 
   long_type = make_primitive
-    (tp_long, MACHINE_LONG_SIZE, MACHINE_LONG_ALIGN);
+    (tp_long, target->tlong.size, target->tlong.align);
   unsigned_long_type = make_primitive
-    (tp_unsigned_long, MACHINE_LONG_SIZE, MACHINE_LONG_ALIGN);
+    (tp_unsigned_long, target->tlong.size, target->tlong.align);
 
   long_long_type = make_primitive
-    (tp_long_long, MACHINE_LONG_LONG_SIZE, MACHINE_LONG_LONG_ALIGN);
+    (tp_long_long, target->tlong_long.size, target->tlong_long.align);
   unsigned_long_long_type = make_primitive
-    (tp_unsigned_long_long, MACHINE_LONG_LONG_SIZE, MACHINE_LONG_LONG_ALIGN);
+    (tp_unsigned_long_long, target->tlong_long.size, target->tlong_long.align);
 
-  signed_char_type = make_primitive(tp_signed_char, 1, MACHINE_INT1_ALIGN);
-  unsigned_char_type = make_primitive(tp_unsigned_char, 1, MACHINE_INT1_ALIGN);
-  char_type = make_primitive(tp_char, 1, MACHINE_INT1_ALIGN);
+  signed_char_type = make_primitive(tp_signed_char, 1, target->int1_align);
+  unsigned_char_type = make_primitive(tp_unsigned_char, 1, target->int1_align);
+  char_type = make_primitive(tp_char, 1, target->int1_align);
 
-  int2_type = lookup_primitive(tp_int2, 2, MACHINE_INT2_ALIGN, FALSE);
-  uint2_type = lookup_primitive(tp_uint2, 2, MACHINE_INT2_ALIGN, TRUE);
-  int4_type = lookup_primitive(tp_int4, 4, MACHINE_INT4_ALIGN, FALSE);
-  uint4_type = lookup_primitive(tp_uint4, 4, MACHINE_INT4_ALIGN, TRUE);
-  int8_type = lookup_primitive(tp_int8, 8, MACHINE_INT8_ALIGN, FALSE);
-  uint8_type = lookup_primitive(tp_uint8, 8, MACHINE_INT8_ALIGN, TRUE);
+  int2_type = lookup_primitive(tp_int2, 2, target->int2_align, FALSE);
+  uint2_type = lookup_primitive(tp_uint2, 2, target->int2_align, TRUE);
+  int4_type = lookup_primitive(tp_int4, 4, target->int4_align, FALSE);
+  uint4_type = lookup_primitive(tp_uint4, 4, target->int4_align, TRUE);
+  int8_type = lookup_primitive(tp_int8, 8, target->int8_align, FALSE);
+  uint8_type = lookup_primitive(tp_uint8, 8, target->int8_align, TRUE);
 
   char_array_type = make_array_type(char_type, NULL);
   error_type = new_type(tk_error);
@@ -379,11 +379,11 @@ void init_types(void)
   void_type->size = void_type->alignment = 1;
   ptr_void_type = make_pointer_type(void_type);
 
-  wchar_type = type_for_size(MACHINE_WCHAR_T_SIZE, !MACHINE_WCHAR_T_SIGNED);
+  wchar_type = type_for_size(target->wchar_t_size, !target->wchar_t_signed);
   wchar_array_type = make_array_type(wchar_type, NULL);
-  size_t_type = type_for_size(MACHINE_SIZE_T_SIZE, TRUE);
-  ptrdiff_t_type = type_for_size(MACHINE_PTR_SIZE, FALSE);
-  intptr_type = type_for_size(MACHINE_PTR_SIZE, TRUE);
+  size_t_type = type_for_size(target->size_t_size, TRUE);
+  ptrdiff_t_type = type_for_size(target->tptr.size, FALSE);
+  intptr_type = type_for_size(target->tptr.size, TRUE);
 }
 
 struct typelist
@@ -479,9 +479,7 @@ bool type_unsigned(type t)
 {
   return t->kind == tk_primitive &&
     (t->u.primitive == tp_unsigned_char ||
-#if MACHINE_CHAR_SIGNED
-     t->u.primitive == tp_char ||
-#endif
+     (!target->char_signed && t->u.primitive == tp_char) ||
      t->u.primitive == tp_unsigned_short ||
      t->u.primitive == tp_unsigned_int ||
      t->u.primitive == tp_unsigned_long ||

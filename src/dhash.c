@@ -34,6 +34,7 @@
 /* A (growable) hash table */
 
 #include <regions.h>
+#include <stdint.h>
 #include "dhash.h"
 
 struct dhash_table
@@ -74,18 +75,14 @@ unsigned long dhash_used(dhash_table h)
 
 #define MAGIC 0.6180339987
 
-#define LLMAGIC ((unsigned long long)(MAGIC * (1ULL << 8 * sizeof(unsigned long))))
+#define LLMAGIC ((uint64_t)(MAGIC * ((uint64_t)1 << 8 * sizeof(uint32_t))))
 
 static unsigned long dhash(dhash_table h, void *x)
 {
-  unsigned long hval = h->hash(x);
-#if 1
-  unsigned long hash = hval * LLMAGIC;
+  uint32_t hval = h->hash(x);
+  uint32_t hash = hval * LLMAGIC;
 
-  return hash >> (8 * sizeof(unsigned long) - h->log2size);
-#else
-  return hval & (h->size - 1);
-#endif
+  return hash >> (8 * sizeof(uint32_t) - h->log2size);
 }
 
 void *dhlookup(dhash_table h, void *x)

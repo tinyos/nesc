@@ -28,9 +28,11 @@ Boston, MA 02111-1307, USA. */
 #include "c-parse.h"
 #include "unparse.h"
 #include "semantics.h"
+#include "machine.h"
 #include "nesc-main.h"
 #include "nesc-paths.h"
 #include "nesc-cpp.h"
+#include "nesc-msg.h"
 
 /* Table of language-independent -f options.
    STRING is the option name.  VARIABLE is the address of the variable.
@@ -54,6 +56,7 @@ static char *lang_options[] =
   "-fnesc-path=",
   "-fnesc-no-debug",
   "-fnesc-msg=",
+  "-fnesc-target=",
 
   "-ansi",
   "-fallow-single-precision",
@@ -183,6 +186,10 @@ static void c_decode_option(char *p)
   else if (!strncmp (p, "-fnesc-msg=", strlen("-fnesc-msg=")))
     {
       select_nesc_msg(p + strlen("-fnesc-msg="));
+    }
+  else if (!strncmp (p, "-fnesc-target=", strlen("-fnesc-target=")))
+    {
+      select_target(p + strlen("-fnesc-target="));
     }
   else if (!strcmp (p, "-fnesc-no-debug"))
     {
@@ -383,6 +390,8 @@ int region_main(int argc, char **argv) deletes
   char *p;
 
   signal(SIGABRT, rcc_aborting);
+  signal(SIGSEGV, rcc_aborting);
+  signal(SIGBUS, rcc_aborting);
   set_nomem_handler(outofmemory);
 
   init_nesc_paths_start(newregion());
