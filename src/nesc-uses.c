@@ -45,9 +45,9 @@ static context use_context(context c)
   if (c & c_deref)
     c = exe_context(c) | c_read;
 
-  /* Constant contexts don't read, write or call. But they might address... */
+  /* Constant contexts don't read or write. But they might address... */
   if (c & c_constant)
-    c &= ~(c_read | c_write | c_fncall);
+    c &= ~(c_read | c_write);
 
   return c;
 }
@@ -200,8 +200,12 @@ static void collect_uses_expr(expression expr, context c)
       function_call fce = CAST(function_call, expr);
       expression e;
 
-      // direct fn calls are c_fncall, otherwise its c_read
-      if (!(is_interface_deref(fce->arg1) ||
+      // tasks posts are a "read" of the task
+      if (fce->call_kind == post_task)
+	collect_uses_expr(fce->arg1, exe_c | c_read);
+      // C named fn calls, commands and events are c_fncall, 
+      // otherwise its c_read (and a warning about fn ptr use)
+      else if (!(is_interface_deref(fce->arg1) ||
 	    is_generic_call(fce->arg1) ||
 	    (is_identifier(fce->arg1) &&
 	     CAST(identifier, fce->arg1)->ddecl->kind == decl_function) ||
