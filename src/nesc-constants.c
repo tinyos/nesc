@@ -166,7 +166,7 @@ static AST_walker_result folder_array_declarator(AST_walker spec, void *data,
 
   AST_walk_children(spec, data, CAST(node, *n));
 
-  if (size->cst)
+  if (size && size->cst)
     check_array_size(size, nice_declarator_name((*n)->declarator));
 
   return aw_done;

@@ -3503,20 +3503,21 @@ void layout_enum_end(tag_declaration tdecl)
     {
       smallest = largest = value_of_enumerator(values);
 
-      scan_enumerator (v, CAST(enumerator, values->next))
-	{
-	  cval vv = value_of_enumerator(v);
+      if (!cval_isunknown(smallest))
+	scan_enumerator (v, CAST(enumerator, values->next))
+         {
+	   cval vv = value_of_enumerator(v);
 
-	  if (cval_isunknown(vv))
-	    {
-	      smallest = vv;
-	      break;
-	    }
-	  if (cval_intcompare(vv, largest) > 0)
-	    largest = vv;
-	  if (cval_intcompare(vv, smallest) < 0)
-	    smallest = vv;
-	}
+	   if (cval_isunknown(vv))
+	     {
+	       smallest = vv;
+	       break;
+	     }
+	   if (cval_intcompare(vv, largest) > 0)
+	     largest = vv;
+	   if (cval_intcompare(vv, smallest) < 0)
+	     smallest = vv;
+	 }
     }
 
   if (cval_isunknown(smallest))
