@@ -22,7 +22,7 @@ Boston, MA 02111-1307, USA. */
 #include "parser.h"
 #include "semantics.h"
 
-node ast_chain(node l1, node l2)
+node AST_chain(node l1, node l2)
 {
   if (!l1) return l2;
   last_node(l1)->next = l2;
@@ -72,7 +72,7 @@ void insert_before(node sameregion *list, node before, node n)
 }
 
 
-unary newkind_unary(region r, ast_kind kind, location location, expression arg1)
+unary newkind_unary(region r, AST_kind kind, location location, expression arg1)
 {
   unary obj = new_unary(r, location, arg1);
 
@@ -81,7 +81,7 @@ unary newkind_unary(region r, ast_kind kind, location location, expression arg1)
   return obj;
 }
 
-binary newkind_binary(region r, ast_kind kind, location location,
+binary newkind_binary(region r, AST_kind kind, location location,
 		      expression arg1, expression arg2)
 {
   if (kind == kind_assign) /* XXX: Yuck */
@@ -96,7 +96,7 @@ binary newkind_binary(region r, ast_kind kind, location location,
     }
 }
 
-tag_ref newkind_tag_ref(region r, ast_kind kind, location location, word word1, attribute attributes, declaration fields, bool defined)
+tag_ref newkind_tag_ref(region r, AST_kind kind, location location, word word1, attribute attributes, declaration fields, bool defined)
 {
   tag_ref obj = new_tag_ref(r, location, word1, attributes, fields, defined);
 

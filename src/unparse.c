@@ -1307,7 +1307,7 @@ void prt_unary(unary e, int context_priority)
   CLOSE(P_CAST);
 }
 
-const char *binary_op_name(ast_kind kind)
+const char *binary_op_name(AST_kind kind)
 {
   switch (kind)
     {

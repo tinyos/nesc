@@ -21,6 +21,8 @@
 
 (load-file "build-basics.el")
 
+(setq kind_type (concat basename "_kind"))
+
 (setq all-type-names (append (mapcar #'type-name types)
 			     (mapcar #'node-name nodes)))
 (setq parent-types
@@ -47,6 +49,8 @@
 
 (dfsnumber 'node 42)
 
+(sort dfsnumbering #'(lambda (entry1 entry2) (< (cadr entry1) (cadr entry2))))
+
 (defun fill-buffer ()
   (copyright-notice)
   (mapc #'write-typedefs types)
@@ -54,18 +58,22 @@
   (insert "typedef enum {\n");
   (mapc #'write-kinds all-type-names)
   (backward-delete-char 2)
-  (insert "\n} ast_kind;\n")
+  (insert (format "\n} %s;\n" kind_type))
+  (insert (format "\nextern %s %s_parent_kind[]; /* indexed by kind - kind_node */\n"
+		  kind_type basename))
+  (insert (format "\nextern %s %s_post_kind[]; /* indexed by kind - kind_node */\n"
+		  kind_type basename))
   (mapc #'write-is-test all-type-names)
   (mapc #'write-reverse all-type-names)
 )
 
 (defun write-typedefs (type)
-  (insert (format "typedef struct AST_%s *%s;\n"
-		  (type-name type) (type-name type))))
+  (insert (format "typedef struct %s_%s *%s;\n"
+		  basename (type-name type) (type-name type))))
 
 (defun write-node-typedefs (node)
-  (insert (format "typedef struct AST_%s *%s;\n"
-		  (node-type node) (node-name node))))
+  (insert (format "typedef struct %s_%s *%s;\n"
+		  basename (node-type node) (node-name node))))
 
 (defun write-kinds (name)
   (insert (format "  kind_%s = %s,\n" name (cadr (assoc name dfsnumbering))))
@@ -98,15 +106,15 @@
 
 (defun write-type (type)
   (insert (format "/* %s */\n" (type-documentation type)))
-  (insert (format "struct AST_%s { /* extends %s */\n"
-		  (type-name type) (type-super-type type)))
+  (insert (format "struct %s_%s { /* extends %s */\n"
+		  basename (type-name type) (type-super-type type)))
   (write-fields type)
   (insert "};\n\n"))
 
 (defun write-fields (type)
   (if (type-super-type type)
       (write-fields (assoc (type-super-type type) types))
-    (insert "  ast_kind kind;\n"))
+    (insert (format "  %s kind;\n" kind_type)))
   (mapc '(lambda (field-name)
 	   (let ((field (assoc field-name fields)))
 	     (insert "  "
@@ -151,12 +159,15 @@
   (mapc #'(lambda (type) (write-creator-source (type-name type) type)) types)
   (mapc #'(lambda (node) (write-creator-source (node-name node) (assoc (node-type node) types))) nodes)
   (insert "\n\n")
-  (mapc #'write-list-source all-type-names))
+  (mapc #'write-list-source all-type-names)
+  (write-parent-kinds)
+  (write-post-kinds))
 
 (defun write-creator-source (name type)
   (write-creator-header name type)
   (insert "\n{\n")
-  (insert (format "  %s obj = ralloc(r, struct AST_%s);\n\n" name (type-name type)))
+  (insert (format "  %s obj = ralloc(r, struct %s_%s);\n\n"
+		  name basename (type-name type)))
   (insert (format "  obj->kind = kind_%s;\n" name))
   (let ((write-creator-fields
 	 #'(lambda (type)
@@ -179,7 +190,24 @@
 
 (defun write-list-source (name)
   (insert (format "%s %s_chain(%s l1, %s l2)\n" name name name name))
-  (insert (format "{ return CAST(%s, ast_chain(CAST(node, l1), CAST(node, l2))); }\n\n" name)))
+  (insert (format "{ return CAST(%s, %s_chain(CAST(node, l1), CAST(node, l2))); }\n\n" name basename)))
+
+(defun write-parent-kinds ()
+  (insert (format "%s %s_parent_kind[] = {\n" kind_type basename))
+  (mapc #'(lambda (dfs_entry)
+	    (let ((parent (parentof (car dfs_entry))))
+	      (if parent
+		  (insert (format "  kind_%s,\n" parent))
+		(insert "  0,\n"))))
+	dfsnumbering)
+  (insert "};\n\n"))
+
+(defun write-post-kinds ()
+  (insert (format "%s %s_post_kind[] = {\n" kind_type basename))
+  (mapc #'(lambda (dfs_entry)
+	    (insert (format "  postkind_%s,\n" (car dfs_entry))))
+	dfsnumbering)
+  (insert "};\n\n"))
 
 (build-file "defs.c")
 

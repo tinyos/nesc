@@ -22,6 +22,9 @@ Boston, MA 02111-1307, USA. */
 #ifndef AST_UTILS_H
 #define AST_UTILS_H
 
+#define IS_A(n, k) \
+  ((n)->kind >= (k) && (n)->kind <= AST_post_kind[(k) - kind_node])
+
 data_declaration get_parameter(declaration d);
 function_declarator get_fdeclarator(declarator d);
 bool oldstyle_function(function_decl fn);
@@ -49,5 +52,11 @@ expression build_uint_constant(region r, location loc, type t, largest_uint c);
 expression build_identifier(region r, location loc, data_declaration id);
 
 cval value_of_enumerator(enumerator e);
+
+wchar_t asm_rwmode(string s);
+/* Return: The first char of asm operand mode specifier s, this indicates
+     the r/w mode for the operand (see gcc docs)
+     The result is (wchar_t)-1 if s is the empty string.
+*/
 
 #endif

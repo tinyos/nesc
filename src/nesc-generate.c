@@ -28,6 +28,7 @@ Boston, MA 02111-1307, USA.  */
 #include "semantics.h"
 #include "constants.h"
 #include "nesc-concurrency.h"
+#include "nesc-uses.h"
 
 static void prt_nesc_function_hdr(data_declaration fn_decl,
 				  psd_options options)
@@ -637,8 +638,9 @@ static void mark_reachable_function(cgraph cg,
      anything */
   fn_lookup(cg, ddecl);
 
-  dd_scan (use, ddecl->uses)
-    mark_reachable_function(cg, ddecl, DD_GET(data_declaration, use));
+  if (ddecl->fn_uses)
+    dd_scan (use, ddecl->fn_uses)
+      mark_reachable_function(cg, ddecl, DD_GET(iduse, use)->id);
 }
 
 static cgraph mark_reachable_code(void)
@@ -650,8 +652,8 @@ static cgraph mark_reachable_code(void)
 
   dd_scan (used, spontaneous_calls)
     mark_reachable_function(cg, NULL, DD_GET(data_declaration, used));
-  dd_scan (used, global_uses)
-    mark_reachable_function(cg, NULL, DD_GET(data_declaration, used));
+  dd_scan (used, nglobal_uses)
+    mark_reachable_function(cg, NULL, DD_GET(iduse, used)->id);
 
   return cg;
 }
@@ -786,10 +788,16 @@ void generate_c_code(nesc_declaration program, const char *target_name,
       outputln("#define dbg_active(mode) 0");
     }
 
-  /* We start by finding each module's connections and marking uncallable
-     functions */
+  /* We start by finding each module's identifier uses and connections
+     and marking uncallable functions */
+  collect_uses(all_cdecls);
   dd_scan (mod, modules)
-    find_connections(cg, DD_GET(nesc_declaration, mod));
+    {
+      nesc_declaration m = DD_GET(nesc_declaration, mod);
+
+      collect_uses(CAST(module, m->impl)->decls);
+      find_connections(cg, m);
+    }
 
   /* Then we set the 'isused' bit on all functions that are reachable
      from spontaneous_calls or global_uses */

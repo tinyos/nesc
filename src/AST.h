@@ -58,7 +58,7 @@ typedef enum { command_call, event_signal, post_task, c_call } nesc_call_kind;
 
 typedef struct AST_ast_generic
 {
-  ast_kind kind;
+  AST_kind kind;
 } *ast_generic;
 
 #ifdef __GNUC__
@@ -72,13 +72,13 @@ typedef struct AST_ast_generic
 #define CASTSRPTR(type, x) ((type sameregion *)(x))
 #endif
 
-unary newkind_unary(region r, ast_kind kind, location location, expression arg1);
-binary newkind_binary(region r, ast_kind kind, location location,
+unary newkind_unary(region r, AST_kind kind, location location, expression arg1);
+binary newkind_binary(region r, AST_kind kind, location location,
 		      expression arg1, expression arg2);
-tag_ref newkind_tag_ref(region r, ast_kind kind, location location, word word1, attribute attributes, declaration fields, bool defined);
+tag_ref newkind_tag_ref(region r, AST_kind kind, location location, word word1, attribute attributes, declaration fields, bool defined);
 node last_node(node n);
 int chain_length(node n);
-node ast_chain(node l1, node l2);
+node AST_chain(node l1, node l2);
 void insert_before(node sameregion *list, node before, node n);
 node ast_reverse(node l);
 

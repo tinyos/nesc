@@ -49,6 +49,8 @@ libparser_a_SOURCES =				\
 	AST_types.h				\
 	AST_utils.c				\
 	AST_utils.h				\
+	AST_walk.c				\
+	AST_walk.h				\
 	array.h					\
 	array.c					\
 	attributes.h				\
@@ -122,6 +124,8 @@ libparser_a_SOURCES =				\
 	nesc-paths.h				\
 	nesc-semantics.c			\
 	nesc-semantics.h			\
+	nesc-uses.c				\
+	nesc-uses.h				\
 	parser.h				\
 	qualifiers.h				\
 	sd_list.c				\
@@ -146,6 +150,7 @@ BUILT_SOURCES =					\
 	AST_parent.c				\
 	AST_print.c				\
 	AST_types.h				\
+	AST_walk_children.c			\
 	c-gperf.h				\
 	c-parse.tab.c				\
 	c-parse.tab.h
@@ -163,6 +168,7 @@ EXTRA_DIST = 					\
 	AST_defs.c				\
 	AST_parent.c				\
 	AST_print.c				\
+	AST_walk_children.c			\
 	machine/self.c				\
 	machine/avr.c				\
 	tdspecs					\
@@ -187,6 +193,9 @@ $(srcdir)/AST_parent.c: build-parent.el nodetypes.def build-basics.el
 
 $(srcdir)/AST_print.c: build-print.el nodetypes.def build-basics.el
 	cd $(srcdir) && $(EMACS) $(EMACSFLAGS) -batch -load build-print.el AST nodetypes.def
+
+$(srcdir)/AST_walk_children.c: build-walk.el nodetypes.def build-basics.el
+	cd $(srcdir) && $(EMACS) $(EMACSFLAGS) -batch -load build-walk.el AST nodetypes.def
 
 $(srcdir)/c-gperf.h: c-parse.gperf qualifiers.h nesc-keywords.h
 	cd $(srcdir) && $(M4) $(M4FLAGS) c-parse.gperf | grep -v '^$$' | \

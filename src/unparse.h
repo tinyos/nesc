@@ -45,7 +45,7 @@ void unindent(void);
 void startline(void);
 void startline_noindent(void);
 
-const char *binary_op_name(ast_kind kind);
+const char *binary_op_name(AST_kind kind);
 
 /* Precedence levels */
 #define P_TOP -1

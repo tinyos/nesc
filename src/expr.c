@@ -1243,11 +1243,6 @@ expression make_identifier(location loc, cstring id, bool maybe_implicit)
   result->static_address = foldaddress_identifier(CAST(expression, result), decl);
   result->ddecl = decl;
 
-  /* Expressions at the parameter level don't count as uses (they are
-     declarations of array sizes) */
-  if (!current.env->parm_level)
-    note_identifier_use(decl);
-
   return CAST(expression, result);
 }
 

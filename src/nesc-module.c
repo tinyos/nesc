@@ -22,6 +22,7 @@ Boston, MA 02111-1307, USA.  */
 #include "c-parse.h"
 #include "expr.h"
 #include "semantics.h"
+#include "nesc-semantics.h"
 
 expression make_generic_call(location loc, expression iref, expression args)
 {
@@ -62,10 +63,7 @@ expression make_interface_deref(location loc, expression object, cstring field)
       result->type = error_type;
     }
   else
-    {
-      result->type = fdecl->type;
-      note_identifier_use(fdecl);
-    }
+    result->type = fdecl->type;
 
   return CAST(expression, result);
 }

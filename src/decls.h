@@ -120,6 +120,8 @@ typedef struct data_declaration {
 				   interrupt handlers, e.g.). Set by the 
 				   `spontaneous' attribute */
 
+  dd_list/*use*/ nuses;		/* List of uses of this identifier */
+
   /* For functions */
   enum { function_implicit, function_normal, function_static, function_nested,
          function_event, function_command }
@@ -136,7 +138,7 @@ typedef struct data_declaration {
   gnode ig_node;		/* inline-graph node for this function */
   struct data_declaration *interface;	/* nesC: interface this cmd/event belongs to */
   typelist oldstyle_args; /* Type of arguments from old-style declaration */
-  dd_list uses;			/* list of declarations of identifiers used */
+  dd_list/*iduse*/ fn_uses;	/* list of uses of identifiers in this fn */
   struct connections *connections; /* See nesc-generate.c: what this command
 				      or event is connected to. */
   /* reduction function for magic functions */

@@ -250,3 +250,10 @@ expression build_identifier(region r, location loc, data_declaration id)
   return CAST(expression, e);
 }
 
+wchar_t asm_rwmode(string s)
+{
+  if (s->ddecl->chars_length > 0)
+    return s->ddecl->chars[0];
+  else
+    return (wchar_t)-1;
+}

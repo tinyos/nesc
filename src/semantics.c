@@ -55,7 +55,6 @@ data_declaration builtin_constant_p;
 struct semantic_state current;
 
 dd_list spontaneous_calls;
-dd_list global_uses;
 
 data_declaration bad_decl;
 
@@ -139,7 +138,8 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->container = NULL;
   dd->interface = NULL;
   dd->Cname = FALSE;
-  dd->uses = NULL;
+  dd->nuses = NULL;
+  dd->fn_uses = NULL;
   dd->connections = NULL;
   dd->spontaneous = FALSE;
   dd->magic_reduce = NULL;
@@ -335,7 +335,7 @@ void shadow_tag_warned(type_element elements, int warned)
 
   scan_type_element (elem, elements)
     {
-      ast_kind code = elem->kind;
+      AST_kind code = elem->kind;
 
       if (code == kind_struct_ref || code == kind_union_ref ||
 	  code == kind_enum_ref)
@@ -1702,7 +1702,6 @@ void check_function(data_declaration dd, declaration fd, int class,
 
   init_data_declaration(dd, fd, name, function_type);
   dd->kind = decl_function;
-  dd->uses = dd_new_list(parse_region);
   dd->isexternalscope = FALSE;
   if (nested)
     dd->ftype = function_nested;
@@ -1808,8 +1807,6 @@ static data_declaration declare_builtin(const char *name, data_kind kind, type t
   tempdecl.needsmemory = TRUE;
   tempdecl.in_system_header = TRUE;
   tempdecl.vtype = variable_static;
-  if (kind == decl_function)
-    tempdecl.uses = dd_new_list(parse_region);
 
   return declare(global_env, &tempdecl, TRUE);
 }
@@ -2131,7 +2128,6 @@ data_declaration implicitly_declare(identifier fnid)
   init_data_declaration(&tempdecl, pseudo_ast,
 			fnid->cstring.data, implicit_function_type);
   tempdecl.kind = decl_function;
-  tempdecl.uses = dd_new_list(parse_region);
   tempdecl.isexternalscope = TRUE;
   tempdecl.isfilescoperef = TRUE;
   tempdecl.ftype = function_implicit;
@@ -2758,7 +2754,7 @@ declaration declare_old_parameter(location l, cstring id)
 }
 
 /* Start definition of struct/union (indicated by skind) type tag. */
-type_element start_struct(location l, ast_kind skind, word tag)
+type_element start_struct(location l, AST_kind skind, word tag)
 {
   tag_ref tref = newkind_tag_ref(parse_region, skind, l, tag, NULL, NULL, TRUE);
   tag_declaration tdecl = tag ? lookup_tag(tref, TRUE) : NULL;
@@ -3119,7 +3115,7 @@ type_element finish_struct(type_element t, declaration fields,
 }
 
 /* Return a reference to struct/union/enum (indicated by skind) type tag */
-type_element xref_tag(location l, ast_kind skind, word tag)
+type_element xref_tag(location l, AST_kind skind, word tag)
 {
   tag_ref tref = newkind_tag_ref(parse_region, skind, l, tag, NULL, NULL, FALSE);
   tag_declaration tdecl = lookup_tag(tref, FALSE);
@@ -3514,23 +3510,10 @@ void split_type_elements(type_element tlist, type_element *odeclspecs,
   *oattributes = attributes;
 }
 
-void note_identifier_use(data_declaration ddecl)
-/* Effects: an identifier expression has just been built for ddecl
-     Collects usage information in current.function_decl->ddecl->uses
-     Uses in a global_context go to global_uses
- */
-{
-  if (current.function_decl)
-    dd_add_last(parse_region, current.function_decl->ddecl->uses, ddecl);
-  else
-    dd_add_last(parse_region, global_uses, ddecl);
-}
-
 void init_semantics(void)
 {
   current.fileregion = parse_region;
 
-  global_uses = dd_new_list(parse_region);
   spontaneous_calls = dd_new_list(parse_region);
 
   global_env = current.env = new_environment(parse_region, NULL, TRUE, FALSE);

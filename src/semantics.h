@@ -105,7 +105,7 @@ declaration declare_old_parameter(location l, cstring id);
 
 
 /* Start definition of struct/union (indicated by skind) type tag. */
-type_element start_struct(location l, ast_kind skind, word tag);
+type_element start_struct(location l, AST_kind skind, word tag);
 
 /* Finish definition of struct/union furnishing the fields and attribs.
    Returns t */
@@ -113,7 +113,7 @@ type_element finish_struct(type_element t, declaration fields,
 			   attribute attribs);
 
 /* Return a reference to struct/union/enum (indicated by skind) type tag */
-type_element xref_tag(location l, ast_kind skind, word tag);
+type_element xref_tag(location l, AST_kind skind, word tag);
 
 /* Start definition of struct/union (indicated by skind) type tag. */
 type_element start_enum(location l, word tag);
@@ -160,14 +160,6 @@ void init_data_declaration(data_declaration dd, declaration ast,
 			   const char *name, type t);
 data_declaration declare(environment env, data_declaration from,
 			 bool ignore_shadow);
-
-void note_identifier_use(data_declaration ddecl);
-/* Effects: an identifier expression has just been built for ddecl
-     Collects usage information in current.function_decl->ddecl->uses
-     Uses in a global_context go to global_uses
- */
-
-extern dd_list global_uses;
 
 /* Build a declaration object for a string */
 data_declaration declare_string(const char *name, bool wide, size_t length);
