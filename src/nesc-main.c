@@ -222,6 +222,10 @@ bool nesc_option(char *p)
     {
       flag_save_macros = 1;
     }
+  else if (!strncmp (p, "fnesc-scheduler=", strlen("fnesc-scheduler=")))
+    {
+      set_scheduler(p + strlen("fnesc-scheduler="));
+    }
   else if (!strncmp (p, "fnesc-docdir=", strlen("fnesc-docdir=")))
     {
       doc_set_outdir(p + strlen("fnesc-docdir="));
@@ -329,7 +333,6 @@ void nesc_compile(const char *filename, const char *target_name)
   init_abstract();
   init_nesc_constants();
   init_network();
-  init_task();
 
   for (includes = includelist; includes; includes = includes->next)
     require_c(toplevel_location, includes->name);

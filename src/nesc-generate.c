@@ -722,8 +722,13 @@ static void mark_reachable_function(cgraph cg,
 				    use caller_use)
 {
   dd_list_pos use;
+
   if (caller && ddecl->kind == decl_function)
     graph_add_edge(fn_lookup(cg, caller), fn_lookup(cg, ddecl), caller_use);
+
+  /* Hack because ALLCODE env variable adds task decl's to spontaneous_calls */
+  if (type_task(ddecl->type) && ddecl->interface)
+    return;
 
   if (ddecl->isused)
     return;

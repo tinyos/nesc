@@ -29,12 +29,12 @@ Boston, MA 02111-1307, USA. */
 #include "nesc-magic.h"
 #include "edit.h"
 
-const char *scheduler_name = "SchedulerBasic";
-const char *scheduler_unique_name = "TinyScheduler$TaskBasic";
-const char *scheduler_interface_name = "TaskBasic";
-const char *scheduler_interfacedef_name = "TaskBasic";
-const char *scheduler_run_name = "run";
-const char *scheduler_post_name = "submit";
+static char *scheduler_name;
+static char *scheduler_unique_name;
+static char *scheduler_interface_name;
+static char *scheduler_interfacedef_name;
+static char *scheduler_run_name;
+static char *scheduler_post_name;
 
 nesc_declaration scheduler;
 static data_declaration scheduler_interface;
@@ -357,6 +357,20 @@ void wire_scheduler(module m)
     }
 }
 
-void init_task(void)
+void set_scheduler(char *spec)
 {
+  scheduler_name = strtok(spec, ",");
+  scheduler_unique_name = strtok(NULL, ",");
+  scheduler_interface_name = strtok(NULL, ",");
+  scheduler_interfacedef_name = strtok(NULL, ",");
+  scheduler_run_name = strtok(NULL, ",");
+  scheduler_post_name = strtok(NULL, ",");
+  
+  if (scheduler_post_name && !strtok(NULL, ","))
+    flag_use_scheduler = TRUE;
+  else
+    {
+      flag_use_scheduler = FALSE;
+      error("invalid arguments to -fnesc-scheduler");
+    }
 }
