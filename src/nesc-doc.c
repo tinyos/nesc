@@ -329,9 +329,35 @@ static char *component_docfile_name(const char *component_name) {
 }
 
 
+static void copy_file(const char *srcfile, const char *destfile)
+{
+  char buf[1024 * 4];
+  FILE *in = fopen(srcfile, "r");
+  FILE *out = fopen(destfile, "w");
+  size_t nread;
+  size_t nwritten;
+
+  assert(in);
+  assert(out);
+  
+  while( !feof(in) ) {
+    nread = fread(buf, 1, sizeof(buf), in);
+    assert( !ferror(in) );
+    if(nread > 0) {
+      nwritten = fwrite(buf, 1, nread, out);
+      assert( !ferror(out) );
+      assert(nwritten == nread);
+    }
+  }
+
+  fclose(in);
+  fclose(out);
+}
+
 static void add_source_symlink(const char *srcfile, const char *linkname) 
 {
   char *src;
+  bool cygwin = FALSE;
 
   // prepend current directory info for relative filenames
   if( *srcfile != dirsep ) {
@@ -345,8 +371,18 @@ static void add_source_symlink(const char *srcfile, const char *linkname)
   }
 
 
+  // determine whether or not we are running under cygwin
+  {
+    char *ostype = getenv("OSTYPE");
+    if(ostype != NULL  &&  !strcmp(ostype,"cygwin")) 
+      cygwin = TRUE;
+  }
+
   unlink(linkname);
-  assert(symlink(srcfile, linkname) == 0);
+  if( !cygwin ) 
+    assert(symlink(srcfile, linkname) == 0);
+  else 
+    copy_file(srcfile, linkname);
 }
 
 
@@ -784,7 +820,7 @@ static dhash_table new_iface_graph_table() {
 
 
 
-static int fixme_graph_num = 1;
+//static int fixme_graph_num = 1;
 
 static bool connection_already_printed(dhash_table table, 
                                 endp ep1, endp ep2, 
@@ -1349,9 +1385,10 @@ static void generate_component_html(nesc_declaration cdecl)
 <font size=\"-1\">
 <table BORDER=\"0\" CELLPADDING=\"3\" CELLSPACING=\"0\" width=\"100%%\">
 <tr ><td>
-<b><a href=\"apps_l.html\">Apps</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"components_l.html\">Components</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"interfaces_l.html\">Interfaces</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"apps_p.html\">Apps</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"components_p.html\">Components</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"interfaces_p.html\">Interfaces</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"allfiles_p.html\">All Files</a></b>&nbsp;&nbsp;&nbsp;
 </td>
 <td align=\"right\">
 source: <a href=\"%s\">%s</a>
@@ -1581,9 +1618,10 @@ static void generate_interface_html(nesc_declaration idecl)
 <font size=\"-1\">
 <table BORDER=\"0\" CELLPADDING=\"3\" CELLSPACING=\"0\" width=\"100%%\">
 <tr ><td>
-<b><a href=\"apps_l.html\">Apps</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"components_l.html\">Components</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"interfaces_l.html\">Interfaces</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"apps_p.html\">Apps</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"components_p.html\">Components</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"interfaces_p.html\">Interfaces</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"allfiles_p.html\">All Files</a></b>&nbsp;&nbsp;&nbsp;
 </td>
 <td align=\"right\">
 source: <a href=\"%s\">%s</a>
@@ -1676,8 +1714,13 @@ static void insert_entry(file_index *fi, char *docfile, char *suffix) {
   assert( *p == '.' );
   *p = '\0'; p--;
 
-  // separate out the name
+  // separate out the name.  We special case for common source file extensions.
   while(p > e->path  &&  *p != '.') p--;
+  if( !strcmp(p,".td") || !strcmp(p,".ti") || !strcmp(p,".h") || !strcmp(p,".c") ) {
+    p--;
+    while(p > e->path  &&  *p != '.') p--;
+  }
+
   if(p == e->path) 
     e->name = e->path;
   else {
@@ -1695,8 +1738,8 @@ static void insert_entry(file_index *fi, char *docfile, char *suffix) {
  * generate the index file
  **/
 typedef enum {
-  SORT_SHORT = 1,
-  SORT_FULL = 2
+  SORT_FILE = 1,
+  SORT_PATH = 2
 } index_sort_type;
 
 static void print_index_file(const char *indexname, index_sort_type sort, file_index *ind)
@@ -1707,13 +1750,13 @@ static void print_index_file(const char *indexname, index_sort_type sort, file_i
   char *title;
 
   // create the file name, & open the file
-  filename = rstralloc(doc_region, strlen(indexname) + strlen("_s.html") + 1);
+  filename = rstralloc(doc_region, strlen(indexname) + strlen("_f.html") + 1);
   assert(filename);
   strcpy(filename, indexname);
-  if( sort == SORT_SHORT ) 
-    strcat(filename, "_s.html");
+  if( sort == SORT_FILE ) 
+    strcat(filename, "_f.html");
   else
-    strcat(filename, "_l.html");
+    strcat(filename, "_p.html");
   
   // open the file
   f = fopen(filename, "w"); assert(f);
@@ -1723,6 +1766,7 @@ static void print_index_file(const char *indexname, index_sort_type sort, file_i
   if( !strcmp(indexname, "interfaces") )        title = "Interface Index";
   else if( !strcmp(indexname, "components") )   title = "Component Index";
   else if( !strcmp(indexname, "apps") )         title = "Application Index";
+  else if( !strcmp(indexname, "allfiles") )     title = "All File Index";
   else assert(0);
   
   fprintf(f, "<html>\n");
@@ -1732,13 +1776,16 @@ static void print_index_file(const char *indexname, index_sort_type sort, file_i
 
   // add a navigation banner
   if( !strcmp(indexname,"apps") )          fprintf(f, "    Apps\n");
-  else                                     fprintf(f, "    <a href=\"apps_l.html\">Apps</a>\n");
+  else                                     fprintf(f, "    <a href=\"apps_p.html\">Apps</a>\n");
   fprintf(f, "    &nbsp;&nbsp;&nbsp;\n");
   if( !strcmp(indexname,"components") )    fprintf(f, "    Components\n");
-  else                                     fprintf(f, "    <a href=\"components_l.html\">Components</a>\n");
+  else                                     fprintf(f, "    <a href=\"components_p.html\">Components</a>\n");
   fprintf(f, "    &nbsp;&nbsp;&nbsp;\n");
   if( !strcmp(indexname,"interfaces") )    fprintf(f, "    Interfaces\n");
-  else                                     fprintf(f, "    <a href=\"interfaces_l.html\">Interfaces</a>\n");
+  else                                     fprintf(f, "    <a href=\"interfaces_p.html\">Interfaces</a>\n");
+  fprintf(f, "    &nbsp;&nbsp;&nbsp;\n");
+  if( !strcmp(indexname,"allfiles") )      fprintf(f, "    All Files\n");
+  else                                     fprintf(f, "    <a href=\"allfiles_p.html\">All Files</a>\n");
   fprintf(f, "<hr><p>\n");
 
 
@@ -1753,16 +1800,17 @@ static void print_index_file(const char *indexname, index_sort_type sort, file_i
     char *heading = rstrdup(doc_region, indexname);
     char *end = heading + strlen(heading)-1;
     if(*end == 's') *end = '\0'; // trim off the last 's'
+    if( !strcmp(indexname,"allfiles") ) heading = "file";
 
     fprintf(f, "<tr>\n");
-    if(sort == SORT_SHORT) {
-      fprintf(f, "<td><a href=\"%s_l.html\"><em>path</em></a></td>\n", indexname);
+    if(sort == SORT_FILE) {
+      fprintf(f, "<td><a href=\"%s_p.html\"><em>path</em></a></td>\n", indexname);
       fprintf(f, "<td>&nbsp;&nbsp;&nbsp;</td>\n");
       fprintf(f, "<td><em>%s</em></td>\n", heading);
     } else {
       fprintf(f, "<td><em>path</em></td>\n");
       fprintf(f, "<td>&nbsp;&nbsp;&nbsp;</td>\n");
-      fprintf(f, "<td><a href=\"%s_s.html\"><em>%s</em></a></td>\n", indexname, heading);
+      fprintf(f, "<td><a href=\"%s_f.html\"><em>%s</em></a></td>\n", indexname, heading);
     }
     fprintf(f, "</tr>\n");
   }
@@ -1776,7 +1824,7 @@ static void print_index_file(const char *indexname, index_sort_type sort, file_i
 
   // index 
   for(i=0; i<ind->num; i++) {
-    if(sort == SORT_SHORT) {
+    if(sort == SORT_FILE) {
       fprintf(f, "<tr>\n");
       fprintf(f, "    <td><a href=\"%s\">%s</a></td>\n", ind->ent[i].fname, ind->ent[i].path);
       fprintf(f, "    <td>&nbsp;</td>\n");
@@ -1801,8 +1849,88 @@ static void print_index_file(const char *indexname, index_sort_type sort, file_i
 
 
   // cleanup
-  fprintf(f, "</center>\n");
   fprintf(f, "</table>\n");
+  fprintf(f, "</center>\n");
+  fprintf(f, "</body>\n");
+  fprintf(f, "</html>\n");
+  fclose(f);
+}
+
+
+static void print_hierarchical_index_file(const char *filename, file_index *ind)
+{
+  FILE *f = fopen(filename,"w");
+  char *title = "Source Tree";
+  char *prevdir;
+  int i,j,level;
+
+  assert(f);
+
+  fprintf(f, "<html>\n");
+  fprintf(f, "<head><title>%s</title></head>\n", title);
+  fprintf(f, "<body>\n");
+
+  // add a navigation banner
+  fprintf(f, "    <a href=\"apps_p.html\">Apps</a>\n");               fprintf(f, "    &nbsp;&nbsp;&nbsp;\n");
+  fprintf(f, "    <a href=\"components_p.html\">Components</a>\n");   fprintf(f, "    &nbsp;&nbsp;&nbsp;\n");
+  fprintf(f, "    <a href=\"interfaces_p.html\">Interfaces</a>\n");   fprintf(f, "    &nbsp;&nbsp;&nbsp;\n");
+  fprintf(f, "    <a href=\"allfiles_p.html\">All Files</a>\n");
+  fprintf(f, "<hr><p>\n");
+
+  // title, and table tags
+  fprintf(f, "<h1 align=\"center\">%s</h1>\n", title);
+  fprintf(f, "<center>\n");
+  fprintf(f, "<table border=0 cellpadding=0>\n");
+
+
+  // listing 
+  prevdir = "";
+  for(i=0; i<ind->num; i++) {
+    // print directory info, if necessary
+    if( strcmp(prevdir,ind->ent[i].path) ) {
+      char *a, *b, *dot;
+
+      // find the common prefix
+      level = 0;
+      a = prevdir;
+      b = ind->ent[i].path;
+      while(*a == *b) {
+        a++;
+        b++;
+        if(*b == '.') level++;
+      }
+      while(b > ind->ent[i].path  &&  *b != '.') b--;
+      if(*b == '.') b++;
+
+      // print the dir headers
+      do {
+        dot = strchr(b,'.');
+        if(dot != NULL) *dot = '\0';
+
+        fprintf(f, "<tr><td>\n");
+        for(j=0; j<level; j++)   fprintf(f, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ");
+        fprintf(f, "\n    %s/<br>\n", b);
+        fprintf(f, "</td></tr>\n");
+        
+        if(dot != NULL) *dot = '.';
+        b = dot+1;
+        level++;
+      } while(dot != NULL);
+
+      prevdir = ind->ent[i].path;
+    }
+
+    // print the link
+    fprintf(f, "<tr><td>\n");
+    for(j=0; j<level; j++) fprintf(f, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ");
+    fprintf(f, "\n    <a href=\"%s\">%s</a>\n", ind->ent[i].fname, ind->ent[i].name);
+    fprintf(f, "</td></tr>\n");
+  }
+
+
+  // cleanup
+  fprintf(f, "</table>\n");
+  fprintf(f, "</center>\n");
   fprintf(f, "</body>\n");
   fprintf(f, "</html>\n");
   fclose(f);
@@ -1819,7 +1947,7 @@ static void print_index_file(const char *indexname, index_sort_type sort, file_i
 
 
 static void generate_index_html() {
-  file_index comp, iface, app;
+  file_index comp, iface, app, allfiles;
 
   // read the directory, and sort the entries
   {
@@ -1834,13 +1962,15 @@ static void generate_index_html() {
       while( readdir(dir) ) nument++;
       rewinddir(dir);
 
-      iface.ent = rarrayalloc(doc_region, nument, index_entry);
-      comp.ent  = rarrayalloc(doc_region, nument, index_entry);
-      app.ent   = rarrayalloc(doc_region, nument, index_entry);
+      iface.ent    = rarrayalloc(doc_region, nument, index_entry);
+      comp.ent     = rarrayalloc(doc_region, nument, index_entry);
+      app.ent      = rarrayalloc(doc_region, nument, index_entry);
+      allfiles.ent = rarrayalloc(doc_region, nument, index_entry);
 
-      iface.num = 0;
-      comp.num  = 0;
-      app.num   = 0;
+      iface.num    = 0;
+      comp.num     = 0;
+      app.num      = 0;
+      allfiles.num = 0;
     }
 
     // scan dir
@@ -1859,18 +1989,21 @@ static void generate_index_html() {
         // add to the appropriate list
         if( !strcmp(p,".ti.html") ) {
           insert_entry(&iface, dent->d_name, ".ti.html");
+          insert_entry(&allfiles, dent->d_name, ".html");
           continue;
         }
         if( !strcmp(p,".td.html") ) {
           insert_entry(&comp, dent->d_name, ".td.html");
+          insert_entry(&allfiles, dent->d_name, ".html");
           continue;
         }
 
         // scan back one more, for app files
         p--;
         while(p > dent->d_name  &&  *p != '.') p--;
-        if( !strcmp(p,".td.app.html") )
+        if( !strcmp(p,".td.app.html") ) {
           insert_entry(&app, dent->d_name, ".td.app.html");
+        }
       }
     }
 
@@ -1879,32 +2012,38 @@ static void generate_index_html() {
   // Generate index files, sorted by short name
   {
     // sort
-    qsort(iface.ent, iface.num, sizeof(index_entry), index_entry_comparator_short);
-    qsort(comp.ent,  comp.num,  sizeof(index_entry), index_entry_comparator_short);
-    qsort(app.ent,   app.num,   sizeof(index_entry), index_entry_comparator_short);
+    qsort(iface.ent,    iface.num,    sizeof(index_entry), index_entry_comparator_short);
+    qsort(comp.ent,     comp.num,     sizeof(index_entry), index_entry_comparator_short);
+    qsort(app.ent,      app.num,      sizeof(index_entry), index_entry_comparator_short);
+    qsort(allfiles.ent, allfiles.num, sizeof(index_entry), index_entry_comparator_short);
     
     // index files    
-    print_index_file("interfaces", SORT_SHORT, &iface);
-    print_index_file("components", SORT_SHORT, &comp);
-    print_index_file("apps", SORT_SHORT, &app);
+    print_index_file("interfaces", SORT_FILE, &iface);
+    print_index_file("components", SORT_FILE, &comp);
+    print_index_file("apps", SORT_FILE, &app);
+    print_index_file("allfiles", SORT_FILE, &allfiles);
   }
 
   // generate index files, sorted by long name
   {
     // sort
-    qsort(iface.ent, iface.num, sizeof(index_entry), index_entry_comparator_full);
-    qsort(comp.ent,  comp.num,  sizeof(index_entry), index_entry_comparator_full);
-    qsort(app.ent,   app.num,   sizeof(index_entry), index_entry_comparator_full);
+    qsort(iface.ent,    iface.num,    sizeof(index_entry), index_entry_comparator_full);
+    qsort(comp.ent,     comp.num,     sizeof(index_entry), index_entry_comparator_full);
+    qsort(app.ent,      app.num,      sizeof(index_entry), index_entry_comparator_full);
+    qsort(allfiles.ent, allfiles.num, sizeof(index_entry), index_entry_comparator_full);
     
     // index files    
-    print_index_file("interfaces", SORT_FULL, &iface);
-    print_index_file("components", SORT_FULL, &comp);
-    print_index_file("apps", SORT_FULL, &app);
+    print_index_file("interfaces", SORT_PATH, &iface);
+    print_index_file("components", SORT_PATH, &comp);
+    print_index_file("apps", SORT_PATH, &app);
+    print_index_file("allfiles", SORT_PATH, &allfiles);
   }
   
 
-  // top-level index file (?)
-
+  // hierarchical, top-level index file
+  qsort(allfiles.ent, allfiles.num, sizeof(index_entry), index_entry_comparator_full);
+  print_hierarchical_index_file("index.html", &allfiles);
+  
 }
 
 
@@ -1949,9 +2088,10 @@ static void generate_app_page(const char *filename, cgraph cg)
 <font size=\"-1\">
 <table BORDER=\"0\" CELLPADDING=\"3\" CELLSPACING=\"0\" width=\"100%%\">
 <tr ><td>
-<b><a href=\"apps_l.html\">Apps</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"components_l.html\">Components</a></b>&nbsp;&nbsp;&nbsp;
-<b><a href=\"interfaces_l.html\">Interfaces</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"apps_p.html\">Apps</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"components_p.html\">Components</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"interfaces_p.html\">Interfaces</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"allfiles_p.html\">All Files</a></b>&nbsp;&nbsp;&nbsp;
 </td>
 <td align=\"right\">
 &nbsp;
