@@ -329,10 +329,12 @@ static void output_docstring(char *docstring)
   docstring_context context = in_main;
   static char *whitespace = " \t\r\n";
 
+  fprintf(stderr, "DOC: %s\n", pos);
+  
   while( 1 ) {
     // find the next @ directive
     at = strchr(pos,'@');
-
+    
     // output the rest, if there are no more @ directives
     if(at == NULL) {
       output(pos);
@@ -340,7 +342,6 @@ static void output_docstring(char *docstring)
         output("</dl>\n");
       return;
     }
-
     // output up to the @
     *at='\0'; output(pos); *at='@';
     pos = at+1;
@@ -371,8 +372,12 @@ static void output_docstring(char *docstring)
       output("<dd>");
       pos += strspn(pos, whitespace);
       len = strcspn(pos, whitespace);
+      // Null terminate the name
+      *(pos + len) = '\0';
       output("%*s",len,pos);
       output(" - ");
+      // Restore to spaced text.
+      *(pos + len) = ' ';
       pos += len;
     }
 
@@ -550,7 +555,7 @@ static void print_function_html(function_decl fd, data_decl dd, variable_decl vd
   char *ldoc = NULL;
   char *ifile = NULL;
 
-  // set up the description pointes
+  // set up the description pointers
   if( fd ) {
     sdoc = fd->ddecl->short_docstring;
     ldoc = fd->ddecl->long_docstring;

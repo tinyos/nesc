@@ -325,9 +325,9 @@ void separate_short_docstring(char *str, char **short_s, char **long_s)
 
   /* both short and long descriptions */
   else {
-    *dot = '\0';
+    *(dot - 1)= '\0';
     *short_s = rstrdup(parse_region, str);
-    *dot = '.';
+    *(dot - 1)= ' ';
     *long_s = str;
   }
 }
