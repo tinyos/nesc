@@ -359,7 +359,7 @@ void inline_functions(cgraph callgraph)
 	inline_function(n, in);
     }
 
-  /* Inline small fns, medium-size single-call fns */
+  /* Inline small fns and single-call fns */
   graph_scan_nodes (n, ig)
     {
       struct inline_node *in = NODE_GET(struct inline_node *, n);

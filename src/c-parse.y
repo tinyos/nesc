@@ -757,6 +757,7 @@ unary_expr:
 		    case post_task:
 		      if (!type_task(calltype))
 			error("only tasks can be posted");
+		      fc->type = unsigned_char_type;
 		      break;
 		    }
 		}
