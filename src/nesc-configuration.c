@@ -79,7 +79,8 @@ static type endpoint_type(endp p)
   return t;
 }
 
-static void connect_interface(cgraph cg, struct endp from, struct endp to)
+static void connect_interface(cgraph cg, struct endp from, struct endp to,
+			      bool reverse)
 {
   env_scanner scanfns;
   const char *fnname;
@@ -97,7 +98,7 @@ static void connect_interface(cgraph cg, struct endp from, struct endp to)
       assert(fndecl->kind == decl_function);
       to.function = fndecl;
       from.function = env_lookup(from.interface->functions->id_env, fndecl->name, TRUE);
-      if (fndecl->defined)
+      if (fndecl->defined ^ reverse)
 	connect_function(cg, from, to);
       else
 	connect_function(cg, to, from);
@@ -351,20 +352,30 @@ static void process_interface_connection(cgraph cg, connection conn,
 
   if (is_eq_connection(conn)) /* p1 = p2 */
     {
-      if (p1.interface->required != p2.interface->required)
-	error_with_location(l, "an '=' connection is between two provided, or two required interfaces");
-      else if (!p1.component)
-	connect_interface(cg, p1, p2);
+      if (!p1.component && !p2.component)
+	{
+	  if (p1.interface->required == p2.interface->required)
+	    error_with_location(l, "external to external connections must be between provided and used interfaces");
+	  else
+	    connect_interface(cg, p1, p2, TRUE);
+	}
       else
-	connect_interface(cg, p2, p1);
-      /* Note: connect_interface takes care of choosing the right edge
-	 direction. There are two cases:
-	 - the interface is provided: then we want edges from outside in,
-	   so from = the outside interface
-	 - the interface is required: then we want edges from inside out,
-	   but connect_interface will reverse them because the interface
-	   is required. So we also pick from = the outside interface.
-      */
+	{
+	  if (p1.interface->required != p2.interface->required)
+	    error_with_location(l, "external to internal connections must be both provided or both used");
+	  else if (!p1.component)
+	    connect_interface(cg, p1, p2, FALSE);
+	  else
+	    connect_interface(cg, p2, p1, FALSE);
+	  /* Note: connect_interface takes care of choosing the right edge
+	     direction. There are two cases:
+	     - the interface is provided: then we want edges from outside in,
+	     so from = the outside interface
+	     - the interface is required: then we want edges from inside out,
+	     but connect_interface will reverse them because the interface
+	     is required. So we also pick from = the outside interface.
+	  */
+	}
     }
   else /* p1 <- p2 */
     {
@@ -372,7 +383,7 @@ static void process_interface_connection(cgraph cg, connection conn,
 	error_with_location(l, "target of '<-' interface must be provided");
       else if (!p2.interface->required)
 	error_with_location(l, "source of '<-' interface must be required");
-      else connect_interface(cg, p2, p1);
+      else connect_interface(cg, p2, p1, FALSE);
     }
 }
 
@@ -385,12 +396,24 @@ static void process_function_connection(cgraph cg, connection conn,
 
   if (is_eq_connection(conn)) /* p1 = p2 */
     {
-      if (p1def != p2def)
-	error_with_location(l, "an '=' connection is between two defined, or two used functions");
-      else if ((!p1.component && !p1def) || (p1.component && p1def))
-	connect_function(cg, p2, p1);
-      else
-	connect_function(cg, p1, p2);
+      if (!p1.component && !p2.component)
+	{
+	  if (p1def == p2def)
+	    error_with_location(l, "external to external connections must be between provided and used functions");
+	  else if (p1def)
+	    connect_function(cg, p1, p2); /* from provided to used */
+	  else
+	    connect_function(cg, p2, p1);
+	}
+      else 
+	{
+	  if (p1def != p2def)
+	    error_with_location(l, "external to internal connections must be both provided or both used");
+	  else if ((!p1.component && !p1def) || (p1.component && p1def))
+	    connect_function(cg, p2, p1);
+	  else
+	    connect_function(cg, p1, p2);
+	}
     }
   else /* p1 <- p2 */
     {
@@ -409,15 +432,13 @@ static void process_actual_connection(cgraph cg, connection conn,
 
   if (is_eq_connection(conn)) /* p1 = p2 */
     {
-      if (!((p1.component && !p2.component) ||
-	    (!p1.component && p2.component)))
-	error_with_location(l, "there must be exactly one external interface in an '=' connection");
+      if (p1.component && p2.component)
+	error_with_location(l, "there must be at least one external interface in an '=' connection");
     }
   else /* p1 <- p2 */
     {
-      if (!((p1.component && p2.component) ||
-	    (!p1.component && !p2.component)))
-	error_with_location(l, "internal and external interfaces mixed in '<-' connection");
+      if (!p1.component || !p2.component)
+	error_with_location(l, "external interfaces cannot be connected with `<-' or `->'");
     }
 
   if (p1.function)

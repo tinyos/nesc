@@ -570,7 +570,7 @@ connection_list:
 
 connection:
 	  endpoint '=' endpoint ';' 
-		{ $$ = CAST(connection, new_eq_connection(pr, $2.location, $3, $1)); }
+		{ $$ = CAST(connection, new_eq_connection(pr, $2.location, $1, $3)); }
 	| endpoint POINTSAT endpoint ';' 
 		{ $$ = CAST(connection, new_rp_connection(pr, $2.location, $3, $1)); }
 	| endpoint TASTNIOP endpoint ';'
