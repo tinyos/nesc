@@ -32,7 +32,10 @@ Boston, MA 02111-1307, USA.  */
     EEXIST occurs when repeating).
   - Removed color map elements -- default graphviz doesn't include
     language cmap.
-  
+
+  Modified 8/15/2002 by Phil Levis
+
+  - Chase down pointer_declarators for functions properly now.
 
   
   FIXME: need to document the doc system...  ;-)
