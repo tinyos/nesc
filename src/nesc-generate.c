@@ -972,23 +972,47 @@ static void prt_nido_initialize(dd_list modules)
   outputln("}");
 }
 
-void prt_nesc_typedefs(nesc_declaration comp)
+static void prt_typedefs(nesc_declaration comp)
 {
   declaration parm;
 
+  scan_declaration (parm, comp->parameters)
+    if (is_type_parm_decl(parm))
+      {
+	type_parm_decl td = CAST(type_parm_decl, parm);
+	asttype arg = CAST(type_argument, td->ddecl->initialiser)->asttype;
+
+	output("typedef ");
+	prt_declarator(arg->declarator, arg->qualifiers, NULL, td->ddecl,
+		       psd_print_ddecl);
+	outputln(";");
+      }
+}
+
+void prt_nesc_interface_typedefs(nesc_declaration comp)
+{
+  const char *ifname;
+  void *ifentry;
+  env_scanner scanifs;
+
+  env_scan(comp->env->id_env, &scanifs);
+  while (env_next(&scanifs, &ifname, &ifentry))
+    {
+      data_declaration idecl = ifentry;
+
+      if (idecl->kind == decl_interface_ref)
+	prt_typedefs(idecl->itype);
+    }
+}
+
+void prt_nesc_typedefs(nesc_declaration comp)
+{
   assert(!comp->abstract);
   if (comp->original)
-    scan_declaration (parm, comp->parameters)
-      if (is_type_parm_decl(parm))
-	{
-	  type_parm_decl td = CAST(type_parm_decl, parm);
-	  asttype arg = CAST(type_argument, td->ddecl->initialiser)->asttype;
-
-	  output("typedef ");
-	  prt_declarator(arg->declarator, arg->qualifiers, NULL, td->ddecl,
-			 psd_print_ddecl);
-	  outputln(";");
-	}
+    prt_typedefs(comp);
+  /* Only module interface type arguments are used in output */
+  if (is_module(comp->impl))
+    prt_nesc_interface_typedefs(comp);
 }
 
 void generate_c_code(nesc_declaration program, const char *target_name,

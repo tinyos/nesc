@@ -618,7 +618,7 @@ void prt_plain_ddecl(data_declaration ddecl, psd_options options)
 	    output("/*%s*/", ddecl->container->instance_name);
 	  output_stripped_string_dollar(ddecl->container->name);
 	}
-      if (ddecl->kind == decl_function && ddecl->interface)
+      if (/*ddecl->kind == decl_function &&*/ ddecl->interface)
 	output_stripped_string_dollar(ddecl->interface->name);
       if ((options & psd_print_default) &&
 	  (!ddecl->defined && ddecl->kind == decl_function &&
@@ -802,8 +802,13 @@ void prt_typename(typename tname)
   data_declaration tdecl = tname->ddecl;
 
   set_location(tname->location);
-  if (tdecl->container && !tdecl->Cname)
-    output_stripped_string_dollar(tdecl->container->name);
+  if (!tdecl->Cname)
+    {
+      if (tdecl->container)
+	output_stripped_string_dollar(tdecl->container->name);
+      if (tdecl->interface)
+	output_stripped_string_dollar(tdecl->interface->name);
+    }
   output_stripped_string(tdecl->name);
 }
 

@@ -34,11 +34,14 @@ typedef struct nesc_declaration {
   struct environment *env;
   char *short_docstring;	/* For documentation comments */
   char *long_docstring;
+
   bool abstract;		/* true for abstract components and
 				   generic interfaces */
   declaration parameters;	/* Parameters for abstract components and
 				   generic interfaces */
-  int folded;			/* number of last constant folding pass */
+  struct environment *parameter_env;
+  struct nesc_declaration *original; /* For instances: the "original" component
+					or interface */
 
   /* for components */
   implementation impl;
@@ -47,8 +50,7 @@ typedef struct nesc_declaration {
   size_t instance_count;	/* For abstract components, the
 				   instance count (used to give each
 				   instance a unique name) */
-  struct nesc_declaration *original; /* For instances of abstract components,
-					the "original" component */
+  int folded;			/* number of last constant folding pass */
 } *nesc_declaration;
 
 #endif

@@ -103,8 +103,8 @@ static void connect_interface(cgraph cg, struct endp from, struct endp to,
   const char *fnname;
   void *fnentry;
 
-  assert(!from.function && !to.function &&
-	 from.interface->itype == to.interface->itype);
+  assert(!from.function && !to.function
+	 /*&& from.interface->itype == to.interface->itype*/);
 
   /* All functions */
   interface_scan(to.interface, &scanfns);

@@ -453,12 +453,18 @@ interface_parms:
 	  /* empty */ { $$ = NULL; }
 	| '(' interface_parm_list ')' 
 		{
+		  nesc_declaration intf = current.container;
+
+		  intf->parameters = $2;
+		  intf->parameter_env = current.env;
+		  $$ = $2;
+
 		  /* Template intfs need a new level for the actual intf */
 		  pushlevel(FALSE);
-		  current.container->env = current.env;
-		  current.container->abstract = TRUE;
-		  current.container->parameters = $2;
-		  $$ = $2;
+		  /* The interface env counts as global */
+		  current.env->global_level = TRUE;
+		  intf->env = current.env;
+		  intf->abstract = TRUE;
 		}
 	;
 
@@ -558,14 +564,19 @@ component_parms:
 		}
 	| '(' template_parms ')'
 		{
-		  if (!current.container->abstract)
+		  nesc_declaration comp = current.container;
+
+		  if (!comp->abstract)
 		    error("only abstract components can have a parameter list");
+		  comp->parameters = $2;
+		  comp->parameter_env = current.env;
+		  $$ = $2;
+
 		  /* abstract components need a new level for the 
 		     specification */
 		  pushlevel(FALSE);
-		  current.container->env = current.env;
-		  current.container->parameters = $2;
-		  $$ = $2;
+		  current.env->global_level = TRUE;
+		  comp->env = current.env;
 		}
 	;
 

@@ -148,16 +148,18 @@ void declare_interface_ref(interface_ref iref, declaration gparms,
 	{
 	  ddecl->itype = interface_copy(parse_region, iref,
 					current.container->abstract);
+	  ddecl->functions = ddecl->itype->env;
 	}
     }
+  else
+    copy_interface_functions(parse_region, current.container, ddecl,
+			     ddecl->itype->env);
 
   /* We don't make the interface type generic. Instead, we push the generic
      type into each function in copy_interface_functions.  This is because
      the syntax for invoking or defining a function on a generic interface
      is interfacename.functionname[generic args](...) */
   ddecl->type = make_interface_type(ddecl);
-  copy_interface_functions(parse_region, current.container, ddecl,
-			   ddecl->itype->env);
 }
 
 void check_generic_parameter_type(location l, data_declaration gparm)

@@ -104,13 +104,17 @@ static void instantiate_ddecl_types(data_declaration ddecl)
     ddecl->gparms = instantiate_typelist(ddecl->gparms);
 }
 
+static data_declaration hack_interface;
+static bool hack_required;
+
 static void clone_ddecl(data_declaration ddecl)
 {
   data_declaration copy;
 
   /* If already cloned, return. */
   if (ddecl->instantiation &&
-      ddecl->instantiation->container == current.container)
+      ddecl->instantiation->container == current.container &&
+      (!hack_interface || ddecl->instantiation->interface == hack_interface))
     return;
 
   /* Copy module functions (incl. tasks) and variables */
@@ -130,6 +134,9 @@ static void clone_ddecl(data_declaration ddecl)
   copy->nuses = NULL;
   copy->shadowed = ddecl;
   copy->container = current.container;
+  copy->interface = hack_interface;
+  if (ddecl_is_command_or_event(copy))
+    copy->defined = (copy->ftype == function_command) ^ hack_required;
   instantiate_ddecl_types(copy);
 }
 
@@ -350,19 +357,38 @@ static AST_walker_result clone_field_ref(AST_walker spec, void *data,
 
 static void set_ddecl_instantiation1(data_declaration fndecl, void *data)
 {
-  data_declaration orig = fndecl;
+  data_declaration orig;
 
   instantiate_ddecl_types(fndecl);
 
   /* Here we make the copy of the fndecl created during parsing
      (the copy from the actual interface type) point to fndecl.
-     Note that the last shadowed pointer points to the entries in
-     the interface type */
-  while (orig->shadowed->shadowed)
+     We may have to go two deep for abstract modules in abstract
+     configurations (but don't get fooled by generic interfaces) */
+  orig = fndecl->shadowed;
+  if (orig->shadowed && orig->shadowed->container->kind == l_component)
     orig = orig->shadowed;
 
-  assert(orig != fndecl);
   orig->instantiation = fndecl;
+}
+
+static void set_env_instantiations(environment env)
+{
+  const char *name;
+  void *entry;
+  env_scanner scan;
+
+  env_scan(env->id_env, &scan);
+  while (env_next(&scan, &name, &entry))
+    set_ddecl_instantiation1(entry, NULL);
+#if 0
+    {
+      data_declaration ddecl = entry, orig = original_declaration(ddecl);
+
+      assert(ddecl != orig);
+      orig->instantiation = ddecl;
+    }
+#endif
 }
 
 static void set_specification_instantiations(nesc_declaration component)
@@ -407,8 +433,6 @@ static declaration instantiate_parameters(region r, declaration orig_parms)
 /* Effects: Makes a new list of declarations for an abstract componnent
 */
 {
-  /* A new dummy env for the instantiated parameters */
-  current.env = new_environment(r, NULL, TRUE, FALSE);
   AST_walk_list(clone_walker, r, CASTPTR(node, &orig_parms));
   AST_set_parents(CAST(node, orig_parms));
 
@@ -487,10 +511,13 @@ static AST_walker_result clone_interface_ref(AST_walker spec, void *data,
   new->ddecl = new->ddecl->instantiation;
 
   if (new->ddecl->itype->abstract)
-    new->ddecl->itype = interface_copy(data, new, current.container->abstract);
-
-  copy_interface_functions(data, current.container, 
-			   new->ddecl, new->ddecl->functions);
+    {
+      new->ddecl->itype = interface_copy(data, new, current.container->abstract);
+      new->ddecl->functions = new->ddecl->itype->env;
+    }
+  else
+    copy_interface_functions(data, current.container, 
+			     new->ddecl, new->ddecl->functions);
 
   return aw_done;
 }
@@ -588,26 +615,6 @@ void set_parameter_values(nesc_declaration cdecl, expression args)
     }
 }
 
-static void set_parameter_instantiations(nesc_declaration cdecl)
-{
-  declaration parm;
-
-  /* We know args is the same length as parameters (earlier error if not) */
-  scan_declaration (parm, cdecl->parameters)
-    {
-      data_declaration ddecl, orig;
-
-      if (is_data_decl(parm))
-	ddecl = CAST(variable_decl, CAST(data_decl, parm)->decls)->ddecl;
-      else
-	ddecl = CAST(type_parm_decl, parm)->ddecl;
-
-      orig = original_declaration(ddecl);
-      assert(ddecl != orig);
-      orig->instantiation = ddecl;
-    }
-}
-
 node instantiate_ast_list(region r, node n)
 {
   AST_walk_list(clone_walker, r, &n);
@@ -633,11 +640,7 @@ void instantiate(nesc_declaration component, expression arglist)
      specially (not copied). So we just copy the parameters and the
      implementation. */
 
-#if 0
-  component->parameters = instantiate_parameters(r, component->parameters);
-  set_parameter_values(component, arglist);
-#endif
-  set_parameter_instantiations(component);
+  set_env_instantiations(component->parameter_env);
   set_specification_instantiations(component);
 
   /* A new dummy env for all instantiations in the implementation */
@@ -868,22 +871,26 @@ bool check_abstract_arguments(const char *kind, data_declaration ddecl,
 
 static nesc_declaration 
 nesc_declaration_copy(region r, nesc_declaration old, expression args,
-		      bool copy_is_abstract)
+		      bool copy_is_abstract, data_declaration ddecl)
 {
   nesc_declaration copy;
 
   copy = new_nesc_declaration(r, old->kind, old->name);
-  copy->env = new_environment(r, old->env->parent, TRUE, FALSE);
   copy->short_docstring = old->short_docstring;
   copy->long_docstring = old->long_docstring;
   copy->abstract = copy_is_abstract;
   copy->original = old;
 
-  /* Copy the parameters, storing the new decls in a dummy env */
-  current.env = new_environment(r, NULL, TRUE, FALSE);
-  current.container = copy;
+  /* Copy the parameters into new env, make new top-level env */
+  copy->parameter_env = current.env = new_environment(r, NULL, TRUE, FALSE);
+  copy->env = new_environment(r, copy->parameter_env, TRUE, FALSE);
+  hack_interface = ddecl;
+  current.container = ddecl ? ddecl->container : copy;
   copy->parameters = instantiate_parameters(r, old->parameters);
   set_parameter_values(copy, args);
+
+  current.env = copy->env;
+  //current.container = copy;
 
   return copy;
 }
@@ -899,9 +906,12 @@ nesc_declaration interface_copy(region r, interface_ref iref,
 
   assert(intf->kind == l_interface);
 
-  copy = nesc_declaration_copy(r, intf, iref->args, copy_is_abstract);
-  current.env = copy->env;
+  copy = nesc_declaration_copy(r, intf, iref->args, copy_is_abstract,
+			       iref->ddecl);
+  hack_required = iref->ddecl->required;
   copy->ast = CAST(nesc_decl, instantiate_ast_list(r, CAST(node, intf->ast)));
+  hack_required = FALSE;
+  hack_interface = NULL;
   current = old;
   
   return copy;
@@ -919,7 +929,7 @@ nesc_declaration specification_copy(region r, component_ref cref,
 
   assert(comp->kind == l_component);
 
-  copy = nesc_declaration_copy(r, comp, cref->args, copy_is_abstract);
+  copy = nesc_declaration_copy(r, comp, cref->args, copy_is_abstract, NULL);
   copy->instance_name = cref->word2->cstring.data;
   if (!copy_is_abstract)
     {
@@ -938,7 +948,6 @@ nesc_declaration specification_copy(region r, component_ref cref,
   copy->impl = comp->impl;
 
   /* Copy the specification into the copy's env */
-  current.env = copy->env;
   spec = CAST(component, copy->ast);
   spec->rplist = CAST(rp_interface,
 		      instantiate_ast_list(r, CAST(node, spec->rplist)));
