@@ -116,6 +116,9 @@ static int am_type(region r, tag_declaration tdecl)
       if (type_integer(am_val->type) && cval_knownvalue(am_val->cval))
 	return constant_sint_value(am_val);
     }
+  
+  fprintf(stderr, "warning: Cannot determine AM type for %s\n", selected_type);
+  fprintf(stderr, "         (Looking for definition of %s)\n", am_name);
   return -1;
 }
 
