@@ -1,0 +1,49 @@
+<dsd xmlns="http://www.brics.dk/DSD/2.0"
+     xmlns:m="http://www.brics.dk/DSD/2.0/meta"
+     xmlns:nesc="http://www.tinyos.net/nesC">
+
+  <if>
+    <element name="nesc:components"/>
+    <declare>
+      <contents>
+        <repeat><boolexp ref="nesc:component"/></repeat>
+      </contents>
+    </declare>
+  </if>
+
+  <boolexp id="nesc:component">
+    <or>
+      <element name="nesc:configuration"/>
+      <element name="nesc:module"/>
+    </or>
+  </boolexp>
+
+  <if>
+    <boolexp ref="nesc:component"/>
+    <declare>
+      <required>
+        <attribute name="qname"/>
+      </required>
+
+      <m:doc>Order of these elements is unimportant</m:doc>
+      <contents>
+        <optional><element name="nesc:instance"/></optional>
+      </contents>
+      <contents>
+        <m:doc>Present for generic components</m:doc>
+        <optional><element name="nesc:parameters"/></optional>
+      </contents>
+    </declare>
+  </if>
+
+  <if>
+    <element name="nesc:instance"/>
+    <declare>
+      <required>
+        <attribute name="instance"><stringtype ref="nesc:number"/></attribute>
+      </required>
+      <contents><element name="nesc:component-ref"/></contents>
+    </declare>
+  </if>
+
+</dsd>

@@ -1,0 +1,75 @@
+<dsd xmlns="http://www.brics.dk/DSD/2.0"
+     xmlns:m="http://www.brics.dk/DSD/2.0/meta"
+     xmlns:nesc="http://www.tinyos.net/nesC">
+
+  <m:doc>Many attribute names have the same format everywhere
+    (some contents may choose to place further restrictions).
+    Declare those global rules here.
+    Attributes which rely on these rules will have no `stringtype ref'
+    Currently: name, qname, ref, size, alignment, value, scoped</m:doc>
+
+  <if>
+    <attribute name="ref"/>
+    <require>
+      <attribute name="ref">
+        <stringtype ref="nesc:ref"/>
+      </attribute>
+    </require>
+  </if>
+   
+  <if>
+    <attribute name="name"/>
+    <require>
+      <attribute name="name">
+        <stringtype ref="nesc:identifier"/>
+      </attribute>
+    </require>
+  </if>
+   
+  <if>
+    <attribute name="qname"/>
+    <require>
+      <attribute name="qname">
+        <stringtype ref="nesc:path"/>
+      </attribute>
+    </require>
+  </if>
+   
+  <if>
+    <attribute name="scoped"/>
+    <require>
+      <attribute name="scoped">
+        <stringtype ref="nesc:empty"/>
+      </attribute>
+    </require>
+  </if>
+   
+  <if>
+    <attribute name="size"/>
+    <require>
+      <attribute name="size">
+        <stringtype ref="nesc:constant"/>
+      </attribute>
+    </require>
+  </if>
+   
+  <if>
+    <attribute name="alignment"/>
+    <require>
+      <attribute name="alignment">
+        <stringtype ref="nesc:constant"/>
+      </attribute>
+    </require>
+  </if>
+   
+  <if>
+    <attribute name="cst"/>
+    <require>
+      <attribute name="cst">
+        <stringtype ref="nesc:constant"/>
+      </attribute>
+    </require>
+  </if>
+   
+
+</dsd>

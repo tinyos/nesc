@@ -1,0 +1,163 @@
+<dsd xmlns="http://www.brics.dk/DSD/2.0"
+     xmlns:m="http://www.brics.dk/DSD/2.0/meta"
+     xmlns:nesc="http://www.tinyos.net/nesC">
+
+  <stringtype id="nesc:letter">
+    <union>
+      <char min="A" max="Z"/>
+      <char min="a" max="z"/>
+      <char set="_"/>
+    </union>
+  </stringtype>
+
+  <stringtype id="nesc:digit">
+    <char min="0" max="9"/>
+  </stringtype>
+
+  <m:doc>A regular expression for a nesC identifier</m:doc>
+  <stringtype id="nesc:identifier">
+    <sequence>
+      <stringtype ref="nesc:letter"/>
+      <repeat>
+        <union>
+          <stringtype ref="nesc:letter"/>
+          <stringtype ref="nesc:digit"/>
+        </union>
+      </repeat>
+    </sequence>
+  </stringtype>
+
+  <m:doc>A regular expression for a nesC identifier path separated by `.'
+	 (used, e.g., for component instance names)</m:doc>
+  <stringtype id="nesc:path">
+    <sequence>
+      <stringtype ref="nesc:identifier"/>
+      <repeat>
+        <sequence>
+	  <char set="."/>
+          <stringtype ref="nesc:identifier"/>
+        </sequence>
+      </repeat>
+    </sequence>
+  </stringtype>
+
+  <m:doc>A regular expression for a C base type (e.g., unsigned long)</m:doc>
+  <stringtype id="nesc:c-base-type">
+    <sequence>
+      <stringtype ref="nesc:identifier"/>
+      <repeat>
+        <sequence>
+	  <char set=" "/>
+          <stringtype ref="nesc:identifier"/>
+        </sequence>
+      </repeat>
+    </sequence>
+  </stringtype>
+
+  <m:doc>The regular expression for an integer</m:doc>
+  <stringtype id="nesc:number">
+    <sequence>
+      <optional><char set="-"/></optional>
+      <repeat min="1">
+        <stringtype ref="nesc:digit"/>
+      </repeat>
+    </sequence>
+  </stringtype>
+
+  <m:doc>The regular expression for a real number</m:doc>
+  <stringtype id="nesc:real">
+    <sequence>
+      <stringtype ref="nesc:number"/>
+      <optional>
+        <sequence>
+	  <char set="."/>
+          <stringtype ref="nesc:number"/>
+	</sequence>
+      </optional>
+      <optional>
+        <sequence>
+	  <char set="eE"/>
+	  <optional><char set="+-"/></optional>
+          <stringtype ref="nesc:number"/>
+	</sequence>
+      </optional>
+    </sequence>
+  </stringtype>
+
+  <m:doc>A boolean value (we mostly use presence of an attribute to
+    indicate boolean properites, but there are a few exceptions which
+    use this stringtype instead - mostly to denote binary properties
+    (used vs provided, e.g.) rather than options</m:doc>
+  <stringtype id="nesc:bool">
+    <char min="0" max="1"/>
+  </stringtype>
+
+  <m:doc>The regular expression for the "ref" attribute used to refer
+	 to uniquely identify definitions of various items</m:doc>
+  <stringtype id="nesc:ref">
+    <repeat min="1">
+      <union>
+        <stringtype ref="nesc:letter"/>
+        <stringtype ref="nesc:digit"/>
+      </union>
+    </repeat>
+  </stringtype>
+
+  <m:doc>The regular expression for an empty string</m:doc>
+  <stringtype id="nesc:empty">
+    <sequence/>
+  </stringtype>
+
+  <m:doc>The regular expression for a nesC constant. This has the
+    following basic format X:val, where X represents the kind of
+    constant and val it's value. X is I for integers, F for floats,
+    S for strings, U for unknown, and V for variable (not constant)</m:doc>
+  <stringtype id="nesc:constant">
+    <union>
+      <stringtype ref="nesc:constant-int"/>
+      <stringtype ref="nesc:constant-float"/>
+      <stringtype ref="nesc:constant-string"/>
+      <stringtype ref="nesc:constant-unknown"/>
+      <stringtype ref="nesc:constant-not"/>
+    </union>
+  </stringtype>
+
+  <stringtype id="nesc:constant-int">
+    <sequence>
+      <char set="I"/>
+      <char set=":"/>
+      <stringtype ref="nesc:number"/>
+    </sequence>
+  </stringtype>
+  
+  <stringtype id="nesc:constant-float">
+    <sequence>
+      <char set="F"/>
+      <char set=":"/>
+      <stringtype ref="nesc:real"/>
+    </sequence>
+  </stringtype>
+  
+  <stringtype id="nesc:constant-string">
+    <sequence>
+      <char set="S"/>
+      <char set=":"/>
+      <repeat><char/></repeat>
+    </sequence>
+  </stringtype>
+  
+  <stringtype id="nesc:constant-unknown">
+    <sequence>
+      <char set="U"/>
+      <char set=":"/>
+    </sequence>
+  </stringtype>
+ 
+  <stringtype id="nesc:constant-not">
+    <sequence>
+      <char set="V"/>
+      <char set=":"/>
+    </sequence>
+  </stringtype>
+ 
+</dsd>

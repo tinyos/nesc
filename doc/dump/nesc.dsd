@@ -1,0 +1,31 @@
+<dsd xmlns="http://www.brics.dk/DSD/2.0"
+     xmlns:m="http://www.brics.dk/DSD/2.0/meta"
+     xmlns:nesc="http://www.tinyos.net/nesC"
+     root="nesc:nesc">
+
+  <m:doc> DSD2 schema for nesC XML dump</m:doc>
+
+  <import href="regexps.dsd"/>
+  <import href="attributes.dsd"/>
+  <import href="basic.dsd"/>
+  <import href="common.dsd"/>
+
+  <m:doc>Top-level elements</m:doc>
+  <import href="component.dsd"/>
+  <import href="interface.dsd"/>
+  <import href="interfacedef.dsd"/>
+  <import href="tag.dsd"/>
+  <import href="wiring.dsd"/>
+
+
+  <if><element name="nesc:nesc"/>
+    <declare>
+      <contents><element name="nesc:wiring"/></contents>
+      <contents><element name="nesc:components"/></contents>
+      <contents><element name="nesc:interfaces"/></contents>
+      <contents><element name="nesc:interfacedefs"/></contents>
+      <contents><element name="nesc:tags"/></contents>
+    </declare>
+  </if>
+
+</dsd>

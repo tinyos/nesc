@@ -1,0 +1,102 @@
+<dsd xmlns="http://www.brics.dk/DSD/2.0"
+     xmlns:m="http://www.brics.dk/DSD/2.0/meta"
+     xmlns:nesc="http://www.tinyos.net/nesC">
+
+  <if>
+    <element name="nesc:tags"/>
+    <declare>
+      <contents>
+        <repeat><boolexp ref="nesc:tag"/></repeat>
+      </contents>
+    </declare>
+  </if>
+
+  <boolexp id="nesc:tag">
+    <or>
+      <element name="nesc:struct"/>
+      <element name="nesc:union"/>
+      <element name="nesc:nw_struct"/>
+      <element name="nesc:nw_union"/>
+      <element name="nesc:enum"/>
+    </or>
+  </boolexp>
+
+  <if>
+    <boolexp ref="nesc:tag"/>
+    <declare>
+      <required>
+        <attribute name="ref"/>
+        <attribute name="size"/>
+        <attribute name="alignment"/>
+      </required>
+      <attribute name="name"/>
+      <attribute name="defined"><stringtype ref="nesc:empty"/></attribute>
+      <attribute name="packed"><stringtype ref="nesc:empty"/></attribute>
+      <attribute name="scoped"><stringtype ref="nesc:empty"/></attribute>
+
+      <m:doc>May be in a container, may have attributes</m:doc>
+      <contents><contenttype ref="nesc:container"/></contents>
+      <contents><contenttype ref="nesc:attributes"/></contents>
+    </declare>
+  </if>
+	  	  
+  <m:doc>Non-enums contain a field list</m:doc>
+  <if>
+    <or>
+      <element name="nesc:struct"/>
+      <element name="nesc:union"/>
+      <element name="nesc:nw_struct"/>
+      <element name="nesc:nw_union"/>
+    </or>
+    <declare>
+      <contents>
+	<repeat><element name="nesc:field"/></repeat>
+      </contents>
+    </declare>
+  </if>
+
+  <if>
+    <element name="field"/>
+    <declare>
+      <required>
+        <attribute name="name"/>
+	<attribute name="ref"/>
+	<attribute name="bit-offset"><stringtype ref="nesc:constant"/></attribute>
+      </required>
+      <attribute name="packed"><stringtype ref="nesc:empty"/></attribute>
+      <m:doc>There's either a size or bit-size attribute</m:doc>
+      <attribute name="size"/>
+      <attribute name="bit-size"><stringtype ref="nesc:constant"/></attribute>
+      <contents><boolexp ref="nesc:type"/></contents>
+      <contents><contenttype ref="nesc:attributes"/></contents>
+    </declare>
+  </if>
+
+  <m:doc>Enforce size or bit-size attribute in field rule</m:doc>
+  <if>
+    <element name="field"/>
+    <require>
+      <or>
+        <attribute name="size"/>
+        <attribute name="bit-size"/>
+      </or>
+    </require>
+  </if>
+	
+	  	  
+  <m:doc>Enums contain a representation type</m:doc>
+  <if>
+    <element name="nesc:enum"/>
+    <declare>
+      <contents><element name="nesc:enum-rep"/></contents>
+    </declare>
+  </if>
+
+  <if>
+    <element name="nesc:enum-rep"/>
+    <declare>
+      <contents><boolexp ref="nesc:type"/></contents>
+    </declare>
+  </if>
+
+</dsd>

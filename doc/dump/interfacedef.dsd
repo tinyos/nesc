@@ -1,0 +1,26 @@
+<dsd xmlns="http://www.brics.dk/DSD/2.0"
+     xmlns:m="http://www.brics.dk/DSD/2.0/meta"
+     xmlns:nesc="http://www.tinyos.net/nesC">
+
+  <if>
+    <element name="nesc:interfacedefs"/>
+    <declare>
+      <contents>
+        <repeat><element name="nesc:interfacedef"/></repeat>
+      </contents>
+    </declare>
+  </if>
+
+  <if>
+    <element name="nesc:interfacedef"/>
+    <declare>
+      <required>
+        <attribute name="qname"/>
+      </required>
+      <contents>
+        <optional><element name="nesc:parameters"/></optional>
+      </contents>
+    </declare>
+  </if>
+
+</dsd>

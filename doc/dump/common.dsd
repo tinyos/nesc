@@ -2,27 +2,63 @@
      xmlns:m="http://www.brics.dk/DSD/2.0/meta"
      xmlns:nesc="http://www.tinyos.net/nesC">
 
-  <stringtype id="nesc:letter">
-    <union>
-      <char min="A" max="Z"/>
-      <char min="a" max="z"/>
-      <char set="_"/>
-    </union>
-  </stringtype>
+  <m:doc>nesC elements can be contained in nothing (global scope), a
+    component, or a function</m:doc>
+  <contenttype id="nesc:container">
+    <optional>
+      <or>
+        <element name="nesc:component-ref"/>
+        <element name="nesc:function-ref"/>
+      </or>
+    </optional>
+  </contenttype>
 
-  <stringtype id="nesc:digit">
-    <char min="0" max="9"/>
-  </stringtype>
+  <m:doc>Attribute list.</m:doc>
+  <contenttype id="nesc:attributes">
+    <repeat><element name="nesc:attribute"/></repeat>
+  </contenttype>
 
-  <stringtype id="nesc:identifier">
-    <sequence>
-      <stringtype ref="nesc:letter"/>
-      <repeat>
-        <union>
-          <stringtype ref="nesc:letter"/>
-          <stringtype ref="nesc:digit"/>
-        </union>
-      </repeat>
-    </sequence>
-  </stringtype>
+  <m:doc>Argument list</m:doc>
+  <if>
+    <element name="nesc:arguments"/>
+    <declare>
+      <contents>
+        <repeat>
+	  <union>
+	    <boolexp ref="nesc:type"/>
+	    <element name="nesc:value"/>
+	  </union>
+	</repeat>
+      </contents>
+    </declare>
+  </if>
+
+  <m:doc>Parameter list</m:doc>
+  <if>
+    <element name="nesc:parameters"/>
+    <declare>
+      <contents>
+        <sequence>
+          <repeat>
+	    <or>
+	      <boolexp ref="nesc:type"/>
+	      <element name="nesc:parameter-type"/>
+	    </or>
+          </repeat>
+	  <optional><element name="nesc:varargs"/></optional>
+	</sequence>
+      </contents>
+    </declare>
+  </if>
+
+  <m:doc>A type parameter. The ref will match uses of the parameter 
+    in type-var elements.</m:doc>
+  <if>
+    <element name="nesc:parameter-type"/>
+    <declare>
+      <required><attribute name="ref"/></required>
+      <contents><boolexp ref="nesc:type"/></contents>
+    </declare>
+  </if>
+
 </dsd>

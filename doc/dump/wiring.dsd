@@ -1,0 +1,50 @@
+<dsd xmlns="http://www.brics.dk/DSD/2.0"
+     xmlns:m="http://www.brics.dk/DSD/2.0/meta"
+     xmlns:nesc="http://www.tinyos.net/nesC">
+
+  <if>
+    <element name="nesc:wiring"/>
+    <declare>
+      <contents>
+        <repeat><element name="nesc:wire"/></repeat>
+      </contents>
+    </declare>
+  </if>
+
+  <if>
+    <element name="nesc:wire"/>
+    <declare>
+      <contents>
+        <sequence>
+	  <element name="nesc:from"/>
+	  <element name="nesc:to"/>
+	</sequence>
+      </contents>
+    </declare>
+  </if>
+
+  <m:doc>A from and to in a wiring just refers to a declaration of
+    an interface or function, with optional arguments for parameterized
+    interfaces.</m:doc>
+  <if>
+    <and>
+      <or>
+        <element name="nesc:from"/>
+        <element name="nesc:to"/>
+      </or>
+      <parent><element name="nesc:wire"/></parent>
+    </and>
+    <declare>
+      <contents>
+        <or>
+	  <element name="nesc:function-ref"/>
+	  <element name="nesc:interface-ref"/>
+	</or>
+      </contents>
+      <contents>
+        <optional><element name="nesc:arguments"/></optional>
+      </contents>
+    </declare>
+  </if>
+    
+</dsd>

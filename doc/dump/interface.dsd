@@ -1,0 +1,34 @@
+<dsd xmlns="http://www.brics.dk/DSD/2.0"
+     xmlns:m="http://www.brics.dk/DSD/2.0/meta"
+     xmlns:nesc="http://www.tinyos.net/nesC">
+
+  <if>
+    <element name="nesc:interfaces"/>
+    <declare>
+      <contents>
+        <repeat><element name="nesc:interface"/></repeat>
+      </contents>
+    </declare>
+  </if>
+
+  <if>
+    <element name="nesc:interface"/>
+    <declare>
+      <required>
+        <attribute name="name"/>
+	<attribute name="ref"/>
+	<attribute name="provided"><stringtype ref="nesc:bool"/></attribute>
+      </required>
+
+      <m:doc>Order of these elements is unimportant</m:doc>
+      <contents><element name="nesc:component-ref"/></contents>
+      <contents><element name="nesc:interfacedef-ref"/></contents>
+      <contents><contenttype ref="nesc:attributes"/></contents>
+      <contents>
+        <m:doc>Present for parameterised interfaces</m:doc>
+        <optional><element name="nesc:parameters"/></optional>
+      </contents>
+    </declare>
+  </if>
+
+</dsd>
