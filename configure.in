@@ -41,7 +41,9 @@ AC_SUBST(CYGWINHACKS)
 
 AM_INIT_AUTOMAKE(nesc, 1.1dev)
 
-AC_CONFIG_SUBDIRS(src gdb/avarice)
+AC_CONFIG_SUBDIRS(src)
+
+AC_PROG_CC
 
 AC_PATH_PROG(pathperl, perl)
 if test -z "$pathperl" ; then
@@ -72,4 +74,7 @@ AC_OUTPUT(
 	tools/ncc
 	tools/nescc
 	tools/set-mote-id
+	tools/avr-as/Makefile
+	tools/avr-as/make-avr-as
+	tools/avr-as/install-avr-as
 )

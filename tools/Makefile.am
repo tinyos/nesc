@@ -17,6 +17,8 @@
 
 AUTOMAKE_OPTIONS = foreign
 
+SUBDIRS = avr-as
+
 ncclibdir=$(libdir)/ncc
 
 bin_SCRIPTS = mig ncg ncc nescc set-mote-id
