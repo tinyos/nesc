@@ -119,17 +119,17 @@ sub gen() {
     print "     * message type name and the non-indexed field values.\n";
     print "     */\n";
     print "    public String toString() {\n";
-    print "      String s = \"Message <$java_classname> \";\n";
+    print "      String s = \"Message <$java_classname> \\n\";\n";
     for (@fields) {
 	($field, $type, $bitlength, $offset, $amax, $abitsize, $aoffset) = @{$_};
 	$javafield = $field;
 	$javafield =~ s/\./_/g;
-	if (!$amax) {
+	if (!@$amax) {
           print "      s += \"  [$field=0x\"+Long.toHexString(get_$javafield())+\"]\\n\";\n";
 	} elsif (@$amax == 1 && $$amax[0] != 0) {
-          print "      s += \"[$field=\";\n";
+          print "      s += \"  [$field=\";\n";
           print "      for (int i = 0; i < $$amax[0]; i++) {\n";
-          print "        s += \"  0x\"+Long.toHexString(getElement_$javafield(i))+\" \";\n";
+          print "        s += \"0x\"+Long.toHexString(getElement_$javafield(i))+\" \";\n";
           print "      }\n";
           print "      s += \"]\\n\";\n";
 	}
@@ -395,9 +395,9 @@ sub gen() {
 	      print "     */\n";
 	      print "    public String getString_$javafield() { \n";
 	      if ($$amax[0] == 0) {
-                print "         char carr[] = new char[Message.MAX_CONVERTED_STRING_LENGTH];\n";
+                print "         char carr[] = new char[net.tinyos.message.Message.MAX_CONVERTED_STRING_LENGTH];\n";
 	      } else {
-                print "         char carr[] = new char[Math.min(Message.MAX_CONVERTED_STRING_LENGTH,$$amax[0])];\n";
+                print "         char carr[] = new char[Math.min(net.tinyos.message.Message.MAX_CONVERTED_STRING_LENGTH,$$amax[0])];\n";
               }
 	      print "         int i;\n";
 	      print "         for (i = 0; i < carr.length; i++) {\n";
