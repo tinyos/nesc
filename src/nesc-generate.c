@@ -712,7 +712,7 @@ static void mark_connected_function_list(cgraph cg,
       full_connection conn = DD_GET(full_connection, connected);
 
       mark_reachable_function(cg, caller, conn->ep->function,
-			      new_use(dummy_location, c_executable | c_fncall));
+			      new_use(dummy_location, caller, c_executable | c_fncall));
     }
 }
 
@@ -746,7 +746,7 @@ static void mark_reachable_function(cgraph cg,
       mark_connected_function_list(cg, ddecl, conn->normal_calls);
       if (conn->combiner)
 	mark_reachable_function(cg, ddecl, conn->combiner,
-				new_use(dummy_location, c_executable | c_fncall));
+				new_use(dummy_location, caller, c_executable | c_fncall));
 
       /* Don't process body of suppressed default defs */
       if (ddecl->suppress_definition)

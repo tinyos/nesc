@@ -50,8 +50,7 @@ context exe_context(context c);
 
 void init_uses(void);
 
-use new_use(location l, context c);
+use new_use(location l, data_declaration fn, context c);
 void ddecl_used(data_declaration id, use u);
-data_declaration using_function(data_declaration ddecl);
 
 #endif

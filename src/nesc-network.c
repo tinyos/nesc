@@ -26,19 +26,21 @@ Boston, MA 02111-1307, USA. */
 #include "unparse.h"
 #include "nesc-uses.h"
 
-static void xtox_used(data_declaration transcoderfn)
+static void xtox_used(data_declaration transcoderfn, function_decl fn)
 {
-  ddecl_used(transcoderfn, new_use(dummy_location, c_executable | c_fncall));
+  data_declaration fdecl = fn ? fn->ddecl : NULL;
+
+  ddecl_used(transcoderfn, new_use(dummy_location, fdecl, c_executable | c_fncall));
 }
 
-static void hton_used(type t)
+static void hton_used(type t, function_decl fn)
 {
-  xtox_used(type_network_base_decl(t)->encoder);
+  xtox_used(type_network_base_decl(t)->encoder, fn);
 }
 
-static void ntoh_used(type t)
+static void ntoh_used(type t, function_decl fn)
 {
-  xtox_used(type_network_base_decl(t)->decoder);
+  xtox_used(type_network_base_decl(t)->decoder, fn);
 }
 
 static void validate_network_lvalue(expression e)
@@ -65,10 +67,11 @@ static AST_walker_result network_expression(AST_walker spec, void *data,
 					    expression *n)
 {
   expression e = *n;
+  function_decl fn = data;
 
   if (e->type && type_network_base_type(e->type) &&
       (e->context & c_read) && !(e->context & c_write))
-    ntoh_used(e->type);
+    ntoh_used(e->type, fn);
 
   return aw_walk;
 }
@@ -82,8 +85,8 @@ static AST_walker_result network_assignment(AST_walker spec, void *data,
   if (type_network_base_type(a->type))
     {
       if (a->kind != kind_assign) /* op= reads too */
-	ntoh_used(a->type);
-      hton_used(a->type);
+	ntoh_used(a->type, fn);
+      hton_used(a->type, fn);
     }
 
   validate_network_lvalue(a->arg1);
@@ -106,8 +109,8 @@ static AST_walker_result network_increment(AST_walker spec, void *data,
 
   if (type_network_base_type(i->type))
     {
-      ntoh_used(i->type);
-      hton_used(i->type);
+      ntoh_used(i->type, fn);
+      hton_used(i->type, fn);
     }
 
   validate_network_lvalue(i->arg1);
@@ -133,11 +136,7 @@ static AST_walker_result network_increment(AST_walker spec, void *data,
 static AST_walker_result network_fdecl(AST_walker spec, void *data,
 				       function_decl *fd)
 {
-  data_declaration old = using_function((*fd)->ddecl);
-
   AST_walk_children(spec, *fd, CAST(node, *fd));
-  using_function(old);
-
   return aw_done;
 }
 

@@ -28,16 +28,6 @@ dd_list nglobal_uses;
 
 /* IDEAS: track fields of structs
  */
-static data_declaration current_function;
-
-data_declaration using_function(data_declaration ddecl)
-{
-  data_declaration old = current_function;
-
-  current_function = ddecl;
-
-  return old;
-}
 
 context exe_context(context c)
 {
@@ -67,12 +57,12 @@ static context use_context(context c)
   return access_context(c);
 }
 
-use new_use(location l, context c)
+use new_use(location l, data_declaration fn, context c)
 {
   use u = ralloc(rr, struct use);
 
   u->l = l;
-  u->fn = current_function;
+  u->fn = fn;
   u->c = use_context(c);
 
   return u;
@@ -97,34 +87,34 @@ void ddecl_used(data_declaration id, use u)
   dd_add_last(rr, id->nuses, u);
   id->use_summary |= u->c;
 
-  if (current_function)
+  if (u->fn)
     {
-      if (!current_function->fn_uses)
-	current_function->fn_uses = dd_new_list(rr);
-      dd_add_last(rr, current_function->fn_uses, i);
+      if (!u->fn->fn_uses)
+	u->fn->fn_uses = dd_new_list(rr);
+      dd_add_last(rr, u->fn->fn_uses, i);
     }
   else
     dd_add_last(rr, nglobal_uses, i);
 }
 
-static void identifier_used(identifier id, context c)
+static void identifier_used(identifier id, data_declaration fn, context c)
 {
-  ddecl_used(id->ddecl, new_use(id->location, c));
+  ddecl_used(id->ddecl, new_use(id->location, fn, c));
 }
 
-static void interface_used(interface_deref iref, context c)
+static void interface_used(interface_deref iref, data_declaration fn, context c)
 {
-  ddecl_used(iref->ddecl, new_use(iref->location, c));
+  ddecl_used(iref->ddecl, new_use(iref->location, fn, c));
 }
 
-static void collect_uses_ast(void *n, context c);
-static void collect_uses_children(void *n, context c);
-static void collect_uses_stmt(statement stmt, context c);
-static void collect_uses_expr(expression expr, context c);
+static void collect_uses_ast(void *n, data_declaration fn, context c);
+static void collect_uses_children(void *n, data_declaration fn, context c);
+static void collect_uses_stmt(statement stmt, data_declaration fn, context c);
+static void collect_uses_expr(expression expr, data_declaration fn, context c);
 
 
-static void collect_uses_deref(expression expr,
-			       expression dereferenced, context c)
+static void collect_uses_deref(expression expr, expression dereferenced,
+			       data_declaration fn, context c)
 {
   c = use_context(c);
 
@@ -135,10 +125,10 @@ static void collect_uses_deref(expression expr,
       c |= c_deref;
       /*pointer_use(expr, c);*/
     }
-  collect_uses_expr(dereferenced, c);
+  collect_uses_expr(dereferenced, fn, c);
 }
 
-static void collect_uses_expr(expression expr, context c)
+static void collect_uses_expr(expression expr, data_declaration fn, context c)
 {
   context exe_c = exe_context(c);
 
@@ -169,11 +159,11 @@ static void collect_uses_expr(expression expr, context c)
     {
     case kind_identifier:
       expr->context = access_context(c);
-      identifier_used(CAST(identifier, expr), c);
+      identifier_used(CAST(identifier, expr), fn, c);
       break;
 
     case kind_interface_deref:
-      interface_used(CAST(interface_deref, expr), c);
+      interface_used(CAST(interface_deref, expr), fn, c);
       break;
 
     case kind_comma: {
@@ -181,13 +171,13 @@ static void collect_uses_expr(expression expr, context c)
 
       scan_expression (e, CAST(comma, expr)->arg1)
 	if (e->next)
-	  collect_uses_expr(e, exe_c);
+	  collect_uses_expr(e, fn, exe_c);
 	else
-	  collect_uses_expr(e, c);
+	  collect_uses_expr(e, fn, c);
       break;
     }
     case kind_extension_expr:
-      collect_uses_expr(CAST(unary, expr)->arg1, c);
+      collect_uses_expr(CAST(unary, expr)->arg1, fn, c);
       break;
 
     case kind_conditional: {
@@ -202,13 +192,13 @@ static void collect_uses_expr(expression expr, context c)
 	    false_c &= ~c_executable;
 	}
 
-      collect_uses_expr(ce->condition, exe_c | c_read);
-      collect_uses_expr(ce->arg1, true_c);
-      collect_uses_expr(ce->arg2, false_c);
+      collect_uses_expr(ce->condition, fn, exe_c | c_read);
+      collect_uses_expr(ce->arg1, fn, true_c);
+      collect_uses_expr(ce->arg2, fn, false_c);
       break;
     }
     case kind_compound_expr:
-      collect_uses_stmt(CAST(compound_expr, expr)->stmt, c);
+      collect_uses_stmt(CAST(compound_expr, expr)->stmt, fn, c);
       break;
 
     case kind_function_call: {
@@ -217,7 +207,7 @@ static void collect_uses_expr(expression expr, context c)
 
       // tasks posts are a "read" of the task
       if (fce->call_kind == post_task)
-	collect_uses_expr(fce->arg1, exe_c | c_read);
+	collect_uses_expr(fce->arg1, fn, exe_c | c_read);
       // C named fn calls, commands and events are c_fncall, 
       // otherwise its c_read (and a warning about fn ptr use)
       else if (!(is_interface_deref(fce->arg1) ||
@@ -231,24 +221,24 @@ static void collect_uses_expr(expression expr, context c)
 	     that this represents runtime implementation stuff (e.g., 
 	     the task scheduler, or tossim stuff) */
 	  if (warn_fnptr && 
-	      (!current_function || current_function->container))
+	      (!fn || fn->container))
 	    nesc_warning_with_location(fce->location, "call via function pointer");
-	  collect_uses_expr(fce->arg1, exe_c | c_read);
+	  collect_uses_expr(fce->arg1, fn, exe_c | c_read);
 	}
       else
-	collect_uses_expr(fce->arg1, exe_c | c_fncall);
+	collect_uses_expr(fce->arg1, fn, exe_c | c_fncall);
 
       scan_expression (e, fce->args)
-	collect_uses_expr(e, exe_c | c_read);
+	collect_uses_expr(e, fn, exe_c | c_read);
       break;
     }
     case kind_generic_call: {
       generic_call fce = CAST(generic_call, expr);
       expression e;
 
-      collect_uses_expr(fce->arg1, exe_c | c_read);
+      collect_uses_expr(fce->arg1, fn, exe_c | c_read);
       scan_expression (e, fce->args)
-	collect_uses_expr(e, exe_c | c_read);
+	collect_uses_expr(e, fn, exe_c | c_read);
       break;
     }
 
@@ -263,14 +253,14 @@ static void collect_uses_expr(expression expr, context c)
 	  arg = arg1; arg1 = arg2; arg2 = arg;
 	}
 
-      collect_uses_deref(expr, arg1, c);
-      collect_uses_expr(arg2, exe_c | c_read);
+      collect_uses_deref(expr, arg1, fn, c);
+      collect_uses_expr(arg2, fn, exe_c | c_read);
       expr->context = access_context(c);
       break;
     }
     case kind_dereference:
       expr->context = access_context(c);
-      collect_uses_deref(expr, CAST(dereference, expr)->arg1, c);
+      collect_uses_deref(expr, CAST(dereference, expr)->arg1, fn, c);
       break;
 
     case kind_address_of: {
@@ -281,26 +271,26 @@ static void collect_uses_expr(expression expr, context c)
       else
 	c = exe_c | c_addressed;
 
-      collect_uses_expr(arg, c);
+      collect_uses_expr(arg, fn, c);
       break;
     }
     case kind_field_ref: {
       expr->context = access_context(c);
-      collect_uses_expr(CAST(field_ref, expr)->arg1, c);
+      collect_uses_expr(CAST(field_ref, expr)->arg1, fn, c);
       break;
     }
     case kind_preincrement: case kind_postincrement:
     case kind_predecrement: case kind_postdecrement: {
       unary ue = CAST(unary, expr);
 
-      collect_uses_expr(ue->arg1, exe_c | c_read | c_write);
+      collect_uses_expr(ue->arg1, fn, exe_c | c_read | c_write);
       break;
     }
     case kind_assign: {
       binary be = CAST(binary, expr);
 
-      collect_uses_expr(be->arg1, exe_c | c_write);
-      collect_uses_expr(be->arg2, exe_c | c_read);
+      collect_uses_expr(be->arg1, fn, exe_c | c_write);
+      collect_uses_expr(be->arg2, fn, exe_c | c_read);
       break;
     }
     case kind_plus_assign: case kind_minus_assign: 
@@ -308,29 +298,29 @@ static void collect_uses_expr(expression expr, context c)
     case kind_bitand_assign: case kind_bitor_assign: case kind_bitxor_assign:
     case kind_lshift_assign: case kind_rshift_assign: {
       binary be = CAST(binary, expr);
-      collect_uses_expr(be->arg1, exe_c | c_read | c_write);
-      collect_uses_expr(be->arg2, exe_c | c_read);
+      collect_uses_expr(be->arg1, fn, exe_c | c_read | c_write);
+      collect_uses_expr(be->arg2, fn, exe_c | c_read);
       break;
     }
     case kind_sizeof_expr: case kind_alignof_expr:
-      collect_uses_expr(CAST(unary, expr)->arg1, 0);
+      collect_uses_expr(CAST(unary, expr)->arg1, fn, 0);
       break;
 
     case kind_cast: {
       cast ce = CAST(cast, expr);
 
-      collect_uses_ast(ce->asttype, c);
-      collect_uses_expr(ce->arg1, c);
+      collect_uses_ast(ce->asttype, fn, c);
+      collect_uses_expr(ce->arg1, fn, c);
     }
     default:
       if (is_unary(expr))
-	collect_uses_expr(CAST(unary,expr)->arg1, c);
+	collect_uses_expr(CAST(unary,expr)->arg1, fn, c);
       else if (is_binary(expr))
 	{
 	  binary be = CAST(binary, expr);
 
-	  collect_uses_expr(be->arg1, exe_c | c_read);
-	  collect_uses_expr(be->arg2, exe_c | c_read);
+	  collect_uses_expr(be->arg1, fn, exe_c | c_read);
+	  collect_uses_expr(be->arg2, fn, exe_c | c_read);
 	}
       else
 	/* A default catch-all for
@@ -339,12 +329,13 @@ static void collect_uses_expr(expression expr, context c)
 	     string_cst, string
 	   Embeddded expressions are compile-time constants or read-only,
 	   so the default collect_uses_ast_expr is valid. */
-	collect_uses_children(expr, c);
+	collect_uses_children(expr, fn, c);
       break;
     }
 }
 
-static void collect_uses_asm_operands(asm_operand operands, context exe_c)
+static void collect_uses_asm_operands(asm_operand operands,
+				      data_declaration fn, context exe_c)
 {
   asm_operand aop;
 
@@ -359,12 +350,12 @@ static void collect_uses_asm_operands(asm_operand operands, context exe_c)
       if (mode != '=')
 	c |= c_read;
 
-      collect_uses_expr(aop->arg1, c);
+      collect_uses_expr(aop->arg1, fn, c);
     }
 }
 
 
-static void collect_uses_stmt(statement stmt, context c)
+static void collect_uses_stmt(statement stmt, data_declaration fn, context c)
 {
   context exe_c = exe_context(c);
 
@@ -377,15 +368,15 @@ static void collect_uses_stmt(statement stmt, context c)
       compound_stmt cs = CAST(compound_stmt, stmt);
       statement s;
 
-      collect_uses_ast(cs->id_labels, c);
-      collect_uses_ast(cs->decls, c);
+      collect_uses_ast(cs->id_labels, fn, c);
+      collect_uses_ast(cs->decls, fn, c);
 
       /* The last statement is possiblt read (in compound_expr) */
       scan_statement (s, cs->stmts)
         if (s->next) 
-          collect_uses_stmt(s, exe_c);
+          collect_uses_stmt(s, fn, exe_c);
         else 
-          collect_uses_stmt(s, c);
+          collect_uses_stmt(s, fn, c);
 
       break;
     }
@@ -401,9 +392,9 @@ static void collect_uses_stmt(statement stmt, context c)
 	    false_c &= ~c_executable;
 	}
 
-      collect_uses_expr(is->condition, exe_c | c_read);
-      collect_uses_stmt(is->stmt1, true_c);
-      collect_uses_stmt(is->stmt2, false_c);
+      collect_uses_expr(is->condition, fn, exe_c | c_read);
+      collect_uses_stmt(is->stmt1, fn, true_c);
+      collect_uses_stmt(is->stmt2, fn, false_c);
       break;
     }
     case kind_while_stmt: case kind_dowhile_stmt: case kind_switch_stmt: {
@@ -413,8 +404,8 @@ static void collect_uses_stmt(statement stmt, context c)
       if (cs->condition->cst && stmt->kind == kind_while_stmt &&
 	  definite_zero(cs->condition))
 	body_c &= ~c_executable;
-      collect_uses_expr(cs->condition, exe_c | c_read);
-      collect_uses_stmt(cs->stmt, body_c);
+      collect_uses_expr(cs->condition, fn, exe_c | c_read);
+      collect_uses_stmt(cs->stmt, fn, body_c);
       break;
     }
     case kind_for_stmt: {
@@ -423,37 +414,37 @@ static void collect_uses_stmt(statement stmt, context c)
 
       if (fs->arg2 && fs->arg2->cst && definite_zero(fs->arg2))
 	body_c &= ~c_executable;
-      collect_uses_expr(fs->arg1, exe_c | c_read);
-      collect_uses_expr(fs->arg2, exe_c | c_read);
-      collect_uses_expr(fs->arg3, body_c | c_read);
-      collect_uses_stmt(fs->stmt, body_c);
+      collect_uses_expr(fs->arg1, fn, exe_c | c_read);
+      collect_uses_expr(fs->arg2, fn, exe_c | c_read);
+      collect_uses_expr(fs->arg3, fn, body_c | c_read);
+      collect_uses_stmt(fs->stmt, fn, body_c);
       break;
     }
     case kind_labeled_stmt:
-      collect_uses_ast(CAST(labeled_stmt, stmt)->label, c);
-      collect_uses_stmt(CAST(labeled_stmt, stmt)->stmt, c);
+      collect_uses_ast(CAST(labeled_stmt, stmt)->label, fn, c);
+      collect_uses_stmt(CAST(labeled_stmt, stmt)->stmt, fn, c);
       break;
 
     case kind_expression_stmt:
-      collect_uses_expr(CAST(expression_stmt, stmt)->arg1, c);
+      collect_uses_expr(CAST(expression_stmt, stmt)->arg1, fn, c);
       break;
 
     case kind_atomic_stmt:
-      collect_uses_stmt(CAST(atomic_stmt,stmt)->stmt, exe_c | c_atomic);
+      collect_uses_stmt(CAST(atomic_stmt,stmt)->stmt, fn, exe_c | c_atomic);
       break;
 
     case kind_asm_stmt: {
       asm_stmt as = CAST(asm_stmt, stmt);
 
-      collect_uses_expr(as->arg1, exe_c | c_read);
-      collect_uses_asm_operands(as->asm_operands1, exe_c);
-      collect_uses_asm_operands(as->asm_operands2, exe_c);
+      collect_uses_expr(as->arg1, fn, exe_c | c_read);
+      collect_uses_asm_operands(as->asm_operands1, fn, exe_c);
+      collect_uses_asm_operands(as->asm_operands2, fn, exe_c);
       break;
     }
     default:
       /* for break_stmt, continue_stmt, goto_stmt, computed_goto_stmt,
              empty_stmt, return_stmt */
-      collect_uses_children(stmt, c);
+      collect_uses_children(stmt, fn, c);
       break;
     }
 }
@@ -461,28 +452,36 @@ static void collect_uses_stmt(statement stmt, context c)
 /* An AST walker that collect_usess all reachable expressions */
 static AST_walker collect_uses_walker;
 
-static AST_walker_result collect_uses_ast_expr(AST_walker spec, void *data,
-					  expression *e)
+struct uses_data
 {
-  collect_uses_expr(*e, exe_context(*(context *)data) | c_read);
+  context c;
+  data_declaration function;
+};
+
+static AST_walker_result collect_uses_ast_expr(AST_walker spec, void *data,
+					       expression *e)
+{
+  struct uses_data *ud = data;
+  collect_uses_expr(*e, ud->function, exe_context(ud->c) | c_read);
   return aw_done;
 }
 
 static AST_walker_result collect_uses_ast_stmt(AST_walker spec, void *data,
 					       statement *s)
 {
-  collect_uses_stmt(*s, exe_context(*(context *)data));
+  struct uses_data *ud = data;
+  collect_uses_stmt(*s, ud->function, exe_context(ud->c));
   return aw_done;
 }
 
 static AST_walker_result collect_uses_ast_fdecl(AST_walker spec, void *data,
 						function_decl *fd)
 {
-  data_declaration oldfn = current_function;
+  struct uses_data *ud = data;
+  struct uses_data new_ud = *ud;
 
-  current_function = (*fd)->ddecl;
-  AST_walk_children(spec, data, CAST(node, *fd));
-  current_function = oldfn;
+  new_ud.function = (*fd)->ddecl;
+  AST_walk_children(spec, &new_ud, CAST(node, *fd));
 
   return aw_done;
 }
@@ -498,22 +497,30 @@ static void init_collect_uses_walker(void)
 		    collect_uses_ast_fdecl);
 }
 
-static void collect_uses_ast(void *n, context c)
+static void collect_uses_ast(void *n, data_declaration fn, context c)
 {
   node nn = CAST(node, n);
+  struct uses_data new_ud;
 
-  AST_walk_list(collect_uses_walker, &c, &nn);
+  new_ud.c = c;
+  new_ud.function = fn;
+
+  AST_walk_list(collect_uses_walker, &new_ud, &nn);
 }
 
-static void collect_uses_children(void *n, context c)
+static void collect_uses_children(void *n, data_declaration fn, context c)
 {
-  AST_walk_children(collect_uses_walker, &c, CAST(node, n));
+  struct uses_data new_ud;
+
+  new_ud.c = c;
+  new_ud.function = fn;
+
+  AST_walk_children(collect_uses_walker, &new_ud, CAST(node, n));
 }
 
 void collect_uses(declaration decls)
 {
-  current_function = NULL;
-  collect_uses_ast(decls, c_executable);
+  collect_uses_ast(decls, NULL, c_executable);
 }
 
 void init_uses(void)
