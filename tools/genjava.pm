@@ -54,11 +54,13 @@ sub gen() {
     print "    /** Create a new $java_classname of size $size. */\n";
     print "    public $java_classname() {\n";
     print "        super(DEFAULT_MESSAGE_SIZE);\n";
+    print "        amTypeSet(AM_TYPE);\n";
     print "    }\n\n";
 
     print "    /** Create a new $java_classname of the given data_length. */\n";
     print "    public $java_classname(int data_length) {\n";
     print "        super(data_length);\n";
+    print "        amTypeSet(AM_TYPE);\n";
     print "    }\n\n";
 
     print "    /**\n";
@@ -67,6 +69,7 @@ sub gen() {
     print "     */\n";
     print "    public $java_classname(int data_length, int base_offset) {\n";
     print "        super(data_length, base_offset);\n";
+    print "        amTypeSet(AM_TYPE);\n";
     print "    }\n\n";
 
     print "    /**\n";
@@ -75,6 +78,7 @@ sub gen() {
     print "     */\n";
     print "    public $java_classname(byte[] data) {\n";
     print "        super(data);\n";
+    print "        amTypeSet(AM_TYPE);\n";
     print "    }\n\n";
 
     print "    /**\n";
@@ -83,6 +87,7 @@ sub gen() {
     print "     */\n";
     print "    public $java_classname(byte[] data, int base_offset) {\n";
     print "        super(data, base_offset);\n";
+    print "        amTypeSet(AM_TYPE);\n";
     print "    }\n\n";
 
     print "    /**\n";
@@ -91,6 +96,7 @@ sub gen() {
     print "     */\n";
     print "    public $java_classname(byte[] data, int base_offset, int data_length) {\n";
     print "        super(data, base_offset, data_length);\n";
+    print "        amTypeSet(AM_TYPE);\n";
     print "    }\n\n";
 
     print "    /**\n";
@@ -99,6 +105,7 @@ sub gen() {
     print "     */\n";
     print "    public $java_classname(net.tinyos.message.Message msg, int base_offset) {\n";
     print "        super(msg, base_offset, DEFAULT_MESSAGE_SIZE);\n";
+    print "        amTypeSet(AM_TYPE);\n";
     print "    }\n\n";
 
     print "    /**\n";
@@ -107,11 +114,7 @@ sub gen() {
     print "     */\n";
     print "    public $java_classname(net.tinyos.message.Message msg, int base_offset, int data_length) {\n";
     print "        super(msg, base_offset, data_length);\n";
-    print "    }\n\n";
-
-    print "    /** Return the Active Message type of this message (-1 if unknown). */\n";
-    print "    public int amType() {\n";
-    print "        return AM_TYPE;\n";
+    print "        amTypeSet(AM_TYPE);\n";
     print "    }\n\n";
 
     print "    /**\n";
