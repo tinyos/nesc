@@ -69,6 +69,6 @@ AC_OUTPUT(
 	tools/Makefile
 	tools/mig
 	tools/ncc
-	tools/tcc
+	tools/nescc
 	tools/set-mote-id
 )

@@ -1,6 +1,6 @@
 mig
 ncc
-tcc
+nescc
 set-mote-id
 Makefile
 Makefile.in
