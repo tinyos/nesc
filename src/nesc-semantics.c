@@ -28,6 +28,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-component.h"
 #include "nesc-interface.h"
 #include "edit.h"
+#include "c-parse.h"
 
 #include <errno.h>
 
@@ -346,4 +347,52 @@ data_declaration get_function_ddecl(expression e)
     return CAST(interface_deref, e)->ddecl;
 
   return NULL;
+}
+
+void handle_combine_attribute(location loc, const char *combiner, type *t)
+{
+  data_declaration cdecl;
+  typelist combiner_args;
+  type combiner_sig;
+  bool ok = FALSE;
+
+  /* Build combiner signature */
+  combiner_args = new_typelist(parse_region);
+  typelist_append(combiner_args, *t);
+  typelist_append(combiner_args, *t);
+  combiner_sig = make_function_type(*t, combiner_args, FALSE, FALSE);
+
+  /* If combiner already declared, declaration should match combiner_sig.
+     If not, we declare it with signature combiner_sig */
+  cdecl = lookup_id(combiner, FALSE);
+  if (cdecl)
+    {
+      if (cdecl->kind != decl_function ||
+	  !(cdecl->ftype == function_normal || cdecl->ftype == function_static))
+	error_with_location(loc, "combiner `%s' is not a C function",
+			    combiner);
+      else if (!type_compatible_unqualified(cdecl->type, combiner_sig))
+	error_with_location(loc, "combiner `%s' does not have the right signature",
+			    combiner);
+      else
+	ok = TRUE;
+    }
+  else
+    {
+      struct data_declaration tempdecl;
+      declaration dummy = make_error_decl();
+
+      /* Declare combiner as a function of arguments *t, *t returning *t */
+      dummy->location = loc;
+      init_data_declaration(&tempdecl, dummy, combiner, combiner_sig);
+      tempdecl.kind = decl_function;
+      tempdecl.ftype = function_normal;
+      tempdecl.isexternalscope = tempdecl.isfilescoperef = TRUE;
+      cdecl = declare(current.env, &tempdecl, FALSE);
+
+      ok = TRUE;
+    }
+
+  if (ok)
+    *t = make_combiner_type(*t, cdecl);
 }

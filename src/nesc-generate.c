@@ -89,6 +89,9 @@ struct connections
      take place. 'args' is the expression list to add to the arguments
      if 'ep' is generic. */
   dd_list/*<full_connection>*/ normal_calls;
+
+  /* The combiner function used, if any */
+  data_declaration combiner;
 };
 
 static full_connection new_full_connection(region r, endp ep, expression cond,
@@ -156,26 +159,6 @@ static bool prt_arguments(declaration parms, bool first)
   return first;
 }
 
-static bool combiner_warning_printed;
-
-static void combine_warning(struct connections *c)
-{
-  if (warn_no_combiner && !combiner_warning_printed)
-    {
-      combiner_warning_printed = TRUE;
-
-      /* Warnings to be enabled when result_t gets defined correctly */
-      if (c->called->interface)
-	warning("calls to %s.%s in %s are uncombined",
-		c->called->interface->name,
-		c->called->name,
-		c->called->container->name);
-      else
-	warning("calls to %s in %s are uncombined",
-		c->called->name, c->called->container->name);
-    }
-}
-
 void prt_ncf_direct_call(struct connections *c,
 			 full_connection ccall,
 			 bool first_call,
@@ -195,15 +178,10 @@ void prt_ncf_direct_call(struct connections *c,
       output("result = ");
 
       /* Combine w/ the combiner on subsequent calls */
-      if (!first_call)
+      if (!first_call && combiner)
 	{
-	  if (combiner)
-	    {
-	      output("%s(result, ", combiner->name);
-	      calling_combiner = TRUE;
-	    }
-	  else
-	    combine_warning(c);
+	  output("%s(result, ", combiner->name);
+	  calling_combiner = TRUE;
 	}
     }
 
@@ -432,8 +410,6 @@ static void prt_nesc_connection_function(struct connections *c)
 
   prt_ncf_header(c, return_type);
 
-  combiner_warning_printed = FALSE;
-
   if (c->called->gparms)
     {
       bool first_call;
@@ -582,6 +558,95 @@ static void find_connected_functions(struct connections *c)
 			c->called->name);
 }
 
+static void combine_warning(struct connections *c)
+{
+  if (warn_no_combiner)
+    {
+      /* Warnings to be enabled when result_t gets defined correctly */
+      if (c->called->interface)
+	warning("calls to %s.%s in %s are uncombined",
+		c->called->interface->name,
+		c->called->name,
+		c->called->container->name);
+      else
+	warning("calls to %s in %s are uncombined",
+		c->called->name, c->called->container->name);
+    }
+}
+
+static bool combiner_used;
+
+static bool cicn_direct_calls(dd_list/*<full_connection>*/ calls)
+{
+  dd_list_pos first = dd_first(calls);
+
+  if (dd_is_end(first))
+    return TRUE;
+
+  if (!dd_is_end(dd_next(first)))
+    combiner_used = TRUE;
+
+  return FALSE;
+}
+
+static void cicn_conditional_calls(struct connections *c, bool first_call)
+{
+  dd_list_pos call;
+  int i, j, ncalls = dd_length(c->normal_calls);
+  full_connection *cond_eps =
+    rarrayalloc(c->r, ncalls, full_connection);
+
+  /* Sort calls so we can find connections with the same conditions */
+  i = 0;
+  dd_scan (call, c->normal_calls)
+    cond_eps[i++] = DD_GET(full_connection, call);
+  qsort(cond_eps, ncalls, sizeof(full_connection), condition_compare);
+
+  /* output the calls */
+  i = 0;
+  while (i < ncalls)
+    {
+      /* find last target with same condition */
+      j = i;
+      while (++j < ncalls && condition_compare(&cond_eps[i], &cond_eps[j]) == 0)
+	;
+
+      if (i + first_call < j)
+	combiner_used = TRUE;
+      i = j;
+    }
+}
+
+static void check_if_combiner_needed(struct connections *c)
+{
+  /* To see if a combiner is needed, we follow (a simplified form of) the
+     logic used in printing the connection function (see
+     prt_nesc_connection_function) */
+  type return_type = function_return_type(c->called);
+
+  if (type_void(return_type)) /* No combiner needed */
+    return;
+
+  combiner_used = FALSE;
+
+  if (c->called->gparms)
+    {
+      bool first_call;
+
+      first_call = cicn_direct_calls(c->generic_calls);
+      cicn_conditional_calls(c, first_call);
+    }
+  else
+    cicn_direct_calls(c->normal_calls);
+
+  if (combiner_used)
+    {
+      c->combiner = type_combiner(return_type);
+      if (!c->combiner)
+	combine_warning(c);
+    }
+}
+
 void find_function_connections(data_declaration fndecl, void *data)
 {
   cgraph cg = data;
@@ -613,6 +678,8 @@ void find_function_connections(data_declaration fndecl, void *data)
 	fndecl->suppress_definition =
 	  !dd_is_empty(fndecl->gparms ? connections->generic_calls :
 		       connections->normal_calls);
+
+      check_if_combiner_needed(connections);
     }
 }
 
@@ -662,10 +729,15 @@ static void mark_reachable_function(cgraph cg,
   if ((ddecl->ftype == function_command || ddecl->ftype == function_event) &&
       !ddecl->defined)
     {
+      struct connections *conn = ddecl->connections;
+
       /* Call to a command or event not defined in this module.
 	 Mark all connected functions */
-      mark_connected_function_list(cg, ddecl, ddecl->connections->generic_calls);
-      mark_connected_function_list(cg, ddecl, ddecl->connections->normal_calls);
+      mark_connected_function_list(cg, ddecl, conn->generic_calls);
+      mark_connected_function_list(cg, ddecl, conn->normal_calls);
+      if (conn->combiner)
+	mark_reachable_function(cg, ddecl, conn->combiner,
+				new_use(dummy_location, c_executable | c_call));
 
       /* Don't process body of suppressed default defs */
       if (ddecl->suppress_definition)

@@ -91,4 +91,9 @@ data_declaration get_function_ddecl(expression e);
      Otherwise return NULL
 */
 
+void handle_combine_attribute(location loc, const char *combiner, type *t);
+/* Effects: handle combine attribute specifying function 'combiner', 
+     modifying *t as appropriate
+ */
+
 #endif

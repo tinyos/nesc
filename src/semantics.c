@@ -2591,8 +2591,6 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
       handle_decl_dd_attributes(extra_attr, &tempdecl);
 
       old_decl = lookup_id(name, !tempdecl.Cname);
-      /* Check the global environment if declaring something with file
-	 scope */
 
       if ((current.language == l_interface || current.language == l_component)
 	  && current.env->global_level)
@@ -2603,6 +2601,8 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
 	}
       else if (!old_decl && tempdecl.isfilescoperef)
 	{
+	  /* Check the global environment if declaring something with file
+	     scope */
 	  old_decl = lookup_global_id(name);
 	  /* global typedefs don't count */
 	  if (old_decl && old_decl->kind == decl_typedef)

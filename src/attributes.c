@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "attributes.h"
 #include "semantics.h"
+#include "nesc-semantics.h"
 
 /* Provide warnings about ignored attributes and attribute lists */
 
@@ -126,18 +127,7 @@ bool handle_type_attribute(attribute attr, type *t)
       if (!attr->word2 || attr->args)
 	error_with_location(attr->location, "wrong number of arguments specified for `combine' attribute");
       else
-	{
-	  const char *combiner = attr->word2->cstring.data;
-	  data_declaration cdecl = lookup_id(combiner, FALSE);
-
-
-	  if (cdecl->kind != decl_function ||
-	      !(cdecl->ftype == function_normal || cdecl->ftype == function_static))
-	    error_with_location(attr->location, "combiner `%s' is not a C function");
-	  else /* XXX: should check type's sig */
-	    *t = make_combiner_type(*t, cdecl);
-	}
-
+	handle_combine_attribute(attr->location, attr->word2->cstring.data, t);
       return TRUE;
     }
   return FALSE;

@@ -98,4 +98,6 @@ bool unevaluated_expression(void);
 
 void parse(void) deletes;
 
+declaration make_error_decl(void);
+
 #endif

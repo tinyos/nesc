@@ -58,8 +58,8 @@ void async_violation(gnode n)
 	data_declaration caller = NODE_GET(endp, graph_edge_from(edge))->function;
 
 	if (caller->actual_async)
-	  error_with_decl(fn->ast, "`%s' called asynchronously from `%s'",
-			  decl_printname(fn), decl_printname(caller));
+	  warning_with_decl(fn->ast, "`%s' called asynchronously from `%s'",
+			    decl_printname(fn), decl_printname(caller));
       }
 }
 
