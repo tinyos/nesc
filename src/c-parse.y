@@ -747,21 +747,22 @@ unary_expr:
 		{
 		  function_call fc = CAST(function_call, $2);
 		  type calltype = fc->arg1->type;
+		  bool noerror = fc->type != error_type;
 		  
 		  $$ = $2;
 		  CAST(function_call, $$)->call_kind = $1.i;
 		  switch ($1.i)
 		    {
 		    case command_call:
-		      if (!type_command(calltype))
+		      if (noerror && !type_command(calltype))
 			error("only commands can be called");
 		      break;
 		    case event_signal:
-		      if (!type_event(calltype))
+		      if (noerror && !type_event(calltype))
 			error("only events can be signaled");
 		      break;
 		    case post_task:
-		      if (!type_task(calltype))
+		      if (noerror && !type_task(calltype))
 			error("only tasks can be posted");
 		      fc->type = unsigned_char_type;
 		      break;
