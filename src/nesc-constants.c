@@ -40,6 +40,7 @@ static AST_walker_result folder_expression(AST_walker spec, void *data,
   struct folder_data *d = data;
   expression e = *n;
   known_cst c = NULL, sa = NULL;
+  bool require_constant_value = FALSE;
   
   /* Constant-fold children first */
   if (d->require_constant_value && !(is_init_list(*n) || is_init_specific(*n)))
@@ -48,6 +49,7 @@ static AST_walker_result folder_expression(AST_walker spec, void *data,
 	 expressions, not to every subexpression */
       struct folder_data newd = *d;
 
+      require_constant_value = TRUE;
       newd.require_constant_value = FALSE;
       AST_walk_children(spec, &newd, CAST(node, e));
     }
@@ -152,7 +154,7 @@ static AST_walker_result folder_expression(AST_walker spec, void *data,
   if ((sa && constant_unknown(sa)) || (c && constant_unknown(c)))
     *d->done = FALSE;
 
-  if (d->require_constant_value)
+  if (require_constant_value)
     check_init_element(e);
 
   return aw_done;

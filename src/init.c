@@ -261,7 +261,7 @@ static bool digest_init(type t, expression init)
 	  && is_string(init))
 	{
 	  type init_chartype = type_array_of(itype);
-	  largest_int tsize;
+	  cval tcsize;
 
 	  if (type_compatible_unqualified(t, itype))
 	    return TRUE;
@@ -277,11 +277,15 @@ static bool digest_init(type t, expression init)
 	      return FALSE;
 	    }
 
-	  tsize = cval_uint_value(type_array_size_cval(t));
-	  if (tsize >= 0
+	  tcsize = type_array_size_cval(t);
+	  if (!cval_istop(tcsize))
+	    {
+	      largest_uint tsize = cval_uint_value(tcsize);
+
 	      /* Don't count the null char (char x[1] = "a" is ok) */
-	      && tsize < CAST(string, init)->ddecl->chars_length)
-	    pedwarn_init ("initializer-string for array of chars is too long");
+	      if (tsize < CAST(string, init)->ddecl->chars_length)
+		pedwarn_init ("initializer-string for array of chars is too long");
+	    }
 
 	  return TRUE;
 	}
@@ -699,8 +703,13 @@ static bool new_constructor_type(void)
     }
   else if (type_array(constructor_type))
     {
+      cval max = type_array_size_cval(constructor_type);
+
       constructor_kind = c_array;
-      constructor_max_index = cval_sint_value(type_array_size_cval(constructor_type)) - 1;
+      if (cval_istop(max))
+	constructor_max_index = -1;
+      else
+	constructor_max_index = cval_sint_value(max) - 1;
       constructor_index = constructor_array_size = 0;
     }
   else

@@ -189,7 +189,9 @@ static AST_walker_result clone_expression(AST_walker spec, void *data,
 {
   expression new = clone(data, n);
 
-  new->type = instantiate_type(new->type);
+  /* A few nodes don't have types */
+  if (new->type)
+    new->type = instantiate_type(new->type);
 
   return aw_walk;
 }
