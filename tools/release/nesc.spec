@@ -1,6 +1,6 @@
 Summary: nesC compiler 
 Name: nesc
-Version: 1.1.2
+Version: 1.2
 Release: 1
 License: GNU GPL Version 2
 Packager: TinyOS Group, UC Berkeley
@@ -29,11 +29,10 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 
 %files
 /usr/local/lib/ncc/
-/usr/local/bin/mig
-/usr/local/bin/ncg
-/usr/local/bin/ncc
+/usr/local/bin/nescc-diff
+/usr/local/bin/nescc-mig
+/usr/local/bin/nescc-ncg
 /usr/local/bin/nescc
-/usr/local/bin/nesdoc
 
 %defattr(-,root,root,-)
 %doc

@@ -17,15 +17,13 @@
 
 AUTOMAKE_OPTIONS = foreign
 
-SUBDIRS = avr-as
-
 ncclibdir=$(libdir)/ncc
 editordir=$(ncclibdir)/editor-modes
 emacsdir=$(editordir)/emacs
 vimdir=$(editordir)/vim
 kdedir=$(editordir)/kde
 
-bin_SCRIPTS = mig ncg ncc nescc nesdoc nccdiff
+bin_SCRIPTS = nescc-mig nescc-ncg nescc nescc-diff
 
 ncclib_DATA = genjava.pm gencstjava.pm gencsharp.pm gencstc.pm migdecode.pm first-avr5.x second-avr5.x nesc_nx.h
 ncclib_SCRIPTS = smalldiff

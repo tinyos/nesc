@@ -131,8 +131,8 @@ if( defined($docdir) ) {
 
 
 unshift @new_args, "-specs=$NCDIR/tdspecs";
+unshift @new_args, "-fnesc-gcc=$gcc";
 unshift @new_args, $gcc;
-$ENV{NESC_GCC} = $gcc;
 
 if ($mingw_gcc) {
     # Yuck. Convert unix paths to windows paths
