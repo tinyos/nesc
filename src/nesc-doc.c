@@ -31,6 +31,8 @@ Boston, MA 02111-1307, USA.  */
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <errno.h>
+#include <string.h>
 
 #include "dhash.h"
 #include "parser.h"
@@ -992,10 +994,10 @@ static void print_cg_html(const char *component_name, const char *component_file
     ret = system(cmd); 
     if(ret == -1)
       fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
-    ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tcmap -o%s %s", iface_cmap, iface_dot); assert(ret > 0);
-    ret = system(cmd); assert(ret != -1);
-    if(ret == -1)
-      fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
+    //ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tcmap -o%s %s", iface_cmap, iface_dot); assert(ret > 0);
+    //ret = system(cmd); assert(ret != -1);
+    //if(ret == -1)
+    // fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
 
     if( do_func_graph ) {
       ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tgif -o%s %s", func_gif, func_dot); assert(ret > 0);
@@ -1018,9 +1020,9 @@ static void print_cg_html(const char *component_name, const char *component_file
     // FIXME: add a link to the function graph page here.
     output("<br>\n");
 
-    output("<map name=\"comp\">\n");
-    copy_file_to_output(iface_cmap);
-    output("</map>\n");
+    //output("<map name=\"comp\">\n");
+    //copy_file_to_output(iface_cmap);
+    //output("</map>\n");
     output("<center><image src=\"%s\" usemap=\"#comp\" border=0></center>\n", iface_gif);
   }
   else {
@@ -1076,8 +1078,8 @@ static void generate_component_html(nesc_declaration cdecl)
     char *sourcelink = doc_filename_with_ext(cdecl->ast->location->filename, ".source");
     char *sourcefile = doc_filename_with_ext(cdecl->ast->location->filename, "");
 
+    unlink(sourcelink);
     assert(symlink(cdecl->ast->location->filename, sourcelink) == 0);
-
     output("
 <html>
 <head>
@@ -1308,6 +1310,7 @@ static void generate_interface_html(nesc_declaration idecl)
     char *sourcelink = doc_filename_with_ext(idecl->ast->location->filename, ".source");
     char *sourcefile = doc_filename_with_ext(idecl->ast->location->filename, "");
 
+    unlink(sourcelink);
     assert(symlink(idecl->ast->location->filename, sourcelink) == 0);
 
     output("
