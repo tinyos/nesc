@@ -2309,7 +2309,7 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
 	      if (current.language == l_interface)
 		error("only commands and events can be defined in interfaces");
 	      else
-		error("only commands, events and interfaces can be defined in components");
+		error("only commands, events and interfaces can be defined in component specifications");
 	      class = RID_COMMAND;
 	      var_type = dummy_function_type;
 	      fdeclarator = dummy_function_declarator;
@@ -2393,6 +2393,10 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
 	      else if (!(class == RID_COMMAND || class == RID_EVENT))
 		error("generic parameters not allowed on functions");
 	    }
+
+	  if ((type_command(var_type) || type_event(var_type)) &&
+	      type_function_varargs(var_type))
+	    error("varargs commands and events are not supported");
 
 	  check_function(&tempdecl, CAST(declaration, vd), class, inlinep,
 			 name, var_type, nested, TRUE, defaulted_int);

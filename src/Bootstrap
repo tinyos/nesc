@@ -43,6 +43,6 @@ set -x
     autoheader
     autoconf
     [ -d config-aux ] || mkdir config-aux
-    automake -a
+    automake -ac
 )
 rm -f config.cache

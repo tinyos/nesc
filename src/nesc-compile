@@ -24,15 +24,19 @@ for ($i = 0; $i <= $#ARGV; $i++) {
     if (/^-/) {
 	$nocompile = 1 if ($_ eq "-fsyntax-only");
 	if (/^-[Wwvpf]/ || /^-pedantic/ || /^-ansi/) {
-	    push @nesc_args, $_ unless /^-fnesc-cfile$/;
+	    push @nesc_args, $_ unless /^-fnesc-.*cfile=/;
 	}
 
 	if (/^-o/) {
 	    ($i, $objtarget) = &extractarg($i);
 	}
 	elsif (/^-fnesc-/) {
-	    if (/^-fnesc-cfile$/) {
-		($i, $ctarget) = &nextarg($i);
+	    if (/^-fnesc-cfile=(.*)$/) {
+		$ctarget = $1;
+	    }
+	    if (/^-fnesc-tmpcfile=(.*)$/) {
+		$ctarget = $1;
+		$delcfile = 1;
 	    }
 	}
 	else {
@@ -61,8 +65,9 @@ if ($csuffix ne ".td") {
 
 if ($ctarget eq "") {
     # not a good choice, but we're normally invoked via gcc which gives 
-    # us a -fnesc-cfile option
+    # us a -fnesc-cfile= option
     $ctarget = "/tmp/nesc.$$.c";
+    $delcfile = 1;
 }
 
 if ($objtarget eq "") {
@@ -100,7 +105,7 @@ push @gcc_args, "-S";
 push @gcc_args, $ctarget;
 unshift @gcc_args, "avr-gcc";
 system @gcc_args;
-unlink $ctarget;
+unlink $ctarget if $delcfile;
 if ($? != 0) {
     unlink $asmtarget1;
     exit 2;

@@ -1,0 +1,9 @@
+To install, you need:
+automake
+autoconf
+emacs
+
+Directions:
+./Bootstrap (once only after checkout)
+./configure
+make

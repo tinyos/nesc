@@ -139,7 +139,7 @@ environment compile(location loc, source_language l, const char *name,
       f = fopen(path, "r");
       if (!f)
 	error_with_location(loc, "cannot open %s: %s",
-			    path, sys_errlist[errno]);
+			    path, strerror(errno));
     }
   if (!f)
     return new_environment(parse_region, global_env, TRUE, FALSE);

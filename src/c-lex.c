@@ -197,12 +197,11 @@ yyprint (file, yychar, yylval)
     }
 }
 
-/* If C is not whitespace, return C.
-   Otherwise skip whitespace and return first nonwhite char read.  */
-
+/* Skip /*-style comment. Note that unlike C, nesC has nested /*-comments.
+   Hence this comment would be an error in nesC :-) */
 static void skip_c_comment(void)
 {
-  int last_c = 0, c;
+  int last_c = 0, c, depth = 1;
   location start = input_file_stack->l;
 
   for (;;)
@@ -219,7 +218,15 @@ static void skip_c_comment(void)
 	  break;
 	case '/':
 	  if (last_c == '*')
-	    return;
+	    {
+	      if (--depth == 0)
+		return;
+	    }
+	  break;
+	case '*':
+	  if (last_c == '/')
+	    ++depth;
+	  break;
 	}
       last_c = c;
     }
@@ -244,6 +251,8 @@ static void skip_cpp_comment(void)
     }
 }
 
+/* If C is not whitespace, return C.
+   Otherwise skip whitespace and return first nonwhite char read.  */
 
 static int
 skip_white_space (c)

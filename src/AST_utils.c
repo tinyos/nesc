@@ -59,7 +59,7 @@ data_declaration get_parameter(declaration d)
     case kind_data_decl:
       return CAST(variable_decl, CAST(data_decl, d)->decls)->ddecl;
     default:
-      assert(0);
+      assert(0); return NULL;
     }
 }
 

@@ -163,6 +163,6 @@ $(srcdir)/AST_print.c: build-print.el nodetypes.def build-basics.el
 
 $(srcdir)/c-gperf.h: c-parse.gperf qualifiers.h
 	cd $(srcdir) && $(M4) $(M4FLAGS) c-parse.gperf | grep -v '^$$' | \
-	$(GPERF) $(GPERFFLAGS) -p -j1 -i 1 -g -o -t -G -N is_reserved_word -k1,3,$$ >$@.
-	mv $@. $@
+	$(GPERF) $(GPERFFLAGS) -p -j1 -i 1 -g -o -t -G -N is_reserved_word -k1,3,$$ >$@-
+	mv $@- $@
 
