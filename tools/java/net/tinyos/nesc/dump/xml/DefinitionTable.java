@@ -11,6 +11,7 @@
 
 package net.tinyos.nesc.dump.xml;
 
+import net.tinyos.nesc.dump.*;
 import org.xml.sax.*;
 import java.util.*;
 
@@ -34,7 +35,7 @@ class DefinitionTable
 	return me;
     }
 
-    synchronized Definition define(Object key, Attribute attrs, Definition def) {
+    synchronized Definition define(Object key, Attributes attrs, Definition def) {
 	Definition me = (Definition)allDefinitions.get(this);
 	if (me == null) {
 	    me = def;

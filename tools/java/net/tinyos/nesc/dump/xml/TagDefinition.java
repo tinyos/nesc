@@ -11,6 +11,7 @@
 
 package net.tinyos.nesc.dump.xml;
 
+import net.tinyos.nesc.dump.*;
 import org.xml.sax.*;
 import java.util.*;
 
@@ -29,7 +30,7 @@ public class TagDefinition extends CDefinition
 	/* ignoring scoped for now */
     }
 
-    public synchronized NDElement start(Attribute attrs) {
+    public synchronized NDElement start(Attributes attrs) {
 	TagDefinition me = (TagDefinition)defs.define(attrs.getValue("ref"), attrs, this);
 	me.size = Constant.decode(attrs.getValue("size"));
 	me.alignment = Constant.decode(attrs.getValue("alignment"));
@@ -38,7 +39,7 @@ public class TagDefinition extends CDefinition
 	return me;
     }
 
-    static synchronized Definition lookup(NDReader reader, Attribute attrs, 
+    static synchronized Definition lookup(NDReader reader, Attributes attrs, 
 					  String elementName) {
 	return defs.lookup(reader, attrs.getValue("ref"), attrs, elementName);
     }

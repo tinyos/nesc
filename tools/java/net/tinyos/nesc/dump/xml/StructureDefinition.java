@@ -12,6 +12,7 @@
 package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
+import java.util.*;
 
 public class StructureDefinition extends TagDefinition
 {

@@ -11,11 +11,12 @@
 
 package net.tinyos.nesc.dump.xml;
 
+import net.tinyos.nesc.dump.*;
 import org.xml.sax.*;
 
 public class Xconstant_ref extends NDElement
 {
-    public NDElement start(NDReader reader, Attributes attrs) {
+    public NDElement start(NDReader reader, Attributess attrs) {
 	return DataDefinition.lookup(reader, attrs, "constant");
     }
 }

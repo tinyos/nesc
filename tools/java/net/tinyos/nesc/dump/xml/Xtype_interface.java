@@ -15,10 +15,10 @@ import org.xml.sax.*;
 
 public class Xtype_interface extends Type
 {
-    public Xinterface interface;
+    public Xinterface intf;
 
     public void child(NDElement subElement) {
 	if (subElement instanceof Xinterface)
-	    interface = (Xinterface)subElement;
+	    intf = (Xinterface)subElement;
     }
 }

@@ -11,9 +11,10 @@
 
 package net.tinyos.nesc.dump.xml;
 
+import org.xml.sax.*;
 import java.util.*;
 
-public class Xcomponents extends NDList
+public class Xtags extends NDList
 {
     public static LinkedList list;
 

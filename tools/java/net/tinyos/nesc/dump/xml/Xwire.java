@@ -24,5 +24,4 @@ public class Xwire extends NDElement
 	if (subElement instanceof Xto)
 	    to = (Xto)subElement;
     }
-    
 }

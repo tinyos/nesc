@@ -11,11 +11,12 @@
 
 package net.tinyos.nesc.dump.xml;
 
+import net.tinyos.nesc.dump.*;
 import org.xml.sax.*;
 
 public class Xstructured_element extends NDElement
 {
-    public Field field;
+    public Xfield field;
     public Value value;
 
     public NDElement start(NDReader reader, Attributes attrs) {

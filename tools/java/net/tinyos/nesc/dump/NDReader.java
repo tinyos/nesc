@@ -78,6 +78,10 @@ public class NDReader extends DefaultHandler
 	return makeElementIn(standardPkg, name);
     }
 
+    public NDElement parent() {
+	return activeElements.elementAt(activeElements.length() - 2);
+    }
+
     public void startElement(String uri, String localName, String qName,
 			     Attributes attrs) {
 	NDElement element = null;
@@ -99,7 +103,7 @@ public class NDReader extends DefaultHandler
 
 	if (current == null)
 	    return;
-	current = current.end();
+	current = current.end(this);
 	if (current == null)
 	    return;
 
@@ -107,7 +111,7 @@ public class NDReader extends DefaultHandler
 	    top = current; /* top level element */
 	else {
 	    NDElement parent = (NDElement)activeElements.peek();
-	    parent.child(current);
+	    parent.child(this, current);
 	}
     }
 

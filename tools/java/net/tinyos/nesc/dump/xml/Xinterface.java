@@ -11,6 +11,7 @@
 
 package net.tinyos.nesc.dump.xml;
 
+import java.util.*;
 import org.xml.sax.*;
 
 public class Xinterface extends DataDefinition

@@ -11,11 +11,13 @@
 
 package net.tinyos.nesc.dump.xml;
 
-import org.xml.sax.*;
-
-public class Xattribute_ref extends NDElement
+public class WiringPosition
 {
-    public NDElement start(NDReader reader, Attributes attrs) {
-	return TagDefinition.lookup(reader, attrs, "attribute");
+    public WiringNode node;
+    public Xarguments args;
+
+    public void copy(WiringPosition from) {
+	node = from.node;
+	args = from.args;
     }
 }

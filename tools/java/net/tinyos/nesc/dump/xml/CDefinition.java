@@ -14,7 +14,7 @@ package net.tinyos.nesc.dump.xml;
 import org.xml.sax.*;
 import java.util.*;
 
-public class CDefinition extends Definition
+abstract public class CDefinition extends Definition
 {
     public Container container;
 

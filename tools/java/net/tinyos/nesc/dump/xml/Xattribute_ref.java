@@ -11,13 +11,12 @@
 
 package net.tinyos.nesc.dump.xml;
 
-import java.util.*;
+import net.tinyos.nesc.dump.*;
+import org.xml.sax.*;
 
-public class Xcomponents extends NDList
+public class Xattribute_ref extends NDElement
 {
-    public static LinkedList list;
-
-    public void end() {
-	list = l;
+    public NDElement start(NDReader reader, Attributes attrs) {
+	return TagDefinition.lookup(reader, attrs, "attribute");
     }
 }

@@ -24,11 +24,11 @@ public class NescDefinition extends Definition
 	qname = attrs.getValue("qname");
     }
 
-    public synchronized NDElement start(Attribute attrs) {
+    public synchronized NDElement start(Attributes attrs) {
 	return defs.define(attrs.getValue("qname"), attrs, this);
     }
 
-    static synchronized Definition lookup(Attribute attrs, NDReader reader,
+    static synchronized Definition lookup(Attributes attrs, NDReader reader,
 					  String elementName) {
 	return defs.lookup(attrs.getValue("qname"), attrs, reader, elementName);
     }
