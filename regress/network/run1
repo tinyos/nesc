@@ -1,2 +1,2 @@
-~/motes/nesc/1.1/src/nesc1 -fnesc-target=avr $1 && nescc -Wall -c -o /dev/null $1
+/usr/local/lib/ncc/nesc1 -fnesc-target=avr $1 && nescc -Wall -c -o /dev/null $1
 

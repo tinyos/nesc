@@ -52,7 +52,8 @@ static AST_walker_result network_assignment(AST_walker spec, void *data,
   function_decl fn = data;
 
   validate_network_lvalue(a->arg1);
-  if (type_network_base_type(a->type))
+  /* See problem/ugly hack comment in network_increment */
+  if (type_network_base_type(a->type) && !a->temp1)
     {
       /* op= needs a temp */
       if (a->kind != kind_assign)
@@ -70,7 +71,14 @@ static AST_walker_result network_increment(AST_walker spec, void *data,
 
   validate_network_lvalue(i->arg1);
 
-  if (type_network_base_type(i->type))
+  /* Problem: adding the declarations for the temporaries changes the AST
+     as we're walking through it. If we add a temporary while walking 
+     through the first declaration, we'll revisit this declaration. Oops.
+     Ugly hack fix: don't create the temporaries if they've already been
+     created. Note that this could lead to duplicate error messages from
+     validate_network_lvalue, but that's for use of a deprecated gcc
+     feature which is going away soon. */
+  if (type_network_base_type(i->type) && !i->temp1)
     {
       /* pre-ops need 1 temp, post-ops need 2 */
       i->temp1 = add_network_temporary(fn, make_pointer_type(i->type));
@@ -84,7 +92,7 @@ static AST_walker_result network_increment(AST_walker spec, void *data,
 static AST_walker_result network_fdecl(AST_walker spec, void *data,
 				       function_decl *fd)
 {
-  AST_walk_children(spec, fd, CAST(node, *fd));
+  AST_walk_children(spec, *fd, CAST(node, *fd));
   return aw_done;
 }
 
