@@ -1113,7 +1113,44 @@ module M1 {                              module M2 {
 The \code{M2.SC -> M1} line is equivalent to \code{M2.SC -> M1.StdControl}.
 
 \subsection{Examples}
-[ADD MORE EXAMPLES]
+
+The first example shows all possible wiring cases (comments within the
+example):
+\begin{quote}
+\begin{verbatim}
+configuration All {
+  provides interface A as ProvidedA1;
+  provides interface A as ProvidedA2;
+  provides interface A as ProvidedA3;
+  uses interface A as UsedA1;
+}
+implementation {
+  components new MyComponent() as Comp1, new MyComponent() as Comp2;
+
+  // equate our interface ProvidedA1 with MyA provided by Comp1
+  ProvidedA1 = Comp1.MyA; 
+
+  // the same, for ProvidedA2 and MyA of Comp2. We rely on the implicit
+  // connection to avoid naming MyA
+  ProvidedA2 = Comp2;
+
+  // An equate wire connecting ProvidedA3 with UsedA1. We're just passing
+  // the interface through
+  ProvidedA3 = UsedA1;
+
+  // Link some B interfaces together:
+  Comp1.UsedB -> Comp2.MyB; // fully explicit connection
+  Comp1 -> Comp2.MyB; // implicit equivalent of above line
+  Comp1 <- Comp2.UsedB; // implicit equivalent of Comp2.UsedB -> Comp1.MyB
+}
+
+generic module MyComponent() {
+  provides interface A as MyA;
+  provides interface B as MyB;
+  uses interface B as UsedB;
+} implementation { ... }
+\end{verbatim}
+\end{quote}
 
 The same specification element may be connected multiple times, e.g.,:
 \begin{quote} \begin{verbatim}
@@ -1863,8 +1900,7 @@ use. \tinyos reserves all identifiers starting with \kw{TOS\_} and
 via the \kw{includes} directive follow the \emph{translation-unit}
 directive from K\&R. 
 
-New rules:
-\begin{tabbing}
+New rules: \em \begin{tabbing}
 \grammarindent
 nesC-file: \\
 \>	includes-list\opt interface-definition\\
