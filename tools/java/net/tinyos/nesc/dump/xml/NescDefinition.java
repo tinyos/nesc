@@ -33,4 +33,8 @@ public class NescDefinition extends Definition
 					  String elementName) {
 	return defs.lookup(reader, attrs.getValue("qname"), attrs, elementName);
     }
+
+    public String toString() {
+	return qname;
+    }
 }

@@ -46,6 +46,12 @@ public class DataDefinition extends CDefinition
     }
 
     public String toString() {
+	if (container == null)
+	    return name;
+	return container.toString() + "." + name;
+    }
+
+    public String debugString() {
 	String base = "";
 	//base += "[" + super.toString() + "]";
 	if (name != null)

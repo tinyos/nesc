@@ -11,18 +11,18 @@
 
 package net.tinyos.nesc.dump.xml;
 
-import org.xml.sax.*;
-import java.util.*;
-
-public class Xinterfacedef extends NescDefinition
+abstract public class WiringScan extends WiringPosition implements Cloneable
 {
-    public Xparameters parameters;
-    public LinkedList/*Xfunction*/ functions = new LinkedList();
+    abstract public java.util.ListIterator edges();
+    abstract public boolean follow(WiringEdge e);
+    abstract public boolean isForwards();
 
-    public void child(NDElement subElement) {
-	if (subElement instanceof Xparameters)
-	    parameters = (Xparameters)subElement;
-	if (subElement instanceof Xfunction)
-	    functions.add(subElement);
+    public WiringScan duplicate() {
+	try {
+	    return (WiringScan)clone();
+	}
+	catch (CloneNotSupportedException e) { 
+	    return null; // cannot happen
+	}
     }
 }

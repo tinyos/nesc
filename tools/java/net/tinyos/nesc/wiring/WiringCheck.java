@@ -28,60 +28,87 @@ public class WiringCheck
        or events (when wantCommands = false) */
     boolean contains(Xinterface intf, boolean wantCommands) {
 	Xinterfacedef idef = (Xinterfacedef)intf.instance.parent;
+	ListIterator fns = idef.functions.listIterator();
 
+	while (fns.hasNext()) {
+	    Xfunction fn = (Xfunction)fns.next();
+
+	    if (fn.command == wantCommands)
+		return true;
+	}
+	return false;
+    }
+
+    boolean check1Wire(WiringScan from, int min, int max) {
+	int count = count(from);
+
+	if (min >= 0 && count < min) 
+	    return explain("underwired", from);
+	if (max >= 0 && count > max)
+	    return explain("overwired", from);
+
+	return false;
+    }
+
+    boolean explain(String error, WiringScan from) {
+	System.err.println("Interface " + from.node.ep + " " + error);
+	printPath(2, from);
 	return true;
     }
 
-    void check1Wire(WiringNode from, boolean forwards, int min, int max) {
-	WiringPosition pfrom = new WiringPosition(from);
-	int count = forwards ? countForwards(pfrom) : countBackwards(pfrom);
-
-	if (min >= 0 && count < min)
-	    System.err.println("Interface " + from.ep.name + " underwired");
-	if (max >= 0 && count > max)
-	    System.err.println("Interface " + from.ep.name + " overwired");
-    }
-    
     /* We know the wiring graph is acyclic */
 
-    int countForwards(WiringPosition position) {
-	ListIterator out = position.node.outgoingEdges();
+    int count(WiringScan position) {
+	ListIterator out = position.edges();
 	int count = 0;
-	WiringPosition temp = new WiringPosition();
+	WiringScan temp = null;
 
 	//System.err.println("fcount " + count + " @ " + position);
 
 	while (out.hasNext()) {
 	    WiringEdge e = (WiringEdge)out.next();
 
-	    temp.copy(position);
-	    if (e.followForward(temp)) {
+	    if (temp == null)
+		temp = position.duplicate();
+	    else
+		temp.copy(position);
+	    if (temp.follow(e)) {
 		if (inModule(temp))
 		    count++;
-		count += countForwards(temp);
+		count += count(temp);
 	    }
 	}
 	return count;
     }
 
-    int countBackwards(WiringPosition position) {
-	ListIterator in = position.node.incomingEdges();
-	int count = 0;
-	WiringPosition temp = new WiringPosition();
+    static String repeat(int n, char c) {
+	char[] cs = new char[n];
 
-	//System.err.println("bcount " + count + " @ " + position);
+	for (int i = 0; i < n; i++)
+	    cs[i] = c;
 
-	while (in.hasNext()) {
-	    WiringEdge e = (WiringEdge)in.next();
+	return new String(cs);
+    }
 
-	    temp.copy(position);
-	    if (e.followBackward(temp)) {
-		if (inModule(temp))
-		    count++;
-		count += countBackwards(temp);
+    void printPath(int offset, WiringScan position) {
+	ListIterator out = position.edges();
+	WiringScan temp = null;
+
+	while (out.hasNext()) {
+	    WiringEdge e = (WiringEdge)out.next();
+
+	    if (temp == null)
+		temp = position.duplicate();
+	    else
+		temp.copy(position);
+	    if (temp.follow(e)) {
+		System.err.println(repeat(offset, ' ') +
+				   (position.isForwards() ? "-> " : "<- ") +
+				   temp.node.ep +
+				   (inModule(temp) ? " (module)" : ""));
+		printPath(offset + 2, temp);
 	    }
 	}
-	return count;
     }
 
     boolean inModule(WiringPosition pos) {
@@ -96,6 +123,7 @@ public class WiringCheck
 	    int min = -1, max = -1;
 	    Xinterface check1 = (Xinterface)toCheck.next();
 	    Xattribute_value exactlyOnce = check1.attributeLookup("exactlyonce");
+	    boolean reported = false;
 
 	    if (check1.attributeLookup("atmostonce") != null ||
 		exactlyOnce != null)
@@ -109,11 +137,12 @@ public class WiringCheck
 
 	    boolean providing = contains(check1, check1.provided);
 	    boolean using = contains(check1, !check1.provided);
+	    WiringNode checkNode = Xwiring.wg.lookup(check1);
 
 	    if (providing)
-		check1Wire(Xwiring.wg.lookup(check1), true, min, max);
-	    if (using)
-		check1Wire(Xwiring.wg.lookup(check1), false, min, max);
+		reported = check1Wire(new WiringScanForwards(checkNode), min, max);
+	    if (using && !reported)
+		check1Wire(new WiringScanBackwards(checkNode), min, max);
 	}
     }
 

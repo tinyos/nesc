@@ -12,17 +12,7 @@
 package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
-import java.util.*;
 
-public class Xinterfacedef extends NescDefinition
+public class Xtype_void extends SimpleType
 {
-    public Xparameters parameters;
-    public LinkedList/*Xfunction*/ functions = new LinkedList();
-
-    public void child(NDElement subElement) {
-	if (subElement instanceof Xparameters)
-	    parameters = (Xparameters)subElement;
-	if (subElement instanceof Xfunction)
-	    functions.add(subElement);
-    }
 }

@@ -24,7 +24,7 @@ public class WiringEdge
 	this.toArgs = toArgs;
     }
 
-    public boolean followForward(WiringPosition position) {
+    public boolean followForwards(WiringPosition position) {
 	if (position.args != null) {
 	    if (fromArgs != null) {
 		if (!fromArgs.equals(position.args))
@@ -39,7 +39,7 @@ public class WiringEdge
 	return true;
     }
 
-    public boolean followBackward(WiringPosition position) {
+    public boolean followBackwards(WiringPosition position) {
 	if (position.args != null) {
 	    if (toArgs != null) {
 		if (!toArgs.equals(position.args))
