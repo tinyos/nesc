@@ -1,0 +1,44 @@
+typedef int main$sc$t1;
+typedef char *main$sc$t2;
+typedef int mod$sc$t1;
+typedef char *mod$sc$t2;
+static  mod$sc$t1 mod$sc$init(mod$sc$t2 arg_0x82f44b8, int arg_0x82f4608);
+static  
+# 2 "sc.nc"
+main$sc$t1 main$sc$init(main$sc$t2 arg_0x82f44b8, int arg_0x82f4608);
+# 5 "main.nc"
+void  main$entry(void);
+static inline  
+# 5 "mod.nc"
+int mod$sc$init(char *foo, int b);
+static inline  
+#line 5
+int mod$sc$init(char *foo, int b)
+#line 5
+{
+  return foo[0] + b;
+}
+
+# 2 "sc.nc"
+inline static  main$sc$t1 main$sc$init(main$sc$t2 arg_0x82f44b8, int arg_0x82f4608){
+#line 2
+  int result;
+#line 2
+
+#line 2
+  result = mod$sc$init(arg_0x82f44b8, arg_0x82f4608);
+#line 2
+
+#line 2
+  return result;
+#line 2
+}
+#line 2
+# 5 "main.nc"
+void  main$entry(void)
+#line 5
+{
+  int b = main$sc$init("aa", 2);
+
+}
+

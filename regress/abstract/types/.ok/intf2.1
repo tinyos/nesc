@@ -1,0 +1,60 @@
+typedef int main$sc$t1;
+typedef char *main$sc$t2;
+typedef int /*test.mod1*/mod$0$sc$t1;
+typedef char */*test.mod1*/mod$0$sc$t2;
+typedef int /*test.mod2*/mod$1$sc$t1;
+typedef char */*test.mod2*/mod$1$sc$t2;
+static  mod$0$sc$t1 /*test.mod1*/mod$0$sc$init(mod$0$sc$t2 arg_0x82f4708, int arg_0x82f4858);
+static  mod$1$sc$t1 /*test.mod2*/mod$1$sc$init(mod$1$sc$t2 arg_0x82f4708, int arg_0x82f4858);
+static  
+# 2 "sc.nc"
+main$sc$t1 main$sc$init(main$sc$t2 arg_0x82f4708, int arg_0x82f4858);
+# 5 "main.nc"
+void  main$entry(void);
+static inline  
+# 5 "mod.nc"
+int /*test.mod1*/mod$0$sc$init(char *foo, int b);
+static inline  
+#line 5
+int /*test.mod2*/mod$1$sc$init(char *foo, int b);
+static inline  
+#line 5
+int /*test.mod2*/mod$1$sc$init(char *foo, int b)
+#line 5
+{
+  return foo[0] + b + 20;
+}
+
+static inline  
+#line 5
+int /*test.mod1*/mod$0$sc$init(char *foo, int b)
+#line 5
+{
+  return foo[0] + b + 2;
+}
+
+# 2 "sc.nc"
+inline static  main$sc$t1 main$sc$init(main$sc$t2 arg_0x82f4708, int arg_0x82f4858){
+#line 2
+  int result;
+#line 2
+
+#line 2
+  result = /*test.mod1*/mod$0$sc$init(arg_0x82f4708, arg_0x82f4858);
+#line 2
+  result = /*test.mod2*/mod$1$sc$init(arg_0x82f4708, arg_0x82f4858);
+#line 2
+
+#line 2
+  return result;
+#line 2
+}
+#line 2
+# 5 "main.nc"
+void  main$entry(void)
+#line 5
+{
+  int b = main$sc$init("aa", 2);
+
+}
+
