@@ -135,7 +135,7 @@ sub gen() {
 	$javafield = $field;
 	$javafield =~ s/\./_/g;
 	if (!@$amax) {
-          print "      s += \"[$field=\"+get\u$javafield()+\"] \";\n";
+          print "      s += \"[$field=0x\"+Long.toHexString(get\u$javafield())+\"] \";\n";
 	}
     }
     print "      return s;\n";
