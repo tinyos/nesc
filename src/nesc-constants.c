@@ -26,6 +26,7 @@ Boston, MA 02111-1307, USA.  */
 #include "constants.h"
 
 static AST_walker folder_walker;
+static AST_walker check_walker;
 
 struct folder_data {
   bool done;
@@ -159,8 +160,29 @@ bool fold_constants_list(node n, int pass)
   return d.done;
 }
 
+static AST_walker_result check_array_declarator(AST_walker spec, void *data,
+						array_declarator *n)
+{
+  expression size = (*n)->arg1;
+
+  if (size->cst)
+    check_array_size(size, NULL);
+
+  return aw_walk;
+}
+
+void check_constant_uses_list(node n)
+/* Effects: Checks use of constants in AST n
+ */
+{
+  AST_walk_list(check_walker, NULL, CASTPTR(node, &n));
+}
+
 void init_nesc_constants(void)
 {
   folder_walker = new_AST_walker(permanent);
   AST_walker_handle(folder_walker, kind_expression, folder_expression);
+
+  check_walker = new_AST_walker(permanent);
+  AST_walker_handle(check_walker, kind_array_declarator, check_array_declarator);
 }

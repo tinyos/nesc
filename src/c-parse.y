@@ -693,7 +693,10 @@ generic_arglist:
 	;
 
 generic_arg:
-	  expr_no_commas
+	  expr_no_commas {
+	    if (!$1->cst)
+	      error("argument to component not constant");
+	  }
 	| typename { $$ = CAST(expression, new_type_argument(pr, $1->location, $1)); }
 	;
 

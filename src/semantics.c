@@ -620,6 +620,36 @@ void check_variable_scflags(scflags scf,
     msg(l, "%s `%s' declared `%s'", kind, name, badqual);
 }
 
+expression check_array_size(expression size, const char *printname)
+{
+  assert(constant_integral(size->cst));
+  if (pedantic)
+    {
+      constant_overflow_warning(size->cst);
+      if (definite_zero(size))
+	{
+	  if (printname)
+	    pedwarn_with_location
+	      (size->location, "ANSI C forbids zero-size array `%s'", printname);
+	  else
+	    pedwarn_with_location
+	      (size->location, "ANSI C forbids zero-size array");
+	}
+    }
+
+  if (cval_intcompare(size->cst->cval, cval_zero) < 0)
+    {
+      if (printname)
+	error_with_location(size->location,
+			    "size of array `%s' is negative", printname);
+      else
+	error_with_location(size->location, "size of array is negative");
+      return oneexpr;
+    }
+
+  return size;
+}
+
 void parse_declarator(type_element modifiers, declarator d, bool bitfield, 
 		      bool require_parm_names,
 		      int *oclass, scflags *oscf,
@@ -940,27 +970,20 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 		    size = oneexpr;
 		  }
 
-		if (pedantic && definite_zero(size))
-		  pedwarn_with_location(ad->location,
-					"ANSI C forbids zero-size array `%s'", printname);
-
 		if (size->cst && constant_integral(size->cst))
-		  {
-		    if (pedantic)
-		      constant_overflow_warning(size->cst);
-		    if (cval_intcompare(size->cst->cval, cval_zero) < 0)
-		      {
-			error_with_location(ad->location,
-					    "size of array `%s' is negative", printname);
-			size = oneexpr;
-		      }
-		  }
+		  size = check_array_size(size, printname);
 		else
 		  {
 		    if (!(current.function_decl || current.env->parm_level))
 		      {
 			if (size->cst)
-			  error_with_location(ad->location, "type size can't be explicitly evaluated");
+			  {
+			    /* We allow unknown size arrays (i.e., derived
+			       from template args or unique/uniqueCount) as
+			       they will eventually become an actual number */
+			    if (!constant_unknown(size->cst))
+			      error_with_location(ad->location, "type size can't be explicitly evaluated");
+			  }
 			else
 			  error_with_location(ad->location, "variable-size type declared outside of any function");
 		      }

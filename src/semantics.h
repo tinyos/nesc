@@ -220,4 +220,6 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
 		    bool different_binding_level, bool newinitialised);
 
+expression check_array_size(expression size, const char *printname);
+
 #endif

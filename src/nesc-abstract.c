@@ -490,13 +490,52 @@ static void set_parameter_values(nesc_declaration cdecl, expression args)
     {
       variable_decl vd = CAST(variable_decl, parm->decls);
 
+      assert(args->cst);  // checked in c-parse.y
       vd->ddecl->value = args->cst;
+    }
+}
+
+static bool fold_components(nesc_declaration cdecl, int pass)
+{
+  bool done;
+
+  if (cdecl->folded == pass)
+    return TRUE;
+
+  cdecl->folded = pass;
+
+  done = fold_constants_list(CAST(node, cdecl->impl), pass);
+
+  if (is_module(cdecl->impl))
+    ;
+  else
+    {
+      component_ref comp;
+      configuration c = CAST(configuration, cdecl->impl);
+
+      scan_component_ref (comp, c->components)
+	{
+	  set_parameter_values(comp->cdecl, comp->args);
+	  done = fold_components(comp->cdecl, pass) && done;
+	}
+    }
+  return done;
+}
+
+static void check_parameter_values(nesc_declaration cdecl, expression args)
+{
+  data_decl parm;
+
+  /* We know args is the same length as parameters (earlier error if not) */
+  scan_data_decl (parm, CAST(data_decl, cdecl->parameters))
+    {
+      variable_decl vd = CAST(variable_decl, parm->decls);
+
+      assert(args->cst);  // checked in c-parse.y
+
       /* We can assume the type is arithmetic (for now at least)
 	 (see declare_template_parameter) */
-      if (!args->cst)
-	error_with_location(args->location,
-			    "arguments to component not constant");
-      else if (type_integer(vd->ddecl->type))
+      if (type_integer(vd->ddecl->type))
 	{
 	  if (!constant_integral(args->cst))
 	    error_with_location(args->location, "integer constant expected");
@@ -513,17 +552,15 @@ static void set_parameter_values(nesc_declaration cdecl, expression args)
     }
 }
 
-static bool fold_components(nesc_declaration cdecl, int pass)
+static void check_constant_uses_components(nesc_declaration cdecl)
 {
-  bool done;
+  if (!cdecl->folded)
+    return;
 
-  if (cdecl->folded == pass)
-    return TRUE;
-
-  cdecl->folded = pass;
+  cdecl->folded = 0;
 
   current.container = cdecl;
-  done = fold_constants_list(CAST(node, cdecl->impl), pass);
+  check_constant_uses_list(CAST(node, cdecl->impl));
 
   if (is_module(cdecl->impl))
     ;
@@ -535,11 +572,10 @@ static bool fold_components(nesc_declaration cdecl, int pass)
       scan_component_ref (comp, c->components)
 	{
 	  current.container = cdecl;
-	  set_parameter_values(comp->cdecl, comp->args);
-	  done = fold_components(comp->cdecl, pass) && done;
+	  check_parameter_values(comp->cdecl, comp->args);
+	  check_constant_uses_components(comp->cdecl);
 	}
     }
-  return done;
 }
 
 void fold_program(nesc_declaration program)
@@ -555,6 +591,11 @@ void fold_program(nesc_declaration program)
       pass++;
     }
   while (!done);
+
+  current.container = NULL;
+  check_constant_uses_list(CAST(node, all_cdecls));
+  if (program)
+    check_constant_uses_components(program);
 }
 
 void init_abstract(void)
