@@ -10,3 +10,4 @@ config.log
 config.status
 configure
 stamp-h1
+ice-gdb

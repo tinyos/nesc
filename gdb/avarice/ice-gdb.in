@@ -1,0 +1,23 @@
+#!@pathperl@
+$prefix = "@prefix@";
+$datadir = "@datadir@";
+
+@argcmds = ( "-b", "--cd", "--command", "--core", "--pid", "--directory",
+	     "--exec", "--interpreter", "--se", "--symbols", "--tty",
+	     "-s", "-e", "-se", "-x", "-d" );
+
+for ($i = 0; $i <= $#ARGV; $i++) {
+    $arg = $ARGV[$i];
+
+    if (grep $_ eq $arg, @argcmds) {
+	$i++;
+    }
+    elsif (!($arg =~ /^-/)) {
+	$exe = $arg;
+	break;
+    }
+}
+
+system "start-avarice $exe";
+unshift @ARGV, ("avr-gdb", "-x", "$datadir/avarice/gdb-avarice-script" );
+exec @ARGV;

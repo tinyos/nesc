@@ -21,6 +21,10 @@ AUTOMAKE_OPTIONS = foreign
 
 bin_PROGRAMS = avarice
 
+bin_SCRIPTS = start-avarice ice-gdb
+
+pkgdata_DATA = gdb-avarice-script
+
 avarice_SOURCES =	\
 	avarice.h	\
 	jtag.h		\
@@ -36,4 +40,5 @@ avarice_SOURCES =	\
 	utils.cc
 
 EXTRA_DIST =		\
-	COPYING
+	COPYING		\
+	gdb-avarice-script

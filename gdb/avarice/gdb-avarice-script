@@ -1,0 +1,19 @@
+set remoteaddresssize 32
+set remote Z-packet enable
+
+define target-ice
+  target extended-remote localhost:6423
+end
+
+define ice-load
+  shell start-avarice $arg0
+  file $arg0
+  target-ice
+end
+
+define ice-restart
+  shell start-avarice
+  target-ice
+end
+
+target-ice
