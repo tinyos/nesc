@@ -54,7 +54,7 @@ static struct { char *string; int *variable; int on_value;} f_options[] =
 
 static char *lang_options[] =
 {
-  "-fnesc-tossim-tosnodes=",
+  "-fnesc-nido-tosnodes=",
   "-fnesc-path=",
   "-fnesc-no-debug",
   "-fnesc-save-macros",
@@ -188,9 +188,9 @@ static void pipe_closed (int signo)
 static void c_decode_option(char *p)
 {
   /* Yes, using here strlen is evil. But who *really* cares? */
-  if (!strncmp (p, "-fnesc-tossim-tosnodes=", strlen("-fnesc-tossim-tosnodes=")))
+  if (!strncmp (p, "-fnesc-nido-tosnodes=", strlen("-fnesc-nido-tosnodes=")))
     {
-      tossim_num_nodes = p + strlen("-fnesc-tossim-tosnodes=");
+      nido_num_nodes = p + strlen("-fnesc-nido-tosnodes=");
     }
   else if (!strncmp (p, "-fnesc-path=", strlen("-fnesc-path=")))
     {
@@ -204,7 +204,7 @@ static void c_decode_option(char *p)
     {
       char *target = p + strlen("-fnesc-target=");
       if (!strcmp(target, "pc"))
-	use_tossim = TRUE;
+	use_nido = TRUE;
       select_target(target);
     }
   else if (!strcmp (p, "-fnesc-no-debug"))

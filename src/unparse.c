@@ -583,8 +583,8 @@ void prt_ddecl_full_name(data_declaration ddecl, psd_options options)
     }
   output_stripped_string(ddecl->name);
 
-  if (use_tossim && is_module_variable(ddecl))
-    output("[%s]", tossim_num_nodes);
+  if (use_nido && is_module_variable(ddecl))
+    output("[%s]", nido_num_nodes);
 }
 
 void prt_simple_declarator(declarator d, data_declaration ddecl,
@@ -1102,7 +1102,7 @@ void prt_identifier(identifier e, int context_priority)
 
   output_stripped_cstring(e->cstring);
 
-  if (use_tossim && is_module_variable(decl))
+  if (use_nido && is_module_variable(decl))
     output("[tos_state.current_node]");
 }
 

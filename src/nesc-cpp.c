@@ -171,11 +171,11 @@ void create_nesc_keyword_macros(const char *macro_filename)
 	    nesc_keywords[i], nesc_keywords[i]);
 
   /* this will set the enum value of TOSNODES to the value specified
-     during compilation by the flag "-fnesc-tossim-tosnodes = 1000"
+     during compilation by the flag "-fnesc-nido-tosnodes = 1000"
      which in this case is 1000. */     
-  if (use_tossim)
+  if (use_nido)
     fprintf(mf, "#define TOSH_NUM_NODES %s\n",
-	    tossim_num_nodes ? tossim_num_nodes : "1000");
+	    nido_num_nodes ? nido_num_nodes : "1000");
 
   fclose(mf);
 }

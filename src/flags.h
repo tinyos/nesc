@@ -217,11 +217,11 @@ extern int flag_no_debug;
 extern int flag_save_macros;
 
 /* Nonzero means modify identifier and declaration output during code
-   generation to accomodate tossim */
-extern bool use_tossim;
+   generation to accomodate nido */
+extern bool use_nido;
 
 /* specifies the maximum number of nodes that can be simulated at one time */
-extern char* tossim_num_nodes;
+extern char* nido_num_nodes;
 
 /* Nonzero for -v */
 extern int flag_verbose;
