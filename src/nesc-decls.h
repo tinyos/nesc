@@ -52,6 +52,7 @@ typedef struct nesc_declaration {
 				   (needed before impl is set) */
   implementation impl;
   struct cgraph *connections;
+  struct cgraph *user_connections; /* interfaces are not expanded */
   dd_list local_statics;	/* Local static variables (for nido) */
   size_t instance_count;	/* For abstract components, the
 				   instance count (used to give each

@@ -205,31 +205,48 @@ void check_generic_parameter_type(location l, data_declaration gparm)
 struct beg_data
 {
   cgraph cg;
+  cgraph userg;
 };
 
-void beg_iterator(data_declaration fndecl, void *data)
+void beg_iterator(data_declaration ddecl, void *data)
 {
   struct beg_data *d = data;
   struct endp node;
 
   node.component = NULL;
-  node.interface = fndecl->interface;
-  node.function = fndecl;
   node.args_node = NULL;
-  endpoint_lookup(d->cg, &node);
+
+  /* The real connection graph contains all functions.
+     The user connection graph contains all interfaces + the
+     functions which are not in an interface */
+  if (ddecl->kind == decl_interface_ref)
+    {
+      node.interface = ddecl;
+      node.function = NULL;
+      endpoint_lookup(d->userg, &node);
+    }
+  else
+    {
+      node.interface = ddecl->interface;
+      node.function = ddecl;
+      endpoint_lookup(d->cg, &node);
+      if (!node.interface)
+	endpoint_lookup(d->userg, &node);
+    }
 }
 
-cgraph build_external_graph(region r, nesc_declaration cdecl)
+void build_external_graph(region r, nesc_declaration cdecl)
 {
-  cgraph cg = new_cgraph(r);
   struct beg_data d;
 
   /* A very simple graph, with single unconnected nodes for each endpoint
      of cdecl */
-  d.cg = cg;
-  component_functions_iterate(cdecl, beg_iterator, &d);
+  d.cg = new_cgraph(r);
+  d.userg = new_cgraph(r);
+  component_spec_iterate(cdecl, beg_iterator, &d, TRUE);
 
-  return cg;
+  cdecl->connections = d.cg;
+  cdecl->user_connections = d.userg;
 }
 
 void build_component(region r, nesc_declaration cdecl)
@@ -243,7 +260,7 @@ void build_component(region r, nesc_declaration cdecl)
 
   /* Build the default connection graph (just nodes for the external
      endpoints) */
-  cdecl->connections = build_external_graph(r, cdecl);
+  build_external_graph(r, cdecl);
 
   if (is_configuration(cdecl->impl))
     process_configuration(CAST(configuration, cdecl->impl));

@@ -21,6 +21,7 @@ Boston, MA 02111-1307, USA.  */
 #include "semantics.h"
 #include "nesc-semantics.h"
 #include "constants.h"
+#include "init.h"
 
 /* Pick an indentation amount */
 #define INDENT 2
@@ -380,4 +381,60 @@ void nxml_tdecl_ref(tag_declaration tdecl)
     xml_attr_noval("scoped");
   xml_attr_ptr("ref", tdecl);
   xml_tag_end_pop();
+}
+
+static void nxml_value_base(ivalue value, dhash_table tags)
+{
+  indentedtag_start("value-base");
+  xml_attr_cval("value", value->u.base.value);
+  xml_tag_end();
+  nxml_type(value->type, tags);
+  indentedtag_pop();
+}
+
+static void nxml_value_array(ivalue value, dhash_table tags)
+{
+  ivalue_array elem;
+
+  indentedtag("value-array");
+  nxml_type(value->type, tags);
+  for (elem = value->u.array; elem; elem = elem->next)
+    {
+      indentedtag_start("array-element");
+      xml_attr_int("from", elem->from);
+      xml_attr_int("to", elem->to);
+      xml_tag_end();
+      nxml_value(elem->value, tags);
+      indentedtag_pop();
+    }
+  indentedtag_pop();
+}
+
+static void nxml_value_structured(ivalue value, dhash_table tags)
+{
+  ivalue_field field;
+
+  indentedtag("value-structured");
+  nxml_type(value->type, tags);
+  for (field = value->u.structured; field; field = field->next)
+    {
+      indentedtag_start("structured-element");
+      xml_attr("field", field->field->name);
+      xml_attr_ptr("ref", field->field);
+      xml_tag_end();
+      nxml_value(field->value, tags);
+      indentedtag_pop();
+    }
+  indentedtag_pop();
+}
+
+void nxml_value(ivalue value, dhash_table tags)
+{
+  switch (value->kind)
+    {
+    case iv_base: nxml_value_base(value, tags); break;
+    case iv_array: nxml_value_array(value, tags); break;
+    case iv_structured: nxml_value_structured(value, tags); break;
+    default: assert(0);
+    }
 }

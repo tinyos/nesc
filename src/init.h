@@ -26,31 +26,34 @@ Boston, MA 02111-1307, USA. */
 
 /* Types representing a parsed initialiser. Unspecified fields and
    array elements were unspecified in the initialiser. */
-typedef struct ivalue {
+struct ivalue {
   enum { iv_base, iv_array, iv_structured } kind;
 
   type type;
 
   union {
-    cval base; /* for iv_base */
+    struct {			/* for iv_base */
+      expression expr;		/* not an init_list */
+      cval value; 		/* value if constant, cval_top otherwise */
+    } base;
     struct ivalue_array *array; /* for iv_array */
-    struct ivalue_structured *structured; /* for iv_structured */
+    struct ivalue_field *structured; /* for iv_structured */
   } u;
-} *ivalue;
+};
 
-struct ivalue_array {
+typedef struct ivalue_array {
   struct ivalue_array *next;
   largest_int from, to;
   ivalue value;
-};
+} *ivalue_array;
 
-struct ivalue_structured {
-  struct ivalue_structured *next;
+typedef struct ivalue_field {
+  struct ivalue_field *next;
   field_declaration field;
   ivalue value;
-};
+} *ivalue_field;
 
-void start_init(declaration decl);
+void start_init(declaration decl, const char *attribute);
 void finish_init(void);
 void simple_init(expression expr);
 void really_start_incremental_init(type t);

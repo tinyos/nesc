@@ -127,6 +127,7 @@
 (deffield instantiation node ())
 (deffield spelling "const char *" ())
 (deffield parens bool ())
+(deffield ivalue ivalue ())
 
 ;; nesc fields
 (deffield call_kind nesc_call_kind (init))
@@ -170,7 +171,7 @@ dangling node as we drop these nested statements from the AST)")
 
 (deftype expression node (lvalue side_effects cst bitfield isregister
 			  type static_address converted_to_pointer
-			  cst_checked spelling parens ivalueptr)
+			  cst_checked spelling parens ivalue)
   "Expression nodes are subtypes of this type.
 LVALUE is true if this expression can be used in a context requiring an lvalue.
 BITFIELD is true if this lvalue is a bitfield.
@@ -659,8 +660,8 @@ with declaration DDECL. The typedef-name is in ddecl->name")
   "ATOMIC stmt
 An atomic_stmt is not made for lexically nested atomic statements")
 
-(deftype nesc_attribute attribute (args tdecl)
-  "@WORD1(ARGS), a nesC attribute. ARGS is an init_list.
+(deftype nesc_attribute attribute (arg1 tdecl)
+  "@WORD1(ARG1), a nesC attribute. ARG1 is an init_list.
 TDECL is the reference to the declaration of attribute WORD1")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

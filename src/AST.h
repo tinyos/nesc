@@ -26,6 +26,7 @@ typedef int id_declaration_list;
 typedef struct typelist *typelist;
 typedef struct type *type;
 typedef struct known_cst *known_cst;
+typedef struct ivalue *ivalue;
 
 typedef struct edge *edge;
 

@@ -1020,7 +1020,7 @@ cast_expr:
 	  	{ $$ = make_cast($1.location, $2, $4); }
 	| '(' typename ')' '{' 
 		{ 
-		  start_init(NULL);
+		  start_init(NULL, NULL);
 		  really_start_incremental_init($2->type); 
 		}
 	  initlist_maybe_comma '}'
@@ -1665,7 +1665,7 @@ initdcl:
 	  declarator maybeasm maybe_attribute '='
 		{ $<u.decl>$ = start_decl($1, $2, pstate.declspecs, 1,
 					  prefix_attr($3));
-		  start_init($<u.decl>$); }
+		  start_init($<u.decl>$, NULL); }
 	  init
 /* Note how the declaration of the variable is in effect while its init is parsed! */
 		{ finish_init();
@@ -1680,7 +1680,7 @@ notype_initdcl:
 	  notype_declarator maybeasm maybe_attribute '='
 		{ $<u.decl>$ = start_decl($1, $2, pstate.declspecs, 1,
 					 prefix_attr($3));
-		  start_init($<u.decl>$); }
+		  start_init($<u.decl>$, NULL); }
 	  init
 /* Note how the declaration of the variable is in effect while its init is parsed! */
 		{ finish_init();

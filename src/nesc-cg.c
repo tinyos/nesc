@@ -37,6 +37,7 @@ static int ep_compare(void *e1, void *e2)
   ep_table_entry ep1 = e1, ep2 = e2;
 
   return ep1->ep.function == ep2->ep.function &&
+    ep1->ep.interface == ep2->ep.interface &&
     ep1->ep.args_node == ep2->ep.args_node;
 }
 
@@ -44,7 +45,7 @@ static unsigned long ep_hash(void *e)
 {
   ep_table_entry ep = e;
 
-  return hash_ptr(ep->ep.function) ^ hash_ptr(ep->ep.args_node);
+  return hash_ptr(ep->ep.interface) ^ hash_ptr(ep->ep.function) ^ hash_ptr(ep->ep.args_node);
 }
 
 cgraph new_cgraph(region r)
@@ -77,7 +78,8 @@ gnode fn_lookup(cgraph cg, data_declaration fndecl)
 {
   struct endp ep;
 
-  ep.component = ep.interface = NULL;
+  ep.component = NULL;
+  ep.interface = fndecl->interface;
   ep.function = fndecl;
   ep.args_node = NULL;
   return endpoint_lookup(cg, &ep);

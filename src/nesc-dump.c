@@ -29,7 +29,7 @@ dd_list/*nd_option*/ opts;
 region dump_region;
 
 /* What to output */
-bool wiring;
+enum { wiring_none, wiring_user, wiring_functions } wiring = wiring_none;
 dhash_table components;
 dhash_table componentdefs;
 dhash_table interfaces;
@@ -110,11 +110,37 @@ static void dump_type(type t)
   nxml_type(t, get_tags());
 }
 
-static void dump_wiring(cgraph cg)
+static void dump_endp(const char *tag, endp ep)
 {
-  xml_tag("wiring");
+  xml_tag(tag);
+  nxml_ddecl_ref(ep->function ? ep->function : ep->interface);
   xml_pop();
   xnewline();
+}
+
+static void dump_wire(gnode from, gnode to)
+{
+  endp fdata = NODE_GET(endp, from), tdata = NODE_GET(endp, to);
+
+  indentedtag("wire");
+  dump_endp("from", fdata);
+  dump_endp("to", tdata);
+  indentedtag_pop();
+}
+
+static void dump_wiring(cgraph cg)
+{
+  gnode from;
+  gedge wire;
+
+  /* Print complete wiring graph */
+  indentedtag("wiring");
+  graph_scan_nodes (from, cgraph_graph(cg))
+    {
+      graph_scan_out (wire, from)
+	dump_wire(from, graph_edge_to(wire));
+    }
+  indentedtag_pop();
 }
 
 static void dump_component(void *entry)
@@ -146,13 +172,11 @@ static void dump_attributes(dd_list/*nesc_attribute*/ attributes)
     {
       nesc_attribute attr = DD_GET(nesc_attribute, scan);
 
-      xstartline();
-      xml_tag_start("attribute");
+      indentedtag_start("attribute");
       xml_attr("name", attr->word1->cstring.data);
       xml_tag_end();
-      /* Should have value here */
-      xml_pop();
-      xnewline();
+      nxml_value(attr->arg1->ivalue, get_tags());
+      indentedtag_pop();
     }
 }
 
@@ -260,6 +284,8 @@ static void dump_field(field_declaration field)
 {
   indentedtag_start("field");
   xml_attr("name", field->name);
+  xml_attr_ptr("ref", field); /* collapsing structs into their parent can 
+				 cause duplicate names */
   xml_attr_bool("packed", field->packed);
   xml_attr_cval("bit-offset", field->offset);
   if (cval_istop(field->bitwidth))
@@ -466,12 +492,27 @@ void process_tags(nd_option opt, nesc_declaration program, cgraph cg,
 void process_wiring(nd_option opt, nesc_declaration program, cgraph cg,
 		 dd_list modules, dd_list comps)
 {
+  nd_arg arg;
+
   if (!comps)
     {
       error("wiring can only be requested on an actual program");
       return;
     }
-  wiring = TRUE;
+  wiring = wiring_user;
+
+  scan_nd_arg (arg, opt->args)
+    if (is_nd_token(arg))
+      {
+	const char *req = nd_tokenval(arg);
+
+	if (!strcmp(req, "functions"))
+	  wiring = wiring_functions;
+	else
+	  error("unknown wiring request for `%s'", req);
+      }
+    else
+      error("bad argument to wiring");
 }
 
 void process_referenced(nd_option opt, nesc_declaration program, cgraph cg,
@@ -542,7 +583,7 @@ bool dump_selected(void)
   return opts != NULL;
 }
 
-void dump_info(nesc_declaration program, cgraph cg,
+void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
 	       dd_list modules, dd_list comps)
 {
   dd_list_pos scan_opts;
@@ -574,8 +615,10 @@ void dump_info(nesc_declaration program, cgraph cg,
   xml_start(stdout);
   indentedtag("nesc");
 
-  if (wiring)
+  if (wiring == wiring_functions)
     dump_wiring(cg);
+  if (wiring == wiring_user)
+    dump_wiring(userg);
   dump_list("components", &components, dump_component);
   dump_list("interfaces", &interfaces, dump_interface);
   dump_list("componentdefs", &componentdefs, dump_componentdef);

@@ -24,7 +24,7 @@ extern region dump_region;
 
 void select_dump(char *what);
 bool dump_selected(void);
-void dump_info(nesc_declaration program, cgraph cg,
+void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
 	       dd_list modules, dd_list components);
 
 #endif

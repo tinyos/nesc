@@ -549,6 +549,7 @@ static AST_walker_result clone_configuration(AST_walker spec, void *data,
   /* Copy the connection graph
      (note that comp->connections was initialised to an "empty" graph */
   instantiate_cg(comp->connections, original_component(comp)->connections);
+  instantiate_cg(comp->user_connections, original_component(comp)->user_connections);
 
   return aw_done;
 }
@@ -1012,7 +1013,7 @@ nesc_declaration specification_copy(region r, component_ref cref,
   current = old;
 
   /* Give the copy an "empty" specification graph */
-  copy->connections = build_external_graph(r, copy);
+  build_external_graph(r, copy);
 
   return copy;
 }

@@ -26,8 +26,10 @@ tag_declaration start_attribute_use(word name)
      specified by name */
   tag_ref aref = lookup_attribute(name);
   type atype = aref->tdecl ? make_tagged_type(aref->tdecl) : error_type;
+  char *attrname = rstralloc(current.fileregion, strlen(name->cstring.data) + 2);
 
-  start_init(NULL);
+  sprintf(attrname, "@%s", name->cstring.data);
+  start_init(NULL, attrname);
   really_start_incremental_init(atype);
 
   /* XXX: aref leaks */

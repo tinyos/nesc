@@ -37,6 +37,7 @@ typedef struct label_declaration *label_declaration;
 /* Types representing declarations */
 
 typedef struct field_declaration {
+  struct tag_declaration *containing_tag;
   struct field_declaration *next; /* Next field in struct/union */
   const char *name;		/* May be NULL for bitfields (if NULL, bitwidth == 0) */
   type type;

@@ -87,8 +87,8 @@ static void connect_graph(cgraph master, cgraph component)
     }
 }
 
-static void connect(location loc, nesc_declaration cdecl,
-		    cgraph cg, dd_list modules, dd_list components)
+static void connect(location loc, nesc_declaration cdecl, cgraph cg,
+		    cgraph userg, dd_list modules, dd_list components)
 {
   nesc_declaration loop;
 
@@ -107,6 +107,7 @@ static void connect(location loc, nesc_declaration cdecl,
     {
       dd_add_last(regionof(components), components, cdecl);
       connect_graph(cg, cdecl->connections);
+      connect_graph(userg, cdecl->user_connections);
 
       if (is_module(cdecl->impl))
 	dd_add_last(regionof(modules), modules, cdecl);
@@ -123,7 +124,7 @@ static void connect(location loc, nesc_declaration cdecl,
 		push_instance(comp->cdecl);
 		if (comp->cdecl->original)
 		  instantiate(comp->cdecl, comp->args);
-		connect(comp->location, comp->cdecl, cg, modules, components);
+		connect(comp->location, comp->cdecl, cg, userg, modules, components);
 		pop_instance();
 	      }
 	}
@@ -131,14 +132,15 @@ static void connect(location loc, nesc_declaration cdecl,
 }
 
 static void connect_graphs(region r, nesc_declaration program,
-			   cgraph *cg, dd_list *modules, dd_list *components)
+			   cgraph *cg, cgraph *userg, dd_list *modules, dd_list *components)
 {
   *cg = new_cgraph(r);
+  *userg = new_cgraph(r);
   *modules = dd_new_list(r);
   *components = dd_new_list(r);
 
   push_instance(program);
-  connect(toplevel_location, program, *cg, *modules, *components);
+  connect(toplevel_location, program, *cg, *userg, *modules, *components);
   pop_instance();
 }
 
@@ -290,7 +292,7 @@ void nesc_compile(const char *filename, const char *target_name)
   struct ilist *includes;
   nesc_declaration program = NULL;
   bool gencode = FALSE;
-  cgraph cg = NULL;
+  cgraph cg = NULL, userg = NULL;
   dd_list modules = NULL, components = NULL;
 
   if (filename == NULL)
@@ -327,7 +329,7 @@ void nesc_compile(const char *filename, const char *target_name)
 
   if (program && program->kind == l_component && !program->abstract)
     {
-      connect_graphs(parse_region, program, &cg, &modules, &components);
+      connect_graphs(parse_region, program, &cg, &userg, &modules, &components);
       current.container = NULL;
       fold_program(program);
       gencode = TRUE;
@@ -358,7 +360,7 @@ void nesc_compile(const char *filename, const char *target_name)
     }
   if (dump_selected())
     {
-      dump_info(program, cg, modules, components);
+      dump_info(program, cg, userg, modules, components);
       gencode = FALSE;
     }
   if (gencode)

@@ -2890,6 +2890,8 @@ static field_declaration *declare_field(tag_declaration tdecl,
   type field_type = fdecl->type;
   const char *name = fdecl->name;
 
+  fdecl->containing_tag = tdecl;
+
   if (!tdecl->fields_const)
     {
       type base_field_type = type_base(field_type);

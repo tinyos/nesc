@@ -514,7 +514,7 @@ static void pop_exhausted_levels(void)
 
 /* Prepare to parse and output the initializer for variable DECL.  */
 
-void start_init(declaration decl)
+void start_init(declaration decl, const char *attribute)
 /* decl is really a variable_decl */
 {
   const char *locus;
@@ -540,6 +540,12 @@ void start_init(declaration decl)
       constructor_decl = ddecl;
       require_constant_value = ddecl->needsmemory;
       locus = ddecl->name;
+    }
+  else if (attribute)
+    {
+      constructor_decl = NULL;
+      require_constant_value = 1;
+      locus = attribute;
     }
   else
     {
@@ -591,13 +597,15 @@ void finish_init(void)
 /* ivalue constructors */
 static ivalue new_ivalue(int kind, type t)
 {
-  ivalue newp = ralloc(parse_region, ivalue);
+  ivalue newp = ralloc(parse_region, struct ivalue);
 
   newp->kind = kind;
   newp->type = t;
 
   if (newp->kind == iv_base)
-    newp->u.base = cval_top;
+    newp->u.base.value = cval_top;
+
+  return newp;
 }
 
 static void add_ivalue_array(ivalue to, largest_int index, ivalue element)
@@ -1084,7 +1092,7 @@ void check_init_element(expression init)
     {
       constant_overflow_warning(c);
       assert(init->ivalue->kind == iv_base);
-      init->ivalue->u.base = cval_cast(c->cval, init->ivalue->type);
+      init->ivalue->u.base.value = cval_cast(c->cval, init->ivalue->type);
     }
 }
 
@@ -1100,6 +1108,9 @@ void check_init_element(expression init)
 
 static void output_init_element(expression init, type t)
 {
+  assert(init->ivalue->kind == iv_base);
+  init->ivalue->u.base.expr = init;
+
   if (require_constant_value)
     {
       check_init_element(init);
@@ -1147,7 +1158,8 @@ void process_init_element(expression value)
       /* XXX: maybe this should stay as a iv_array, and the string should
 	 be broken down into characters? */
       constructor_value->kind = iv_base;
-      constructor_value->u.base = cval_top;
+      constructor_value->u.base.expr = NULL;
+      constructor_value->u.base.value = cval_top;
     }
 
   /* Ignore elements of a brace group if it is entirely superfluous

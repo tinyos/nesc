@@ -39,11 +39,16 @@ void component_scan(data_declaration cref, env_scanner *scan)
   env_scan(cref->ctype->env->id_env, scan);
 }
 
-static void connect_function(cgraph cg, struct endp from, struct endp to)
+static void connect_userg(cgraph userg, struct endp from, struct endp to)
+{
+  gnode gfrom = endpoint_lookup(userg, &from), gto = endpoint_lookup(userg, &to);
+
+  graph_add_edge(gfrom, gto, NULL);
+}
+ 
+static void connect_cg(cgraph cg, struct endp from, struct endp to)
 {
   gnode gfrom = endpoint_lookup(cg, &from), gto = endpoint_lookup(cg, &to);
-
-  assert(from.function && to.function);
 
   graph_add_edge(gfrom, gto, NULL);
   /* If an endpoint has args, we must also connect the node w/o args */
@@ -51,6 +56,13 @@ static void connect_function(cgraph cg, struct endp from, struct endp to)
     graph_add_edge(fn_lookup(cg, from.function), gfrom, NULL);
   if (to.args_node)
     graph_add_edge(gto, fn_lookup(cg, to.function), NULL);
+}
+ 
+static void connect_function(cgraph cg, cgraph userg,
+			     struct endp from, struct endp to)
+{
+  connect_cg(cg, from, to);
+  connect_userg(userg, from, to);
 }
 
 static type endpoint_type(endp p)
@@ -96,12 +108,18 @@ typelist endpoint_args(endp p)
   return NULL;
 }
 
-static void connect_interface(cgraph cg, struct endp from, struct endp to,
+static void connect_interface(cgraph cg, cgraph userg,
+			      struct endp from, struct endp to,
 			      bool reverse)
 {
   env_scanner scanfns;
   const char *fnname;
   void *fnentry;
+
+  if (reverse)
+    connect_userg(userg, to, from);
+  else
+    connect_userg(userg, from, to);
 
   assert(!from.function && !to.function
 	 /*&& from.interface->itype == to.interface->itype*/);
@@ -116,9 +134,9 @@ static void connect_interface(cgraph cg, struct endp from, struct endp to,
       to.function = fndecl;
       from.function = env_lookup(from.interface->functions->id_env, fndecl->name, TRUE);
       if (fndecl->defined ^ reverse)
-	connect_function(cg, from, to);
+	connect_cg(cg, from, to);
       else
-	connect_function(cg, to, from);
+	connect_cg(cg, to, from);
     }
 }
 
@@ -353,7 +371,7 @@ static bool lookup_endpoint(environment configuration_env, endpoint ep,
 }
 
 
-static void process_interface_connection(cgraph cg, connection conn,
+static void process_interface_connection(cgraph cg, cgraph userg, connection conn,
 					 struct endp p1, struct endp p2)
 {
   location l = conn->location;
@@ -365,16 +383,16 @@ static void process_interface_connection(cgraph cg, connection conn,
 	  if (p1.interface->required == p2.interface->required)
 	    error_with_location(l, "external to external connections must be between provided and used interfaces");
 	  else
-	    connect_interface(cg, p1, p2, TRUE);
+	    connect_interface(cg, userg, p1, p2, TRUE);
 	}
       else
 	{
 	  if (p1.interface->required != p2.interface->required)
 	    error_with_location(l, "external to internal connections must be both provided or both used");
 	  else if (!p1.component)
-	    connect_interface(cg, p1, p2, FALSE);
+	    connect_interface(cg, userg, p1, p2, FALSE);
 	  else
-	    connect_interface(cg, p2, p1, FALSE);
+	    connect_interface(cg, userg, p2, p1, FALSE);
 	  /* Note: connect_interface takes care of choosing the right edge
 	     direction. There are two cases:
 	     - the interface is provided: then we want edges from outside in,
@@ -391,11 +409,11 @@ static void process_interface_connection(cgraph cg, connection conn,
 	error_with_location(l, "target of '<-' interface must be provided");
       else if (!p2.interface->required)
 	error_with_location(l, "source of '<-' interface must be required");
-      else connect_interface(cg, p2, p1, FALSE);
+      else connect_interface(cg, userg, p2, p1, FALSE);
     }
 }
 
-static void process_function_connection(cgraph cg, connection conn,
+static void process_function_connection(cgraph cg, cgraph userg, connection conn,
 					struct endp p1, struct endp p2)
 {
   location l = conn->location;
@@ -409,18 +427,18 @@ static void process_function_connection(cgraph cg, connection conn,
 	  if (p1def == p2def)
 	    error_with_location(l, "external to external connections must be between provided and used functions");
 	  else if (p1def)
-	    connect_function(cg, p1, p2); /* from provided to used */
+	    connect_function(cg, userg, p1, p2); /* from provided to used */
 	  else
-	    connect_function(cg, p2, p1);
+	    connect_function(cg, userg, p2, p1);
 	}
       else 
 	{
 	  if (p1def != p2def)
 	    error_with_location(l, "external to internal connections must be both provided or both used");
 	  else if ((!p1.component && !p1def) || (p1.component && p1def))
-	    connect_function(cg, p2, p1);
+	    connect_function(cg, userg, p2, p1);
 	  else
-	    connect_function(cg, p1, p2);
+	    connect_function(cg, userg, p1, p2);
 	}
     }
   else /* p1 <- p2 */
@@ -429,11 +447,11 @@ static void process_function_connection(cgraph cg, connection conn,
 	error_with_location(l, "target of '<-' function must be defined");
       else if (p2def)
 	error_with_location(l, "source of '<-' function must be used");
-      else connect_function(cg, p2, p1);
+      else connect_function(cg, userg, p2, p1);
     }
 }
 
-static void process_actual_connection(cgraph cg, connection conn,
+static void process_actual_connection(cgraph cg, cgraph userg, connection conn,
 				      struct endp p1, struct endp p2)
 {
   location l = conn->location;
@@ -450,12 +468,12 @@ static void process_actual_connection(cgraph cg, connection conn,
     }
 
   if (p1.function)
-    process_function_connection(cg, conn, p1, p2);
+    process_function_connection(cg, userg, conn, p1, p2);
   else
-    process_interface_connection(cg, conn, p1, p2);
+    process_interface_connection(cg, userg, conn, p1, p2);
 }
 
-static void process_connection(cgraph cg, connection conn,
+static void process_connection(cgraph cg, cgraph userg, connection conn,
 			       struct endp p1, struct endp p2)
 {
   int matches;
@@ -492,10 +510,10 @@ static void process_connection(cgraph cg, connection conn,
   else if (matches > 1)
     error_with_location(conn->location, "ambiguous match");
   else 
-    process_actual_connection(cg, conn, p1, p2);
+    process_actual_connection(cg, userg, conn, p1, p2);
 }
 
-static void process_component_connection(cgraph cg, connection conn,
+static void process_component_connection(cgraph cg, cgraph userg, connection conn,
 					 struct endp p1, struct endp p2)
 {
 #ifndef NO_COMPONENT_MATCHING
@@ -531,7 +549,7 @@ static void process_component_connection(cgraph cg, connection conn,
 	  break;
 	}
       else if (matches == 1)
-	process_actual_connection(cg, conn, p1, p2);
+	process_actual_connection(cg, userg, conn, p1, p2);
     }
   if (total_matches == 0)
 #endif
@@ -543,6 +561,7 @@ static void process_connections(configuration c)
   declaration decl;
   struct endp p1, p2;
   cgraph cg = c->cdecl->connections;
+  cgraph userg = c->cdecl->user_connections;
 
   scan_declaration (decl, c->decls)
     if (is_connection(decl))
@@ -561,9 +580,9 @@ static void process_connections(configuration c)
 	       connections, then handle all remaining cases in process_connection
 	    */
 	    if (!p1.interface && !p2.interface && !p1.function && !p2.function)
-	      process_component_connection(cg, conn, p1, p2);
+	      process_component_connection(cg, userg, conn, p1, p2);
 	    else
-	      process_connection(cg, conn, p1, p2);
+	      process_connection(cg, userg, conn, p1, p2);
 	  }
       }
 }

@@ -59,5 +59,6 @@ void nxml_tdecl_ref(tag_declaration tdecl);
 void nxml_ndefinition_ref(nesc_declaration ndecl, dhash_table defs,
 			  dhash_table tags);
 void nxml_ninstance_ref(nesc_declaration ndecl);
+void nxml_value(ivalue value, dhash_table tags);
 
 #endif
