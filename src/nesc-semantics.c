@@ -433,10 +433,10 @@ void handle_nxbase_attribute(location loc, const char *basename,
   char *encoder_name, *decoder_name;
   type t = ddecl->type;
 
-  encoder_name = rstralloc(r, strlen(basename) + 6);
-  sprintf(encoder_name, "hton_%s", basename);
-  decoder_name = rstralloc(r, strlen(basename) + 6);
-  sprintf(decoder_name, "ntoh_%s", basename);
+  encoder_name = rstralloc(r, strlen(basename) + 13);
+  sprintf(encoder_name, "__nesc_hton_%s", basename);
+  decoder_name = rstralloc(r, strlen(basename) + 13);
+  sprintf(decoder_name, "__nesc_ntoh_%s", basename);
 
   ddecl->encoder = /* takes buffer and original value. returns original value */
     declare_function(loc, encoder_name,

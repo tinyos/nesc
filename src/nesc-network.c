@@ -49,7 +49,7 @@ static void validate_network_lvalue(expression e)
       (type_network_base_type(cond->arg1->type) ||
        type_network_base_type(cond->arg2->type)))
     error_with_location(e->location,
-			"Conditional assignment not yet supported for network types");
+			"Conditional assignment not supported for network types");
 }
 
 static data_declaration add_network_temporary(function_decl fn, type t)

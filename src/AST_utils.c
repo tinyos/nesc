@@ -274,8 +274,8 @@ const char *tagkind_name(int tagkind)
     case kind_attribute_ref: return "attribute";
     case kind_struct_ref: return "struct";
     case kind_union_ref: return "union";
-    case kind_nw_struct_ref: return "nw_struct";
-    case kind_nw_union_ref: return "nw_union";
+    case kind_nw_struct_ref: return "nx_struct";
+    case kind_nw_union_ref: return "nx_union";
     case kind_enum_ref: return "enum";
     default: assert(0); return NULL;
     }

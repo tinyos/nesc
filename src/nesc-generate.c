@@ -1182,6 +1182,11 @@ void generate_c_code(nesc_declaration program, const char *target_name,
   unparse_start(output ? output : stdout, diff_file);
   disable_line_directives();
 
+  /* define nx_struct as struct and nx_union as union (simplifies
+     prt_tag) */
+  outputln("#define nx_struct struct");
+  outputln("#define nx_union union");
+
   /* suppress debug functions if necessary */
   if (flag_no_debug)
     {
