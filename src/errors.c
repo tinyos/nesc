@@ -96,8 +96,6 @@ void report_error_function(const char *file)
 {
   struct file_stack *p;
 
-  print_error_function(file);
-
   if (input_file_stack && input_file_stack->next != 0
       && input_file_stack_tick != last_error_tick
       && file == input_file_stack->l.filename)
@@ -112,6 +110,8 @@ void report_error_function(const char *file)
       fprintf (stderr, ":\n");
       last_error_tick = input_file_stack_tick;
     }
+
+  print_error_function(file);
 }
 
 

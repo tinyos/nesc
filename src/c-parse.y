@@ -30,7 +30,7 @@ Boston, MA 02111-1307, USA. */
 /* To whomever it may concern: I have heard that such a thing was once
    written by AT&T, but I have never seen it.  */
 
-%expect 1
+%expect 8
 
 %pure_parser
 
@@ -142,6 +142,9 @@ void yyerror();
 %type <u.decl> parmlist_or_identifiers identifiers notype_initdcl
 %type <u.decl> parmlist_or_identifiers_1 old_parameter just_datadef
 %type <u.declarator> declarator after_type_declarator notype_declarator
+%type <u.declarator> after_attributes_and_type_declarator
+%type <u.declarator> after_attributes_notype_declarator
+%type <u.declarator> after_attributes_parm_declarator
 %type <u.declarator> absdcl absdcl1 parm_declarator
 %type <u.expr> cast_expr expr expr_no_commas exprlist init initlist_maybe_comma
 %type <u.expr> initlist1 initelt nonnull_exprlist primary string_component 
@@ -1267,9 +1270,7 @@ declarator:
 /* A declarator that is allowed only after an explicit typespec.  */
 
 after_type_declarator:
-	  '(' after_type_declarator ')'
-		{ $$ = $2; }
-	| after_type_declarator parameters '(' parmlist_or_identifiers_1 fn_quals
+	after_type_declarator parameters '(' parmlist_or_identifiers_1 fn_quals
 		{ $$ = make_function_declarator($3.location, $1, $4, $5, $2); }
 	| after_type_declarator '(' parmlist_or_identifiers fn_quals
 		{ $$ = make_function_declarator($2.location, $1, $3, $4, NULL); }
@@ -1277,8 +1278,15 @@ after_type_declarator:
 		{ $$ = CAST(declarator, new_array_declarator(pr, $2.location, $1, $3)); }
 	| after_type_declarator '[' ']'
 		{ $$ = CAST(declarator, new_array_declarator(pr, $2.location, $1, NULL)); }
-	| '*' type_quals after_type_declarator
+	| attributes after_attributes_and_type_declarator { $$ = $2; }
+	| after_attributes_and_type_declarator
+	;
+
+after_attributes_and_type_declarator:
+	'*' type_quals after_type_declarator
 		{ $$ = CAST(declarator, new_pointer_declarator(pr, $1.location, $3, $2)); }
+	| '(' after_type_declarator ')'
+		{ $$ = $2; }
 	| TYPENAME { $$ = CAST(declarator, new_identifier_declarator(pr, $1.location, $1.id)); }
 	| TYPENAME '.' identifier 
 		{
@@ -1298,7 +1306,12 @@ parm_declarator:
 		{ $$ = CAST(declarator, new_array_declarator(pr, $2.location, $1, $3)); }
 	| parm_declarator '[' ']'
 		{ $$ = CAST(declarator, new_array_declarator(pr, $2.location, $1, NULL)); }
-	| '*' type_quals parm_declarator
+	| attributes after_attributes_parm_declarator { $$ = $2; }
+	| after_attributes_parm_declarator
+	;
+
+after_attributes_parm_declarator:
+	'*' type_quals parm_declarator
 		{ $$ = CAST(declarator, new_pointer_declarator(pr, $1.location, $3, $2)); }
 	| TYPENAME { $$ = CAST(declarator, new_identifier_declarator(pr, $1.location, $1.id)); }
 	;
@@ -1311,14 +1324,19 @@ notype_declarator:
 		{ $$ = make_function_declarator($3.location, $1, $4, $5, $2); }
 	| notype_declarator '(' parmlist_or_identifiers fn_quals
 		{ $$ = make_function_declarator($2.location, $1, $3, $4, NULL); }
-	| '(' notype_declarator ')'
-		{ $$ = $2; }
-	| '*' type_quals notype_declarator
-		{ $$ = CAST(declarator, new_pointer_declarator(pr, $1.location, $3, $2)); }
 	| notype_declarator '[' expr ']' 
 		{ $$ = CAST(declarator, new_array_declarator(pr, $2.location, $1, $3)); }
 	| notype_declarator '[' ']'
 		{ $$ = CAST(declarator, new_array_declarator(pr, $2.location, $1, NULL)); }
+	| attributes after_attributes_notype_declarator { $$ = $2; }
+	| after_attributes_notype_declarator
+	;
+
+after_attributes_notype_declarator:
+	'*' type_quals notype_declarator
+		{ $$ = CAST(declarator, new_pointer_declarator(pr, $1.location, $3, $2)); }
+	| '(' notype_declarator ')'
+		{ $$ = $2; }
 	| IDENTIFIER { $$ = CAST(declarator, new_identifier_declarator(pr, $1.location, $1.id)); }
 	| IDENTIFIER '.' identifier { }
 		{
@@ -1937,8 +1955,8 @@ extension:
 	;
 
 scspec:
-	SCSPEC { $$ = CAST(type_element, new_rid(pr, $1.location, $1.i)); }
-	| DEFAULT { $$ = CAST(type_element, new_rid(pr, $1.location, RID_DEFAULT)); }
+	SCSPEC maybe_attribute { $$ = CAST(type_element, new_rid(pr, $1.location, $1.i)); }
+	| DEFAULT maybe_attribute { $$ = CAST(type_element, new_rid(pr, $1.location, RID_DEFAULT)); }
 	;
 
 type_qual:
@@ -1950,7 +1968,7 @@ fn_qual:
 	;
 
 type_spec:
-	TYPESPEC { $$ = CAST(type_element, new_rid(pr, $1.location, $1.i)); }
+	TYPESPEC maybe_attribute { $$ = CAST(type_element, new_rid(pr, $1.location, $1.i)); }
 	;
 
 

@@ -28,21 +28,6 @@ Boston, MA 02111-1307, USA. */
 void *xmalloc(size_t size);
 void *xrealloc(void *p, size_t newsize);
 
-/* A generic closure is defined as:
-typedef struct closure_type_name {
-  result (*fn)(struct closure_type_name *closure, other arguments);
-  -- typically include fields for all alternatives to simplify life
-  type1 data1;
-  ...
-  typen datan;
-} *closure_type_name;
-*/
-
-#define CALL0(closure) ((closure)->fn((closure)))
-#define CALL1(closure, a1) ((closure)->fn((closure), a1))
-#define CALL2(closure, a1, a2) ((closure)->fn((closure), a1, a2))
-#define CALL3(closure, a1, a2, a3) ((closure)->fn((closure), a1, a2, a3))
-
 unsigned long align_to(unsigned long n, unsigned long alignment);
 
 /* least common multiple */
@@ -55,5 +40,11 @@ DECLARE_ARRAY(wchar_array, wchar_t)
 DECLARE_ARRAY(char_array, char)
 
 char *fix_filename(region r, const char *unix_filename);
+
+int wcs_mb_size(const wchar_t *wstr);
+/* Returns: number of bytes to be allocated for a C string buffer
+     that will successfully hold the result of wcstombs(buffer, wstr, ?),
+     or -1 if wstr cannot be converted
+*/
 
 #endif

@@ -91,10 +91,11 @@ void nesc_compile(const char *filename, const char *target_name)
 {
   struct location toplevel;
 
-  if (filename == NULL) {
-    fprintf(stderr, ("usage: nesc1 <filename>\n"));
-    return;
-  }
+  if (filename == NULL)
+    {
+      fprintf(stderr, "usage: nesc1 <filename>\n");
+      return;
+    }
 
   parse_region = newregion();
   preprocess_init();

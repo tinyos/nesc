@@ -1638,6 +1638,8 @@ static size_t extract_strings(expression string_components,
 
       total_length += length;
     }
+  if (into)
+    into[0] = 0;
 
   return total_length;
 }

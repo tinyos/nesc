@@ -128,4 +128,10 @@ void constant_overflow_warning(known_cst c);
  */
 #define constant_boolvalue(c) cval_boolvalue((c)->cval)
 
+char *string_cst_to_c(region r, string_cst s);
+/* Returns: A C string representation of s allocated in r, or NULL if 
+     no such representation can be created (which means s is a wide character
+     string and wcstombs failed)
+*/
+
 #endif

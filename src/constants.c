@@ -405,11 +405,12 @@ string_cst fold_lexical_string(location loc, cstring tok,
 			       bool wide_flag, wchar_array stringvalue)
 {
   size_t length = wchar_array_length(stringvalue);
-  wchar_t *chars = rarrayalloc(parse_region, length, wchar_t);
+  wchar_t *chars = rarrayalloc(parse_region, length + 1, wchar_t);
   string_cst c = new_string_cst(parse_region, loc, tok, chars, length);
 
   c->type = wide_flag ? wchar_array_type : char_array_type;
   memcpy(chars, wchar_array_data(stringvalue), length * sizeof(wchar_t));
+  chars[length] = 0;
 
   /* We don't set c->cst as a C string constant is a sequence of string_cst,
      not a single one. See make_string. */
@@ -487,4 +488,20 @@ bool is_zero_constant(known_cst c)
    requires to be a constant expression. */
 void constant_overflow_warning(known_cst c)
 {
+}
+
+char *string_cst_to_c(region r, string_cst s)
+{
+  const wchar_t *wstr = s->chars;
+  int length_as_str = wcs_mb_size(wstr);
+  char *str;
+
+  if (length_as_str < 0)
+    return NULL;
+
+  str = rarrayalloc(r, length_as_str, char);
+  length_as_str = wcstombs(str, wstr, length_as_str);
+  assert(length_as_str >= 0);
+
+  return str;
 }

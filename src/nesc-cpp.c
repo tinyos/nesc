@@ -63,6 +63,7 @@ NULL
 };
 
 static FILE *macros_file;
+static const char *macros_mode;
 
 static void mktempfile(char *name)
 {
@@ -75,6 +76,77 @@ static void mktempfile(char *name)
     }
 
   close(fd);
+}
+
+static FILE *exec_gcc(char *gcc_output_template, bool redirect_errors, 
+		      int nargs,
+		      void (*setargs)(void *data, const char **argv), void *data)
+{
+  int gcc_pid, gcc_stat, res;
+
+  mktempfile(gcc_output_template);
+
+  if ((gcc_pid = fork()) == 0)
+    {
+      const char **argv;
+      int destfd = creat(gcc_output_template, 0666);
+
+      if (destfd < 0 || dup2(destfd, 1) < 0)
+	exit(2);
+
+      if (redirect_errors)
+	if (dup2(destfd, 2) < 0)
+	  exit(2);
+
+      close(destfd);
+
+      argv = alloca((nargs + 2) * sizeof *argv);
+      argv[0] = target->gcc_compiler;
+      setargs(data, argv + 1);
+
+      /* It's really spammy with this on */
+      if (flag_verbose >= 2)
+	{
+	  int i;
+
+	  for (i = 0; argv[i]; i++)
+	    fprintf(stderr, "%s ", argv[i]);
+	  fprintf(stderr, "\n");
+	}
+
+      execvp(target->gcc_compiler, (char **)argv);
+      exit(2);
+    }
+
+  for (;;)
+    {
+      int pid = wait(&gcc_stat);
+
+      if (pid == -1)
+	{
+	  if (errno == EINTR)
+	    continue;
+	  else
+	    {
+	      res = 2;
+	      break;
+	    }
+	}
+
+      if (pid == gcc_pid)
+	{
+	  if (WIFEXITED(gcc_stat))
+	    res = WEXITSTATUS(gcc_stat);
+	  else
+	    res = 2;
+	  break;
+	}
+    }
+
+  if (res == 0) /* gcc succeeded */
+    return fopen(gcc_output_template, "r");
+  else
+    return NULL;
 }
 
 void preprocess_cleanup(void)
@@ -108,6 +180,43 @@ void create_nesc_keyword_macros(const char *macro_filename)
   fclose(mf);
 }
 
+static void version_setargs(void *data, const char **argv)
+{
+  argv[0] = "-v";
+  argv[1] = NULL;
+}
+
+#define LINELEN 160
+
+void select_macros_mode(void)
+{
+  static char gcc_version_name[] = "/tmp/nesccppvXXXXXX";
+  FILE *gcc_version = exec_gcc(gcc_version_name, TRUE, 1, version_setargs, NULL);
+
+  macros_mode = "w";
+
+  if (gcc_version)
+    {
+      char line[LINELEN];
+
+      while (fgets(line, LINELEN - 1, gcc_version))
+	{
+	  if (!strncmp(line, "gcc version ", 12))
+	    {
+	      double version;
+
+	      if (sscanf(line, "gcc version %lf", &version) == 1)
+		{
+		  if (version <= 2.95)
+		    macros_mode = "a";
+		}
+	    }
+	}
+      fclose(gcc_version);
+    }
+  unlink(gcc_version_name);
+}
+
 void preprocess_init(void)
 {
   atexit(preprocess_cleanup);
@@ -116,110 +225,79 @@ void preprocess_init(void)
   mktempfile(kwd_macros);
 
   create_nesc_keyword_macros(kwd_macros);
+
+  select_macros_mode();
+}
+
+struct preprocess_args_closure
+{
+  /* Ok, ok, the function isn't *in* the closure */
+  source_language l;
+  const char *filename;
+  int nargs;
+};
+
+static void preprocess_setargs(void *data, const char **argv)
+{
+  struct preprocess_args_closure *closure = data;
+  struct cpp_option *saved;
+  region filename_region = newregion();
+  int arg = 0, i;
+
+  rarraycopy(argv + arg, path_argv, path_argv_count, const char *);
+  arg += path_argv_count;
+
+  /* The saved options are reversed */
+  for (saved = saved_options, i = saved_options_count; saved;
+       saved = saved->next)
+    argv[arg + --i] = (char *)saved->opt;
+  arg += saved_options_count;
+
+  argv[arg++] = "-E";
+  argv[arg++] = "-C";
+
+  /* For C files, we define keywords away (kwd_macros) and ask cpp
+     to output macros */
+  if (closure->l == l_c)
+    {
+      argv[arg++] = "-dD";
+      argv[arg++] = "-imacros";
+      argv[arg++] = fix_filename(filename_region, kwd_macros);
+    }
+  else
+    {
+      argv[arg++] = "-x";
+      argv[arg++] = "c";
+    }
+  argv[arg++] = "-imacros";
+  argv[arg++] = fix_filename(filename_region, cpp_macros);
+  argv[arg++] = fix_filename(filename_region, closure->filename);
+  argv[arg++] = NULL;
+  assert(arg <= closure->nargs);
 }
 
 FILE *preprocess(const char *filename, source_language l)
 {
-  int cpp_pid, cpp_stat, res;
+  struct preprocess_args_closure closure;
   char *cpp_dest = rstrdup(parse_region, "/tmp/nesccppsXXXXXX");
+  int nargs = 11 + path_argv_count + saved_options_count;
+  FILE *output;
 
+  closure.l = l;
+  closure.filename = filename;
+  closure.nargs = nargs;
+  output = exec_gcc(cpp_dest, FALSE, nargs, preprocess_setargs, &closure);
   current.preprocessed_file = cpp_dest;
-  mktempfile(cpp_dest);
 
-  if ((cpp_pid = fork()) == 0)
+
+  if (output)
     {
-      char **argv;
-      int nargs = 11 + path_argv_count + saved_options_count, arg = 0, i;
-      struct cpp_option *saved;
-      int destfd = creat(cpp_dest, 0666);
-      region filename_region = newregion();
-
-      if (destfd < 0 || dup2(destfd, 1) < 0)
-	exit(2);
-
-      close(destfd);
-
-      argv = alloca(nargs * sizeof *argv);
-      argv[arg++] = (char *)target->gcc_compiler;
-
-      rarraycopy(argv + arg, path_argv, path_argv_count, char *);
-      arg += path_argv_count;
-
-      /* The saved options are reversed */
-      for (saved = saved_options, i = saved_options_count; saved;
-	   saved = saved->next)
-	argv[arg + --i] = (char *)saved->opt;
-      arg += saved_options_count;
-
-      argv[arg++] = "-E";
-      argv[arg++] = "-C";
-
-      /* For C files, we define keywords away (kwd_macros) and ask cpp
-	 to output macros */
-      if (l == l_c)
-	{
-	  argv[arg++] = "-dD";
-	  argv[arg++] = "-imacros";
-	  argv[arg++] = fix_filename(filename_region, kwd_macros);
-	}
-      else
-	{
-	  argv[arg++] = "-x";
-	  argv[arg++] = "c";
-	}
-      argv[arg++] = "-imacros";
-      argv[arg++] = fix_filename(filename_region, cpp_macros);
-      argv[arg++] = fix_filename(filename_region, filename);
-      argv[arg++] = NULL;
-      assert(arg <= nargs);
-
-      /* It's really spammy with this on */
-      if (flag_verbose >= 2)
-	{
-	  for (i = 0; i < arg - 1; i++)
-	    fprintf(stderr, "%s ", argv[i]);
-	  fprintf(stderr, "\n");
-	}
-
-      execvp(target->gcc_compiler, argv);
-      exit(2);
-    }
-
-  for (;;)
-    {
-      int pid = wait(&cpp_stat);
-
-      if (pid == -1)
-	{
-	  if (errno == EINTR)
-	    continue;
-	  else
-	    {
-	      res = 2;
-	      break;
-	    }
-	}
-
-      if (pid == cpp_pid)
-	{
-	  if (WIFEXITED(cpp_stat))
-	    res = WEXITSTATUS(cpp_stat);
-	  else
-	    res = 2;
-	  break;
-	}
-    }
-
-  if (res == 0) /* cpp succeeded */
-    {
-      FILE *output = fopen(cpp_dest, "r");
-
       /* Save the macros for C */
       /* (note: this only works with a global macros file because we
 	 don't reenter the parser when parsing a C file) */
       if (l == l_c)
 	{
-	  macros_file = fopen(cpp_macros, "w");
+	  macros_file = fopen(cpp_macros, macros_mode);
 	  if (!macros_file)
 	    error("failed to create temporary file");
 	}

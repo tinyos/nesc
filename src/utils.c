@@ -114,3 +114,26 @@ char *fix_filename(region r, const char *unix_filename)
 }
 #endif
 
+/* For some obscure reason, there's no standard function for this
+   (Linux's wctombs does it, but it's not standard) */
+int wcs_mb_size(const wchar_t *wstr)
+/* Returns: number of bytes to be allocated for a C string buffer
+     that will successfully hold the result of wcstombs(buffer, wstr, ?),
+     or -1 if wstr cannot be converted
+*/
+{
+  size_t len = 0;
+  char tmp[MB_CUR_MAX];
+
+  wctomb(NULL, 0);
+  while (*wstr)
+    {
+      int mblen = wctomb(tmp, *wstr++);
+
+      if (mblen < 0)
+	return -1;
+      len += mblen;
+    }
+
+  return len + 1;
+}

@@ -1278,7 +1278,7 @@ static int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
       else if (newdecl->kind == decl_typedef &&
 	       (olddecl->in_system_header || newdecl->in_system_header))
 	{
-	  warning_with_decl(newdecl->ast, "redefinition of `%s'");
+	  warning_with_decl(newdecl->ast, "redefinition of `%s'", name);
 	  previous_message = warning_with_decl;
 	}
       else if (olddecl->kind == decl_function
@@ -1717,7 +1717,7 @@ data_declaration declare_string(const char *name, bool wide, size_t length)
 
   /* Save value. */
   tempdecl.chars_length = length;
-  tempdecl.chars = rarrayalloc(parse_region, length, wchar_t);
+  tempdecl.chars = rarrayalloc(parse_region, length + 1, wchar_t);
 
   return declare(current.env, &tempdecl, TRUE);
 }
@@ -1731,6 +1731,7 @@ static void declare_magic_string(const char *name, const char *value)
   /* Save value. */
   for (i = 0; i < l; i++)
     chars[i] = value[i];
+  chars[l] = 0;
 }
 
 static void declare_builtin_type(const char *name, type t)
@@ -3309,8 +3310,10 @@ int save_directive(char *directive)
 	continue;
 
       /* Detect the end of the directive.  */
-      if (looking_for == 0
-	  && (c == '\n' || c == EOF))
+      if (c == EOF)
+	c = '\0';
+
+      if (looking_for == 0 && c == '\n' && !char_escaped)
 	{
           lex_ungetc(c);
 	  c = '\0';
@@ -3321,7 +3324,7 @@ int save_directive(char *directive)
 
       *p++ = c;
 
-      if (c == 0)
+      if (c == '\0')
 	break;
 
       if (c == '/')
@@ -3329,9 +3332,15 @@ int save_directive(char *directive)
 	  int c2 = lex_getc();
 
 	  if (c2 == '/')
-	    skip_cpp_comment();
+	    {
+	      --p;
+	      skip_cpp_comment();
+	    }
 	  else if (c2 == '*')
-	    skip_c_comment();
+	    {
+	      --p;
+	      skip_c_comment();
+	    }
 	  else
 	    lex_ungetc(c2);
 	}

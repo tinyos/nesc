@@ -62,7 +62,7 @@ expression unique_reduce(function_call fcall)
   unsigned int *lastval;
   const wchar_t *name_wstr;
   char *name_str;
-  size_t length_as_str;
+  int length_as_str;
 
   if (!is_string(name))
     {
@@ -71,14 +71,14 @@ expression unique_reduce(function_call fcall)
     }
 
   name_wstr = CAST(string, name)->ddecl->chars;
-  length_as_str = wcstombs(NULL, name_wstr, 0) + 1;
+  length_as_str = wcs_mb_size(name_wstr);
   if (length_as_str < 0)
     {
       error("can't handle this string as argument to `unique'");
       return CAST(expression, fcall);
     }
   name_str = alloca(length_as_str);
-  length_as_str = wcstombs(name_str, name_wstr, length_as_str + 1);
+  length_as_str = wcstombs(name_str, name_wstr, length_as_str);
   assert(length_as_str >= 0);
 
   lastval = env_lookup(unique_env, name_str, FALSE);

@@ -650,16 +650,18 @@ get_directive_line (finput)
     }
 }
 
-/* Requires: c come from a STRING token.
-   Returns a C string with the double quotes removed. Does not deal
-   with escape sequences, etc, etc. */
-static char *parse_string_token(lexical_cst c)
+static char *parse_string_token(string_cst c)
 {
-  char *s;
+  char *s = string_cst_to_c(parse_region, c);
 
-  s = rstralloc(parse_region, c->cstring.length - 1);
-  s[c->cstring.length - 2] = '\0';
-  memcpy(s, c->cstring.data + 1, c->cstring.length - 2);
+  /* If we can't decode the string, we punt and use its lexical rep (minus
+     the intrudoctory L", and final " -- we can only fail for wide strings) */
+  if (!s)
+    {
+      s = rstralloc(parse_region, c->cstring.length - 2);
+      s[c->cstring.length - 3] = '\0';
+      memcpy(s, c->cstring.data + 2, c->cstring.length - 3);
+    }
 
   return s;
 }
@@ -841,7 +843,7 @@ linenum:
 	  goto skipline;
 	}
 
-      new_filename = parse_string_token(CAST(lexical_cst, lval.u.constant));
+      new_filename = parse_string_token(CAST(string_cst, lval.u.constant));
       /* Each change of file name
 	 reinitializes whether we are now in a system header.  */
       input_file_stack->l.in_system_header = 0;
