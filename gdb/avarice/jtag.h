@@ -231,6 +231,9 @@ bool addBreakpoint(unsigned int address, bpType type, unsigned int length);
 /** Send the breakpoint details down to the JTAG box. */
 void updateBreakpoints(void);
 
+/** True if there is a breakpoint at address */
+bool codeBreakpointAt(unsigned int address);
+
 // Miscellaneous
 // -------------
 

@@ -71,6 +71,16 @@ struct breakpoint
 static breakpoint bpCode[MAX_BREAKPOINTS_CODE], bpData[MAX_BREAKPOINTS_DATA];
 static int numBreakpointsCode, numBreakpointsData;
 
+bool codeBreakpointAt(unsigned int address) 
+{
+  //debugOut("checking for bp @ %x\n", address);
+  address /= 2;
+  for (int i = 0; i < numBreakpointsCode; i++)
+    if (bpCode[i].address == address)
+      return true;
+  return false;
+}
+
 void deleteAllBreakpoints(void)
 {
     numBreakpointsData = numBreakpointsCode = 0;

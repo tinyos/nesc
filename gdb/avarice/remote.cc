@@ -298,14 +298,50 @@ static void reportStatus(int sigval)
 {
     char *ptr = remcomOutBuffer;
 
+#if 0
+    *ptr++ = 'T';	// notify gdb with signo
+    ptr = byteToHex(sigval, ptr);
+
+    ptr = byteToHex(PC, ptr);
+    *ptr++ = ':';
+    unsigned long newPC = getProgramCounter();
+    debugOut("TPC = %x\n", newPC);
+    ptr = byteToHex(newPC & 0xff, ptr); newPC >>= 8;
+    ptr = byteToHex(newPC & 0xff, ptr); newPC >>= 8;
+    ptr = byteToHex(newPC & 0xff, ptr); newPC >>= 8;
+    ptr = byteToHex(newPC & 0xff, ptr);
+    *ptr++ = ';';
+
+#if 0
+    ptr = byteToHex(SP, ptr);
+    *ptr++ = ':';
+    uchar *jtagBuffer = jtagRead(0x5d + DATA_SPACE_ADDR_OFFSET, 2);
+    ptr = byteToHex(jtagBuffer[0], ptr);
+    ptr = byteToHex(jtagBuffer[1], ptr);
+    *ptr++ =';';
+#endif
+
+#else
     // We could use 'T'. But this requires reading PC, SP, FP at least, so
     // won't be significantly faster than the 'g' operation that gdb will
     // request if we use 'S' here
 
     *ptr++ = 'S';	// notify gdb with signo
     ptr = byteToHex(sigval, ptr);
+#endif
 
     *ptr++ = 0;
+}
+
+static void stepThrough(int start, int end)
+{
+    for (;;)
+    {
+	jtagSingleStep();
+	int newPC = getProgramCounter();
+	if (!(newPC >= start && newPC < end) || codeBreakpointAt(newPC))
+	    break;
+    }
 }
 
 /** Read packet from gdb into remcomInBuffer, check checksum and confirm
@@ -434,7 +470,7 @@ static void error(int n)
 
 void talkToGdb(void)
 {
-    int addr;
+    int addr, start, end;
     int length;
     int i;
     unsigned int newPC;
@@ -616,6 +652,18 @@ void talkToGdb(void)
 	    gdbOut("Failed to single-step");
 	reportStatus(SIGTRAP);
 	break;
+
+    case 'e': //eAA..AA,BB..BB continue until pc leaves [A..B[ range
+      if (hexToInt(&ptr, &start) &&
+	  *ptr++ == ',' &&
+	  hexToInt(&ptr, &end))
+      {
+	  debugOut("single step from %x to %x\n", start, end);
+	  putpacket("OK");
+	  stepThrough(start, end);
+	  reportStatus(SIGTRAP);
+      }
+      break;
 
     case 'c':  // cAA..AA    Continue from address AA..AA(optional)
 	// try to read optional parameter, pc unchanged if no parm

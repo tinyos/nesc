@@ -1,5 +1,6 @@
 set remoteaddresssize 32
 set remote Z-packet enable
+set remote step-over-range-packet enable
 
 define target-ice
   target extended-remote localhost:6423
