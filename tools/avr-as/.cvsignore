@@ -2,6 +2,6 @@
 Makefile
 as
 gas-2.11.2-avr-dollar-patch
-gas-2.13.1-avr-dollar-patch
+gas-2.13.2.1-avr-dollar-patch
 install-avr-as
 make-avr-as

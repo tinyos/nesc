@@ -19,7 +19,7 @@ AUTOMAKE_OPTIONS = foreign
 
 ncclibdir=$(libdir)/ncc
 
-noinst_PROGRAMS = as
+noinst_DATA = as$(EXEEXT)
 
 as$(EXEEXT): make-avr-as
 	perl make-avr-as $(EXEEXT)
@@ -29,6 +29,6 @@ install-exec-local: as$(EXEEXT)
 
 EXTRA_DIST =					\
 	gas-2.11.2-avr-dollar-patch.tar.bz2 	\
-	gas-2.13.1-avr-dollar-patch.tar.bz2	\
+	gas-2.13.2.1-avr-dollar-patch.tar.bz2	\
 	make-avr-as.in				\
 	install-avr-as.in

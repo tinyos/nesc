@@ -27,8 +27,8 @@ while (<GCCV>) {
 }
 die "Could not determine avr-gcc version" if !defined($version);
 $_ = $version;
-$asv = "2.11.2" if /^3.[01]/;
-$asv = "2.13.1" if !defined($asv);
+$asv = "2.11.2" if /^3.[01]/ || /^2/;
+$asv = "2.13.2.1" if !defined($asv);
 $dirname = "gas-$asv-avr-dollar-patch";
 
 print "Extracting patched AVR assembler from $dirname.tar.bz2\n";
