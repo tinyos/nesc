@@ -1,0 +1,71 @@
+static  void /*test.mod1*/mod$0$sc$init(void);
+static  void /*test.mod2*/mod$1$sc$init(void);
+static  
+# 2 "sc.nc"
+void main$sc$init(void);
+# 5 "main.nc"
+void  main$entry(void);
+static inline 
+# 5 "mod.nc"
+int /*test.mod1*/mod$0$f(void);
+
+int /*test.mod1*/mod$0$x = 1 ? 2 : /*test.mod1*/mod$0$f();
+static inline  
+void /*test.mod1*/mod$0$sc$init(void);
+static inline 
+#line 5
+int /*test.mod2*/mod$1$f(void);
+
+int /*test.mod2*/mod$1$x = 1 ? 2 : /*test.mod2*/mod$1$f();
+static inline  
+void /*test.mod2*/mod$1$sc$init(void);
+static inline  
+#line 9
+void /*test.mod2*/mod$1$sc$init(void)
+#line 9
+{
+  /*test.mod2*/mod$1$x = 2;
+}
+
+static inline  
+#line 9
+void /*test.mod1*/mod$0$sc$init(void)
+#line 9
+{
+  /*test.mod1*/mod$0$x = 2;
+}
+
+# 2 "sc.nc"
+inline static  void main$sc$init(void){
+#line 2
+  /*test.mod1*/mod$0$sc$init();
+#line 2
+  /*test.mod2*/mod$1$sc$init();
+#line 2
+}
+#line 2
+# 5 "main.nc"
+void  main$entry(void)
+#line 5
+{
+  main$sc$init();
+}
+
+static inline 
+# 5 "mod.nc"
+int /*test.mod1*/mod$0$f(void)
+#line 5
+{
+#line 5
+  return 1;
+}
+
+static inline 
+#line 5
+int /*test.mod2*/mod$1$f(void)
+#line 5
+{
+#line 5
+  return 1;
+}
+

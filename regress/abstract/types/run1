@@ -1,0 +1,2 @@
+NESC=`pwd | sed -e 's|nesc/.*|nesc|'`
+$NESC/src/nesc1 test.nc
