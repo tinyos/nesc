@@ -728,8 +728,10 @@ void generate_c_code(nesc_declaration program, const char *target_name,
     {
       suppress_function("dbg");
       suppress_function("dbg_clear");
+      suppress_function("dbg_active");
       outputln("#define dbg(mode, format, ...) ((void)0)");
       outputln("#define dbg_clear(mode, format, ...) ((void)0)");
+      outputln("#define dbg_active(mode) 0");
     }
 
   /* We start by finding each module's connections and marking uncallable
