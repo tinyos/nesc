@@ -38,18 +38,30 @@ sub gen() {
     print "package $package;\n\n";
     print "public class $java_classname extends $java_extends {\n";
 
+    print "    $java_classname(int size) {\n";
+    print "        super(new byte[size]);\n";
+    print "    }\n\n";
+
     print "    $java_classname() {\n";
-    print "        super(new byte[$size]);\n";
+    print "        this($size);\n";
+    print "    }\n\n";
+
+    print "    $java_classname(byte[] packet, int size) {\n";
+    print "        this(size);\n";
+    print "        dataSet(packet);\n";
     print "    }\n\n";
 
     print "    $java_classname(byte[] packet) {\n";
-    print "        this();\n";
+    print "        this(packet, $size);\n";
+    print "    }\n\n";
+
+    print "    $java_classname(net.tinyos.message.ByteArray packet, int size) {\n";
+    print "        this(size);\n";
     print "        dataSet(packet);\n";
     print "    }\n\n";
 
     print "    $java_classname(net.tinyos.message.ByteArray packet) {\n";
-    print "        this();\n";
-    print "        dataSet(packet);\n";
+    print "        this(packet, $size);\n";
     print "    }\n\n";
 
     print "    public int amType() {\n";
@@ -68,17 +80,36 @@ sub gen() {
 	$index = 0;
 	@args = map { $index++; "int index$index" } @{$amax};
 	$argspec = join(", ", @args);
-	print "    $javatype get\u$javafield($argspec) {\n";
+
+	$index = 0;
+	@passargs = map { $index++; "index$index" } @{$amax};
+	$passargs = join(", ", @passargs);
+
+	print "    public static int offset\u$javafield($argspec) {\n";
 	printoffset($base + $offset, $amax, $abitsize, $aoffset);
-	print "        return ($javatype)get$java_access(offset, $bitlength);\n";
+	print "        return offset;\n";
+	print "    }\n\n";
+
+	print "    public $javatype get\u$javafield($argspec) {\n";
+	print "        return ($javatype)get$java_access(offset\u$javafield($passargs), $bitlength);\n";
 	print "    }\n\n";
 
 	push @args, "$javatype value";
 	$argspec = join(", ", @args);
-	print "    void set\u$javafield($argspec) {\n";
-	printoffset($base + $offset, $amax, $abitsize, $aoffset);
-	print "        set$java_access(offset, $bitlength, value);\n";
+	print "    public void set\u$javafield($argspec) {\n";
+	print "        set$java_access(offset\u$javafield($passargs), $bitlength, value);\n";
 	print "    }\n\n";
+
+	print "    public static int size\u$javafield() {\n";
+	if (@$amax) {
+	    $bitsize = $$abitsize[0] * $$amax[0];
+	}
+	else {
+	    $bitsize = $bitlength;
+	}
+	print "        return $bitsize;\n";
+	print "    }\n\n";
+
     }
 
     print "}\n";
@@ -117,7 +148,15 @@ sub printoffset()
 
     print "        int offset = $offset;\n";
     for ($i = 1; $i <= @$max; $i++) {
-	print "        if (index$i < 0 || index$i >= $$max[$i - 1]) throw new ArrayIndexOutOfBoundsException();\n";
+	# check index bounds. 0-sized arrays don't get an upper-bound check
+	# (they represent variable size arrays. Normally they should only
+	# occur as the first-dimension of the last element of the structure)
+	if ($$max[$i - 1] != 0) {
+	    print "        if (index$i < 0 || index$i >= $$max[$i - 1]) throw new ArrayIndexOutOfBoundsException();\n";
+	}
+	else {
+	    print "        if (index$i < 0) throw new ArrayIndexOutOfBoundsException();\n";
+	}
 	print "        offset += $$aoffset[$i - 1] + index$i * $$bitsize[$i - 1];\n";
     }
 }
