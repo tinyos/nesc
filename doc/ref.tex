@@ -11,7 +11,7 @@
 \newcommand{\code}[1]{{\tt #1}}
 \newcommand{\file}[1]{{\tt #1}}
 \newcommand{\nesc}{nesC\xspace}
-\newcommand{\opt}{$_\mbox{opt}$\xspace}
+\newcommand{\opt}{$_{\mbox{opt}}$\xspace}
 \newcommand{\FSE}{\mathcal{F}}
 \newcommand{\connect}{\mathcal{C}}
 
@@ -136,7 +136,7 @@ Section~\ref{sec:configuration} explains how component interfaces are
 linked together.
 
 Interfaces are specified by \emph{interface types}, as follows:
-\emph{\begin{tabbing}
+\em \begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 nesC-file: \\
 \>	includes-list\opt interface\\
@@ -147,7 +147,7 @@ interface:\\
 \\
 storage-class-specifier: \emph{also one of}\\
 \>	\kw{command} \kw{event}\\
-\end{tabbing}}
+\end{tabbing} \rm
 This declares interface type \emph{identifier}. This identifier has global
 scope and belongs to a separate namespace, the \emph{component and
 interface type} namespace. So all interface types have names distinct from
@@ -178,7 +178,7 @@ Provides of the \code{SendMsg} interface type must implement the
 
 A \nesc component is either a \emph{module} (Section~\ref{sec:module}) or a
 \emph{configuration} (Section~\ref{sec:configuration}):
-\emph{\begin{tabbing}
+\em \begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 nesC-file: \\
 \>	includes-list\opt module\\
@@ -190,7 +190,7 @@ module:\\
 \\
 configuration:\\
 \>	\kw{configuration} identifier specification configuration-implementation\\
-\end{tabbing}}
+\end{tabbing} \rm
 Component's names are specified by the \emph{identifier}. This identifier
 has global scope and belongs to the component and interface type namespace.
 A component introduces two per-component scopes: a specification scope,
@@ -215,7 +215,7 @@ elements.
 
 Each specification element has a name (interface instance name, command
 name or event name). These names belong to the variable namespace of the
-per-component-specification scope.  \emph{\begin{tabbing}
+per-component-specification scope.  \em \begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 specification:\\
 \>	\kw{\{} uses-provides-list \kw{\}}\\
@@ -235,7 +235,7 @@ specification-element-list:\\
 specification-elements:\\
 \>	specification-element\\
 \>	specification-elements specification-element\\
-\end{tabbing}}
+\end{tabbing} \rm
 There can be multiple \kw{uses} and \kw{provides} directives in a component
 specification. Multiple used or provided specification elements can be
 grouped in a single directive by surrounding them with \{ and \}. For
@@ -261,7 +261,7 @@ module A1 {
 \end{minipage}
 
 An interface instance is specified as follows:
-\emph{\begin{tabbing}
+\em \begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 specification-element:\\
 \>	\kw{interface} renamed-identifier parameters\opt\\
@@ -273,7 +273,7 @@ renamed-identifier:\\
 \\
 interface-parameters:\\
 \>	\kw{[} parameter-type-list \kw{]}
-\end{tabbing}}
+\end{tabbing} \rm
 
 The complete syntax for interface instance declaration is \code{interface X
 as Y}, explicitly specifying \code{Y} as the instance's name. The
@@ -292,7 +292,7 @@ integral types (\kw{enum}s are not allowed at this time).
 Commands or events can be included directly as specification elements by
 including a standard C function declaration with
 \kw{command} or \kw{event} as its storage class specifier:
-\emph{\begin{tabbing}
+\em \begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 specification-element:\\
 \>	declaration\\
@@ -300,7 +300,7 @@ specification-element:\\
 \\
 storage-class-specifier: \emph{also one of}\\
 \>	\kw{command} \kw{event}\\
-\end{tabbing}}
+\end{tabbing} \rm
 It is a compile-time error if the \emph{declaration} is not a function
 declaration with the \kw{command} or \kw{event} storage class. 
 
@@ -309,12 +309,12 @@ As with interface instances, commands (events) are \emph{simple commands}
 \emph{parameterised commands} (\emph{parameterised events}) if interface
 parameters are specified. The \emph{interface-parameters} are placed before
 the function's regular parameter list, e.g., \code{command void
-send[uint8\_t id](int x)}: \emph{\begin{tabbing}
+send[uint8\_t id](int x)}: \em \begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 direct-declarator: \emph{also}\\
 \>	direct-declarator interface-parameters \kw{(} parameter-type-list \kw{)}\\
 \>	\ldots
-\end{tabbing}}
+\end{tabbing} \rm
 Note that interface parameters are only allowed on commands or events within
 component specifications, not within interface types.
 
@@ -370,11 +370,11 @@ simple status of the specification element to which they correspond.
 \label{sec:module}
 
 Modules implement a component specification with C code:
-\emph{\begin{tabbing}
+\em \begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 module-implementation:\\
 \>	\kw{implementation} \kw{\{} translation-unit \kw{\}}\\
-\end{tabbing}}
+\end{tabbing} \rm
 where \emph{translation-unit} is a list of C declarations and definitions
 (see K\&R~\cite[pp234--239]{kandr}). 
 
@@ -394,7 +394,7 @@ events.
 
 These command and event implementations are specified with the following C
 syntax extensions:
-\emph{\begin{tabbing}
+\em \begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 storage-class-specifier: \emph{also one of}\\
 \>	\kw{command} \kw{event}\\
@@ -405,7 +405,7 @@ declaration-specifiers: \emph{also}\\
 direct-declarator: \emph{also}\\
 \>	identifier \kw{.} identifier \\
 \>	direct-declarator interface-parameters \kw{(} parameter-type-list \kw{)}\\
-\end{tabbing}}
+\end{tabbing} \rm
 The implementation of simple command or event $\alpha$ has the syntax of a C
 function definition for $\alpha$ (note the extension to
 \emph{direct-declarator} to allow \code{.} in function names) with storage
@@ -446,7 +446,7 @@ event does not match that given in the module's specification.
 
 The following extensions to C syntax are used to call events and signal
 commands:
-\emph{\begin{tabbing}
+\em \begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 postfix-expression:\\
 \>	postfix-expression \kw{[} argument-expression-list \kw{]}\\
@@ -455,12 +455,12 @@ postfix-expression:\\
 \\\\
 call-kind: \emph{one of}\\
 \>	\kw{call} \kw{signal} \kw{post}
-\end{tabbing}}
+\end{tabbing} \rm
 
 A simple command $\alpha$ is called with \code{call $\alpha$(...)}, a
 simple event $\alpha$ is signaled with \code{signal $\alpha$(...)}. For
 instance, in a module that uses interface \code{Send} of type \kw{SendMsg}:
-\code{call Send.send(1, sizeof(Message), &msg1)}.
+\code{call Send.send(1, sizeof(Message), \&msg1)}.
 
 A parameterised command $\alpha$ (respectively, an event) with $n$
 interface parameters of type $\tau_1, \ldots, \tau_n$ is called with
@@ -490,11 +490,11 @@ implementations of provided commands or events. Default implementations are
 executed when $\alpha$ is not connected to any command or event
 implementation. A default command or event is defined by prefixing a
 command or event implementation with the \kw{default} keyword:
-\emph{\begin{tabbing}
+\em \begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 declaration-specifiers: \emph{also}\\
 \>	\kw{default} declaration-specifiers\\
-\end{tabbing}}
+\end{tabbing} \rm
 For instance, in a in a module that uses interface \code{Send} of type
 \kw{SendMsg}:
 \begin{verbatim}
@@ -523,25 +523,25 @@ Tasks are posted by prefixing a call to the task with \kw{post}, e.g.,
 \code{post myTask()}. Post returns immediately; its return value is 1 if
 the task was successfully posted for independent execution, 0
 otherwise. The type of a post expression is \code{unsigned char}.
-\emph{\begin{tabbing}
+\em \begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 storage-class-specifier: \emph{also one of}\\
 \>	\kw{task}\\
 \\
 call-kind: \emph{also one of}\\
 \>	\kw{post}
-\end{tabbing}}
+\end{tabbing} \rm
 
 \section{Configurations}
 \label{sec:configuration}
 
 Configurations implement a component specification by connecting, or wiring,
 together a collection of other components:
-\emph{\begin{tabbing}
+\em \begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 configuration-implementation:\\
 \>	\kw{implementation} \kw{\{} component-list\opt connection-list \kw{\}}\\
-\end{tabbing}}
+\end{tabbing} \rm
 
 The \emph{component-list} lists the components that are used to build this
 configuration, the \emph{connection-list} specifies how these components
@@ -562,7 +562,7 @@ specification elements, or to simplify changing the components a
 configuration uses (to avoid having to change the wiring). The names
 chosen for components belong to the component's implementation scope.
 
-\emph{\begin{tabbing}
+\em \begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 component-list:\\
 \>	components\\
@@ -578,7 +578,7 @@ component-line:\\
 renamed-identifier:\\
 \>	identifier\\
 \>	identifier \kw{as} identifier\\
-\end{tabbing}}
+\end{tabbing} \rm
 
 A compile-time error occurs if two components are given the same name using \kw{as} (e.g., \code{components X, Y as X}).
 
@@ -595,7 +595,7 @@ events) together. This section and the next (Section~\ref{sec:implicit})
 define the syntax and compile-time rules for
 wiring. Section~\ref{sec:wiring-semantics} details how a program's wiring
 statements dictate which functions get called at each \kw{call} and
-\kw{signal} expression.  \emph{\begin{tabbing}
+\kw{signal} expression.  \em \begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 connection-list:\\
 \>	connection\\
@@ -613,7 +613,7 @@ endpoint:\\
 identifier-path:\\
 \>	identifier\\
 \>	identifier-path \kw{.} identifier\\
-\end{tabbing}}
+\end{tabbing} \rm
 
 
 Wiring statements connect two \emph{endpoints}. The \emph{identifier-path}
@@ -877,9 +877,9 @@ implementations in module \code{M} (not shown).
 \begin{tabular}{ll}
 \tt list of int $I_\code{M.P.f}()$ \{ & \tt list of void $I_\code{M.P.g}$(int x) \{ \\
 \tt \ \ return list(M.P.f());         & \tt \ \ list of int r1 = $I_\code{C.X.g}$(x); \\
-\tt }                                 & \tt \ \ list of int r1 = $I_\code{M.U.g}$(x); \\
+\tt \}                                & \tt \ \ list of int r1 = $I_\code{M.U.g}$(x); \\
                                       & \tt \ \ return list\_concat(r1, r2); \\
-                                      & \tt } \\
+                                      & \tt \} \\
 \\
 \tt list of int $I_\code{M.U.f}()$ \{ & \tt list of void $I_\code{M.U.g}$(int x) \{ \\
 \tt \ \ return $I_\code{M.P.f}$();    & \tt \ \ return list(M.U.g(x)); \\
@@ -1046,7 +1046,7 @@ processed C files, interface types and components.
 If $K$ has already been loaded, nothing more is done. Otherwise, file
 $X$.nc is located and preprocessed. Changes made to C macros (via
 \code{\#define} and \code{\#undef}) are discarded. The preprocessed file is
-parsed using the following grammar: \emph{\begin{tabbing}
+parsed using the following grammar: \em \begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 nesC-file: \\
 \>	includes-list\opt interface\\
@@ -1059,7 +1059,7 @@ includes-list:\\
 \\
 includes:\\
 \>	\kw{includes} identifier-list \kw{;}\\
-\end{tabbing}}
+\end{tabbing} \rm
 If $X$.nc does not define \code{module $K$} or \code{configuration $K$}, a
 compile-time error is reported. Otherwise, all C files specified by the
 \emph{includes-list} are loaded (Section~\ref{sec:load-c}). Then all
@@ -1140,7 +1140,7 @@ list in function definitions.} The attributes of a function $f$ are the
 union of all attributes on all declarations and definitions of $f$.
 
 The attribute syntax in \nesc is:
-\emph{\begin{tabbing}
+\em \begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 init-declarator-list: \emph{also}\\
 \>	init-declarator attributes\\
@@ -1163,7 +1163,7 @@ attribute-list:\\
 single-attribute:\\
 \>	identifier\\
 \>	identifier \kw{(} argument-expression-list \kw{)}\\
-\end{tabbing}}
+\end{tabbing} \rm
 
 \nesc supports two attributes:
 \begin{itemize}
@@ -1241,7 +1241,7 @@ via the \kw{includes} directive follow the \emph{translation-unit}
 directive from K\&R. 
 
 New rules:
-\emph{\begin{tabbing}
+\em \begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 nesC-file: \\
 \>	includes-list\opt interface\\
@@ -1327,10 +1327,10 @@ specification-element:\\
 \\
 parameters:\\
 \>	\kw{[} parameter-type-list \kw{]}
-\end{tabbing}}
+\end{tabbing} \rm
 
 Changed rules: 
-\emph{\begin{tabbing}
+\em \begin{tabbing}
 \hspace*{2cm}\= \\ \kill
 storage-class-specifier: \emph{also one of}\\
 \>	\kw{command} \kw{event} \kw{task}\\
@@ -1375,7 +1375,7 @@ postfix-expression: \emph{replaced by}\\
 \\\\
 call-kind: \emph{one of}\\
 \>	\kw{call} \kw{signal} \kw{post}
-\end{tabbing}}
+\end{tabbing} \rm
 
 \section{Glossary}
 \label{sec:glossary}
