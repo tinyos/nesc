@@ -1190,7 +1190,7 @@ void show_previous_decl(void (*message)(declaration d, const char *format, ...),
 {
   if (olddecl->kind == decl_function && olddecl->ftype == function_implicit)
     message(olddecl->ast, "previous implicit declaration of `%s'", olddecl->name);
-  else if (ddecl_is_command_or_event(olddecl))
+  else if (ddecl_is_command_or_event(olddecl) && olddecl->definition)
     message(olddecl->definition, "previous declaration of `%s'",
 	    decl_printname(olddecl));
   else
