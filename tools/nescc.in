@@ -104,6 +104,10 @@ else {
 $numversion = $v_a * 100 + $v_b * 10 + $v_c;
 push @new_args, "-DNESC=$numversion";
 
+# Base network type definitions
+unshift @new_args, "-I$NCDIR";
+unshift @new_args, "-fnesc-include=nesc_nx";
+
 #
 # documentation generation options
 #

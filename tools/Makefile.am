@@ -27,7 +27,7 @@ kdedir=$(editordir)/kde
 
 bin_SCRIPTS = mig ncg ncc nescc nesdoc nccdiff
 
-ncclib_DATA = genjava.pm gencstjava.pm gencsharp.pm gencstc.pm migdecode.pm first-avr5.x second-avr5.x
+ncclib_DATA = genjava.pm gencstjava.pm gencsharp.pm gencstc.pm migdecode.pm first-avr5.x second-avr5.x nesc_nx.h
 ncclib_SCRIPTS = smalldiff
 
 emacs_DATA =					\
