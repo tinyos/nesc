@@ -11,8 +11,8 @@ c-parse.tab.h
 c-parse.output
 c-gperf.h
 config.cache
-config.h
-config.h.in
+autoconf.h
+autoconf.h.in
 config.log
 config.status
 config-aux

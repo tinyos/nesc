@@ -22,10 +22,8 @@ Boston, MA 02111-1307, USA. */
 #ifndef CONFIG_H
 #define CONFIG_H
 
-/* Configuration section */
-@TOP@
-
-@BOTTOM@
+/* autoconf/configure options */
+#include "autoconf.h"
 
 /* Target type structure information.
    This setup assumes that we are compiling on self, with gcc 
