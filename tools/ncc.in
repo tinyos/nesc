@@ -236,13 +236,16 @@ sub winpath {
     return $path;
 }
 
+
 #
-# Expand symlinks along the path.  
+# Expand symlinks along the path.  This function returns a list of all
+# aliases of the passed-in directories.
 #
 # FIXME: This should really either be part of nesc1, or should be done
 # away with altogether, in favor of Java-style package names.
 #
-sub expand_symlinks { my @dirs = @_; my @ret = ();
+sub expand_symlinks_mdw { 
+  my @dirs = @_; my @ret = ();
 
   foreach my $dir (@dirs) {
     my $done = 0;
@@ -279,4 +282,49 @@ sub expand_symlinks { my @dirs = @_; my @ret = ();
     }
   }
   return @ret;
+}
+
+
+sub expand_symlinks { 
+    my @dirs = @_; my @ret = ();
+    
+    
+    # accumulate all possible aliases for each directory
+    foreach my $dir (@dirs) {
+        my @partials = ("");
+        foreach my $subdir (split('/', $dir)) {
+            next if($subdir =~ /^\s*$/);
+            my @temp = ();
+            foreach my $d (@partials) {
+                push @temp, "$d/$subdir";
+                if ( -l "$d/$subdir" ) {
+                    my $link = readlink("$d/$subdir");
+                    if ($link =~ m!^/!) {
+                        push @temp, $link;
+                    } else {
+                        push @temp, "$d/$link";
+                    }
+                }
+            }
+            @partials = @temp;
+        }
+        push @ret, @partials;
+    }
+
+    # clean up relative paths & multiple /
+    my @temp = @ret;
+    @ret = ();
+    foreach my $dir (@temp) {
+        # multiple / 
+        $dir =~ s!/+!/!g;
+
+        # collapse relative paths
+        while ($dir =~ m!/[^/]+/\.\./!) {
+            $dir =~ s!/[^/]+/\.\./!/!;
+        }
+        push @ret, $dir;
+    }
+    
+    
+    return @ret;
 }
