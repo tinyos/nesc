@@ -18,6 +18,7 @@
       <required>
         <attribute name="name"/>
         <attribute name="ref"/>
+        <attribute name="loc"/>
       </required>
       <attribute name="scoped"/>
     </declare>

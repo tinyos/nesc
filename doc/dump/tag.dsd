@@ -20,6 +20,9 @@
       <required>
         <attribute name="ref"/>
       </required>
+      <m:doc>There is no location if there is no actual definition of the tag
+      </m:doc>
+      <attribute name="loc"/>
       <attribute name="name"/>
       <attribute name="scoped"/>
     </declare>

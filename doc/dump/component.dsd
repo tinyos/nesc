@@ -16,6 +16,7 @@
     <declare>
       <required>
         <attribute name="qname"/>
+        <attribute name="loc"/>
       </required>
 
       <m:doc>Order of these elements is unimportant</m:doc>

@@ -14,6 +14,9 @@
   <if>
     <element name="nesc:wire"/>
     <declare>
+      <m:doc>Location attributes are present in user-level wiring, absent
+	in function-level wirings.</m:doc>
+      <attribute name="loc"/>
       <contents>
         <sequence>
 	  <element name="nesc:from"/>

@@ -6,7 +6,7 @@
     (some contents may choose to place further restrictions).
     Declare those global rules here.
     Attributes which rely on these rules will have no `stringtype ref'
-    Currently: name, qname, ref, size, alignment, value, scoped</m:doc>
+    Currently: name, qname, ref, size, alignment, value, scoped, loc</m:doc>
 
   <if>
     <attribute name="ref"/>
@@ -71,5 +71,13 @@
     </require>
   </if>
    
-
+  <if>
+    <attribute name="loc"/>
+    <require>
+      <attribute name="loc">
+        <stringtype ref="nesc:location"/>
+      </attribute>
+    </require>
+  </if>
+   
 </dsd>
