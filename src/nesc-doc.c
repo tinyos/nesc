@@ -469,7 +469,6 @@ typedef struct {
 static env ic_env;
 static implementor_list ic_empty_implementor_list;
 
-/* Debug code
 static void ic_print()
 {
   env_scanner scanner;
@@ -496,7 +495,6 @@ static void ic_print()
   }
   printf("\n\n");
 }
-*/
 
 static void ilist_add(implementor_list *list, char *name)
 {
@@ -511,7 +509,7 @@ static void ilist_add(implementor_list *list, char *name)
 
   // first allocation
   if(list->comp == NULL) {
-    list->comp = rarrayalloc(doc_region, 10, char*);
+    list->comp = rarrayextend(doc_region, NULL, 10, char*);
     list->slots = 10;
     list->num = 0;
   }
@@ -519,6 +517,7 @@ static void ilist_add(implementor_list *list, char *name)
   // expand, if necessary
   if(list->num == list->slots) {
     list->comp = rarrayextend(doc_region, list->comp, list->slots+10, char*);
+    list->slots += 10;
   }
 
   // add the item, and shift the rest up
@@ -2821,7 +2820,7 @@ void generate_docs(const char *filename, cgraph cg)
         *pos = '\0';
         if(mkdir(docdir, 0755) != 0  &&  errno != EEXIST  &&  errno != ENOMEDIUM) {
           perror("mkdir");
-          fatal("error making parent directory of docdir '%s'.  errno=%d\n", docdir,errno);
+          fatal("error making ancestor directory of docdir '%s'.  errno=%d\n", docdir,errno);
         }
         *pos = dirsep;
         pos = strchr(pos+1, dirsep);
@@ -2829,7 +2828,7 @@ void generate_docs(const char *filename, cgraph cg)
     }
     if(mkdir(docdir, 0755) != 0  &&  errno != EEXIST  &&  errno != ENOMEDIUM) {
       perror("mkdir");
-      fatal("error making docdir '%s'\n", docdir);
+      fatal("error making parent directory of docdir '%s'.  errno=%d\n", docdir,errno);
     }
     if(chdir(docdir) != 0) {
       perror("chdir");
