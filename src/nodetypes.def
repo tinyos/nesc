@@ -121,6 +121,7 @@
 (deffield converted_to_pointer bool ())
 (deffield fdecl field_declaration ())
 (deffield cst_checked bool ())
+(deffield instantiation node ())
 
 ;; nesc fields
 (deffield call_kind nesc_call_kind (init))
@@ -132,7 +133,6 @@
 (deffield ep1 endpoint (init tree))
 (deffield ep2 endpoint (init tree))
 (deffield ids parameterised_identifier (init tree))
-(deffield newid parameterised_identifier ())
 (deffield external bool (init))
 (deffield ienv environment (init))
 (deffield docstring "char *" (init))
@@ -146,7 +146,7 @@
 ;; Base types
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftype node nil (location next parent parent_ptr)
+(deftype node nil (location next parent parent_ptr instantiation)
   "The common supertype of all AST nodes")
 
 (deftype declaration node ()
@@ -601,10 +601,8 @@ Legal if exactly one of EP1 and EP2 are interfaces of the component")
 (deftype endpoint node (ids)
   "a list of parameterised_identifier in IDS")
 
-(deftype parameterised_identifier node (word1 args newid)
-  "WORD1[ARGS] if ARGS != null, just WORD1 otherwise
-NEWID is used during abstract configuration instantiation to point to the
-new instantiation of a parameterised_identifier node")
+(deftype parameterised_identifier node (word1 args)
+  "WORD1[ARGS] if ARGS != null, just WORD1 otherwise")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; types for extensions to the regular C syntax

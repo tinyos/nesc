@@ -55,6 +55,18 @@ static AST_walker clone_walker;
 /* types in:
  */
 
+static void *clone(region r, void *vn)
+{
+  node *n = vn;
+  node new = AST_clone(r, *n);
+
+  (*n)->instantiation = new;
+  new->instantiation = NULL;
+  *n = new;
+
+  return new;
+}
+
 static void forward(data_declaration *dd)
 {
   data_declaration ddecl = *dd;
@@ -92,7 +104,30 @@ static void clone_ddecl(data_declaration ddecl)
   copy->container = current.container;
 }
 
-static void forward_tdecl(tag_ref tref)
+static void copy_fields(region r, tag_declaration copy, tag_declaration orig)
+{
+  field_declaration ofield, *nextfield;
+  
+
+  copy->fields = new_env(r, NULL);
+  nextfield = &copy->fieldlist;
+
+  for (ofield = orig->fieldlist; ofield; ofield = ofield->next)
+    {
+      field_declaration cfield = ralloc(r, struct field_declaration);
+
+      *cfield = *ofield;
+      cfield->ast = CAST(field_decl, ofield->ast->instantiation);
+      ofield->instantiation = cfield;
+      cfield->instantiation = NULL;
+      if (cfield->name)
+	env_add(copy->fields, cfield->name, cfield);
+      *nextfield = cfield;
+      nextfield = &cfield->next;
+    }
+}
+
+static void forward_tdecl(region r, tag_ref tref)
 {
   tag_declaration tdecl = tref->tdecl, copy;  
 
@@ -110,8 +145,8 @@ static void forward_tdecl(tag_ref tref)
   tdecl->instantiation = copy;
 
   copy->reptype = tdecl->reptype;
-  copy->fields = tdecl->fields;
-  copy->fieldlist = tdecl->fieldlist;
+  if (tdecl->defined)
+    copy_fields(r, copy, tdecl);
   copy->shadowed = tdecl;
   copy->defined = tdecl->defined;
   copy->fields_const = tdecl->fields_const;
@@ -124,7 +159,8 @@ static void forward_tdecl(tag_ref tref)
 static AST_walker_result clone_function_decl(AST_walker spec, void *data,
 					     function_decl *n)
 {
-  function_decl new = CAST(function_decl, AST_clone(data, CAST(node, *n)));
+  declaration old = CAST(declaration, *n);
+  function_decl new = clone(data, n);
 
   clone_ddecl(new->ddecl);
 
@@ -138,11 +174,10 @@ static AST_walker_result clone_function_decl(AST_walker spec, void *data,
       /* We update the ast field if it pointed to this function_decl
 	 (note that command and event data_declarations assume that the
 	 ast field points to the original variable_decl) */
-      if (instance->ast == CAST(declaration, *n))
+      if (instance->ast == old)
 	instance->ast = CAST(declaration, new);
       new->ddecl = instance;
     }
-  *n = new;
 
   return aw_walk;
 }
@@ -150,10 +185,9 @@ static AST_walker_result clone_function_decl(AST_walker spec, void *data,
 static AST_walker_result clone_identifier(AST_walker spec, void *data,
 					  identifier *n)
 {
-  identifier new = CAST(identifier, AST_clone(data, CAST(node, *n)));
+  identifier new = clone(data, n);
 
   forward(&new->ddecl);
-  *n = new;
 
   return aw_walk;
 }
@@ -161,22 +195,9 @@ static AST_walker_result clone_identifier(AST_walker spec, void *data,
 static AST_walker_result clone_interface_deref(AST_walker spec, void *data,
 					     interface_deref *n)
 {
-  interface_deref new = CAST(interface_deref, AST_clone(data, CAST(node, *n)));
+  interface_deref new = clone(data, n);
 
   forward(&new->ddecl);
-  *n = new;
-
-  return aw_walk;
-}
-
-static AST_walker_result clone_parameterised_identifier
-  (AST_walker spec, void *data, parameterised_identifier *n)
-{
-  parameterised_identifier new =
-    CAST(parameterised_identifier, AST_clone(data, CAST(node, *n)));
-
-  (*n)->newid = new; /* Save ptr to new node */
-  *n = new;
 
   return aw_walk;
 }
@@ -184,7 +205,8 @@ static AST_walker_result clone_parameterised_identifier
 static AST_walker_result clone_variable_decl(AST_walker spec, void *data,
 					     variable_decl *n)
 {
-  variable_decl new = CAST(variable_decl, AST_clone(data, CAST(node, *n)));
+  declaration old = CAST(declaration, *n);
+  variable_decl new = clone(data, n);
 
   clone_ddecl(new->ddecl);
 
@@ -193,13 +215,12 @@ static AST_walker_result clone_variable_decl(AST_walker spec, void *data,
       data_declaration instance = new->ddecl->instantiation;
 
       /* Forward the ddecl and update the ast and definition fields */
-      if (instance->definition == CAST(declaration, *n))
+      if (instance->definition == old)
 	instance->definition = CAST(declaration, new);
-      if (instance->ast == CAST(declaration, *n))
+      if (instance->ast == old)
 	instance->ast = CAST(declaration, new);
       new->ddecl = instance;
     }
-  *n = new;
 
   return aw_walk;
 }
@@ -207,10 +228,9 @@ static AST_walker_result clone_variable_decl(AST_walker spec, void *data,
 static AST_walker_result clone_typename(AST_walker spec, void *data,
 					  typename *n)
 {
-  typename new = CAST(typename, AST_clone(data, CAST(node, *n)));
+  typename new = clone(data, n);
 
   forward(&new->ddecl);
-  *n = new;
 
   return aw_walk;
 }
@@ -218,7 +238,7 @@ static AST_walker_result clone_typename(AST_walker spec, void *data,
 static AST_walker_result clone_enumerator(AST_walker spec, void *data,
 					  enumerator *n)
 {
-  enumerator new = CAST(enumerator, AST_clone(data, CAST(node, *n)));
+  enumerator new = clone(data, n);
 
   clone_ddecl(new->ddecl);
 
@@ -232,22 +252,20 @@ static AST_walker_result clone_enumerator(AST_walker spec, void *data,
       new->ddecl = instance;
     }
 
-  *n = new;
-
   return aw_walk;
 }
 
 static AST_walker_result clone_tag_ref(AST_walker spec, void *data,
 				       tag_ref *n)
 {
-  tag_ref new = CAST(tag_ref, AST_clone(data, CAST(node, *n)));
+  tag_ref new = clone(data, n);
 
-  *n = new;
-  forward_tdecl(new);
+  AST_walk_children(spec, data, CAST(node, new));
+  forward_tdecl(data, new);
   if (new->defined)
     new->tdecl->definition = new;
 
-  return aw_walk;
+  return aw_done;
 }
 
 void set_ddecl_instantiation1(data_declaration fndecl, void *data)
@@ -323,7 +341,8 @@ static void instantiate_endp(endp ep)
   if (ep->function->instantiation)
     ep->function = ep->function->instantiation;
   if (ep->args_node)
-    ep->args_node = ep->args_node->newid;
+    ep->args_node = CAST(parameterised_identifier,
+			 ep->args_node->instantiation);
 }
 
 static void instantiate_cg(cgraph copy, cgraph original)
@@ -360,9 +379,7 @@ static void instantiate_cg(cgraph copy, cgraph original)
 static AST_walker_result clone_component_ref(AST_walker spec, void *data,
 					     component_ref *n)
 {
-  component_ref new = CAST(component_ref, AST_clone(data, CAST(node, *n)));
-
-  *n = new;
+  component_ref new = clone(data, n);
 
   /* Instantiate any further abstract components inside this abstract
      configuration. */
@@ -378,10 +395,8 @@ static AST_walker_result clone_component_ref(AST_walker spec, void *data,
 static AST_walker_result clone_configuration(AST_walker spec, void *data,
 					     configuration *n)
 {
-  configuration new = CAST(configuration, AST_clone(data, CAST(node, *n)));
+  configuration new = clone(data, n);
   nesc_declaration comp = current.container;
-
-  *n = new;
 
   /* Copy the components and connections */
   AST_walk_children(spec, data, CAST(node, new));
@@ -395,8 +410,7 @@ static AST_walker_result clone_configuration(AST_walker spec, void *data,
 
 static AST_walker_result clone_ast(AST_walker spec, void *data, node *n)
 {
-  *n = AST_clone(data, *n);
-
+  clone(data, n);
   return aw_walk;
 }
 
@@ -407,8 +421,6 @@ static void init_clone(void)
   AST_walker_handle(clone_walker, kind_function_decl, clone_function_decl);
   AST_walker_handle(clone_walker, kind_identifier, clone_identifier);
   AST_walker_handle(clone_walker, kind_interface_deref, clone_interface_deref);
-  AST_walker_handle(clone_walker, kind_parameterised_identifier,
-		    clone_parameterised_identifier);
   AST_walker_handle(clone_walker, kind_variable_decl, clone_variable_decl);
   AST_walker_handle(clone_walker, kind_typename, clone_typename);
   AST_walker_handle(clone_walker, kind_enumerator, clone_enumerator);

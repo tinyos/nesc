@@ -1919,10 +1919,8 @@ type instantiate_type(type t)
       break;
     }
     case tk_array:
-#if 0
       newt = make_array_type(instantiate_type(t->u.array.arrayof),
-			     t->u.array.size->hmm);
-#endif
+			     CAST(expression, t->u.array.size->instantiation));
       break;
 
     case tk_iref:
