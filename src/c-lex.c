@@ -33,6 +33,10 @@ Boston, MA 02111-1307, USA. */
 
 #include <ctype.h>
 
+/* Define to support nested comments. Probably a bad idea given we're 
+   pre-processing w/ gcc which doesn't know about nested comments */
+#undef NESTED_COMMENTS
+
 /* MULTIBYTE_CHARS support only works for native compilers.
    ??? Ideally what we want is to model widechar support after
    the current floating point support.  */
@@ -74,9 +78,12 @@ static size_t int_type_size;
 /* Cause the `yydebug' variable to be defined.  */
 #define YYDEBUG 1
 
-#define UNGETC(c) ungetc (c, input_file_stack->lex.finput)
+void lex_ungetc(int c)
+{
+  ungetc (c, input_file_stack->lex.finput);
+}
 
-int GETC()
+int lex_getc(void)
 {
   /* Nuke CR from CR-LF */
   int c = getc (input_file_stack->lex.finput);
@@ -88,7 +95,7 @@ int GETC()
   if (c == '\n')
     return c;
 
-  UNGETC(c);
+  lex_ungetc(c);
 
   return '\r';
 }
@@ -178,7 +185,7 @@ start_lex (source_language l)
   input_file_stack->lex.indent_level = 0;
   language_token = -1;
 
-  UNGETC(check_newline());
+  lex_ungetc(check_newline());
 
   switch (l)
     {
@@ -306,25 +313,25 @@ void get_latest_docstring(char **short_s, char **long_s)
 
 
 
-/* Skip / *-style comment. Note that unlike C, nesC has nested / *-comments. */
-static void skip_c_comment(void)
+/* Skip / *-style comment. */
+void skip_c_comment(void)
 {
   int last_c = 0, c, depth = 1;
   struct location start = input_file_stack->l;
   bool docstring = FALSE;
 
   /* if the first char is '*', then this is a code documentation comment */
-  c = GETC();
+  c = lex_getc();
   if(c == '*') {
     docstring = TRUE;
     init_c_docstring();
   } else {
-    UNGETC(c);
+    lex_ungetc(c);
   }
 
   for (;;)
     {
-      c = GETC();
+      c = lex_getc();
 
       switch (c)
 	{
@@ -342,8 +349,10 @@ static void skip_c_comment(void)
 	    }
 	  break;
 	case '*':
+#ifdef NESTED_COMMENTS
 	  if (last_c == '/')
 	    ++depth;
+#endif
 	  break;
 	}
 
@@ -363,30 +372,30 @@ static void skip_c_comment(void)
 
 
 
-static void skip_cpp_comment(void)
+void skip_cpp_comment(void)
 {
   int c;
   bool docstring = FALSE;
 
   /* if the first char is '/', then this is a code documentation comment */
-  c = GETC();
+  c = lex_getc();
   if(c == '/') {
     docstring = TRUE;
     init_cpp_docstring();
   } else {
-    UNGETC(c);
+    lex_ungetc(c);
   }
 
   for (;;)
     {
-      c = GETC();
+      c = lex_getc();
 
       switch (c)
 	{
 	case EOF:
 	  return;
 	case '\n':
-	  UNGETC(check_newline());
+	  lex_ungetc(check_newline());
 	  return;
 	}
       
@@ -411,7 +420,7 @@ skip_white_space (c)
 	{
 	case '/':
 	  /* check for comments */
-	  c1 = GETC();
+	  c1 = lex_getc();
 
 	  if (c1 == '/')
 	    skip_cpp_comment();
@@ -419,10 +428,10 @@ skip_white_space (c)
 	    skip_c_comment();
 	  else
 	    {
-	      UNGETC(c1);
+	      lex_ungetc(c1);
 	      return c;
 	    }
-	  c = GETC();
+	  c = lex_getc();
 	  break;
 
 	case '\n':
@@ -434,7 +443,7 @@ skip_white_space (c)
 	case '\f':
 	case '\v':
 	case '\b':
-	  c = GETC();
+	  c = lex_getc();
 	  break;
 
 	case '\r':
@@ -446,16 +455,16 @@ skip_white_space (c)
 	      warning ("(we only warn about the first carriage return)");
 	      newline_warning = 1;
 	    }
-	  c = GETC();
+	  c = lex_getc();
 	  break;
 
 	case '\\':
-	  c = GETC();
+	  c = lex_getc();
 	  if (c == '\n')
 	    input_file_stack->l.lineno++;
 	  else
 	    error ("stray '\\' in program");
-	  c = GETC();
+	  c = lex_getc();
 	  break;
 
 	default:
@@ -482,11 +491,11 @@ extend_token_buffer (p)
 }
 
 static char *traditional token_ptr;
-#define TUNGETC(c) (token_ptr--, UNGETC((c)))
+#define token_ungetc(c) (token_ptr--, lex_ungetc((c)))
 
-static int TGETC(void)
+static int token_getc(void)
 {
-  int c = GETC();
+  int c = lex_getc();
 
   if (c != EOF)
     {
@@ -628,9 +637,9 @@ check_newline ()
 
   /* Read first nonwhite char on the line.  */
 
-  c = GETC();
+  c = lex_getc();
   while (c == ' ' || c == '\t')
-    c = GETC();
+    c = lex_getc();
 
   if (c != '#')
     {
@@ -640,9 +649,9 @@ check_newline ()
 
   /* Read first nonwhite char after the `#'.  */
 
-  c = GETC();
+  c = lex_getc();
   while (c == ' ' || c == '\t')
-    c = GETC();
+    c = lex_getc();
 
   /* If a letter follows, then if the word here is `line', skip
      it and ignore it; otherwise, ignore the line, with an error
@@ -652,12 +661,12 @@ check_newline ()
     {
       if (c == 'p')
 	{
-	  if (GETC() == 'r'
-	      && GETC() == 'a'
-	      && GETC() == 'g'
-	      && GETC() == 'm'
-	      && GETC() == 'a'
-	      && ((c = GETC()) == ' ' || c == '\t' || c == '\n'))
+	  if (lex_getc() == 'r'
+	      && lex_getc() == 'a'
+	      && lex_getc() == 'g'
+	      && lex_getc() == 'm'
+	      && lex_getc() == 'a'
+	      && ((c = lex_getc()) == ' ' || c == '\t' || c == '\n'))
 	    {
 	      return save_directive("pragma");
 	    }
@@ -665,42 +674,42 @@ check_newline ()
 
       else if (c == 'd')
 	{
-	  if (GETC() == 'e'
-	      && GETC() == 'f'
-	      && GETC() == 'i'
-	      && GETC() == 'n'
-	      && GETC() == 'e'
-	      && ((c = GETC()) == ' ' || c == '\t' || c == '\n'))
+	  if (lex_getc() == 'e'
+	      && lex_getc() == 'f'
+	      && lex_getc() == 'i'
+	      && lex_getc() == 'n'
+	      && lex_getc() == 'e'
+	      && ((c = lex_getc()) == ' ' || c == '\t' || c == '\n'))
 	    {
 	      return save_directive("define");
 	    }
 	}
       else if (c == 'u')
 	{
-	  if (GETC() == 'n'
-	      && GETC() == 'd'
-	      && GETC() == 'e'
-	      && GETC() == 'f'
-	      && ((c = GETC()) == ' ' || c == '\t' || c == '\n'))
+	  if (lex_getc() == 'n'
+	      && lex_getc() == 'd'
+	      && lex_getc() == 'e'
+	      && lex_getc() == 'f'
+	      && ((c = lex_getc()) == ' ' || c == '\t' || c == '\n'))
 	    {
 	      return save_directive("undef");
 	    }
 	}
       else if (c == 'l')
 	{
-	  if (GETC() == 'i'
-	      && GETC() == 'n'
-	      && GETC() == 'e'
-	      && ((c = GETC()) == ' ' || c == '\t'))
+	  if (lex_getc() == 'i'
+	      && lex_getc() == 'n'
+	      && lex_getc() == 'e'
+	      && ((c = lex_getc()) == ' ' || c == '\t'))
 	    goto linenum;
 	}
       else if (c == 'i')
 	{
-	  if (GETC() == 'd'
-	      && GETC() == 'e'
-	      && GETC() == 'n'
-	      && GETC() == 't'
-	      && ((c = GETC()) == ' ' || c == '\t'))
+	  if (lex_getc() == 'd'
+	      && lex_getc() == 'e'
+	      && lex_getc() == 'n'
+	      && lex_getc() == 't'
+	      && ((c = lex_getc()) == ' ' || c == '\t'))
 	    {
 	      /* #ident.  The pedantic warning is now in cccp.c.  */
 
@@ -708,13 +717,13 @@ check_newline ()
 		 A string constant should follow.  */
 
 	      while (c == ' ' || c == '\t')
-		c = GETC();
+		c = lex_getc();
 
 	      /* If no argument, ignore the line.  */
 	      if (c == '\n')
 		return c;
 
-	      UNGETC (c);
+	      lex_ungetc (c);
 	      token = yylex (&lval);
 	      if (token != STRING)
 		{
@@ -736,7 +745,7 @@ linenum:
      In either case, it should be a line number; a digit should follow.  */
 
   while (c == ' ' || c == '\t')
-    c = GETC();
+    c = lex_getc();
 
   /* If the # is the only nonwhite char on the line,
      just ignore it.  Check the new newline.  */
@@ -745,7 +754,7 @@ linenum:
 
   /* Something follows the #; read a token.  */
 
-  UNGETC (c);
+  lex_ungetc (c);
   token = yylex (&lval);
 
   if (token_isint(token, &lval))
@@ -757,16 +766,16 @@ linenum:
       int l = token_intvalue(&lval) - 1;
 
       /* Is this the last nonwhite stuff on the line?  */
-      c = GETC();
+      c = lex_getc();
       while (c == ' ' || c == '\t')
-	c = GETC();
+	c = lex_getc();
       if (c == '\n')
 	{
 	  /* No more: store the line number and check following line.  */
 	  input_file_stack->l.lineno = l;
 	  return c;
 	}
-      UNGETC (c);
+      lex_ungetc (c);
 
       /* More follows: it must be a string constant (filename).  */
 
@@ -785,9 +794,9 @@ linenum:
       input_file_stack->l.in_system_header = 0;
 
       /* Is this the last nonwhite stuff on the line?  */
-      c = GETC();
+      c = lex_getc();
       while (c == ' ' || c == '\t')
-	c = GETC();
+	c = lex_getc();
       if (c == '\n')
 	{
 	  input_file_stack->l.filename = new_filename;
@@ -795,7 +804,7 @@ linenum:
 	  return c;
 	}
 
-      UNGETC (c);
+      lex_ungetc (c);
 
       token = yylex (&lval);
       used_up = 0;
@@ -858,7 +867,7 @@ linenum:
   if (c != '\n' && c != EOF && input_file_stack->lex.nextchar >= 0)
     c = input_file_stack->lex.nextchar, input_file_stack->lex.nextchar = -1;
   while (c != '\n' && c != EOF)
-    c = GETC();
+    c = lex_getc();
   return c;
 }
 
@@ -871,7 +880,7 @@ linenum:
 static int
 readescape (int *ignore_ptr)
 {
-  int c = TGETC();
+  int c = token_getc();
   int code;
   unsigned count;
   unsigned firstdig = 0;
@@ -891,12 +900,12 @@ readescape (int *ignore_ptr)
       nonnull = 0;
       while (1)
 	{
-	  c = TGETC();
+	  c = token_getc();
 	  if (!(c >= 'a' && c <= 'f')
 	      && !(c >= 'A' && c <= 'F')
 	      && !(c >= '0' && c <= '9'))
 	    {
-	      TUNGETC (c);
+	      token_ungetc (c);
 	      break;
 	    }
 
@@ -934,9 +943,9 @@ readescape (int *ignore_ptr)
       while ((c <= '7') && (c >= '0') && (count++ < 3))
 	{
 	  code = (code * 8) + (c - '0');
-	  c = TGETC();
+	  c = token_getc();
 	}
-      TUNGETC (c);
+      token_ungetc (c);
       return code;
 
     case '\\': case '\'': case '"':
@@ -1005,7 +1014,7 @@ static int read_char(char *context, char terminating_char,
 #endif
 
  tryagain:
-  c = TGETC ();
+  c = token_getc ();
 
   if (c == terminating_char)
     return 0;
@@ -1043,7 +1052,7 @@ static int read_char(char *context, char terminating_char,
 	  char_len = local_mbtowc (& wc, cp, i + 1);
 	  if (char_len != -1)
 	    break;
-	  c = TGETC ();
+	  c = token_getc ();
 	}
       if (char_len == -1)
 	{
@@ -1051,14 +1060,14 @@ static int read_char(char *context, char terminating_char,
 	  /* Note: gcc just takes the character following the
 	     invalid multibyte-char-sequence as being the next 
 	     character. This is obviously incorrect. */
-	  TUNGETC (c);
+	  token_ungetc (c);
 	  goto tryagain;
 	}
       else
 	{
 	  /* mbtowc sometimes needs an extra char before accepting */
 	  if (char_len <= i)
-	    TUNGETC (c);
+	    token_ungetc (c);
 	  if (! wcp)
 	    return i + 1;
 	  else
@@ -1125,7 +1134,7 @@ yylex(struct yystype *lvalp)
   if (input_file_stack->lex.nextchar >= 0)
     c = input_file_stack->lex.nextchar, input_file_stack->lex.nextchar = -1;
   else
-    c = GETC();
+    c = lex_getc();
 
   /* Effectively do c = skip_white_space (c)
      but do it faster in the usual cases.  */
@@ -1137,7 +1146,7 @@ yylex(struct yystype *lvalp)
       case '\f':
       case '\v':
       case '\b':
-	c = GETC();
+	c = lex_getc();
 	break;
 
       case '\r':
@@ -1171,7 +1180,7 @@ yylex(struct yystype *lvalp)
     case 'L':
       /* Capital L may start a wide-string or wide-character constant.  */
       {
-	int c = TGETC();
+	int c = token_getc();
 	if (c == '\'')
 	  {
 	    wide_flag = 1;
@@ -1182,7 +1191,7 @@ yylex(struct yystype *lvalp)
 	    wide_flag = 1;
 	    goto string_constant;
 	  }
-	TUNGETC (c);
+	token_ungetc (c);
       }
       goto letter;
 
@@ -1212,7 +1221,7 @@ yylex(struct yystype *lvalp)
 		pedwarn ("`$' in identifier");
 	    }
 
-	  c = TGETC();
+	  c = token_getc();
 	}
 
       *token_ptr = 0;
@@ -1275,11 +1284,11 @@ yylex(struct yystype *lvalp)
 
 	if (c == '0')
 	  {
-	    c = TGETC();
+	    c = token_getc();
 	    if ((c == 'x') || (c == 'X'))
 	      {
 		base = 16;
-		c = TGETC();
+		c = token_getc();
 	      }
 	    /* Leading 0 forces octal unless the 0 is the only digit.  */
 	    else if (c >= '0' && c <= '9')
@@ -1319,7 +1328,7 @@ yylex(struct yystype *lvalp)
 		  floatflag = AFTER_POINT;
 
 		base = 10;
-		c = TGETC();
+		c = token_getc();
 		/* Accept '.' as the start of a floating-point number
 		   only when it is followed by a digit.
 		   Otherwise, unread the following non-digit
@@ -1328,7 +1337,7 @@ yylex(struct yystype *lvalp)
 		  {
 		    if (c == '.')
 		      {
-			c = TGETC();
+			c = token_getc();
 			if (c == '.')
 			  {
 			    value = ELLIPSIS;
@@ -1336,7 +1345,7 @@ yylex(struct yystype *lvalp)
 			  }
 			error ("parse error at `..'");
 		      }
-		    TUNGETC (c);
+		    token_ungetc (c);
 		    value = '.';
 		    goto done;
 		  }
@@ -1381,7 +1390,7 @@ yylex(struct yystype *lvalp)
 		  overflow = 1;
 		cstvalue += c;
 
-		c = TGETC();
+		c = token_getc();
 	      }
 	  }
 
@@ -1401,16 +1410,16 @@ yylex(struct yystype *lvalp)
 
 	    if ((c == 'e') || (c == 'E'))
 	      {
-		c = TGETC();
+		c = token_getc();
 		if ((c == '+') || (c == '-'))
 		  {
-		    c = TGETC();
+		    c = token_getc();
 		  }
 		if (! isdigit (c))
 		  error ("floating constant exponent has no digits");
 	        while (isdigit (c))
 		  {
-		    c = TGETC();
+		    c = token_getc();
 		  }
 	      }
 
@@ -1448,10 +1457,10 @@ yylex(struct yystype *lvalp)
 		if (lose)
 		  break;
 
-		c = TGETC();
+		c = token_getc();
 	      }
 
-	    TUNGETC(c);
+	    token_ungetc(c);
 
 	    if (fflag)
 	      {
@@ -1508,10 +1517,10 @@ yylex(struct yystype *lvalp)
 		  }
 		else
 		  break;
-		c = TGETC();
+		c = token_getc();
 	      }
 
-	    TUNGETC (c);
+	    token_ungetc (c);
 
 	    /* Collect type as specified in the lexeme. The constant folder
 	       will expand the type if necessary. */
@@ -1659,7 +1668,7 @@ yylex(struct yystype *lvalp)
 
       combine:
 
-	c1 = TGETC();
+	c1 = token_getc();
 
 	if (c1 == '=')
 	  {
@@ -1738,17 +1747,17 @@ yylex(struct yystype *lvalp)
 		{ value = '}'; input_file_stack->lex.indent_level--; goto done; }
 	      break;
 	    }
-	TUNGETC (c1);
+	token_ungetc (c1);
 
 	if (c == '<') 
 	  {
-	    c1 = TGETC();
+	    c1 = token_getc();
 
 	    if (c1 == '-')
 	      value = TASTNIOP;
 	    else
 	      {
-		TUNGETC (c1);
+		token_ungetc (c1);
 		value = ARITHCOMPARE;
 		lvalp->u.itoken.i = kind_lt;
 	      }

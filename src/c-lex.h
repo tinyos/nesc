@@ -75,6 +75,10 @@ extern char *traditional token_buffer;	/* Pointer to token buffer.  */
 int yylex(struct yystype *lvalp);
 void init_lex(void);
 void start_lex(source_language l);
+int lex_getc(void);
+void lex_ungetc(int c);
+void skip_c_comment(void);
+void skip_cpp_comment(void);
 
 struct lex_state
 {

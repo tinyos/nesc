@@ -3300,7 +3300,7 @@ int save_directive(char *directive)
 	  buffer_limit = &directive_buffer[buffer_length];
         }
 
-      c = getc (input_file_stack->lex.finput);
+      c = lex_getc();
 
       /* Discard initial whitespace.  */
       if ((c == ' ' || c == '\t') && p == directive_buffer)
@@ -3310,7 +3310,7 @@ int save_directive(char *directive)
       if (looking_for == 0
 	  && (c == '\n' || c == EOF))
 	{
-          ungetc (c, input_file_stack->lex.finput);
+          lex_ungetc(c);
 	  c = '\0';
 	}
 
@@ -3321,6 +3321,18 @@ int save_directive(char *directive)
 
       if (c == 0)
 	break;
+
+      if (c == '/')
+	{
+	  int c2 = lex_getc();
+
+	  if (c2 == '/')
+	    skip_cpp_comment();
+	  else if (c2 == '*')
+	    skip_c_comment();
+	  else
+	    lex_ungetc(c2);
+	}
 
       /* Handle string and character constant syntax.  */
       if (looking_for)
