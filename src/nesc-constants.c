@@ -231,16 +231,18 @@ static AST_walker_result folder_tag_ref(AST_walker spec, void *data,
 static AST_walker_result folder_variable_decl(AST_walker spec, void *data,
 					      variable_decl *n)
 {
+  variable_decl vd = *n;
   struct folder_data *d = data;
   struct folder_data newd = *d;
 
-  newd.require_constant_value = (*n)->ddecl->needsmemory;
+  if (vd->ddecl)
+    newd.require_constant_value = vd->ddecl->needsmemory;
 
   /* AST_walk_list handles the NULL case... */
-  AST_walk_list(folder_walker, d, CASTPTR(node, &(*n)->declarator));
-  AST_walk_list(folder_walker, d, CASTPTR(node, &(*n)->attributes));
-  AST_walk_list(folder_walker, &newd, CASTPTR(node, &(*n)->arg1));
-  AST_walk_list(folder_walker, d, CASTPTR(node, &(*n)->asm_stmt));
+  AST_walk_list(folder_walker, d, CASTPTR(node, &vd->declarator));
+  AST_walk_list(folder_walker, d, CASTPTR(node, &vd->attributes));
+  AST_walk_list(folder_walker, &newd, CASTPTR(node, &vd->arg1));
+  AST_walk_list(folder_walker, d, CASTPTR(node, &vd->asm_stmt));
   
   return aw_done;
 }
