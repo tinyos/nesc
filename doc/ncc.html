@@ -75,7 +75,12 @@ overwrite the C code from the first.</blockquote>
 <b>-docdir=</b><u>dir</u><blockquote> generate documentation for the
 compiled component in directory <u>dir</u>.</blockquote>
 
-<b>-topdir=dir</b><blockquote> [Rob, can you fell this in?]</blockquote>
+<b>-topdir=dir</b><blockquote> specify directory paths that should be
+stripped from the source file names when generating "package names"
+for the documentation files.  The directory above TOSDIR is
+automatically added, so this option is only needed for directories
+outside the main TinyOS distribution.
+</blockquote>
 
 <b>-graphviz=y|n</b><blockquote> explicitly enable or disable the use of the
 graphviz tool in the generated documentation. Without this option, graphviz
