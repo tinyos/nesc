@@ -25,6 +25,7 @@ Boston, MA 02111-1307, USA.  */
 #include <fcntl.h>
 #include "nesc-paths.h"
 #include "machine.h"
+#include "flags.h"
 
 static region opt_region;
 
@@ -95,6 +96,12 @@ void create_nesc_keyword_macros(const char *macro_filename)
   for (i = 0; nesc_keywords[i]; i++) 
     fprintf(mf, "#define %s __nesc_keyword_%s\n",
 	    nesc_keywords[i], nesc_keywords[i]);
+
+  /* this will set the enum value of TOSNODES to the value specified
+     during compilation by the flag "-fnesc-tossim-tosnodes = 1000"
+     which in this case is 1000. */     
+  if (use_tossim)
+    fprintf(mf, "#define MYMAGICNAME %s\n", tossim_num_nodes);
 
   fclose(mf);
 }

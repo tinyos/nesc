@@ -509,6 +509,12 @@ void prt_ddecl_full_name(data_declaration ddecl, psd_options options)
 	output("default$");
     }
   output_stripped_string(ddecl->name);
+
+  if (use_tossim &&
+      (ddecl->kind == decl_variable &&
+       (FALSE == ddecl->Cname && NULL != ddecl->container))) {
+    output("[%s]", tossim_num_nodes);
+  }
 }
 
 void prt_simple_declarator(declarator d, data_declaration ddecl,
@@ -1005,6 +1011,12 @@ void prt_identifier(identifier e, int context_priority)
     output_stripped_string_dollar(decl->container->name);
 
   output_stripped_cstring(e->cstring);
+
+  if (use_tossim &&
+      (decl->kind == decl_variable &&
+       (FALSE == decl->Cname && NULL != decl->container))) {
+    output("[tos_state.current_node]");
+  }
 }
 
 void prt_compound_expr(compound_expr e, int context_priority)

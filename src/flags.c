@@ -217,6 +217,13 @@ char *cmdline_nesc_path;
    varargs functions */
 int flag_no_debug;
 
+/* Nonzero means modify identifier and declaration output during code
+   generation to accomodate tossim */
+bool use_tossim;
+
+/* specifies the maximum number of nodes that can be simulated at one time */
+char* tossim_num_nodes;
+
 /* Nonzero for -v */
 int flag_verbose;
 

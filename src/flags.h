@@ -213,6 +213,13 @@ extern int flag_parse_only;
    varargs functions */
 extern int flag_no_debug;
 
+/* Nonzero means modify identifier and declaration output during code
+   generation to accomodate tossim */
+extern bool use_tossim;
+
+/* specifies the maximum number of nodes that can be simulated at one time */
+extern char* tossim_num_nodes;
+
 /* Nonzero for -v */
 extern int flag_verbose;
 

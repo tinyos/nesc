@@ -129,6 +129,8 @@ if ($target eq "avr") {
 else {
     push @gcc_args, "-o";
     push @gcc_args, $objtarget;
+    push @gcc_args, "-c";
+    push @gcc_args, $ctarget;
     unshift @gcc_args, "gcc";
     &vsystem(@gcc_args);
     unlink $ctarget if $delcfile;
