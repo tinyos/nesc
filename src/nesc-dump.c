@@ -18,8 +18,46 @@ Boston, MA 02111-1307, USA.  */
 #include "parser.h"
 #include "nesc-dump.h"
 #include "nesc-dspec.h"
+#include "nesc-xml.h"
+#include "nesc-cg.h"
 
-nd_option opts;
+dd_list/*nd_option*/ opts;
+
+void dump_component(component comp)
+{
+  if (comp->configuration)
+    xml_tag_start("configuration");
+  else
+    xml_tag_start("module");
+  xml_attr("name", comp->instance_name);
+  xml_qtag_end();
+}
+
+void dump_components(nd_option opt, nesc_declaration program, cgraph cg,
+		     dd_list modules, dd_list components)
+
+{
+  dd_list_pos scan_components;
+
+  if (!components)
+    {
+      error("components can only be requested on an actual program");
+      return;
+    }
+
+  xml_tag("components");
+  xnewline(); xindent();
+  dd_scan (scan_components, components)
+    {
+      nesc_declaration comp = DD_GET(nesc_declaration, scan_components);
+
+      dump_component(comp);
+      xnewline();
+    }
+  xunindent();
+  xml_pop();
+  xnewline();
+}
 
 void select_dump(char *what)
 {
@@ -27,6 +65,7 @@ void select_dump(char *what)
 
   if (opt)
     {
+#if 0
       nd_arg arg;
       int i = 0;
 
@@ -34,12 +73,15 @@ void select_dump(char *what)
       scan_nd_arg (arg, opt->args)
 	if (is_nd_int(arg))
 	  fprintf(stderr, "  arg %d int %ld\n", ++i,
-		  (long)CAST(nd_int, arg)->val);
+		  (long)ND_CAST(nd_int, arg)->val);
 	else
 	  fprintf(stderr, "  arg %d token %s\n", ++i,
-		  CAST(nd_token, arg)->str);
+		  ND_CAST(nd_token, arg)->str);
+#endif
 
-      opts = opt;
+      if (!opts)
+	opts = dd_new_list(permanent);
+      dd_add_last(permanent, opts, opt);
     }
 }
 
@@ -48,6 +90,20 @@ bool dump_selected(void)
   return opts != NULL;
 }
 
-void dump_info(void)
+void dump_info(nesc_declaration program, cgraph cg,
+	       dd_list modules, dd_list components)
 {
+  dd_list_pos scan_opts;
+
+  xml_start(stdout);
+  dd_scan (scan_opts, opts)
+    {
+      nd_option opt = DD_GET(nd_option, scan_opts);
+
+      if (!strcmp(opt->name, "components"))
+	dump_components(opt, program, cg, modules, components);
+      else
+	error("unknown dump request `%s'", opt->name);
+    }
+  xml_end();
 }

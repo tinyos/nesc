@@ -143,6 +143,8 @@ libparser_a_SOURCES =				\
 	nesc-semantics.h			\
 	nesc-uses.c				\
 	nesc-uses.h				\
+	nesc-xml.c				\
+	nesc-xml.h				\
 	parser.h				\
 	qualifiers.h				\
 	sd_list.c				\

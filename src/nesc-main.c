@@ -358,7 +358,7 @@ void nesc_compile(const char *filename, const char *target_name)
     }
   if (dump_selected())
     {
-      dump_info();
+      dump_info(program, cg, modules, components);
       gencode = FALSE;
     }
   if (gencode)
