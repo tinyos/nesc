@@ -43,15 +43,16 @@ sub gen() {
     print "    }\n\n";
 
     print "    $java_classname(byte[] packet) {\n";
-    print "        this(packet, 0);\n";
-    print "    }\n\n";
-
-    print "    $java_classname(byte[] packet, int offset) {\n";
     print "        this();\n";
-    print "        setData(packet, offset);\n";
+    print "        dataSet(packet);\n";
     print "    }\n\n";
 
-    print "    public int getType() {\n";
+    print "    $java_classname(ByteArray packet) {\n";
+    print "        this();\n";
+    print "        dataSet(packet);\n";
+    print "    }\n\n";
+
+    print "    public int amType() {\n";
     print "        return $amtype;\n";
     print "    }\n\n";
 
@@ -62,14 +63,14 @@ sub gen() {
 	$javafield = $field;
 	$javafield =~ s/\./_/g;
 	
-	($javatype, $java_access) = &javabasetype($type);
+	($javatype, $java_access) = &javabasetype($type, $bitlength);
 
 	$index = 0;
 	@args = map { $index++; "int index$index" } @{$amax};
 	$argspec = join(", ", @args);
 	print "    $javatype get\u$javafield($argspec) {\n";
 	printoffset($base + $offset, $amax, $abitsize, $aoffset);
-	print "        return get$java_access(offset, $bitlength);\n";
+	print "        return ($javatype)get$java_access(offset, $bitlength);\n";
 	print "    }\n\n";
 
 	push @args, "$javatype value";
@@ -85,12 +86,27 @@ sub gen() {
 
 sub javabasetype()
 {
-    my ($basetype) = @_;
+    my ($basetype, $bitlength) = @_;
+    my $jtype, $acc;
 
-    return ("long", "UIntElement") if ($basetype eq "U");
-    return ("long", "SIntElement") if ($basetype eq "I");
     return ("float", "FloatElement")
 	if ($basetype eq "F" || $basetype eq "D" || $basetype eq "LD");
+
+    # Pick the java type whose range is closest to the corresponding C type
+    if ($basetype eq "U") {
+	$acc = "UIntElement";
+	return ("byte", $acc) if $bitlength < 8;
+	return ("char", $acc) if $bitlength <= 16;
+	return ("int", $acc) if $bitlength < 32;
+	return ("long", $acc);
+    }
+    if ($basetype eq "I") {
+	$acc = "SIntElement";
+	return ("byte", $acc) if $bitlength <= 8;
+	return ("short", $acc) if $bitlength <= 16;
+	return ("int", $acc) if $bitlength <= 32;
+	return ("long", $acc);
+    }
 
     return (0, 0);
 }
