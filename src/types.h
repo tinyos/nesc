@@ -251,6 +251,11 @@ type instantiate_type(type t);
    Returns: The instantiated type
 */
 
+typelist instantiate_typelist(typelist old);
+/* Returns: An instantiated copy of typelist old, allocated in the same
+     region
+*/
+
 const char *type_name(region r, type t);
 
 unsigned long type_hash(type t);

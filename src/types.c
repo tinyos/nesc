@@ -1877,6 +1877,23 @@ data_declaration type_variable_decl(type t)
   return t->u.tdecl;
 }
 
+typelist instantiate_typelist(typelist old)
+/* Returns: An instantiated copy of typelist old, allocated in the same
+     region
+*/
+{
+  typelist new = new_typelist(old->r);
+  struct typelist_element *scan = old->first;
+
+  while (scan)
+    {
+      typelist_append(new, instantiate_type(scan->t));
+      scan = scan->next;
+    }
+  
+  return new;
+}
+
 type instantiate_type(type t)
 /* Effects: Instantiate a type with type variables based on the instantiation
      of the variables and tag declarations. These are found in 
@@ -1903,17 +1920,8 @@ type instantiate_type(type t)
       typelist args = NULL;
 
       if (t->u.fn.argtypes)
-	{
-	  typelist old = t->u.fn.argtypes;
-	  struct typelist_element *scan = old->first;
+	args = instantiate_typelist(t->u.fn.argtypes);
 
-	  args = new_typelist(old->r);
-	  while (scan)
-	    {
-	      typelist_append(args, instantiate_type(scan->t));
-	      scan = scan->next;
-	    }
-	}
       newt = make_function_type(ret, args, t->u.fn.varargs, t->u.fn.oldstyle);
       newt->u.fn.fkind = t->u.fn.fkind;
       break;

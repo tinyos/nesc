@@ -53,7 +53,18 @@ static AST_walker clone_walker;
  */
 
 /* types in:
+   (ignoring declared_type, currently unused)
+   expression
+   asttype
+   field_declaration
+   data_declaration
+   (reptype in tag_declaration does not need instantiating)
  */
+
+/* typelist in:
+   data_declaration (gparms, can ignore oldstyle_args as not allowed in
+                     modules)
+*/
 
 static void *clone(region r, void *vn)
 {
@@ -73,6 +84,13 @@ static void forward(data_declaration *dd)
 
   if (ddecl->instantiation)
     *dd = ddecl->instantiation;
+}
+
+static void instantiate_ddecl_types(data_declaration ddecl)
+{
+  ddecl->type = instantiate_type(ddecl->type);
+  if (ddecl->kind == decl_interface_ref)
+    ddecl->gparms = instantiate_typelist(ddecl->gparms);
 }
 
 static void clone_ddecl(data_declaration ddecl)
@@ -102,6 +120,7 @@ static void clone_ddecl(data_declaration ddecl)
   copy->nuses = NULL;
   copy->shadowed = ddecl;
   copy->container = current.container;
+  instantiate_ddecl_types(copy);
 }
 
 static void copy_fields(region r, tag_declaration copy, tag_declaration orig)
@@ -117,6 +136,7 @@ static void copy_fields(region r, tag_declaration copy, tag_declaration orig)
       field_declaration cfield = ralloc(r, struct field_declaration);
 
       *cfield = *ofield;
+      cfield->type = instantiate_type(cfield->type);
       cfield->ast = CAST(field_decl, ofield->ast->instantiation);
       ofield->instantiation = cfield;
       cfield->instantiation = NULL;
@@ -156,6 +176,25 @@ static void forward_tdecl(region r, tag_ref tref)
   copy->container = current.container;
 }
 
+static AST_walker_result clone_expression(AST_walker spec, void *data,
+					  expression *n)
+{
+  expression new = clone(data, n);
+
+  new->type = instantiate_type(new->type);
+
+  return aw_walk;
+}
+
+static AST_walker_result clone_asttype(AST_walker spec, void *data, asttype *n)
+{
+  asttype new = clone(data, n);
+
+  new->type = instantiate_type(new->type);
+
+  return aw_walk;
+}
+
 static AST_walker_result clone_function_decl(AST_walker spec, void *data,
 					     function_decl *n)
 {
@@ -187,6 +226,7 @@ static AST_walker_result clone_identifier(AST_walker spec, void *data,
 {
   identifier new = clone(data, n);
 
+  new->type = instantiate_type(new->type);
   forward(&new->ddecl);
 
   return aw_walk;
@@ -197,6 +237,7 @@ static AST_walker_result clone_interface_deref(AST_walker spec, void *data,
 {
   interface_deref new = clone(data, n);
 
+  new->type = instantiate_type(new->type);
   forward(&new->ddecl);
 
   return aw_walk;
@@ -226,7 +267,7 @@ static AST_walker_result clone_variable_decl(AST_walker spec, void *data,
 }
 
 static AST_walker_result clone_typename(AST_walker spec, void *data,
-					  typename *n)
+					typename *n)
 {
   typename new = clone(data, n);
 
@@ -268,9 +309,23 @@ static AST_walker_result clone_tag_ref(AST_walker spec, void *data,
   return aw_done;
 }
 
-void set_ddecl_instantiation1(data_declaration fndecl, void *data)
+static AST_walker_result clone_field_ref(AST_walker spec, void *data,
+					 field_ref *n)
+{
+  field_ref new = clone(data, n);
+
+  new->type = instantiate_type(new->type);
+  if (new->fdecl->instantiation)
+    new->fdecl = new->fdecl->instantiation;
+
+  return aw_walk;
+}
+
+static void set_ddecl_instantiation1(data_declaration fndecl, void *data)
 {
   data_declaration orig = fndecl;
+
+  instantiate_ddecl_types(fndecl);
 
   /* Here we make the copy of the fndecl created during parsing
      (the copy from the actual interface type) point to fndecl.
@@ -283,11 +338,13 @@ void set_ddecl_instantiation1(data_declaration fndecl, void *data)
   orig->instantiation = fndecl;
 }
 
-void set_specification_instantiations(nesc_declaration component)
+static void set_specification_instantiations(nesc_declaration component)
 /* Effects: Set the instantiation pointers in the data_declarations of
      the original abstract component from which component is derived to
      the copies in component (in preparation for cloning component's
      AST and pointing to component's decls)
+
+     Also instantiate the types in the copies
 
      The original data_declarations can be found by following the
      shadowed fields. We may have to follow these one deep (abstract
@@ -298,13 +355,13 @@ void set_specification_instantiations(nesc_declaration component)
   component_functions_iterate(component, set_ddecl_instantiation1, NULL);
 }
 
-void set_ddecl_instantiation2(data_declaration fndecl, void *data)
+static void set_ddecl_instantiation2(data_declaration fndecl, void *data)
 {
   /* We just make the decl fndecl is a copy of point back to fndecl */
   fndecl->shadowed->instantiation = fndecl;
 }
 
-void set_specification_instantiations_shallow(nesc_declaration component)
+static void set_specification_instantiations_shallow(nesc_declaration component)
 /* Effects: Set the instantiation pointers in the data_declarations of
      the original abstract component from which component is derived to
      the copies in component (in preparation for cloning component's
@@ -418,9 +475,14 @@ static void init_clone(void)
 {
   clone_walker = new_AST_walker(permanent);
   AST_walker_handle(clone_walker, kind_node, clone_ast);
-  AST_walker_handle(clone_walker, kind_function_decl, clone_function_decl);
+
+  AST_walker_handle(clone_walker, kind_expression, clone_expression);
+  AST_walker_handle(clone_walker, kind_field_ref, clone_field_ref);
   AST_walker_handle(clone_walker, kind_identifier, clone_identifier);
   AST_walker_handle(clone_walker, kind_interface_deref, clone_interface_deref);
+
+  AST_walker_handle(clone_walker, kind_asttype, clone_asttype);
+  AST_walker_handle(clone_walker, kind_function_decl, clone_function_decl);
   AST_walker_handle(clone_walker, kind_variable_decl, clone_variable_decl);
   AST_walker_handle(clone_walker, kind_typename, clone_typename);
   AST_walker_handle(clone_walker, kind_enumerator, clone_enumerator);

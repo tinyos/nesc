@@ -204,7 +204,6 @@ struct data_declaration {
   char *short_docstring;
   char *long_docstring;
   location doc_location;
-
 };
 
 struct label_declaration {
