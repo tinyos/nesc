@@ -18,8 +18,11 @@ abstract public class Definition extends NDElement
 {
     public boolean definitionAvailable;
     public LinkedList/*Xattribute_value*/ attributes;
+    public Location location; /* may be null */
 
-    abstract public void init(Attributes attrs);
+    public void init(Attributes attrs) {
+	location = Location.decode(attrs.getValue("loc"));
+    }
 
     public void child(NDElement subElement) {
 	if (subElement instanceof Xattribute_value) {

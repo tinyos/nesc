@@ -13,6 +13,6 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xto extends Endpoint
+public class Xto extends WiringEndpoint
 {
 }

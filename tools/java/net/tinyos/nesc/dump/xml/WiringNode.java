@@ -24,14 +24,14 @@ public class WiringNode
 	this.ep = ep;
     }
 
-    void addToEdge(WiringEdge e) {
+    void addToEdge(Xwire e) {
 	//System.err.println("" + this + " TO " + e.to);
 	if (outgoing == null)
 	    outgoing = new LinkedList();
 	outgoing.add(e);
     }
 
-    void addFromEdge(WiringEdge e) {
+    void addFromEdge(Xwire e) {
 	//System.err.println("" + this + " FROM " + e.from);
 	if (incoming == null)
 	    incoming = new LinkedList();

@@ -21,7 +21,7 @@ public class WiringScanForwards extends WiringScan
 
     public WiringScanForwards(WiringNode n, Xarguments a) { 
 	node = n;
-	args = a;
+	arguments = a;
     }
 
     public boolean isForwards() {
@@ -32,7 +32,7 @@ public class WiringScanForwards extends WiringScan
 	return node.outgoingEdges();
     }
 
-    public boolean follow(WiringEdge e) {
+    public boolean follow(Xwire e) {
 	return e.followForwards(this);
     }
 }

@@ -25,6 +25,7 @@ public class TagDefinition extends CDefinition
     public boolean defined, packed;
 
     public void init(Attributes attrs) {
+	super.init(attrs);
 	ref = attrs.getValue("ref");
 	name = attrs.getValue("name");
 	/* ignoring scoped for now */

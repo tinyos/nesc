@@ -13,16 +13,39 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Endpoint extends NDElement
+public class WiringEndpoint extends NDElement
 {
-    public DataDefinition entity;
+    public WiringNode node;
     public Xarguments arguments; /* optional */
 
     public void child(NDElement subElement) {
 	if (subElement instanceof DataDefinition)
-	    entity = (DataDefinition)subElement;
+	    node = new WiringNode((DataDefinition)subElement);
 	if (subElement instanceof Xarguments)
 	    arguments = (Xarguments)subElement;
     }
     
+    public WiringEndpoint() { }
+
+    public WiringEndpoint(WiringNode n) { 
+	node = n;
+    }
+
+    public WiringEndpoint(WiringNode n, Xarguments a) { 
+	node = n;
+	arguments = a;
+    }
+
+    public WiringEndpoint(WiringEndpoint p) { 
+	copy(p);
+    }
+    
+    public void copy(WiringEndpoint from) {
+	node = from.node;
+	arguments = from.arguments;
+    }
+
+    public String toString() {
+	return node.toString();
+    }
 }

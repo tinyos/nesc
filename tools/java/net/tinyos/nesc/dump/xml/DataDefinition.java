@@ -25,6 +25,7 @@ public class DataDefinition extends CDefinition
 
     /* for reference handling */
     public void init(Attributes attrs) {
+	super.init(attrs);
 	ref = attrs.getValue("ref");
 	name = attrs.getValue("name");
 	/* ignoring scoped for now */

@@ -66,7 +66,7 @@ public class WiringCheck
 	//System.err.println("fcount " + count + " @ " + position);
 
 	while (out.hasNext()) {
-	    WiringEdge e = (WiringEdge)out.next();
+	    Xwire e = (Xwire)out.next();
 
 	    if (temp == null)
 		temp = position.duplicate();
@@ -95,7 +95,7 @@ public class WiringCheck
 	WiringScan temp = null;
 
 	while (out.hasNext()) {
-	    WiringEdge e = (WiringEdge)out.next();
+	    Xwire e = (Xwire)out.next();
 
 	    if (temp == null)
 		temp = position.duplicate();
@@ -105,13 +105,14 @@ public class WiringCheck
 		System.err.println(repeat(offset, ' ') +
 				   (position.isForwards() ? "-> " : "<- ") +
 				   temp.node.ep +
-				   (inModule(temp) ? " (module)" : ""));
+				   (inModule(temp) ? " (module)" : "") +
+				   " [" + e.location + "]");
 		printPath(offset + 2, temp);
 	    }
 	}
     }
 
-    boolean inModule(WiringPosition pos) {
+    boolean inModule(WiringEndpoint pos) {
 	Xcomponent container = (Xcomponent)pos.node.ep.container;
 	return container.implementation instanceof Xmodule;
     }

@@ -22,6 +22,7 @@ public class NescDefinition extends Definition
     public String qname; /* globally unique */
 
     public void init(Attributes attrs) {
+	super.init(attrs);
 	qname = attrs.getValue("qname");
     }
 

@@ -11,10 +11,10 @@
 
 package net.tinyos.nesc.dump.xml;
 
-abstract public class WiringScan extends WiringPosition implements Cloneable
+abstract public class WiringScan extends WiringEndpoint implements Cloneable
 {
     abstract public java.util.ListIterator edges();
-    abstract public boolean follow(WiringEdge e);
+    abstract public boolean follow(Xwire e);
     abstract public boolean isForwards();
 
     public WiringScan duplicate() {

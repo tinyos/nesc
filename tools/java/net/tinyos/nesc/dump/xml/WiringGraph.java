@@ -27,10 +27,11 @@ public class WiringGraph
 	return found;
     }
 
-    public void addEdge(WiringNode from, Xarguments fromArgs,
-			WiringNode to, Xarguments toArgs) {
-	WiringEdge edge = new WiringEdge(from, fromArgs, to, toArgs);
-	from.addToEdge(edge);
-	to.addFromEdge(edge);
+    public void addEdge(Xwire wire) {
+	wire.from.node = lookup(wire.from.node.ep);
+	wire.from.node.addToEdge(wire);
+
+	wire.to.node = lookup(wire.to.node.ep);
+	wire.to.node.addFromEdge(wire);
     }
 }
