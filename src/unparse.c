@@ -237,7 +237,8 @@ void set_location(location l)
   else if (output_loc.lineno != l->lineno)
     {
       /* Just send some newlines for small changes */
-      if (output_loc.lineno < l->lineno && output_loc.lineno + 10 >= l->lineno)
+      if (!fixed_location &&
+	  output_loc.lineno < l->lineno && output_loc.lineno + 10 >= l->lineno)
 	{
 	  while (output_loc.lineno != l->lineno)
 	    newline();
