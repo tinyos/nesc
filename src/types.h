@@ -243,10 +243,13 @@ type make_variable_type(data_declaration tdecl);
 bool type_variable(type t);
 data_declaration type_variable_decl(type t);
 
-/* Instantiate a type with type variables based on the instantiation of
-   the variable (found in type_variable_decl(typevartype)->instantiation->type
-*/
 type instantiate_type(type t);
+/* Effects: Instantiate a type with type variables based on the instantiation
+     of the variables and tag declarations. These are found in 
+       type_variable_decl(vartype)->instantiation->type for variables
+       type_tag(tagtype)->instantiation for tags
+   Returns: The instantiated type
+*/
 
 const char *type_name(region r, type t);
 

@@ -43,9 +43,16 @@ static AST_walker clone_walker;
 */
 
 /* tag_declaration in:
+   tag_ref
+   types
  */
 
 /* field_declaration in:
+   field_ref
+   tag_declaration
+ */
+
+/* types in:
  */
 
 static void forward(data_declaration *dd)
@@ -82,6 +89,35 @@ static void clone_ddecl(data_declaration ddecl)
   copy->fn_uses = NULL;
   copy->nuses = NULL;
   copy->shadowed = ddecl;
+  copy->container = current.container;
+}
+
+static void forward_tdecl(tag_ref tref)
+{
+  tag_declaration tdecl = tref->tdecl, copy;  
+
+  /* Ignore non-module tags */
+  if (!tdecl->container)
+    return;
+
+  /* If already cloned, return */
+  if (tdecl->instantiation &&
+      tdecl->instantiation->container == current.container)
+    return;
+
+  copy = declare_tag(tref);
+  tref->tdecl = copy;
+  tdecl->instantiation = copy;
+
+  copy->reptype = tdecl->reptype;
+  copy->fields = tdecl->fields;
+  copy->fieldlist = tdecl->fieldlist;
+  copy->shadowed = tdecl;
+  copy->defined = tdecl->defined;
+  copy->fields_const = tdecl->fields_const;
+  copy->fields_volatile = tdecl->fields_volatile;
+  copy->transparent_union = tdecl->transparent_union;
+  copy->collapsed = tdecl->collapsed;
   copy->container = current.container;
 }
 
@@ -197,6 +233,19 @@ static AST_walker_result clone_enumerator(AST_walker spec, void *data,
     }
 
   *n = new;
+
+  return aw_walk;
+}
+
+static AST_walker_result clone_tag_ref(AST_walker spec, void *data,
+				       tag_ref *n)
+{
+  tag_ref new = CAST(tag_ref, AST_clone(data, CAST(node, *n)));
+
+  *n = new;
+  forward_tdecl(new);
+  if (new->defined)
+    new->tdecl->definition = new;
 
   return aw_walk;
 }
@@ -365,6 +414,7 @@ static void init_clone(void)
   AST_walker_handle(clone_walker, kind_enumerator, clone_enumerator);
   AST_walker_handle(clone_walker, kind_configuration, clone_configuration);
   AST_walker_handle(clone_walker, kind_component_ref, clone_component_ref);
+  AST_walker_handle(clone_walker, kind_tag_ref, clone_tag_ref);
 }
 
 void instantiate(nesc_declaration component)

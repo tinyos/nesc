@@ -1444,9 +1444,9 @@ void name_tag(tag_declaration tag)
       char tagname[sizeof(UNNAMED_STRUCT_PREFIX) + 20];
 
       sprintf(tagname, UNNAMED_STRUCT_PREFIX "%ld", nextid++);
-      tag->ast->word1 = new_word(parse_region, dummy_location,
-				 str2cstring(parse_region, tagname));
-      tag->name = tag->ast->word1->cstring.data;
+      tag->definition->word1 = new_word(parse_region, dummy_location,
+					str2cstring(parse_region, tagname));
+      tag->name = tag->definition->word1->cstring.data;
     }
 }
 
@@ -1457,7 +1457,7 @@ static type_element tag2ast(region r, location loc, tag_declaration tag,
 
   name_tag(tag);
   tr = newkind_tag_ref(r, tag->kind, loc, 
-		       new_word(r, loc, tag->ast->word1->cstring),
+		       new_word(r, loc, str2cstring(r, tag->name)),
 		       NULL, NULL, FALSE);
 
   tr->tdecl = tag;
@@ -1877,10 +1877,73 @@ data_declaration type_variable_decl(type t)
   return t->u.tdecl;
 }
 
-/* Instantiate a type with type variables based on the instantiation of
-   the variable (found in type_variable_decl(typevartype)->instantiation->type
+type instantiate_type(type t)
+/* Effects: Instantiate a type with type variables based on the instantiation
+     of the variables and tag declarations. These are found in 
+       type_variable_decl(vartype)->instantiation->type for variables
+       type_tag(tagtype)->instantiation for tags
+   Returns: The instantiated type
 */
-type instantiate_type(type t);
+{
+  type newt = NULL;
+
+  switch (t->kind)
+    {
+    case tk_tagged:
+      if (t->u.tag->instantiation)
+	newt = make_tagged_type(t->u.tag->instantiation);
+      break;
+
+    case tk_pointer:
+      newt = make_pointer_type(instantiate_type(t->u.pointsto));
+      break;
+
+    case tk_function: {
+      type ret = instantiate_type(t->u.fn.returns);
+      typelist args = NULL;
+
+      if (t->u.fn.argtypes)
+	{
+	  typelist old = t->u.fn.argtypes;
+	  struct typelist_element *scan = old->first;
+
+	  args = new_typelist(old->r);
+	  while (scan)
+	    {
+	      typelist_append(args, instantiate_type(scan->t));
+	      scan = scan->next;
+	    }
+	}
+      newt = make_function_type(ret, args, t->u.fn.varargs, t->u.fn.oldstyle);
+      newt->u.fn.fkind = t->u.fn.fkind;
+      break;
+    }
+    case tk_array:
+#if 0
+      newt = make_array_type(instantiate_type(t->u.array.arrayof),
+			     t->u.array.size->hmm);
+#endif
+      break;
+
+    case tk_iref:
+      if (t->u.iref->instantiation)
+	newt = make_interface_type(t->u.iref->instantiation);
+      break;
+
+    case tk_variable:
+      if (t->u.tdecl->instantiation)
+	newt = t->u.tdecl->instantiation->type;
+      break;
+
+    default:
+      break;
+    }
+
+  if (newt)
+    return make_qualified_type(newt, t->qualifiers);
+  else
+    return t;
+}
 
 static char *primname[] = {
   NULL,

@@ -255,7 +255,6 @@ tag_declaration declare_tag_env(environment env, tag_ref t)
 
   tdecl->kind = t->kind;
   tdecl->name = name;
-  tdecl->ast = t;
 #if 0
   tdecl->fields = NULL;
   tdecl->fieldlist = NULL;
@@ -2799,6 +2798,7 @@ type_element start_struct(location l, AST_kind skind, word tag)
     tdecl = declare_tag(tref);
 
   tref->tdecl = tdecl;
+  tdecl->definition = tref;
   tdecl->being_defined = TRUE;
 
   return CAST(type_element, tref);
@@ -2904,7 +2904,7 @@ void layout_struct(tag_declaration tdecl)
   // (corresponding to, e.g., `int x, y, z;' in a struct) and fdecl is
   // the declaration following the one being used in flist
   fdecl = tdecl->fieldlist;
-  dlist = tdecl->ast->fields;
+  dlist = tdecl->definition->fields;
   flist = NULL;
   for (;;)
     {
@@ -3486,7 +3486,7 @@ void layout_enum_start(tag_declaration tdecl)
 
 void layout_enum_end(tag_declaration tdecl)
 {
-  declaration names = tdecl->ast->fields;
+  declaration names = tdecl->definition->fields;
   cval smallest, largest;
   bool enum_isunsigned;
   type type_smallest, type_largest, enum_reptype;
@@ -3632,6 +3632,7 @@ type_element start_enum(location l, word tag)
     tdecl = declare_tag(tref);
 
   tref->tdecl = tdecl;
+  tdecl->definition = tref;
   tdecl->being_defined = TRUE;
   tdecl->packed = flag_short_enums;
   layout_enum_start(tdecl);

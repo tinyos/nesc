@@ -175,10 +175,13 @@ static AST_walker_result folder_array_declarator(AST_walker spec, void *data,
 static AST_walker_result folder_enum_ref(AST_walker spec, void *data,
 					 enum_ref *n)
 {
+  if (!(*n)->defined)
+    return aw_walk;
+
   layout_enum_start((*n)->tdecl);
   AST_walk_children(spec, data, CAST(node, *n));
   layout_enum_end((*n)->tdecl);
-
+  
   return aw_done;
 }
 
@@ -196,6 +199,9 @@ static AST_walker_result folder_enumerator(AST_walker spec, void *data,
 static AST_walker_result folder_tag_ref(AST_walker spec, void *data,
 					tag_ref *n)
 {
+  if (!(*n)->defined)
+    return aw_walk;
+
   AST_walk_children(spec, data, CAST(node, *n));
   layout_struct((*n)->tdecl);
 

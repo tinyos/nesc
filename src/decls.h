@@ -45,6 +45,10 @@ typedef struct field_declaration {
   cval offset;			/* in bits, not bytes. Can be cval_top if
 				   offset is not a compile-time constant */
   bool packed;			/* if packed attribute specified */
+
+  /* In abstract configurations or modules: The latest instantiation
+     of this declaration */
+  struct field_declaration *instantiation;
 } *field_declaration;
 
 /* A struct, union or enum */
@@ -56,7 +60,7 @@ typedef struct tag_declaration {
   /* fields and fieldlist are only defined for structs/unions */
   env fields;
   field_declaration fieldlist;
-  tag_ref ast;
+  tag_ref definition;
   struct tag_declaration *shadowed; /* Any struct with the same tag defined in enclosing scope */
   bool defined, being_defined;
   bool fields_const, fields_volatile;
@@ -70,6 +74,10 @@ typedef struct tag_declaration {
   bool packed;			/* if packed attribute specified */
 
   nesc_declaration container;	/* as in data_declarations */
+
+  /* In abstract configurations or modules: The latest instantiation
+     of this declaration */
+  struct tag_declaration *instantiation;
 } *tag_declaration;
 
 typedef enum { decl_variable, decl_constant, decl_function,
