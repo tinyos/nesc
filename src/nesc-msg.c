@@ -55,32 +55,27 @@ static void dump_type(type t)
     assert(0);
 }
 
-static void dump_fields(region r, const char *prefix, largest_uint offset,
-			field_declaration fields)
+static void dump_fields(region r, const char *prefix, field_declaration fields)
 {
   while (fields)
     {
       if (fields->name) /* skip anon fields */
 	{
 	  type t = fields->type;
-	  largest_uint foffset = offset + fields->offset;
-
-	  assert(fields->offset_cc);
 
 	  printf("  %s%s ", prefix, fields->name);
-	  if (type_array(t))
+	  while (type_array(t))
 	    {
 	      type base = type_array_of(t);
 	      expression size = type_array_size(t);
 
-	      dump_type(base);
 	      printf("[%lu]", (unsigned long)constant_uint_value(size->cst));
 	      t = base;
 	    }
-	  else
-	    dump_type(t);
+	  dump_type(t);
 
-	  printf(" %lu %lu\n", (unsigned long)foffset,
+	  assert(fields->offset_cc);
+	  printf(" %lu %lu\n", (unsigned long)fields->offset,
 		 (unsigned long)
 		 (fields->bitwidth >= 0 ? fields->bitwidth :
 		  BITSPERBYTE * type_size(t)));
@@ -91,7 +86,7 @@ static void dump_fields(region r, const char *prefix, largest_uint offset,
 	      char *newprefix = rarrayalloc(r, strlen(prefix) + strlen(fields->name) + 2, char);
 
 	      sprintf(newprefix, "%s%s.", prefix, fields->name);
-	      dump_fields(r, newprefix, foffset, tdecl->fieldlist);
+	      dump_fields(r, newprefix, tdecl->fieldlist);
 	    }
 	}
       fields = fields->next;
@@ -107,7 +102,7 @@ static void dump_layout(tag_declaration tdecl)
 	 tdecl->name,
 	 (unsigned long)tdecl->size);
 
-  dump_fields(r, "", 0, tdecl->fieldlist);
+  dump_fields(r, "", tdecl->fieldlist);
 
   deleteregion(r);
 }
