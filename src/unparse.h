@@ -70,7 +70,8 @@ void prt_expression(expression e, int context_priority);
 
 typedef enum {
   pte_duplicate = 1,
-  pte_noextern = 2
+  pte_noextern = 2,
+  pte_skip_command_event = 4
 } pte_options;
 
 void prt_type_elements(type_element elements, pte_options options);
