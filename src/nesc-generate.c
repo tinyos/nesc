@@ -577,10 +577,13 @@ static void mark_reachable_function(cgraph cg,
       if (ddecl->suppress_definition)
 	return;
     }
-  
+
+  /* Make sure ddecl gets a node in the graph even if it doesn't call
+     anything */
+  fn_lookup(cg, ddecl);
+
   dd_scan (use, ddecl->uses)
     mark_reachable_function(cg, ddecl, DD_GET(data_declaration, use));
-  fn_lookup(cg, ddecl);
 }
 
 static cgraph mark_reachable_code(void)
