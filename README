@@ -1,0 +1,68 @@
+This is the 1.1 (alpha test) release of nesC. 
+
+Installation instructions are in INSTALL, and are essentially unchanged
+since 1.0. Note that this release of nesC includes a patched GNU assembler
+for the AVR (to support debugging).  An appopriate version of the assembler
+is installed in ncc's support directory (usually /usr/local/lib/ncc) based
+on your installed version of avr-gcc (2.11.2 for avr-gcc up to 3.1.1, 
+2.13.2.1 for later avr-gcc's).
+
+The following is a summary of the changes in nesC 1.1:
+- Support for new language features:
+  o atomic sections
+  o compile-time data race detection
+  o explicit marking of asynchronous (aka interrupt) code (async keyword on
+    commands and events)
+  o automatic combining of results of multiply-wired functions
+  These are enabled with the new -Wnesc-all option. These changes will be
+  fully described in an updated nesC reference manual.
+
+- new nesC warning flags/changes:
+  o -W[no-]unexpected-docstring is now -Wnesc-docstring, and defaults to off
+  o -W[no-]nesc-fnptr: warn for uses of function pointers
+  o -W[no-]nesc-data-race: turn on[off] compile-time data race detection
+  o -W[no-]nesc-async: warn [bug in alpha: error] if asynchronous code calls
+    synchronous code
+  o -W[no-]nesc-combine: warn when multiply wired functions do not have
+    a combining function defined on the result type. See tos.h for the
+    the combining function definition for result_t
+  o -Wnesc-all: same as -Wnesc-data-race -Wnesc-async -Wnesc-fnptr and
+                -Wnesc-combine
+
+- The NESC preprocessor symbol is defined to XYZ, where X is the major
+  version, Y the minor and Z the patchlevel. So nesc 1.1 defines NESC as 110
+
+- Tool chain changes:
+  o ncc has been split into two files: ncc and nescc
+    TinyOS-specific code is in ncc, nescc is a "generic" nesC compiler
+    (nescc does not automatically include tos.h, and does not automatically
+     add the TinyOS directory structure to the search path)
+  o the -fnesc-include=<filename> option includes a C file before compiling
+    the requested component (used by ncc to include tos.h...)
+    You can specify several -fnesc-include=... options
+  o A hardware platform X can now more easily added:
+    - create directory .../tos/platforms/X
+    - place a .platform file in .../tos/platforms/X. Look at existing
+      .platform files for inspiration.
+  o A sensor board Y can add directories to the search path if there is
+    a .sensor file in the .../tos/sensorboards/Y directory
+    (as with .platform, .sensor is just perl code so can modify the
+    variables used by ncc to achieve whatever effect is necessary)
+  o set-mode-id works for programs greater than 64K
+
+- New tool to extract (enum) constants from C code: ncg. Usage is similar
+  to mig.
+- Debugging on mica supports with the Atmel JTAG ICE and the AvarICE
+  project (at http://sourceforge.net/projects/avarice)
+
+- Some improved error messages, miscellaneous bug fixes
+
+
+
+Scheduled changes before the final release:
+- documentation updates for new tools and features
+- gdb patches to fix a number of debugging problems with nesC
+- support initialisers on module variables
+- 8051 platform support (with Keil C) from David Patnode
+- a few bugs that need tracking down
+- clean up combining function association with types
