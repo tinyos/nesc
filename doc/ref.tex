@@ -646,7 +646,7 @@ a generic module implementing an \code{n} entry queue with elements of
 type \code{t}. Note how \code{AQueue} instantiates the generic interface
 \code{Queue} with its type parameter \code{t}.
 
-\section{Modules}
+\section{Component Implementation: Modules}
 \label{sec:module}
 
 Modules implement a component specification with C code:
@@ -662,15 +662,15 @@ The top-level declarations of the module's \emph{translation-unit} belong
 to the module's implementation scope (Section~\ref{sec:scoping}). These
 declarations have indefinite extent and can be: any standard C declaration
 or definition, a task declaration or definition (placed in the object name
-space), a commands or event implementation.
+space), a command or event implementation.
 
 \subsection{Implementing the Module's Specification}
 
 The \emph{translation-unit} must implement all provided commands
-(events) $\alpha$ of the module (i.e., all directly provided commands and
-events, all commands in provided interfaces and all events in used
-interfaces). A module can call any of its commands and signal any of its
-events.
+(events) $\alpha$ of the module (i.e., all commands in provided
+interfaces, all events in used interfaces, and all bare, provided
+commands and events). A module can call any of its commands and
+signal any of its events.
 
 These command and event implementations are specified with the following C
 syntax extensions:
@@ -691,7 +691,8 @@ C function definition for $\alpha$ (note the extension to
 \emph{direct-declarator} to allow \code{.} in function names) with storage
 class \kw{command} or \kw{event}. Additionally, the \kw{async} keyword must
 be included iff it was included in $\alpha$'s declaration. For example, in
-a module that provides interface \code{Send} of type \kw{SendMsg}:
+a module that provides interface \code{Send} of type \kw{SendMsg} (shown
+at the start of Section~\ref{sec:interface}):
 \begin{quote} \begin{verbatim}
 command result_t Send.send(uint16_t address, uint8_t length, TOS_MsgPtr msg) {
   ...
@@ -699,15 +700,14 @@ command result_t Send.send(uint16_t address, uint8_t length, TOS_MsgPtr msg) {
 }
 \end{verbatim} \end{quote}
 
-The implementation of parameterised command or event $\alpha$ with interface
-parameters $P$ has the syntax of a C function definition for $\alpha$ with
-storage class \kw{command} or \kw{event} where the function's regular
-parameter list is prefixed with the parameters $P$ within square brackets
-(this is the same syntax as parameterised command or event declarations
-within a component specification). These interface parameter declarations
-$P$ belong to $\alpha$'s function-parameter scope and have the same extent
-as regular function parameters. For example, in a module that provides
-interface \code{Send[uint8\_t id]} of type \kw{SendMsg}:
+The implementation of parameterised command or event $\alpha$ with
+instance parameters $P$ has the syntax of a C function definition for
+$\alpha$ with storage class \kw{command} or \kw{event} where the
+function's regular parameter list is prefixed with the parameters $P$
+within square brackets. These instance parameter declarations
+$P$ belong to $\alpha$'s function-parameter scope and have the same
+extent as regular function parameters. For example, in a module that
+provides interface \code{Send[uint8\_t id]} of type \kw{SendMsg}:
 \begin{quote} \begin{verbatim}
 command result_t Send.send[uint8_t id](uint16_t address, uint8_t length, 
                                        TOS_MsgPtr msg) {
@@ -745,12 +745,12 @@ instance, in a module that uses interface \code{Send} of type \kw{SendMsg}:
 \code{call Send.send(1, sizeof(Message), \&msg1)}.
 
 A parameterised command $\alpha$ (respectively, an event) with $n$
-interface parameters of type $\tau_1, \ldots, \tau_n$ is called with
-interface parameters expressions $e_1, \ldots, e_n$ as follows: \code{call
+instance parameters of type $\tau_1, \ldots, \tau_n$ is called with
+instance arguments $e_1, \ldots, e_n$ as follows: \code{call
 $\alpha$[$e_1, \ldots, e_n$](...)}  (respectively, \code{signal
-$\alpha$[$e_1, \ldots, e_n$](...)}). Interface parameter expression $e_i$
-must be assignable to type $\tau_i$; the actual interface parameter value
-is $e_i$ cast to type $\tau_i$. For instance, in a module that uses
+$\alpha$[$e_1, \ldots, e_n$](...)}). Interface argument $e_i$
+must be assignable to type $\tau_i$; the actual interface argument value
+is the value of $e_i$ cast to type $\tau_i$. For instance, in a module that uses
 interface \code{Send[uint8\_t id]} of type \kw{SendMsg}:
 
 \begin{quote} \begin{verbatim}
@@ -766,12 +766,14 @@ wiring statements may specify that 0, 1 or more implementations are to be
 executed. When more than 1 implementation is executed, we say that the
 module's command or event has ``fan-out''.  
 
-A module can specify a default implementation for a used command or event
-$\alpha$ that it calls or signals. A compile-time error occurs for default
-implementations of provided commands or events. Default implementations are
-executed when $\alpha$ is not connected to any command or event
-implementation. A default command or event is defined by prefixing a
-command or event implementation with the \kw{default} keyword:
+A module can specify a default implementation for a used command or
+event $\alpha$ (a compile-time error occurs if a default
+implementation is supplied for a provided command or event). Default
+implementations are executed when $\alpha$ is not connected to any
+command or event implementation (see
+Section~\ref{sec:wiring-semantics}). A default command or event is
+defined by prefixing a command or event implementation with the
+\kw{default} keyword:
 \begin{quote} \grammarshift \em \begin{tabbing}
 \grammarindent
 declaration-specifiers: \emph{also}\\
@@ -801,9 +803,9 @@ arguments are declared with \code{()}, not \code{(void)}. See
 Section~\ref{sec:misc-void}.} A task can also have a forward declaration, e.g.,
 \code{task void myTask();}.
 
-Tasks are posted by prefixing a call to the task with \kw{post}, e.g.,
-\code{post myTask()}. Post returns immediately; its return value is 1 if
-the task was successfully posted for independent execution, 0
+Tasks are posted for later execution by prefixing a call to the task
+with \kw{post}, e.g., \code{post myTask()}. Post returns immediately;
+its return value is 1 if the task was successfully posted, 0
 otherwise. The type of a post expression is \code{unsigned char}.
 \begin{quote} \grammarshift \em \begin{tabbing}
 \grammarindent
@@ -813,9 +815,8 @@ storage-class-specifier: \emph{also one of}\\
 call-kind: \emph{also one of}\\
 \>	\kw{post}
 \end{tabbing} \end{quote}
-
-\nesc's concurrency model, including tasks, is presented in detail in
-Section~\ref{sec:concurrency}.
+Section~\ref{sec:concurrency}, which presents \nesc's concurrency
+model, explains when tasks get executed.
 
 \subsection{Atomic statements}
 
@@ -827,11 +828,12 @@ atomic-stmt: \\
 \end{tabbing} \end{quote}
 guarantee that the statement is executed ``as-if'' no other computation
 occured simultaneously. It is used to implement mutual exclusion, for
-updates to concurrent data structures, etc. A simple example is:
+updates to concurrent data structures, etc. The following example
+uses \kw{atomic} to prevent concurrent execution of \code{do\_something}:
 \begin{verbatim}
   bool busy; // global
 
-  void f() {
+  void f() { // called from an interrupt handler
     bool available;
 
     atomic {
@@ -844,15 +846,15 @@ updates to concurrent data structures, etc. A simple example is:
 \end{verbatim}
 
 Atomic sections should be short, though this is not currently enforced in
-any way.  Control may only flow ``normally'' in or out of on atomic
+any way. [FIX FOR CURRENT RULES] Control may only flow ``normally'' in or out of on atomic
 statement: any \kw{goto}, \kw{break} or \kw{continue} that jumps in or out
 of an atomic statement is an error. A \kw{return} statement is never
 allowed inside an atomic statement.
 
-Section~\ref{sec:concurrency} discusses the relation between \kw{atomic} and
-\nesc's concurrency model and data-race detector.
+Section~\ref{sec:concurrency} discusses the relation between \kw{atomic}, 
+\nesc's concurrency model, and the data-race detector.
 
-\section{Configurations}
+\section{Component Implementation: Configurations}
 \label{sec:configuration}
 
 Configurations implement a component specification by selecting regular
@@ -862,16 +864,20 @@ a configuration has two parts:
 \begin{quote} \grammarshift \em \begin{tabbing}
 \grammarindent
 configuration-implementation:\\
-\>	\kw{implementation} \kw{\{} component-list\opt connection-list \kw{\}}\\
+\>	\kw{implementation} \kw{\{} component-list\opt connection-list\opt \kw{\}}\\
 \end{tabbing} \end{quote}
 The \emph{component-list} lists the components that are used to build this
 configuration, the \emph{connection-list} specifies how these components
 are wired to each other and to the configuration's specification.
 
-In the rest of this section, we call specification elements from the
-configuration's specification \emph{external},
-and specification elements from one of the configuration's components
-\emph{internal}.
+A configuration $C$'s wiring statements connects two sets of specification
+elements:
+\begin{itemize}
+\item $C$'s specification elements. In this section, we refer to these as
+\emph{external} specification elements.
+\item The specification elements of the components referred to instantiated
+in $C$. We refer to these as \emph{internal} specification elements.
+\end{itemize}
 
 \subsection{Included components}
 \label{sec:config-components}
@@ -880,12 +886,12 @@ The \emph{component-list} specifies the components used to build this
 configuration. These can be:
 \begin{itemize}
 \item A non-generic component $X$. Non-generic components are implicitly
-instantiated, references to $X$ in different configurations will all
+instantiated, references to $X$ in different configurations all
 refer to the same component.
 
 \item An instantiation of a generic component $Y$. Instantiations of $Y$ in
 different configurations, or multiple instantiations in the same
-configuration will represent different components (see
+configuration represent different components (see
 Section~\ref{sec:generic-components}).
 \end{itemize}
 
@@ -922,10 +928,10 @@ Each \emph{component-ref} specifies a non-generic component $X$ by simply
 giving its name (a compile-time error occurs if $X$ is generic) and
 a generic component $Y$ with $\kw{new} Y(args)$ (a compile-time error occurs
 if $Y$ is not generic). The arguments to $Y$ must match the number of
-parameters $Y$ expects, and:
+parameters of $Y$'s definition, and:
 \begin{itemize}
 \item If the parameter is a type parameter, then the argument must be
-a non-function, non-array, non-incomplete type.
+a type which is not incomplete, or of function or array type.
 \item If the parameter is of type \code{char[]}, the argument must be
 a string constant.
 \item If the parameter is of arithmetic type, the argument must be a 
@@ -936,13 +942,28 @@ Within the \emph{connection-list}, a component specified in the
 \emph{component-list} is referred to by:
 \begin{itemize}
 \item The name explicitly specified by the \code{X as Y} syntax
-(\emph{instance-name}). This is necessary, e.g., when instantiating the
-same generic component more than once in a given configuration.
+(\emph{instance-name}). Use of \kw{as} is necessary, e.g., when
+instantiating the same generic component more than once in a given
+configuration.
 \item The name of the component definition (\code{components new X(), Y;} is
 the same as \code{components new X() as X, Y as Y;}).
 \end{itemize}
 The names specified by the \emph{connection-list} belong to the object name
 space of the component's implementation scope (Section~\ref{sec:scoping}).
+
+This \code{NoWiring} configuration:
+\begin{quote}
+\begin{verbatim}
+configuration NoWiring { }
+implementation {
+  components A, new AQueue(10, int);
+  components new AQueue(20, float) as SecondQueue;
+}
+\end{verbatim}
+\end{quote}
+selects component \code{A}, and instantiates generic component
+\code{AQueue} twice. The two instances of \code{AQueue} are known as
+\code{AQueue} and \code{SecondQueue} within \code{NoWiring}.
 
 \subsection{Wiring}
 \label{sec:wiring}
@@ -951,8 +972,9 @@ Wiring is used to connect specification elements (interfaces, commands,
 events) together. This section and the next (Section~\ref{sec:implicit})
 define the syntax and compile-time rules for
 wiring. Section~\ref{sec:wiring-semantics} details how a program's wiring
-statements dictate which functions get called at each \kw{call} and
-\kw{signal} expression.  \begin{quote} \grammarshift \em \begin{tabbing}
+statements dictate which functions get called by the \kw{call} and
+\kw{signal} expressions found in modules. 
+\begin{quote} \grammarshift \em \begin{tabbing}
 \grammarindent
 connection-list:\\
 \>	connection\\
@@ -973,19 +995,20 @@ identifier-path:\\
 \end{tabbing} \end{quote}
 
 
-Wiring statements connect two \emph{endpoints}. The \emph{identifier-path}
-of an \emph{endpoint} specifies a specification element. The
-\emph{argument-expression-list} optionally specifies interface parameter
-values. We say that an endpoint is parameterised if its specification
-element is parameterised and the endpoint has no parameter values. A
-compile-time error occurs if an endpoint has parameter values and any of
-the following is true:
+Wiring statements connect two \emph{endpoints}. The
+\emph{identifier-path} of an \emph{endpoint} specifies a specification
+element (either internal or external). The
+\emph{argument-expression-list} optionally specifies instance
+arguments. We say that an endpoint is parameterised if its
+specification element is parameterised and the endpoint has no
+arguments. A compile-time error occurs if an endpoint has
+arguments and any of the following is true:
 \begin{itemize}
-\item The parameter values are not all constant expressions.
+\item Some arguments is not a constant expression.
 \item The endpoint's specification element is not parameterised.
-\item There are more (or less) parameter values than there are parameters
+\item There are more (or less) arguments than there are parameters
 on the specification element.
-\item The parameter values are not in range for the specification element's
+\item The argument's values are not in range for the specification element's
 parameter types.
 \end{itemize}
 
@@ -998,10 +1021,10 @@ $X$ is a specification element of $K$.
 \item $K$ where $K$ is a some component name from the
 \emph{component-list}.  This form is used in implicit connections,
 discussed in Section~\ref{sec:implicit}. This form cannot be used when
-parameter values are specified.
+arguments are specified.
 
-Note that a component name can hide a specification element, preventing
-the element from being wired:
+Note that a component name can hide an external specification element,
+preventing the element from being wired:
 \begin{quote}
 \begin{verbatim}
 configuration AA { provides interface X as Y; }
@@ -1013,7 +1036,7 @@ implementation {
 \end{verbatim}
 \end{quote}
 Hiding specification elements will always result in a compile-time error as
-specification elements must all be wired.
+external specification elements must all be wired.
 \end{itemize}
 
 There are three wiring statements in \nesc:
@@ -1032,7 +1055,7 @@ $S_2$ are both provided or both used,
 \end{itemize}
 
 \item \emph{endpoint}$_1$ \code{->} \emph{endpoint}$_2$ \ (link wires): A
-connection involving two internal specification elements. Link wires always
+connection between two internal specification elements. Link wires always
 connect a used specification element specified by \emph{endpoint}$_1$ to a
 provided one specified by \emph{endpoint}$_2$ . If these two conditions do
 not hold, a compile-time error occurs.
@@ -1043,44 +1066,20 @@ not hold, a compile-time error occurs.
 
 In all three kinds of wiring, the two specification elements specified must
 be compatible, i.e., they must both be commands, or both be events, or both
-be interface instances. Also, if they are commands (or events), then they
-must both have the same function signature. If they are interface instances
-they must be of the same interface type. If these conditions do not hold,
+be interfaces. Also, if they are commands (or events), then they
+must both have the same function signature. If they are interfaces
+they must have the same interface type. If these conditions do not hold,
 a compile-time error occurs.
 
 If one endpoint is parameterised, the other must be too and must have the
 same parameter types; otherwise a compile-time error occurs.
 
-The same specification element may be connected multiple times, e.g.,:
-\begin{quote} \begin{verbatim}
-configuration C {
-  provides interface X;
-} implementation {
-  components C1, C2;
-
-  X = C1.X;
-  X = C2.X;
-}
-\end{verbatim} \end{quote}
-In this example, the multiple wiring will lead to multiple signalers
-(``fan-in'') for the events in interface \code{X} and for multiple
-functions being executed (``fan-out'') when commands in interface \code{X}
-are called. Note that multiple wiring can also happen when two
-configurations independently wire the same interface, e.g.:
-\begin{quote} \begin{verbatim}
-configuration C { }           configuration D { }
-implementation {              implementation {
-  components C1, C2;            components C3, C2;
-
-  C1.Y -> C2.Y;                 C3.Y -> C2.Y;
-}                             }
-\end{verbatim} \end{quote}
-
-All external specification elements must be wired or a compile-time error
-occurs. However, internal specification elements may be left unconnected
-(these may be wired in another configuration, or they may be left unwired
-if the modules have the appropriate \kw{default} event or command
-implementations).
+A configuration's external specification elements must all be wired or
+a compile-time error occurs. However, internal specification elements
+may be left unconnected (these may be wired in another configuration,
+or they may be left unwired if the modules have the appropriate
+\kw{default} event or command implementations, see
+Section~\ref{sec:wiring-semantics}).
 
 \subsection{Implicit Connections}
 \label{sec:implicit}
@@ -1107,12 +1106,41 @@ module M1 {                              module M2 {
 \end{verbatim} \end{quote}
 The \code{M2.SC -> M1} line is equivalent to \code{M2.SC -> M1.StdControl}.
 
+\subsection{Examples}
+[ADD MORE EXAMPLES]
+
+The same specification element may be connected multiple times, e.g.,:
+\begin{quote} \begin{verbatim}
+configuration C {
+  provides interface X;
+} implementation {
+  components C1, C2;
+
+  X = C1.X;
+  X = C2.X;
+}
+\end{verbatim} \end{quote}
+In this example, the multiple wiring will lead to multiple signalers
+(``fan-in'') for the events in interface \code{X} and for multiple
+functions being executed (``fan-out'') when commands in interface \code{X}
+are called. Note that multiple wiring can also happen when two
+configurations independently wire the same interface, e.g., the
+following example wires \code{C2.Y} twice:
+\begin{quote} \begin{verbatim}
+configuration C { }           configuration D { }
+implementation {              implementation {
+  components C1, C2;            components C3, C2;
+
+  C1.Y -> C2.Y;                 C3.Y -> C2.Y;
+}                             }
+\end{verbatim} \end{quote}
+
 \subsection{Wiring Semantics}
 \label{sec:wiring-semantics}
 
 We first explain the semantics of wiring in the absence of parameterised
 interfaces. Section~\ref{sec:wiring-parms} below covers parameterised
-interfaces. Finally, Section~\ref{sec:wiring-reqs} specifies requirements
+interfaces. Section~\ref{sec:wiring-reqs} specifies requirements
 on the wiring statements of an application when viewed as a whole. We will
 use the simple application of Figure~\ref{fig:wiring} as our running
 example.
@@ -1126,7 +1154,7 @@ and~\ref{sec:load-component}.
 \begin{verbatim}
 interface X {               module M {
   command int f();            provides interface X as P;
-  event void g(int x);        uses interface X as U;
+  event bool g(int x);        uses interface X as U;
 }                             provides command void h();
                             } implementation { ... }
 configuration C {
@@ -1153,21 +1181,22 @@ $I_\alpha$ for every command or event $\alpha$ of every component. For
 instance, in Figure~\ref{fig:wiring}, module M has intermediate functions
 $I_\code{M.P.f}$, $I_\code{M.P.g}$, $I_\code{M.U.f}$, $I_\code{M.U.g}$,
 $I_\code{M.h}$.  In examples, we name intermediate functions based on their
-component, optional interface instance name and function name.
+component, interface name and function name.
 
 An intermediate function is either used or provided. Each intermediate
-function takes the same arguments as the corresponding command or event in
-the component's specification. The body of an intermediate function $I$ is
-a list of calls (executed sequentially) to other intermediate
-functions. These other intermediate functions are the functions to which
-$I$ is connected by the application's wiring statements. The arguments $I$
-receives are passed on to the called intermediate functions unchanged. The
-result of $I$ is a list of results (the type of list elements is the result
-type of the command or event corresponding to $I$), built by concatenating
-the result lists of the called intermediate functions. An intermediate
-function which returns an empty result list corresponds to an unconnected
-command or event; an intermediate function which returns a list of two or
-more elements corresponds to ``fan-out''.
+function takes the same arguments as the corresponding command or
+event in the component's specification. The body of an intermediate
+function $I$ is a list of calls (executed sequentially) to other
+intermediate functions. These other intermediate functions are the
+functions to which $I$ is connected by the application's wiring
+statements. The arguments $I$ receives are passed on to the called
+intermediate functions unchanged. The result of $I$ is a list of
+results (the type of this list's elements is the result type of the
+command or event corresponding to $I$), built by concatenating the
+result lists of the called intermediate functions. An intermediate
+function which returns an empty result list corresponds to an
+unconnected command or event; an intermediate function which returns a
+list of two or more elements corresponds to ``fan-out''.
 
 \paragraph{Intermediate Functions and Configurations}
 
@@ -1196,9 +1225,9 @@ the callee is added to the body of the caller. \code{$I_1$}
 respect to the configuration $C$ containing the connection):
 \begin{itemize}
 \item If \code{$I_1$} corresponds to an internal specification element that
-is a provided command or event.
+is a bare, provided command or event.
 \item If \code{$I_1$} corresponds to an external specification element that
-is a used command or event.
+is a bare, used command or event.
 \item If \code{$I_1$} corresponds to a command of interface instance $X$,
 and $X$ is an internal, provided or external, used specification element.
 \item If \code{$I_1$} corresponds to an event of interface instance $X$,
@@ -1265,17 +1294,17 @@ implementations in module \code{M} (not shown).
 
 \begin{figure}
 \begin{tabular}{ll}
-\tt list of int $I_\code{M.P.f}()$ \{ & \tt list of void $I_\code{M.P.g}$(int x) \{ \\
-\tt \ \ return list(M.P.f());         & \tt \ \ list of int r1 = $I_\code{C.X.g}$(x); \\
-\tt \}                                & \tt \ \ list of int r1 = $I_\code{M.U.g}$(x); \\
+\tt list of int $I_\code{M.P.f}()$ \{ & \tt list of bool $I_\code{M.P.g}$(int x) \{ \\
+\tt \ \ return list(M.P.f());         & \tt \ \ list of bool r1 = $I_\code{C.X.g}$(x); \\
+\tt \}                                & \tt \ \ list of bool r1 = $I_\code{M.U.g}$(x); \\
                                       & \tt \ \ return list\_concat(r1, r2); \\
                                       & \tt \} \\
 \\
-\tt list of int $I_\code{M.U.f}()$ \{ & \tt list of void $I_\code{M.U.g}$(int x) \{ \\
+\tt list of int $I_\code{M.U.f}()$ \{ & \tt list of bool $I_\code{M.U.g}$(int x) \{ \\
 \tt \ \ return $I_\code{M.P.f}$();    & \tt \ \ return list(M.U.g(x)); \\
 \tt \}                                & \tt \} \\
 \\
-\tt list of int $I_\code{C.X.f}()$ \{ & \tt list of void $I_\code{C.X.g}$(int x) \{ \\
+\tt list of int $I_\code{C.X.f}()$ \{ & \tt list of bool $I_\code{C.X.g}$(int x) \{ \\
 \tt \ \ return $I_\code{M.P.f}$();    & \tt \ \ return empty\_list; \\
 \tt \}                                & \tt \} \\
 \\
@@ -1290,15 +1319,15 @@ implementations in module \code{M} (not shown).
 \subsubsection{Wiring and Parameterised Functions}
 \label{sec:wiring-parms}
 
-If a command or event $\alpha$ of component $K$ is parameterised with
-interface parameters of type $\tau_1, \ldots, \tau_n$ then there is an
-intermediate function $I_{\alpha,v_1,\ldots,v_n}$ for every distinct tuple
-$(v_1:\tau_1, \ldots, v_n:\tau_n)$.
+If a command or event $\alpha$ of component $K$ has instance
+parameters of type $\tau_1, \ldots, \tau_n$ then there is an
+intermediate function $I_{\alpha,v_1,\ldots,v_n}$ for every distinct
+tuple $(v_1:\tau_1, \ldots, v_n:\tau_n)$.
 
 In modules, if intermediate function $I_{v_1, \ldots, v_n}$ corresponds
 to parameterised, provided command (or event) $\alpha$ then the call in
 $I_{v_1, \ldots, v_n}$ to $\alpha$'s implementation passes values $v_1,
-\ldots, v_n$ as the values for $\alpha$'s interface parameters. 
+\ldots, v_n$ as the values for $\alpha$'s instance parameters. 
 
 The expression \code{call} $\alpha[e'_1, \ldots, e'_m](e_1, \ldots, e_n)$
 is evaluated as follows:
@@ -1357,7 +1386,7 @@ in the application's modules:
 \item If the call is unparameterised: if the call returns an empty result
 list there must be a default implementation of $\alpha$ (the number of
 elements in the result list depends only on the wiring).
-\item If the call is parameterised: if substituation of any values for the
+\item If the call is parameterised: if substitution of any values for the
 interface parameters of $\alpha$ returns an empty result list there must be
 a default implementation of $\alpha$ (the number of elements in the result
 list for a given parameter value tuple depends only on the wiring).
