@@ -29,17 +29,18 @@
 \begin{document}
 
 \title{\nesc Language Reference Manual}
-\author{David Gay [add your names here as you edit]}
-\date{August 2002}
+\author{David Gay, Philip Levis}
+\date{September 2002}
 
 \maketitle
 
 \section{Introduction}
 
 \nesc is a new programming language designed to embody the structuring
-concepts and execution model of TinyOS~\cite{tinyos}. [Someone: insert the
-standard 2-sentence TinyOS/sensor network desc]. TinyOS has now been
-reimplemented in \nesc.
+concepts and execution model of TinyOS~\cite{tinyos}. TinyOS is an
+event-driven operating system designed for sensor network nodes that
+have very limited resources (e.g. 8K program memory, 512 bytes of
+RAM). TinyOS has been reimplemented in \nesc.
 
 The basic concepts behind \nesc are:
 \begin{itemize}
@@ -54,8 +55,12 @@ perform its job.
 implemented by the interface's provider (``commands'') and a set to be
 implemented by the interface's user (``events''). This allows a single
 interface to represent a complex interaction between components (e.g.,
-registration of interest in some event, followed by a callback when that
-event happens).
+registration of interest in some event, followed by a callback when
+that event happens). This is critical because all lengthy commands in
+TinyOS (e.g. send packet) are non-blocking; their completion is
+signaled through an event (send done). By specifying interfaces, a
+component cannot call the {\tt send} command unless it provides an
+implementation of the {\tt sendDone} event.
 \item Components are statically linked to each other via their interfaces.
 This increases runtime efficiency and allows for better static analysis of 
 program's.
@@ -712,6 +717,8 @@ talk about multi-graphs below, and hence edge lists not sets.
 Note: such multiple calls can also happen a bit more indirectly when
 configurations are involved, i.e., there are two distinct paths in
 the wiring graph between a pair of functions. One call or two?]
+
+[{\bf I argue one; it is wiring, after all.} - pal]
 
 The semantics of wiring are defined in terms of the program's wiring graph,
 a directed graph which connects nodes representing command or event calls
