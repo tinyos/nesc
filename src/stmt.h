@@ -37,6 +37,7 @@ void declare_label(id_label label);
 void check_labels(void);
 
 void check_case(label case_label);
+void check_case_value(expression e);
 void check_default(label default_label);
 void check_break(statement break_statement);
 void check_continue(statement continue_statement);

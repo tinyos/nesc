@@ -25,6 +25,7 @@ Boston, MA 02111-1307, USA.  */
 #include "semantics.h"
 #include "constants.h"
 #include "init.h"
+#include "stmt.h"
 
 static AST_walker folder_walker;
 
@@ -185,7 +186,7 @@ static AST_walker_result folder_array_declarator(AST_walker spec, void *data,
 
   AST_walk_children(spec, data, CAST(node, *n));
 
-  if (size && size->cst)
+  if (size)
     check_array_size(size, nice_declarator_name((*n)->declarator));
 
   return aw_done;
@@ -244,6 +245,19 @@ static AST_walker_result folder_variable_decl(AST_walker spec, void *data,
   return aw_done;
 }
 
+static AST_walker_result folder_case_label(AST_walker spec, void *data,
+					   case_label *n)
+{
+  case_label label = *n;
+
+  AST_walk_children(spec, data, CAST(node, *n));
+  check_case_value(label->arg1);
+  if (label->arg2) 
+    check_case_value(label->arg2);
+
+  return aw_done;
+}
+
 void init_nesc_constants(void)
 {
   folder_walker = new_AST_walker(permanent);
@@ -253,4 +267,5 @@ void init_nesc_constants(void)
   AST_walker_handle(folder_walker, kind_enum_ref, folder_enum_ref);
   AST_walker_handle(folder_walker, kind_enumerator, folder_enumerator);
   AST_walker_handle(folder_walker, kind_variable_decl, folder_variable_decl);
+  AST_walker_handle(folder_walker, kind_case_label, folder_case_label);
 }

@@ -260,7 +260,7 @@ static statement containing_switch(label l)
   return sw;
 }
 
-static void check_case_value(expression e)
+void check_case_value(expression e)
 {
   if (check_constant_once(e))
     if (!e->cst || !(e->type == error_type || type_integer(e->type)))
