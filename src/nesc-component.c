@@ -103,8 +103,8 @@ void copy_interface_functions(data_declaration iref)
       fncopy->shadowed = fndecl;
       fncopy->container = current.container;
       fncopy->interface = iref;
-      if (iref->required) /* defined/used swaps in required interfaces */
-	fncopy->defined = !fncopy->defined;
+      /* required events and provided commands are defined */
+      fncopy->defined = (fncopy->ftype == function_command) ^ iref->required;
       if (iref->gparms) /* Push generic args onto fn type and decl */
 	{
 	  fncopy->gparms = iref->gparms;

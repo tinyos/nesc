@@ -2540,7 +2540,7 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
       else
 	ddecl = declare(current.env, &tempdecl, FALSE);
 
-      ddecl->defined = current.interface_defines;
+      ddecl->defined = !current.component_requires;
     }
   assert(ddecl);
   vd->ddecl = ddecl;

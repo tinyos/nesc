@@ -175,19 +175,18 @@ void yyerror();
 %token <u.itoken> DISPATCH_C DISPATCH_NESC
 
 /* tinyos reserved words */
-%token <u.itoken> USES DEFINES INTERFACE REQUIRES PROVIDES MODULE INCLUDES
+%token <u.itoken> USES INTERFACE COMPONENTS PROVIDES MODULE INCLUDES
 %token <u.itoken> CONFIGURATION AS TASTNIOP IMPLEMENTATION CALL SIGNAL POST
 
 %type <u.itoken> callkind
-%type <u.iflist> uses_or_defines uses_or_defines_list uses defines
-%type <u.decl> datadef_list function_list parameter_list parameter
+%type <u.decl> datadef_list parameter_list parameter
 %type <u.decl> parameters parameters1
 %type <u.telement> parameter_type
 %type <u.rplist> requires provides requires_or_provides requires_or_provides_list
 %type <u.decl> parameterised_interface_list parameterised_interface
 %type <u.decl> parameterised_interfaces 
 %type <u.iref> interface_ref
-%type <u.cref> component_ref component_list cuses
+%type <u.cref> component_ref component_list uses cuses
 %type <u.conn> connection connection_list
 %type <u.ep> endpoint
 %type <u.pid> parameterised_identifier
@@ -332,27 +331,11 @@ include_list:
 
 interface: 
         includes_list
-	INTERFACE { $<u.docstring>$ = get_docstring(); } idword '{' uses_or_defines_list '}' 
+	INTERFACE { $<u.docstring>$ = get_docstring(); } idword '{' datadef_list '}' 
 		{
-		  parsed_nesc_decl = CAST(nesc_decl, new_interface(pr, $2.location, $4, $<u.docstring>3, interface_functions_reverse($6)));
+		  parsed_nesc_decl = CAST(nesc_decl, new_interface(pr, $2.location, $4, $<u.docstring>3, declaration_reverse($6)));
 		}
 	;
-
-uses_or_defines_list: 
-	uses_or_defines_list uses_or_defines 
-		{ $$ = interface_functions_chain($2, $1); }
-	| uses_or_defines 
-	;
-
-uses_or_defines: uses | defines ;
-
-uses: USES { current.interface_defines = FALSE; } function_list 
-	{ $$ = new_interface_functions(pr, $1.location, FALSE, $3); } ;
-
-defines: DEFINES { current.interface_defines = TRUE; } function_list
-	{ $$ = new_interface_functions(pr, $1.location, TRUE, $3); } ;
-
-function_list: just_datadef | '{' datadef_list '}' { $$ = declaration_reverse($2); };
 
 datadef_list: 
 	datadef_list just_datadef { $$ = declaration_chain($2, $1); }
@@ -408,10 +391,12 @@ requires_or_provides_list:
 
 requires_or_provides: requires | provides ;
 
-requires: REQUIRES { current.component_requires = TRUE; current.interface_defines = FALSE; } parameterised_interface_list 
+requires: USES { current.component_requires = TRUE; } 
+	  parameterised_interface_list 
 		{ $$ = new_rp_interface(pr, $1.location, TRUE, declaration_reverse($3)); } ;
 
-provides: PROVIDES { current.component_requires = FALSE; current.interface_defines = TRUE; } parameterised_interface_list 
+provides: PROVIDES { current.component_requires = FALSE; } 
+	  parameterised_interface_list 
 		{ $$ = new_rp_interface(pr, $1.location, FALSE, declaration_reverse($3)); } ;
 
 parameterised_interface_list:
@@ -443,21 +428,24 @@ parameterised_interface:
 interface_ref: 
 	INTERFACE idword 
 		{ $$ = new_interface_ref(pr, $1.location, $2, NULL, NULL); }
-	| INTERFACE idword idword
-		{ $$ = new_interface_ref(pr, $1.location, $2, $3, NULL); }
+	| INTERFACE idword AS idword
+		{ $$ = new_interface_ref(pr, $1.location, $2, $4, NULL); }
 	;
 
 iconfiguration:
 	IMPLEMENTATION { $<u.env>$ = start_implementation(); } '{'
-	  cuses
+	  uses
 	  connection_list
 	'}'
-		{ $$ = CAST(implementation, new_configuration(pr, $1.location, $<u.env>2, $4, connection_reverse($5)));
+		{ $$ = CAST(implementation, new_configuration(pr, $1.location, $<u.env>2, component_ref_reverse($4), connection_reverse($5)));
 		}
 	;
 
-cuses:  /* empty */ { $$ = NULL; }
-	| USES component_list ';' { $$ = component_ref_reverse($2); }
+uses:   /* empty */ { $$ = NULL; }
+	| uses cuses { $$ = component_ref_chain($2, $1); }
+	;
+
+cuses:  COMPONENTS component_list ';' { $$ = $2; }
 	;
 
 component_list: 

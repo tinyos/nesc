@@ -196,8 +196,7 @@ struct semantic_state
   nesc_declaration container;	/* The nesC entity being compiled (NULL for C) */
   function_decl function_decl;	/* The function currently being defined */
   tag_ref pending_invalid_xref;	/* Internal use */
-  bool interface_defines;	/* TRUE if in defines section, FALSE in uses */
-  bool component_requires;	/* TRUE if in provides section, FALSE in requires */
+  bool component_requires;	/* FALSE if in provides section, TRUE in requires */
 
   char *preprocessed_file;	/* Temp file holding preprocessor output */
 };

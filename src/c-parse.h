@@ -45,7 +45,6 @@ struct yystype {
     type_element telement;
     asttype type;
     word word;
-    interface_functions iflist;
     rp_interface rplist;
     interface_ref iref;
     component_ref cref;

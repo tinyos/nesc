@@ -121,7 +121,6 @@
 
 ;; nesc fields
 (deffield call_kind nesc_call_kind (init))
-(deffield interface_functions interface_functions (init tree))
 (deffield rplist rp_interface (init tree))
 (deffield components component_ref (init tree))
 (deffield connections connection (init tree))
@@ -506,8 +505,8 @@ DDECL is the magic_string declaration for this string.")
   "a supertype for interface/component declarations of WORD1, with
 documentation string DOCSTRING")
 
-(deftype interface nesc_decl (interface_functions)
-  "interface WORD1 { INTERFACE_FUNCTIONS }")
+(deftype interface nesc_decl (decls)
+  "interface WORD1 { DECLS }")
 
 (deftype component nesc_decl (rplist implementation)
   "configuration/module WORD1 { RPLIST } IMPLEMENTATION")
@@ -518,18 +517,10 @@ CDECL is the declaration for this component
 IENV is the implementation's environment")
 
 (deftype configuration implementation (components connections)
-  "configuration implementation 'implementation { uses COMPONENTS; CONNECTIONS }'")
+  "configuration implementation { uses COMPONENTS; CONNECTIONS }'")
 
 (deftype module implementation (decls)
-  "module implementation 'implementation { DECLS }'")
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; interface definition types
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(deftype interface_functions node (defined decls)
-  "A function list in an interface. DEFINED is true if DECLS are defined, 
-false if they are used")
+  "module implementation { DECLS }'")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; component definition types

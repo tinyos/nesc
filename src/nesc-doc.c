@@ -1224,6 +1224,29 @@ static void generate_component_html(nesc_declaration cdecl)
 }
 
 
+static void generate_intf_function_list(const char *heading,
+					nesc_declaration idecl,
+					int kind, int flags)
+{
+  declaration funcs = CAST(interface, idecl->ast)->decls;
+  declaration f;
+  bool printed_heading = FALSE;
+
+  // commands
+  scan_declaration(f,funcs) {
+    data_decl dd = CAST(data_decl, f);
+    variable_decl vd;
+
+    scan_variable_decl(vd, CAST(variable_decl,dd->decls)) {
+      if( vd->ddecl->ftype == kind ) {
+	if(!printed_heading) {print_html_banner(heading); output("<ul>\n"); printed_heading=TRUE;}
+	print_function_html(NULL,dd,vd,in_interface|flags);
+      }
+    }
+  }
+  if(printed_heading) output("</ul>\n");
+}
+
 //////////////////////////////////////////////////
 // generate HTML for an interface file
 //////////////////////////////////////////////////
@@ -1247,93 +1270,16 @@ static void generate_interface_html(nesc_declaration idecl)
   
   
   // summary
-  {
-    interface_functions funcs = CAST(interface, idecl->ast)->interface_functions;
-    interface_functions f;
-    bool printed_heading = FALSE;
-
-    // defines
-    scan_interface_functions(f,funcs) {
-      data_decl dd;
-
-      scan_data_decl(dd, CAST(data_decl,f->decls)) {
-        variable_decl vd;
-
-        scan_variable_decl(vd, CAST(variable_decl,dd->decls)) {
-          if( vd->ddecl->defined ) {
-            if(!printed_heading) {print_html_banner("<h3>Defined Functions</h3>"); output("<ul>\n"); printed_heading=TRUE;}
-            print_function_html(NULL,dd,vd,in_interface|short_desc);
-          }
-        }
-      }
-    }
-    if(printed_heading) output("</ul>\n");
-
-    // uses
-    printed_heading = FALSE;
-    scan_interface_functions(f,funcs) {
-      data_decl dd;
-
-      scan_data_decl(dd, CAST(data_decl,f->decls)) {
-        variable_decl vd;
-
-        scan_variable_decl(vd, CAST(variable_decl,dd->decls)) {
-          if( !vd->ddecl->defined ) {
-            if(!printed_heading) {print_html_banner("<h3>Used Functions</h3>"); output("<ul>\n"); printed_heading=TRUE;}
-            print_function_html(NULL,dd,vd,in_interface|short_desc);
-          }
-        }
-      }
-    }
-    if(printed_heading) output("</ul>\n");
-  }
+  generate_intf_function_list("<h3>Defined Functions</h3>",
+			      idecl, function_command, short_desc);
+  generate_intf_function_list("<h3>Used Functions</h3>",
+			      idecl, function_event, short_desc);
 
   // detailed descriptions
-  {
-    interface_functions funcs = CAST(interface, idecl->ast)->interface_functions;
-    interface_functions f;
-    bool printed_heading = FALSE;
-    bool first = TRUE;
-
-    // defines
-    scan_interface_functions(f,funcs) {
-      data_decl dd;
-
-      scan_data_decl(dd, CAST(data_decl,f->decls)) {
-        variable_decl vd;
-
-        scan_variable_decl(vd, CAST(variable_decl,dd->decls)) {
-          if( vd->ddecl->defined  &&  has_long_desc(NULL,dd,vd)) {
-            if(!printed_heading) {print_html_banner("<h3>Defined Functions - Details</h3>"); printed_heading=TRUE;}
-            if( !first ) output("<hr>\n");
-            print_function_html(NULL,dd,vd,in_interface|long_desc);
-            first = FALSE;
-          }
-        }
-      }
-    }
-
-    // uses
-    printed_heading = FALSE;
-    first = TRUE;
-    scan_interface_functions(f,funcs) {
-      data_decl dd;
-
-      scan_data_decl(dd, CAST(data_decl,f->decls)) {
-        variable_decl vd;
-
-        scan_variable_decl(vd, CAST(variable_decl,dd->decls)) {
-          if( !vd->ddecl->defined  &&  has_long_desc(NULL,dd,vd)) {
-            if(!printed_heading) {print_html_banner("<h3>Used Functions - Details</h3>"); printed_heading=TRUE;}
-            if( !first ) output("<hr>\n");
-            print_function_html(NULL,dd,vd,in_interface|long_desc);
-            first = FALSE;
-          }
-        }
-      }
-    }
-  }
-
+  generate_intf_function_list("<h3>Defined Functions - Details</h3>",
+			      idecl, function_command, long_desc);
+  generate_intf_function_list("<h3>Used Functions - Details</h3>",
+			      idecl, function_event, long_desc);
 }
 
 
