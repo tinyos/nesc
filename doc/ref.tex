@@ -18,6 +18,9 @@
 \parskip 0.15cm
 \parindent 0cm
 
+\newcommand{\grammarshift}{\vspace*{-.7cm}}
+\newcommand{\grammarindent}{\hspace*{2cm}\= \\ \kill}
+
 \begin{document}
 
 \title{\nesc Language Reference Manual}
@@ -136,8 +139,9 @@ Section~\ref{sec:configuration} explains how component interfaces are
 linked together.
 
 Interfaces are specified by \emph{interface types}, as follows:
+\begin{quote} \grammarshift
 \em \begin{tabbing}
-\hspace*{2cm}\= \\ \kill
+\grammarindent
 nesC-file: \\
 \>	includes-list\opt interface\\
 \>	\ldots\\
@@ -147,7 +151,8 @@ interface:\\
 \\
 storage-class-specifier: \emph{also one of}\\
 \>	\kw{command} \kw{event}\\
-\end{tabbing} \rm
+\end{tabbing}
+\end{quote}
 This declares interface type \emph{identifier}. This identifier has global
 scope and belongs to a separate namespace, the \emph{component and
 interface type} namespace. So all interface types have names distinct from
@@ -163,12 +168,12 @@ An interface can optionally include C files via the \emph{includes-list}
 (see Section~\ref{sec:app}).
 
 A simple interface is:
-\begin{verbatim}
+\begin{quote} \begin{verbatim}
 interface SendMsg { 
   command result_t send(uint16_t address, uint8_t length, TOS_MsgPtr msg);
   event result_t sendDone(TOS_MsgPtr msg, result_t success);
 }
-\end{verbatim}
+\end{verbatim} \end{quote}
 
 Provides of the \code{SendMsg} interface type must implement the
 \code{send} command, while users must implement the \code{sendDone} event.
@@ -178,8 +183,9 @@ Provides of the \code{SendMsg} interface type must implement the
 
 A \nesc component is either a \emph{module} (Section~\ref{sec:module}) or a
 \emph{configuration} (Section~\ref{sec:configuration}):
+\begin{quote} \grammarshift
 \em \begin{tabbing}
-\hspace*{2cm}\= \\ \kill
+\grammarindent
 nesC-file: \\
 \>	includes-list\opt module\\
 \>	includes-list\opt configuration\\
@@ -190,7 +196,8 @@ module:\\
 \\
 configuration:\\
 \>	\kw{configuration} identifier specification configuration-implementation\\
-\end{tabbing} \rm
+\end{tabbing} \end{quote}
+
 Component's names are specified by the \emph{identifier}. This identifier
 has global scope and belongs to the component and interface type namespace.
 A component introduces two per-component scopes: a specification scope,
@@ -215,8 +222,9 @@ elements.
 
 Each specification element has a name (interface instance name, command
 name or event name). These names belong to the variable namespace of the
-per-component-specification scope.  \em \begin{tabbing}
-\hspace*{2cm}\= \\ \kill
+per-component-specification scope.  
+\begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
 specification:\\
 \>	\kw{\{} uses-provides-list \kw{\}}\\
 \\
@@ -235,34 +243,24 @@ specification-element-list:\\
 specification-elements:\\
 \>	specification-element\\
 \>	specification-elements specification-element\\
-\end{tabbing} \rm
+\end{tabbing} \end{quote}
 There can be multiple \kw{uses} and \kw{provides} directives in a component
 specification. Multiple used or provided specification elements can be
 grouped in a single directive by surrounding them with \{ and \}. For
-instance, the following two specifications are identical:
+instance, these two specifications are identical:
 
-\begin{minipage}[t]{3in}
-\begin{verbatim}
-module A1 {
-  uses interface X;
-  uses interface Y;
-} ...
-\end{verbatim}
-\end{minipage}
-\begin{minipage}[t]{3in}
-\begin{verbatim}
-module A1 {
-  uses {
-    interface X;
-    interface Y;
-  }
-} ...
-\end{verbatim}
-\end{minipage}
+\begin{quote} \begin{verbatim}
+module A1 {                          module A1 {      
+  uses interface X;                    uses {         
+  uses interface Y;                      interface X; 
+} ...                                    interface Y; 
+                                       }              
+                                     } ...            
+\end{verbatim} \end{quote}
 
 An interface instance is specified as follows:
-\em \begin{tabbing}
-\hspace*{2cm}\= \\ \kill
+\begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
 specification-element:\\
 \>	\kw{interface} renamed-identifier parameters\opt\\
 \>	\ldots\\
@@ -273,7 +271,7 @@ renamed-identifier:\\
 \\
 interface-parameters:\\
 \>	\kw{[} parameter-type-list \kw{]}
-\end{tabbing} \rm
+\end{tabbing} \end{quote}
 
 The complete syntax for interface instance declaration is \code{interface X
 as Y}, explicitly specifying \code{Y} as the instance's name. The
@@ -292,15 +290,15 @@ integral types (\kw{enum}s are not allowed at this time).
 Commands or events can be included directly as specification elements by
 including a standard C function declaration with
 \kw{command} or \kw{event} as its storage class specifier:
-\em \begin{tabbing}
-\hspace*{2cm}\= \\ \kill
+\begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
 specification-element:\\
 \>	declaration\\
 \>	\ldots\\
 \\
 storage-class-specifier: \emph{also one of}\\
 \>	\kw{command} \kw{event}\\
-\end{tabbing} \rm
+\end{tabbing} \end{quote}
 It is a compile-time error if the \emph{declaration} is not a function
 declaration with the \kw{command} or \kw{event} storage class. 
 
@@ -309,17 +307,17 @@ As with interface instances, commands (events) are \emph{simple commands}
 \emph{parameterised commands} (\emph{parameterised events}) if interface
 parameters are specified. The \emph{interface-parameters} are placed before
 the function's regular parameter list, e.g., \code{command void
-send[uint8\_t id](int x)}: \em \begin{tabbing}
-\hspace*{2cm}\= \\ \kill
+send[uint8\_t id](int x)}: \begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
 direct-declarator: \emph{also}\\
 \>	direct-declarator interface-parameters \kw{(} parameter-type-list \kw{)}\\
 \>	\ldots
-\end{tabbing} \rm
+\end{tabbing} \end{quote}
 Note that interface parameters are only allowed on commands or events within
 component specifications, not within interface types.
 
 Here is a full specification example:
-\begin{verbatim}
+\begin{quote} \begin{verbatim}
 configuration GenericComm {
   provides {
     interface StdControl as Control;
@@ -335,7 +333,7 @@ configuration GenericComm {
     event result_t sendDone();
   }
 } ...
-\end{verbatim}
+\end{verbatim} \end{quote}
 In this example, \code{GenericComm}:
 \begin{itemize}
 \item Provides simple interface instance \code{Control} of type
@@ -370,11 +368,11 @@ simple status of the specification element to which they correspond.
 \label{sec:module}
 
 Modules implement a component specification with C code:
-\em \begin{tabbing}
-\hspace*{2cm}\= \\ \kill
+\begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
 module-implementation:\\
 \>	\kw{implementation} \kw{\{} translation-unit \kw{\}}\\
-\end{tabbing} \rm
+\end{tabbing} \end{quote}
 where \emph{translation-unit} is a list of C declarations and definitions
 (see K\&R~\cite[pp234--239]{kandr}). 
 
@@ -394,8 +392,8 @@ events.
 
 These command and event implementations are specified with the following C
 syntax extensions:
-\em \begin{tabbing}
-\hspace*{2cm}\= \\ \kill
+\begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
 storage-class-specifier: \emph{also one of}\\
 \>	\kw{command} \kw{event}\\
 \\
@@ -405,18 +403,18 @@ declaration-specifiers: \emph{also}\\
 direct-declarator: \emph{also}\\
 \>	identifier \kw{.} identifier \\
 \>	direct-declarator interface-parameters \kw{(} parameter-type-list \kw{)}\\
-\end{tabbing} \rm
+\end{tabbing} \end{quote}
 The implementation of simple command or event $\alpha$ has the syntax of a C
 function definition for $\alpha$ (note the extension to
 \emph{direct-declarator} to allow \code{.} in function names) with storage
 class \kw{command} or \kw{event}. For example, in a module that provides
 interface \code{Send} of type \kw{SendMsg}:
-\begin{verbatim}
+\begin{quote} \begin{verbatim}
 command result_t Send.send(uint16_t address, uint8_t length, TOS_MsgPtr msg) {
   ...
   return SUCCESS;
 }
-\end{verbatim}
+\end{verbatim} \end{quote}
 
 The implementation of parameterised command or event $\alpha$ with interface
 parameters $P$ has the syntax of a C function definition for $\alpha$ with
@@ -427,13 +425,13 @@ within a component specification). These interface parameter declarations
 $P$ belong to $\alpha$'s function-parameter scope and have the same extent
 as regular function parameters. For example, in a module that provides
 interface \code{Send[uint8\_t id]} of type \kw{SendMsg}:
-\begin{verbatim}
+\begin{quote} \begin{verbatim}
 command result_t Send.send[uint8_t id](uint16_t address, uint8_t length, 
                                        TOS_MsgPtr msg) {
   ...
   return SUCCESS;
 }
-\end{verbatim}
+\end{verbatim} \end{quote}
 
 Compile-time errors are reported when:
 \begin{itemize}
@@ -446,8 +444,8 @@ event does not match that given in the module's specification.
 
 The following extensions to C syntax are used to call events and signal
 commands:
-\em \begin{tabbing}
-\hspace*{2cm}\= \\ \kill
+\begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
 postfix-expression:\\
 \>	postfix-expression \kw{[} argument-expression-list \kw{]}\\
 \>	call-kind\opt primary \kw{(} argument-expression-list\opt \kw{)}\\
@@ -455,7 +453,7 @@ postfix-expression:\\
 \\\\
 call-kind: \emph{one of}\\
 \>	\kw{call} \kw{signal} \kw{post}
-\end{tabbing} \rm
+\end{tabbing} \end{quote}
 
 A simple command $\alpha$ is called with \code{call $\alpha$(...)}, a
 simple event $\alpha$ is signaled with \code{signal $\alpha$(...)}. For
@@ -471,10 +469,10 @@ must be assignable to type $\tau_i$; the actual interface parameter value
 is $e_i$ cast to type $\tau_i$. For instance, in a module that uses
 interface \code{Send[uint8\_t id]} of type \kw{SendMsg}:
 
-\begin{verbatim}
+\begin{quote} \begin{verbatim}
   int x = ...;
   call Send.send[x + 1](1, sizeof(Message), &msg1);
-\end{verbatim}
+\end{verbatim} \end{quote}
 
 Execution of commands and events is immediate, i.e., \kw{call} and
 \kw{signal} behave similarly to function calls. The actual command or event
@@ -490,21 +488,21 @@ implementations of provided commands or events. Default implementations are
 executed when $\alpha$ is not connected to any command or event
 implementation. A default command or event is defined by prefixing a
 command or event implementation with the \kw{default} keyword:
-\em \begin{tabbing}
-\hspace*{2cm}\= \\ \kill
+\begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
 declaration-specifiers: \emph{also}\\
 \>	\kw{default} declaration-specifiers\\
-\end{tabbing} \rm
+\end{tabbing} \end{quote}
 For instance, in a in a module that uses interface \code{Send} of type
 \kw{SendMsg}:
-\begin{verbatim}
+\begin{quote} \begin{verbatim}
 default command result_t Send.send(uint16_t address, uint8_t length, 
                                    TOS_MsgPtr msg) {
   return SUCCESS;
 }
 /* call is allowed even if interface Send is not connected */
 ... call Send.send(1, sizeof(Message), &msg1) ...
-\end{verbatim}
+\end{verbatim} \end{quote}
 
 Section~\ref{sec:wiring-semantics} specifies what command or event
 implementations are actually executed and what result gets returned by
@@ -523,25 +521,25 @@ Tasks are posted by prefixing a call to the task with \kw{post}, e.g.,
 \code{post myTask()}. Post returns immediately; its return value is 1 if
 the task was successfully posted for independent execution, 0
 otherwise. The type of a post expression is \code{unsigned char}.
-\em \begin{tabbing}
-\hspace*{2cm}\= \\ \kill
+\begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
 storage-class-specifier: \emph{also one of}\\
 \>	\kw{task}\\
 \\
 call-kind: \emph{also one of}\\
 \>	\kw{post}
-\end{tabbing} \rm
+\end{tabbing} \end{quote}
 
 \section{Configurations}
 \label{sec:configuration}
 
 Configurations implement a component specification by connecting, or wiring,
 together a collection of other components:
-\em \begin{tabbing}
-\hspace*{2cm}\= \\ \kill
+\begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
 configuration-implementation:\\
 \>	\kw{implementation} \kw{\{} component-list\opt connection-list \kw{\}}\\
-\end{tabbing} \rm
+\end{tabbing} \end{quote}
 
 The \emph{component-list} lists the components that are used to build this
 configuration, the \emph{connection-list} specifies how these components
@@ -562,8 +560,8 @@ specification elements, or to simplify changing the components a
 configuration uses (to avoid having to change the wiring). The names
 chosen for components belong to the component's implementation scope.
 
-\em \begin{tabbing}
-\hspace*{2cm}\= \\ \kill
+\begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
 component-list:\\
 \>	components\\
 \>	component-list components\\
@@ -578,7 +576,7 @@ component-line:\\
 renamed-identifier:\\
 \>	identifier\\
 \>	identifier \kw{as} identifier\\
-\end{tabbing} \rm
+\end{tabbing} \end{quote}
 
 A compile-time error occurs if two components are given the same name using \kw{as} (e.g., \code{components X, Y as X}).
 
@@ -595,8 +593,8 @@ events) together. This section and the next (Section~\ref{sec:implicit})
 define the syntax and compile-time rules for
 wiring. Section~\ref{sec:wiring-semantics} details how a program's wiring
 statements dictate which functions get called at each \kw{call} and
-\kw{signal} expression.  \em \begin{tabbing}
-\hspace*{2cm}\= \\ \kill
+\kw{signal} expression.  \begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
 connection-list:\\
 \>	connection\\
 \>	connection-list connection\\
@@ -613,7 +611,7 @@ endpoint:\\
 identifier-path:\\
 \>	identifier\\
 \>	identifier-path \kw{.} identifier\\
-\end{tabbing} \rm
+\end{tabbing} \end{quote}
 
 
 Wiring statements connect two \emph{endpoints}. The \emph{identifier-path}
@@ -680,7 +678,7 @@ If one endpoint is parameterised, the other must be too and must have the
 same parameter types; otherwise a compile-time error occurs.
 
 The same specification element may be connected multiple times, e.g.,:
-\begin{verbatim}
+\begin{quote} \begin{verbatim}
 configuration C {
   provides interface X;
 } implementation {
@@ -689,20 +687,20 @@ configuration C {
   X = C1.X;
   X = C2.X;
 }
-\end{verbatim}
+\end{verbatim} \end{quote}
 In this example, the multiple wiring will lead to multiple signalers
 (``fan-in'') for the events in interface \code{X} and for multiple
 functions being executed (``fan-out'') when commands in interface \code{X}
 are called. Note that multiple wiring can also happen when two
 configurations independently wire the same interface, e.g.:
-\begin{verbatim}
+\begin{quote} \begin{verbatim}
 configuration C { }           configuration D { }
 implementation {              implementation {
   components C1, C2;            components C3, C2;
 
   C1.Y -> C2.Y;                 C3.Y -> C2.Y;
 }                             }
-\end{verbatim}
+\end{verbatim} \end{quote}
 
 All external specification elements must be wired or a compile-time error
 occurs. However, internal specification elements may be left unconnected
@@ -722,7 +720,7 @@ be found, then the connection is made, otherwise a compile-time error
 occurs.
 
 For instance, with:
-\begin{verbatim}
+\begin{quote} \begin{verbatim}
 module M1 {                              module M2 {
   provides interface StdControl;           uses interface StdControl as SC;
 } ...                                    } ...
@@ -732,7 +730,7 @@ module M1 {                              module M2 {
                 components M1, M2;
                 M2.SC -> M1;
               }
-\end{verbatim}
+\end{verbatim} \end{quote}
 The \code{M2.SC -> M1} line is equivalent to \code{M2.SC -> M1.StdControl}.
 
 \subsection{Wiring Semantics}
@@ -1046,8 +1044,8 @@ processed C files, interface types and components.
 If $K$ has already been loaded, nothing more is done. Otherwise, file
 $X$.nc is located and preprocessed. Changes made to C macros (via
 \code{\#define} and \code{\#undef}) are discarded. The preprocessed file is
-parsed using the following grammar: \em \begin{tabbing}
-\hspace*{2cm}\= \\ \kill
+parsed using the following grammar: \begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
 nesC-file: \\
 \>	includes-list\opt interface\\
 \>	includes-list\opt module\\
@@ -1059,7 +1057,7 @@ includes-list:\\
 \\
 includes:\\
 \>	\kw{includes} identifier-list \kw{;}\\
-\end{tabbing} \rm
+\end{tabbing} \end{quote}
 If $X$.nc does not define \code{module $K$} or \code{configuration $K$}, a
 compile-time error is reported. Otherwise, all C files specified by the
 \emph{includes-list} are loaded (Section~\ref{sec:load-c}). Then all
@@ -1086,23 +1084,13 @@ As an example of including C files in components or interfaces, interface
 type \code{Bar} might include C file \file{BarTypes.h} which defines types
 used in \code{Bar}:
 
-\begin{minipage}[t]{3in}
-\begin{verbatim}
-Bar.nc:
-includes BarTypes;
-interface Bar {
-  command result_t bar(BarType arg1);
-\end{verbatim}
-\end{minipage}
-\begin{minipage}[t]{3in}
-\begin{verbatim}
-BarTypes.h:
-typedef struct {
-  int x;
-  double y;
-} BarType;
-\end{verbatim}
-\end{minipage}
+\begin{quote} \begin{verbatim}
+Bar.nc:                                        BarTypes.h:      
+includes BarTypes;                             typedef struct { 
+interface Bar {                                  int x;         
+  command result_t bar(BarType arg1);            double y;      
+}                                              } BarType;
+\end{verbatim} \end{quote}
 
 The definition of interface \code{Bar} can refer to \code{BarType}, as can
 any component that uses or provides interface \code{Bar} (interface
@@ -1140,8 +1128,8 @@ list in function definitions.} The attributes of a function $f$ are the
 union of all attributes on all declarations and definitions of $f$.
 
 The attribute syntax in \nesc is:
-\em \begin{tabbing}
-\hspace*{2cm}\= \\ \kill
+\begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
 init-declarator-list: \emph{also}\\
 \>	init-declarator attributes\\
 \>	init-declarator-list \kw{,} init-declarator attributes\\
@@ -1163,7 +1151,7 @@ attribute-list:\\
 single-attribute:\\
 \>	identifier\\
 \>	identifier \kw{(} argument-expression-list \kw{)}\\
-\end{tabbing} \rm
+\end{tabbing} \end{quote}
 
 \nesc supports two attributes:
 \begin{itemize}
@@ -1182,14 +1170,14 @@ uses the \code{spontaneous} attribute during compilation.
 \end{itemize}
 
 Example of attribute use: in file \file{RealMain.td}:
-\begin{verbatim}
+\begin{quote} \begin{verbatim}
 module RealMain { ... }
 implementation {
   int main(int argc, char **argv) __attribute__((C, spontaneous)) {
     ...
   }
 }
-\end{verbatim}
+\end{verbatim} \end{quote}
 
 This example declares that function \code{main} should actually appear
 in the C global scope (\code{C}), so that the linker can find it. It
@@ -1242,7 +1230,7 @@ directive from K\&R.
 
 New rules:
 \em \begin{tabbing}
-\hspace*{2cm}\= \\ \kill
+\grammarindent
 nesC-file: \\
 \>	includes-list\opt interface\\
 \>	includes-list\opt module\\
@@ -1331,7 +1319,7 @@ parameters:\\
 
 Changed rules: 
 \em \begin{tabbing}
-\hspace*{2cm}\= \\ \kill
+\grammarindent
 storage-class-specifier: \emph{also one of}\\
 \>	\kw{command} \kw{event} \kw{task}\\
 \\
