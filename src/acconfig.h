@@ -31,13 +31,8 @@ Boston, MA 02111-1307, USA. */
    This setup assumes that we are compiling on self, with gcc 
 */
 
-/* Assume the target machine of the compilation is the current machine, 
-   and other miscellaneous assumptions marked under ASSSUME: in types.c.
-   This allows constant folding and correct handling of types. */
-#define SELF_TARGET
-
-/* Seems unlikely to change, but... */
-#define BITSPERBYTE 8U
+#include <limits.h>
+#define BITSPERBYTE CHAR_BIT
 
 /* Largest signed and unsigned int types (for constants and constant folding) */
 typedef long long largest_int;
@@ -45,6 +40,9 @@ typedef unsigned long long largest_uint;
 
 #define LARGEST_UINTBITS (SIZEOF_LONG_LONG * BITSPERBYTE)
 
+/* Should be somehow configurable at some point (via configure.in?)
+   Note that this should be consistent with the machine.h link too */
+#define TARGET_GCC "avr-gcc"
 
 
 /* Miscellaneous config */

@@ -1,0 +1,5 @@
+#!/bin/sh
+make maintainer-clean
+rm -rf `cat .cvsignore`
+cd src
+rm -rf `cat .cvsignore`

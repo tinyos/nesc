@@ -30,7 +30,7 @@ Boston, MA 02111-1307, USA. */
 #include "semantics.h"
 #include "nesc-main.h"
 #include "nesc-paths.h"
-
+#include "nesc-cpp.h"
 
 /* Table of language-independent -f options.
    STRING is the option name.  VARIABLE is the address of the variable.

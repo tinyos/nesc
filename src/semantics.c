@@ -3216,7 +3216,7 @@ static char *rid_name_int(int id)
     case RID_EVENT: return "event";
     case RID_TASK: return "task";
     case RID_DEFAULT: return "default";
-    default: assert(0);
+    default: assert(0); return NULL;
     }
 }
 

@@ -26,22 +26,22 @@ Boston, MA 02111-1307, USA.  */
 
 static region opt_region;
 
-struct option {
-  struct option *next;
+struct cpp_option {
+  struct cpp_option *next;
   const char *opt;
 };
 
-static struct option *saved_options;
+static struct cpp_option *saved_options;
 static int saved_options_count;
 
 void save_option(const char *option)
 {
-  struct option *newopt;
+  struct cpp_option *newopt;
 
   if (!opt_region)
     opt_region = newregion();
 
-  newopt = ralloc(opt_region, struct option);
+  newopt = ralloc(opt_region, struct cpp_option);
   newopt->opt = option;
   newopt->next = saved_options;
   saved_options = newopt;
@@ -92,10 +92,10 @@ FILE *preprocess(const char *filename)
     {
       char **argv;
       int nargs = 10 + path_argv_count + saved_options_count, arg = 0, i;
-      struct option *saved;
+      struct cpp_option *saved;
 
       argv = alloca(nargs * sizeof *argv);
-      argv[arg++] = "avr-gcc";
+      argv[arg++] = TARGET_GCC;
 
       rarraycopy(argv + arg, path_argv, path_argv_count, char *);
       arg += path_argv_count;
@@ -122,7 +122,7 @@ FILE *preprocess(const char *filename)
       fprintf(stderr, "\n");
 #endif
 
-      execvp("avr-gcc", argv);
+      execvp(TARGET_GCC, argv);
       exit(2);
     }
 

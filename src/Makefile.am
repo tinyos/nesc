@@ -146,7 +146,8 @@ EXTRA_DIST = 					\
 	AST_parent.c				\
 	AST_print.c				\
 	tdspecs					\
-	nesc-compile
+	nesc-compile				\
+	.gdbinit
 
 BISON = bison
 EMACS = emacs
