@@ -44,22 +44,15 @@ typedef int16_t intptr_t;
 
 
 typedef uint16_t uintptr_t;
-# 14 "/usr/local/lib/ncc/nesc_nx.h"
+# 18 "/usr/local/lib/ncc/nesc_nx.h"
 static __inline uint32_t __nesc_ntoh_uint32(void *source);
-#line 36
+#line 40
 static __inline int32_t __nesc_ntoh_int32(void *source);
-#line 55
+#line 59
 static __inline uint32_t __nesc_hton_uint32(void *target, uint32_t value);
-#line 84
+#line 88
 static __inline int32_t __nesc_hton_int32(void *target, int32_t value);
-
-
-
-
-
-
-
-
+#line 187
 typedef struct { char data[1]; } __attribute__((packed)) nx_int8_t;
 typedef struct { char data[2]; } __attribute__((packed)) nx_int16_t;
 typedef struct { char data[4]; } __attribute__((packed)) nx_int32_t;
@@ -68,34 +61,44 @@ typedef struct { char data[1]; } __attribute__((packed)) nx_uint8_t;
 typedef struct { char data[2]; } __attribute__((packed)) nx_uint16_t;
 typedef struct { char data[4]; } __attribute__((packed)) nx_uint32_t;
 typedef struct { char data[8]; } __attribute__((packed)) nx_uint64_t;
+
+
+typedef struct { char data[1]; } __attribute__((packed)) nxle_int8_t;
+typedef struct { char data[2]; } __attribute__((packed)) nxle_int16_t;
+typedef struct { char data[4]; } __attribute__((packed)) nxle_int32_t;
+typedef struct { char data[8]; } __attribute__((packed)) nxle_int64_t;
+typedef struct { char data[1]; } __attribute__((packed)) nxle_uint8_t;
+typedef struct { char data[2]; } __attribute__((packed)) nxle_uint16_t;
+typedef struct { char data[4]; } __attribute__((packed)) nxle_uint32_t;
+typedef struct { char data[8]; } __attribute__((packed)) nxle_uint64_t;
 # 3 "t8a.nc"
 int   main(void);
-# 14 "/usr/local/lib/ncc/nesc_nx.h"
+# 18 "/usr/local/lib/ncc/nesc_nx.h"
 static __inline uint32_t __nesc_ntoh_uint32(void *source)
-#line 14
+#line 18
 {
   uint8_t *base = source;
 
-#line 16
+#line 20
   return ((((uint32_t )base[0] << 24) | (
   (uint32_t )base[1] << 16)) | (
   (uint32_t )base[2] << 8)) | base[3];
 }
 
-#line 36
+#line 40
 static __inline int32_t __nesc_ntoh_int32(void *source)
-#line 36
+#line 40
 {
   return __nesc_ntoh_uint32(source);
 }
 
-#line 55
+#line 59
 static __inline uint32_t __nesc_hton_uint32(void *target, uint32_t value)
-#line 55
+#line 59
 {
   uint8_t *base = target;
 
-#line 57
+#line 61
   base[3] = value;
   base[2] = value >> 8;
   base[1] = value >> 16;
@@ -103,9 +106,9 @@ static __inline uint32_t __nesc_hton_uint32(void *target, uint32_t value)
   return value;
 }
 
-#line 84
+#line 88
 static __inline int32_t __nesc_hton_int32(void *target, int32_t value)
-#line 84
+#line 88
 {
   __nesc_hton_uint32(target, value);
   return value;

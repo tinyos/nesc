@@ -44,11 +44,11 @@ typedef int16_t intptr_t;
 
 
 typedef uint16_t uintptr_t;
-# 6 "/usr/local/lib/ncc/nesc_nx.h"
+# 10 "/usr/local/lib/ncc/nesc_nx.h"
 static __inline uint8_t __nesc_ntoh_uint8(void *source);
-#line 44
+#line 48
 static __inline uint8_t __nesc_hton_uint8(void *target, uint8_t value);
-#line 93
+#line 187
 typedef struct { char data[1]; } __attribute__((packed)) nx_int8_t;
 typedef struct { char data[2]; } __attribute__((packed)) nx_int16_t;
 typedef struct { char data[4]; } __attribute__((packed)) nx_int32_t;
@@ -57,30 +57,40 @@ typedef struct { char data[1]; } __attribute__((packed)) nx_uint8_t;
 typedef struct { char data[2]; } __attribute__((packed)) nx_uint16_t;
 typedef struct { char data[4]; } __attribute__((packed)) nx_uint32_t;
 typedef struct { char data[8]; } __attribute__((packed)) nx_uint64_t;
+
+
+typedef struct { char data[1]; } __attribute__((packed)) nxle_int8_t;
+typedef struct { char data[2]; } __attribute__((packed)) nxle_int16_t;
+typedef struct { char data[4]; } __attribute__((packed)) nxle_int32_t;
+typedef struct { char data[8]; } __attribute__((packed)) nxle_int64_t;
+typedef struct { char data[1]; } __attribute__((packed)) nxle_uint8_t;
+typedef struct { char data[2]; } __attribute__((packed)) nxle_uint16_t;
+typedef struct { char data[4]; } __attribute__((packed)) nxle_uint32_t;
+typedef struct { char data[8]; } __attribute__((packed)) nxle_uint64_t;
 # 3 "t11.nc"
 struct t11$__nesc_unnamed4242 {
   nx_uint8_t a, b[10];
 } t11$z;
 
 int   main(void);
-# 44 "/usr/local/lib/ncc/nesc_nx.h"
+# 48 "/usr/local/lib/ncc/nesc_nx.h"
 static __inline uint8_t __nesc_hton_uint8(void *target, uint8_t value)
-#line 44
+#line 48
 {
   uint8_t *base = target;
 
-#line 46
+#line 50
   base[0] = value;
   return value;
 }
 
-#line 6
+#line 10
 static __inline uint8_t __nesc_ntoh_uint8(void *source)
-#line 6
+#line 10
 {
   uint8_t *base = source;
 
-#line 8
+#line 12
   return base[0];
 }
 
