@@ -189,10 +189,15 @@ bool nesc_option(char *p)
     }
   else if (!strncmp (p, "fnesc-target=", strlen("fnesc-target=")))
     {
-      char *target = p + strlen("fnesc-target=");
-      if (!strcmp(target, "pc"))
-	use_nido = TRUE;
-      select_target(target);
+      select_target(p + strlen("fnesc-target="));
+    }
+  else if (!strcmp (p, "fnesc-simulate"))
+    {
+      use_nido = TRUE;
+    }
+  else if (!strncmp (p, "fnesc-gcc=", strlen("fnesc-gcc=")))
+    {
+      target_compiler = p + strlen("fnesc-gcc=");
     }
   else if (!strcmp (p, "fnesc-no-debug"))
     {

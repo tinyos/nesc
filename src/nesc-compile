@@ -56,6 +56,9 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 		$ctarget = $1;
 		$delcfile = 1;
 	    }
+	    if (/^-_?fnesc-gcc=(.*)$/) {
+		$gcc = $1;
+	    }
 	}
 	elsif (!(/^-D/)) {
 	    if (!(/^-_?W(no-)?nesc/)) {
@@ -114,7 +117,7 @@ push @gcc_args, "-c" unless $asmonly;
 push @gcc_args, "-fdollars-in-identifiers";
 push @gcc_args, $ctarget;
 unshift @gcc_args, "-B$ENV{NCDIR}";
-unshift @gcc_args, $ENV{NESC_GCC};
+unshift @gcc_args, $gcc;
 &vsystem(@gcc_args);
 unlink $ctarget if $delcfile;
 

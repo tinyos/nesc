@@ -35,6 +35,7 @@ static machine_spec *machines[] = {
 };
 
 machine_spec *target = &self_machine;
+const char *target_compiler = "gcc";
 
 bool select_target(const char *targetname)
 {

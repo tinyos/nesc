@@ -39,7 +39,7 @@
 #define sameregion
 #define parentptr
 
-#define RPAGELOG 13
+#define RPAGELOG 12
 
 typedef struct region_ *region;
 extern region permanent;

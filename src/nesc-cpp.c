@@ -122,7 +122,7 @@ static FILE *exec_gcc(char *gcc_output_template, bool redirect_errors,
   static int tmpfd1 = -1, tmpfd2 = -1;
 
   argv = alloca((nargs + 2) * sizeof *argv);
-  argv[0] = target->gcc_compiler;
+  argv[0] = target_compiler;
   setargs(data, argv + 1);
 
   /* It's really spammy with this on */
@@ -165,7 +165,7 @@ static FILE *exec_gcc(char *gcc_output_template, bool redirect_errors,
 
   close(destfd);
 
-  gcc_stat = spawnvp(_P_WAIT, target->gcc_compiler, argv);
+  gcc_stat = spawnvp(_P_WAIT, target_compiler, argv);
   if (WIFEXITED(gcc_stat))
     res = WEXITSTATUS(gcc_stat);
   else
@@ -204,7 +204,7 @@ static FILE *exec_gcc(char *gcc_output_template, bool redirect_errors,
       close(destfd);
 
       argv = alloca((nargs + 2) * sizeof *argv);
-      argv[0] = target->gcc_compiler;
+      argv[0] = target_compiler;
       setargs(data, argv + 1);
 
       /* It's really spammy with this on */
@@ -217,7 +217,7 @@ static FILE *exec_gcc(char *gcc_output_template, bool redirect_errors,
 	  fprintf(stderr, "\n");
 	}
 
-      execvp(target->gcc_compiler, (char **)argv);
+      execvp(target_compiler, (char **)argv);
       exit(2);
     }
 

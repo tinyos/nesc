@@ -15,8 +15,6 @@ typedef struct {
   size_t wchar_t_size, size_t_size;
   bool char_signed, wchar_t_signed;
 
-  const char *gcc_compiler;
-
   bool (*decl_attribute)(gcc_attribute attr, data_declaration ddecl);
   bool (*tag_attribute)(gcc_attribute attr, tag_declaration tdecl);
   bool (*field_attribute)(gcc_attribute attr, field_declaration fdecl);
@@ -25,6 +23,7 @@ typedef struct {
 } machine_spec;
 
 extern machine_spec *target;
+extern const char *target_compiler;
 
 bool select_target(const char *targetname);
 
