@@ -38,6 +38,8 @@
 #include "remote.h"
 #include "jtag.h"
 
+bool ignoreInterrupts;
+
 static int makeSocket(struct sockaddr_in *name, unsigned short int port)
 {
     int sock;
@@ -98,6 +100,9 @@ static void usage(const char *progname)
 	    "  --capture                   Capture running program."
 	    "     Note: debugging must have been enabled prior to starting the program.\n"
 	    "           (e.g., by running avarice earlier)\n\n");
+    fprintf(stderr,
+	    "  --ignore-intr               Automatically step over interrupts."
+	    "     Note: EXPERIMENTAL. Hardwired to 128-in-103 interrupt range.\n");
     fprintf(stderr,
 	    "  -f, --file <filename>       Download specified file"
 	    " prior to debugging.\n\n");
@@ -166,6 +171,10 @@ int main(int argc, char **argv)
 	    else if (0 == strcmp("--capture", argv[j]))
 	    {
 	        capture = true;
+	    }
+	    else if (0 == strcmp("--ignore-intr", argv[j]))
+	    {
+	        ignoreInterrupts = true;
 	    }
 	    else if ((0 == strcmp("--debug", argv[j])) ||
 		     (0 == strcmp("-d", argv[j])))

@@ -329,33 +329,98 @@ static void reportStatus(int sigval)
     *ptr++ = 0;
 }
 
+// little-endian word read
+unsigned int readLWord(unsigned int address)
+{
+    unsigned char *mem = jtagRead(DATA_SPACE_ADDR_OFFSET + address, 2);
+
+    if (!mem)
+	return 0;		// hmm
+
+    unsigned int val = mem[0] | mem[1] << 8;
+    delete[] mem;
+    return val;
+}
+
+// big-endian word read
+unsigned int readBWord(unsigned int address)
+{
+    unsigned char *mem = jtagRead(DATA_SPACE_ADDR_OFFSET + address, 2);
+
+    if (!mem)
+	return 0;		// hmm
+
+    unsigned int val = mem[0] << 8 | mem[1];
+    delete[] mem;
+    return val;
+}
+
+unsigned int readSP(void)
+{
+    return readLWord(0x5d);
+}
+
+bool handleInterrupt(void)
+{
+    bool result;
+
+    // Set a breakpoint at return address
+    debugOut("INTERRUPT\n");
+    unsigned int intrSP = readSP();
+    unsigned int retPC = readBWord(intrSP + 1) << 1;
+    debugOut("INT SP = %x, retPC = %x\n", intrSP, retPC);
+
+    bool needBP = !codeBreakpointAt(retPC);
+
+    for (;;)
+    {
+	if (needBP)
+	{
+	    // If no breakpoint at return address (normal case),
+	    // add one.
+	    // Normally, this breakpoint add should succeed as gdb shouldn't
+	    // be using a momentary breakpoint when doing a step-through-range,
+	    // thus leaving is a free hw breakpoint. But if for some reason it
+	    // the add fails, interrupt the program at the interrupt handler
+	    // entry point
+	    if (!addBreakpoint(retPC, CODE, 0))
+		return false;
+	}
+	result = jtagContinue(true);
+	if (needBP)
+	    deleteBreakpoint(retPC, CODE, 0);
+
+	if (!result) // user interrupt
+	    break;
+
+	// We check that SP is > intrSP. If SP <= intrSP, this is just
+	// an unrelated excursion to retPC
+	if (readSP() > intrSP)
+	    break;
+    }
+    return result;
+}
+
 static bool stepThrough(int start, int end)
 {
     // Try and use a breakpoint at end and "break on change of flow"
     // This doesn't seem to provide much benefit...
-    if (!codeBreakpointBetween(start, end))
-    {
-      setJtagParameter(JTAG_P_BP_FLOW, 1);
-      stopAt(end);
+    bool flowIntr = !codeBreakpointBetween(start, end);
 
-      for (;;) 
-      {
-	  if (!jtagContinue(false))
-	      return false;
-	  int newPC = getProgramCounter();
-	  if (!(newPC >= start && newPC < end) || codeBreakpointAt(newPC))
-	      break;
-      }
-    }
-    else
-	for (;;)
+    for (;;) 
+    {
+	if (flowIntr)
+	{
+	    setJtagParameter(JTAG_P_BP_FLOW, 1);
+	    stopAt(end);
+	    if (!jtagContinue(false))
+		return false;
+	}
+	else
 	{
 	    jtagSingleStep();
-	    int newPC = getProgramCounter();
-	    if (!(newPC >= start && newPC < end) || codeBreakpointAt(newPC))
-		break;
-	    int gdbIn = checkForDebugChar();
 
+	    int gdbIn = checkForDebugChar();
 	    if (gdbIn >= 0)
 		if (gdbIn == 3)
 		    return false;
@@ -363,7 +428,23 @@ static bool stepThrough(int start, int end)
 		    debugOut("Unexpected GDB input `%02x'\n", gdbIn);
 	}
 
-    return true;
+	for (;;)
+	{
+	    int newPC = getProgramCounter();
+	    if (codeBreakpointAt(newPC))
+		return true;
+	    if (newPC >= start && newPC < end)
+		break;
+
+	    if (ignoreInterrupts && newPC < 0x60) // an interrupt, we assume
+	    {
+		if (!handleInterrupt())
+		    return false;
+	    }
+	    else
+		return true;
+	}
+    }
 }
 
 /** Read packet from gdb into remcomInBuffer, check checksum and confirm
