@@ -134,7 +134,7 @@ if( defined($docdir) ) {
     push @topdirs, $tosparent;
 
     # add top level dirs, to strip out of package names
-    foreach my $dir (expand_symlinks(@topdirs)) {
+    foreach my $dir (@topdirs) {
         push @new_args, "-fnesc-topdir=$dir";
     }
 
@@ -234,97 +234,4 @@ sub winpath {
     chop $path;
 
     return $path;
-}
-
-
-#
-# Expand symlinks along the path.  This function returns a list of all
-# aliases of the passed-in directories.
-#
-# FIXME: This should really either be part of nesc1, or should be done
-# away with altogether, in favor of Java-style package names.
-#
-sub expand_symlinks_mdw { 
-  my @dirs = @_; my @ret = ();
-
-  foreach my $dir (@dirs) {
-    my $done = 0;
-
-    while (!$done) {
-      my $origdir = $dir;
-      my $top = "/";
-      foreach my $subdir (split('/', $dir)) {
-        next if ($subdir =~ /^\s*$/);
-      next_one:
-        $fulldir = $top . $subdir;
-        if ( -l $fulldir ) {
-          # OK, found a link
-  	  my $link = readlink($fulldir);
-  	  if ($link =~ m!^/!) {
-	    # Link starts with a slash
-	    $top = $link;
-            $subdir = "";
-	    goto next_one;
-	  } else {
-	    # Link is relative
-	    $top = $top . "/" . $link;
-            $subdir = "";
-	    goto next_one;
-	  }
-        } else {
-          # Not a link at all
-	  $top = $top . $subdir . "/";
-        }
-      }
-      push @ret, $top;
-      if ($top eq $origdir) { $done = 1; }
-      else { $dir = $top; }
-    }
-  }
-  return @ret;
-}
-
-
-sub expand_symlinks { 
-    my @dirs = @_; my @ret = ();
-    
-    
-    # accumulate all possible aliases for each directory
-    foreach my $dir (@dirs) {
-        my @partials = ("");
-        foreach my $subdir (split('/', $dir)) {
-            next if($subdir =~ /^\s*$/);
-            my @temp = ();
-            foreach my $d (@partials) {
-                push @temp, "$d/$subdir";
-                if ( -l "$d/$subdir" ) {
-                    my $link = readlink("$d/$subdir");
-                    if ($link =~ m!^/!) {
-                        push @temp, $link;
-                    } else {
-                        push @temp, "$d/$link";
-                    }
-                }
-            }
-            @partials = @temp;
-        }
-        push @ret, @partials;
-    }
-
-    # clean up relative paths & multiple /
-    my @temp = @ret;
-    @ret = ();
-    foreach my $dir (@temp) {
-        # multiple / 
-        $dir =~ s!/+!/!g;
-
-        # collapse relative paths
-        while ($dir =~ m!/[^/]+/\.\./!) {
-            $dir =~ s!/[^/]+/\.\./!/!;
-        }
-        push @ret, $dir;
-    }
-    
-    
-    return @ret;
 }
