@@ -75,6 +75,10 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	    $print_tosdir = 1;
 	    $strip = 1;
 	}
+	elsif (/^--version$/) {
+	    $print_version = 1;
+	    $strip = 1;
+	}
     } 
 
     push @new_args, $_ if !$strip;
@@ -119,6 +123,13 @@ elsif ($target eq "motor") {
 }
 else {
     &fail("unknown target $target\n(known targets are pc, mica, mica128, rene2)");
+}
+
+if ($print_version) {
+    print "ncc: @PACKAGE_VERSION@\n";
+    print "$gcc: ";
+    system "$gcc --version";
+    exit 0;
 }
 
 
