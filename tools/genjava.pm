@@ -434,17 +434,21 @@ sub javabasetype()
     my $jtype, $acc;
 
     # Pick the java type whose range is closest to the corresponding C type
-    # (overwritten for float types)
-    if ($bitlength < 8) { $jtype = "byte"; }
-    elsif ($bitlength < 16) { $jtype = "short"; }
-    elsif ($bitlength < 32) { $jtype = "int"; }
-    elsif ($bitlength < 64) { $jtype = "long"; }
-
     if ($basetype eq "U") {
       $acc = "UIntElement";
-    } elsif ($basetype eq "I") {
+      if ($bitlength < 8) { $jtype = "byte"; }
+      elsif ($bitlength < 16) { $jtype = "short"; }
+      elsif ($bitlength < 32) { $jtype = "int"; }
+      elsif { $jtype = "long"; }
+    }
+    elsif ($basetype eq "I") {
       $acc = "SIntElement";
-    } elsif ($basetype eq "F" || $basetype eq "D" || $basetype eq "LD") {
+      if ($bitlength <= 8) { $jtype = "byte"; }
+      elsif ($bitlength <= 16) { $jtype = "short"; }
+      elsif ($bitlength <= 32) { $jtype = "int"; }
+      elsif { $jtype = "long"; }
+    }
+    elsif ($basetype eq "F" || $basetype eq "D" || $basetype eq "LD") {
       $acc = "FloatElement";
       $jtype = "float";
     }
