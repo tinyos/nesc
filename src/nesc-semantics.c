@@ -121,10 +121,6 @@ bool nesc_filename(const char *name)
     {
       if (!strcmp(dot, ".nc"))
 	return TRUE;
-      if (!strcmp(dot, ".td"))
-	return TRUE;
-      if (!strcmp(dot, ".ti"))
-	return TRUE;
     }
   return FALSE; /* C by default */
 }
