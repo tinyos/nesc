@@ -1,18 +1,6 @@
-% components included in an app
-
-% when to mention fanout? (call, signal is possible first place)
-
-% in-function static vars
-
-% no initialisers on module variables (future support)
-% vars w/ attribute C are not module vars
-
-% post foo() has type bool
-
-% ponder: should I define a minimum reachable fn defn ?
-% (this def affects what ``missing connection'' errors you get)
-
-% talk more about load order (affects behaviour because of includes)
+% Not in ref manual (implementation restriction rather than language feature):
+%   no initialisers on module variables (future support)
+%   (but vars w/ attribute C are not module vars)
 
 \documentclass[11pt]{article}
 
@@ -33,7 +21,7 @@
 \begin{document}
 
 \title{\nesc Language Reference Manual}
-\author{David Gay, Philip Levis}
+\author{David Gay, David Culler, Philip Levis}
 \date{September 2002}
 
 \maketitle
@@ -43,7 +31,7 @@
 \nesc is a new programming language designed to embody the structuring
 concepts and execution model of TinyOS~\cite{tinyos}. TinyOS is an
 event-driven operating system designed for sensor network nodes that
-have very limited resources (e.g. 8K program memory, 512 bytes of
+have very limited resources (e.g., 8K bytes of program memory, 512 bytes of
 RAM). TinyOS has been reimplemented in \nesc.
 
 The basic concepts behind \nesc are:
@@ -122,8 +110,8 @@ existing non-terminal. In the piecemeal presentation of the grammar, we
 sometimes use \ldots to represent elided productions (not relevant to the
 construction being presented).
 
-The examples will often use the \code{uint8\_t}, \code{uint16\_t} types
-from the standard \file{inttypes.h} file.
+Several examples use the \code{uint8\_t} and \code{uint16\_t} types from
+the C99 standard \file{inttypes.h} file.
 
 \section{Concepts and Terminology}
 \label{sec:terminology}
@@ -990,7 +978,7 @@ elements, with identical interface parameter types $\tau_1, \ldots,
 \tau_n$. If one endpoint corresponds to commands or events $\alpha_1,
 \ldots, \alpha_m$ and the other to corresponds to commands or events
 $\beta_1, \ldots, \beta_m$, then there is a connection $I_{\alpha_i, w_1,
-\ldots, w_n} \code{<->} I_{\beta_i, w_1,\ldots, w_n}$ for all $1 \leq i
+\ldots, w_n}$ \code{<->} $I_{\beta_i, w_1,\ldots, w_n}$ for all $1 \leq i
 \leq m$ and all tuples $(w_1:\tau_1, \ldots, w_n:\tau_n)$ (i.e., the
 endpoints are connected for all corresponding parameter values).
 \end{itemize}
@@ -1028,7 +1016,7 @@ interface type namespace for the \nesc interface types and components.
 within the global scope, as usual (for function declarations and
 definitions, code blocks within functions, etc).
 
-\item Each interface type introduces has a scope that holds the interface's
+\item Each interface type introduces a scope that holds the interface's
 commands or events. This scope is nested in the global scope, therefore
 command and event definitions can refer to C types and tags defined in the
 global scope.
@@ -1041,13 +1029,12 @@ specification scope, contains a variable and a tag namespace.
 For configurations, the implementation's scope variable namespace contains
 the names by which this component refers to its included components
 (Section~\ref{sec:config-components}). For modules, the implementation
-scope holds the command and event implementations, tasks, C declarations
-and definitions that form the module's body. These declarations, etc may
-introduce their own nested scopes within the implementation scope (for
-function bodies, code blocks, etc). As a result of the scope nesting
-structure, code in modules has access to the C declarations and definitions
-in the global scope, but not to any declarations or definitions in other
-components.
+scope holds the tasks, C declarations and definitions that form the
+module's body. These declarations, etc may introduce their own nested
+scopes within the implementation scope (for function bodies, code blocks,
+etc). As a result of the scope nesting structure, code in modules has
+access to the C declarations and definitions in the global scope, but not
+to any declarations or definitions in other components.
 \end{itemize}
 
 The C declarations and defintions, interface types and components that form
@@ -1206,11 +1193,11 @@ single-attribute:\\
 
 \nesc supports two attributes:
 \begin{itemize}
-\item \code{C}: This attribute is used for a function $f$ declared in
-modules (it is ignored for all other declarations). It specifies that
-$f$'s should appear in the global C scope rather than in the module's
-per-component-implementation scope. This allows $f$ to be called from
-C code.
+\item \code{C}: This attribute is used for a C declaration or definition
+$d$ at the top-level of a module (it is ignored for all other
+declarations). It specifies that $d$'s should appear in the global C scope
+rather than in the module's per-component-implementation scope. This allows
+$d$ to be used (e.g., called if it is a function) from C code.
 
 \item \code{spontaneous}: This attribute can be used on any function
 $f$ (in modules or C code). It indicates that there are calls $f$ that
@@ -1220,7 +1207,7 @@ function. Section~\ref{sec:app} discusses how the \nesc compiler
 uses the \code{spontaneous} attribute during compilation.
 \end{itemize}
 
-Example of attribute use: in module \file{RealMain.td}:
+Example of attribute use: in file \file{RealMain.td}:
 \begin{verbatim}
 module RealMain { ... }
 implementation {
