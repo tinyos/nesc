@@ -18,12 +18,16 @@ fi
 
 if [ -x /usr/bin/autoconf-2.53 ]; then
   AUTOCONF="/usr/bin/autoconf-2.53"
+elif [ -x /usr/local/bin/autoconf-new ]; then
+  AUTOCONF="/usr/local/bin/autoconf-new"
 else
   AUTOCONF="autoconf"
 fi
 
 if [ -x /usr/bin/autoheader-2.53 ]; then
   AUTOHEADER="/usr/bin/autoheader-2.53"
+elif [ -x /usr/local/bin/autoheader-new ]; then
+  AUTOHEADER="/usr/local/bin/autoheader-new"
 else
   AUTOHEADER="autoheader"
 fi

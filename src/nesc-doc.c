@@ -2818,6 +2818,12 @@ void generate_docs(const char *filename, cgraph cg)
       if(pos == docdir) pos=strchr(docdir+1, dirsep); // skip the first '/' of an absolute path
       while(pos != NULL) {
         *pos = '\0';
+
+#ifndef ENOMEDIUM
+	/* Ignore ENOMEDIUM on systems that don't have it */
+#define ENOMEDIUM EEXIST
+#endif
+
         if(mkdir(docdir, 0755) != 0  &&  errno != EEXIST  &&  errno != ENOMEDIUM) {
           perror("mkdir");
           fatal("error making ancestor directory of docdir '%s'.  errno=%d\n", docdir,errno);
