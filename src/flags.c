@@ -230,3 +230,7 @@ char* tossim_num_nodes;
 /* Nonzero for -v */
 int flag_verbose;
 
+/* Warn if there are unexpected documentation strings in the code */
+int warn_unexpected_docstring = 0;
+
+

@@ -226,4 +226,7 @@ extern char* tossim_num_nodes;
 /* Nonzero for -v */
 extern int flag_verbose;
 
+/* Warn if there are unexpected documentation strings in the code */
+extern int warn_unexpected_docstring;
+
 #endif

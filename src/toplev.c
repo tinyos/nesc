@@ -152,6 +152,8 @@ static char *lang_options[] =
   "-Wno-undef",
   "-Wwrite-strings",
   "-Wno-write-strings",
+  "-Wunexpected-docstring",
+  "-Wno-unexpected-docstring",
 
   0
 };
@@ -368,6 +370,10 @@ static void c_decode_option(char *p)
     warn_multichar = 1;
   else if (!strcmp (p, "-Wno-multichar"))
     warn_multichar = 0;
+  else if (!strcmp (p, "-Wunexpected-docstring"))
+    warn_unexpected_docstring = 1;
+  else if (!strcmp (p, "-Wno-unexpected-docstring"))
+    warn_unexpected_docstring = 0;
   else if (!strcmp (p, "-Wall"))
     {
       /* We save the value of warn_uninitialized, since if they put
@@ -384,6 +390,7 @@ static void c_decode_option(char *p)
       warn_char_subscripts = 1;
       warn_parentheses = 1;
       warn_missing_braces = 1;
+      warn_unexpected_docstring = 1;
       /* We set this to 2 here, but 1 in -Wmain, so -ffreestanding can turn
 	 it off only if it's not explicit.  */
       warn_main = 2;

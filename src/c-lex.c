@@ -231,28 +231,35 @@ yyprint (file, yychar, yylval)
 bool doc_skip_prefix;
 unsigned long prev_cpp_docstring_line = ULONG_MAX;
 struct location doc_location;
+bool in_cpp_docstring = FALSE;
 
 /* initialize an accumulating documentation string */
 static void init_c_docstring() 
 {
-  /* warn about doc strings that are never added to a data_declaration */
-  if(char_array_length(docstring_array) != 0 )
-    warning("discarding unused docstring from %s:%ld.", doc_location.filename, doc_location.lineno);
+  if(warn_unexpected_docstring  &&  char_array_length(docstring_array) != 0)
+    warning("discarding unexpected docstring from %s:%ld.", doc_location.filename, doc_location.lineno);
 
   char_array_reset(docstring_array);
   doc_skip_prefix = FALSE;
   doc_location = input_file_stack->l;
+  in_cpp_docstring = FALSE;
 }
 
 /* set up for a CPP style documentation string.  This allows for
    multiple comment lines to be strung together into a single comment */
 static void init_cpp_docstring() 
 {
-  if(prev_cpp_docstring_line + 1  !=  input_file_stack->l.lineno)
+  if(!in_cpp_docstring  || 
+     prev_cpp_docstring_line + 1  !=  input_file_stack->l.lineno) {
+    if(warn_unexpected_docstring  &&  char_array_length(docstring_array) != 0)
+      warning("discarding unexpected docstring from %s:%ld.", doc_location.filename, doc_location.lineno);
+
     char_array_reset(docstring_array);
+  }
   prev_cpp_docstring_line = input_file_stack->l.lineno;
   doc_skip_prefix = FALSE;
   doc_location = input_file_stack->l;
+  in_cpp_docstring = TRUE;
 }
 
 
@@ -329,6 +336,7 @@ char *get_docstring() {
   str[length] = '\0';
   prev_cpp_docstring_line = ULONG_MAX;
   char_array_reset(docstring_array);
+  in_cpp_docstring = FALSE;
 
   return str;
 }
