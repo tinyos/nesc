@@ -764,7 +764,7 @@ static bool connection_already_printed(dhash_table table,
 /**
  * Display the nodes in the graph, along w/ info on edges
  **/
-static void print_cg_html(const char *component_name, const char *component_file_name, cgraph cg) {
+static void print_cg_html(const char *component_name, const char *component_file_name, cgraph cg, bool app_graph) {
   gnode n;
   dhash_table table = NULL;
   char *iface_dot, *func_dot;
@@ -784,9 +784,11 @@ static void print_cg_html(const char *component_name, const char *component_file
   iface_gif = doc_filename_with_ext(component_file_name,".if.gif");
   iface_cmap = doc_filename_with_ext(component_file_name,".if.cmap");
 
-  func_dot = doc_filename_with_ext(component_file_name,".func.dot");
-  func_gif = doc_filename_with_ext(component_file_name,".func.gif");
-  func_cmap = doc_filename_with_ext(component_file_name,".func.cmap");
+  if( do_func_graph ) {
+    func_dot = doc_filename_with_ext(component_file_name,".func.dot");
+    func_gif = doc_filename_with_ext(component_file_name,".func.gif");
+    func_cmap = doc_filename_with_ext(component_file_name,".func.cmap");
+  }
 
   text_only_name = doc_filename_with_ext(component_file_name,".text.html");
 
@@ -810,11 +812,26 @@ static void print_cg_html(const char *component_name, const char *component_file
 
   // start the dot output
   if( use_graphviz ) {
-    iface_file = fopen(iface_dot, "w");  assert(iface_file);
-    func_file  = fopen(func_dot,  "w");  assert(func_file);
+    char *graphviz_opts = "
+    rankdir=LR;
+    ratio=compress;
+    margin=\"0,0\";
+    ranksep=0.0005; 
+    nodesep=0.1; 
+    node [shape=ellipse style=filled fillcolor=\"#e0e0e0\"];
+    node [fontcolor=blue fontname=Times fontsize=16];
+    edge [fontcolor=blue fontname=Times fontsize=14];
+";
 
-    fprintf(iface_file, "digraph \"%s_if\" {\n    fontsize=8; \n", component_name);
-    fprintf(func_file, "digraph \"%s_func\" {\n    fontsize=8; \n", component_name);
+    iface_file = fopen(iface_dot, "w");  assert(iface_file);
+    fprintf(iface_file, "digraph \"%s_if\" {%s\n    %s\n", component_name, graphviz_opts,
+            app_graph ? "size=\"8,8\"" : "size=\"4,4\"");
+
+    if( do_func_graph ) {
+      func_file  = fopen(func_dot,  "w");  assert(func_file);
+      fprintf(iface_file, "digraph \"%s_func\" {%s\n    %s\n", component_name, graphviz_opts,
+              app_graph ? "size=\"8,8\"" : "size=\"4,4\"");
+    }
   }
   
 
@@ -868,28 +885,27 @@ static void print_cg_html(const char *component_name, const char *component_file
             if( use_graphviz )
             {
               // print the node info (ie URLs)
-              fprintf(iface_file, "    %s [URL=\"%s\" fontsize=\"12\"];\n", 
+              fprintf(iface_file, "    %s [URL=\"%s\"];\n", 
                       iface_node_name(req),
                       component_docfile_name( iface_node_name(req) ));
-              fprintf(iface_file, "    %s [URL=\"%s\" fontsize=\"12\"];\n", 
+              fprintf(iface_file, "    %s [URL=\"%s\"];\n", 
                       iface_node_name(prov),
                       component_docfile_name( iface_node_name(prov) ));
               
               // edge info
-              fprintf(iface_file, "    %s -> %s ",
+              fprintf(iface_file, "    %s -> %s [",
                         iface_node_name( req ),
                         iface_node_name( prov ));
-              fprintf(iface_file, "[fontsize=\"11\" labeldistance=\"20\" ");
               if(req->interface) {
                 if(!req->component || !prov->component) 
-                  fprintf(iface_file, " style=\"dashed\""); 
+                  fprintf(iface_file, " style=dashed"); 
                 fprintf(iface_file, " label=\"%s\" URL=\"%s\"", 
                         prov->interface->itype->name,
                         interface_docfile_name(prov->interface->itype->name));
               } else {
-                fprintf(iface_file, " label=\"func:%s\"", prov->function->name);
+                fprintf(iface_file, " label=\"func:%s\" fontcolor=black", prov->function->name);
               }
-              fprintf(iface_file, "];\n");
+              fprintf(iface_file, " ];\n");
             }
             
             // text stuff
@@ -950,7 +966,9 @@ static void print_cg_html(const char *component_name, const char *component_file
   // finish up the graphviz output
   if( use_graphviz ) {
     fprintf(iface_file, "}\n");  fclose(iface_file);
-    fprintf(func_file, "}\n");   fclose(func_file);
+    if( do_func_graph ) {
+      fprintf(func_file, "}\n");   fclose(func_file);
+    }
   }
 
   // finish up the text output
@@ -1026,9 +1044,9 @@ static void print_cg_html(const char *component_name, const char *component_file
   }
 
   // remove temp files
-  unlink(iface_dot);
+  //unlink(iface_dot);
   unlink(iface_cmap);
-  unlink(func_dot);
+  //unlink(func_dot);
   unlink(func_cmap);
 
 }
@@ -1056,15 +1074,42 @@ static void generate_component_html(nesc_declaration cdecl)
 
 
   // start the HTML
-  output("
+  {
+    char *sourcelink = doc_filename_with_ext(cdecl->ast->location->filename, ".source");
+    char *sourcefile = doc_filename_with_ext(cdecl->ast->location->filename, "");
+
+    assert(symlink(cdecl->ast->location->filename, sourcelink) == 0);
+
+    output("
 <html>
 <head>
 <title>Component: %s</title>
 </head>
+<body>
+", cdecl->name);
 
+    output("
+<font size=\"-1\">
+<table BORDER=\"0\" CELLPADDING=\"3\" CELLSPACING=\"0\" width=\"100%%\">
+<tr ><td>
+<b><a href=\"apps.html\">Apps</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"components.html\">Components</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"interfaces.html\">Interfaces</a></b>&nbsp;&nbsp;&nbsp;
+</td>
+<td align=\"right\">
+source: <a href=\"%s\">%s</a>
+</td>
+</tr></table>
+</font>
+<hr>
+", sourcelink, sourcefile);
+
+
+    output("
 <h1 align=\"center\">Component: %s</h1>
+", cdecl->name);
+  }  
 
-", cdecl->name, cdecl->name);
 
 
   // print the overview documentation
@@ -1160,7 +1205,8 @@ static void generate_component_html(nesc_declaration cdecl)
   {
     print_cg_html(cdecl->name,
                   CAST(component, cdecl->ast)->location->filename, 
-                  cdecl->connections);
+                  cdecl->connections,
+                  FALSE);
   }
 
   // otherwise, we have a module (aka function defs) 
@@ -1239,8 +1285,10 @@ static void generate_intf_function_list(const char *heading,
 
     scan_variable_decl(vd, CAST(variable_decl,dd->decls)) {
       if( vd->ddecl->ftype == kind ) {
-	if(!printed_heading) {print_html_banner(heading); output("<ul>\n"); printed_heading=TRUE;}
-	print_function_html(NULL,dd,vd,in_interface|flags);
+        if( flags & short_desc  ||  has_long_desc(NULL,dd,vd) ) {
+          if(!printed_heading) {print_html_banner(heading); output("<ul>\n"); printed_heading=TRUE;}
+          print_function_html(NULL,dd,vd,in_interface|flags);
+        }
       }
     }
   }
@@ -1258,16 +1306,41 @@ static void generate_interface_html(nesc_declaration idecl)
                           
 
   // start the HTML
-  output("
+  {
+    char *sourcelink = doc_filename_with_ext(idecl->ast->location->filename, ".source");
+    char *sourcefile = doc_filename_with_ext(idecl->ast->location->filename, "");
+
+    assert(symlink(idecl->ast->location->filename, sourcelink) == 0);
+
+    output("
 <html>
 <head>
 <title>Interface: %s</title>
 </head>
+<body>
+", idecl->name);
 
+    output("
+<font size=\"-1\">
+<table BORDER=\"0\" CELLPADDING=\"3\" CELLSPACING=\"0\" width=\"100%%\">
+<tr ><td>
+<b><a href=\"apps.html\">Apps</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"components.html\">Components</a></b>&nbsp;&nbsp;&nbsp;
+<b><a href=\"interfaces.html\">Interfaces</a></b>&nbsp;&nbsp;&nbsp;
+</td>
+<td align=\"right\">
+source: <a href=\"%s\">%s</a>
+</td>
+</tr></table>
+</font>
+<hr>
+", sourcelink, sourcefile);
+
+
+    output("
 <h1 align=\"center\">Interface: %s</h1>
-
-", idecl->name, idecl->name);
-  
+", idecl->name);
+  }  
   
   // summary
   generate_intf_function_list("<h3>Defined Functions</h3>",
@@ -1538,7 +1611,7 @@ static void generate_app_page(const char *filename, cgraph cg)
   fprintf(f, "<body>\n");
   fprintf(f, "<h1 align=\"center\">App: %s</h1>\n", appname);
 
-  print_cg_html(appname, basename, cg);
+  print_cg_html(appname, basename, cg, TRUE);
 
   fprintf(f, "</body>\n");
   fprintf(f, "</html>\n");
