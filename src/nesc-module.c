@@ -23,6 +23,7 @@ Boston, MA 02111-1307, USA.  */
 #include "expr.h"
 #include "semantics.h"
 #include "nesc-semantics.h"
+#include "nesc-task.h"
 
 expression make_generic_call(location loc, expression iref, expression args)
 {
@@ -98,4 +99,6 @@ static void check_complete_implementation(module m)
 void process_module(module m)
 {
   check_complete_implementation(m);
+  /* Add wires to graph for tasks */
+  wire_scheduler(m);
 }

@@ -2109,10 +2109,6 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   else
     ddecl = declare(current.env, &tempdecl, FALSE);
 
-  /* If requested, replace post/task by references to an interface */
-  if (type_task(ddecl->type) && flag_use_scheduler)
-    handle_task_definition(fdecl);
-
   fdecl->base_labels = fdecl->scoped_labels =
     new_env(parse_region,
 	    current.function_decl ? current.function_decl->scoped_labels : NULL);
@@ -2120,6 +2116,10 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   fdecl->fdeclarator = fdeclarator;
 
   set_doc_string(fdecl->ddecl, short_docstring, long_docstring, doc_location);
+
+  /* If requested, replace post/task by references to an interface */
+  if (type_task(ddecl->type) && flag_use_scheduler)
+    handle_task_definition(fdecl);
 
   /* save environments */
   current.env = fdeclarator->env;
@@ -2681,14 +2681,14 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
       else
 	ddecl = declare(current.env, &tempdecl, FALSE);
 
-      /* If requested, replace post/task by references to an interface */
-      if (type_task(ddecl->type) && flag_use_scheduler)
-	handle_task_declaration(vd);
-
       ddecl->defined = current.spec_section == spec_provides;
     }
   assert(ddecl);
   vd->ddecl = ddecl;
+
+  /* If requested, replace post/task by references to an interface */
+  if (type_task(ddecl->type) && flag_use_scheduler)
+    handle_task_declaration(vd);
 
   /* XXX: Ugly hack. */
   if (ddecl->basetype)

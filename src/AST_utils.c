@@ -221,7 +221,8 @@ expression build_identifier(region r, location loc, data_declaration id)
 {
   identifier e = new_identifier(r, loc, str2cstring(r, id->name), id);
 
-  assert(id->kind == decl_variable || id->kind == decl_function);
+  assert(id->kind == decl_variable || id->kind == decl_function ||
+	 id->kind == decl_constant || id->kind == decl_magic_function);
   e->type = id->type;
   e->cst = fold_identifier(CAST(expression, e), id, 0);
 

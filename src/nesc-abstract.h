@@ -39,7 +39,7 @@ nesc_declaration abstract_recursion(void);
      Return Y if this is the case, NULL if not.
 */
 
-void fold_program(nesc_declaration program);
+void fold_program(nesc_declaration program, nesc_declaration scheduler);
 
 void pop_instance(void);
 

@@ -564,8 +564,10 @@ module:
 		} 
 	  component_parms nesc_attributes '{' requires_or_provides_list '}'
 	  imodule
-		{ 
-		  set_nesc_parse_tree(new_component(pr, $2.location, $3, $6, $1, $5, declaration_reverse($8), $10));
+		{
+		  declaration intfs = 
+		    declaration_chain(declaration_reverse($8), all_tasks);
+		  set_nesc_parse_tree(new_component(pr, $2.location, $3, $6, $1, $5, intfs, $10));
 	        }
 	;
 
@@ -809,7 +811,7 @@ parameterised_identifier:
 	  { $$ = new_parameterised_identifier(pr, $1->location, $1, $3); }
 	;
 
-imodule:  IMPLEMENTATION { $<u.env>$ = start_implementation(); } '{' extdefs '}' 
+imodule:  IMPLEMENTATION { $<u.env>$ = start_implementation(); all_tasks = NULL; } '{' extdefs '}' 
 		{ 
 		  $$ = CAST(implementation, new_module(pr, $1.location, $<u.env>2, declaration_reverse($4))); 
 		} ;
@@ -975,12 +977,15 @@ unary_expr:
 		      break;
 		    case post_task:
 		      fc->type = unsigned_char_type;
-		      if (noerror && !type_task(calltype))
-			error("only tasks can be posted");
-		      else if (flag_use_scheduler)
-			/* If requested, replace post/task by references to
-			   an interface */
-			handle_post(fc);
+		      if (noerror)
+		        {
+			  if (!type_task(calltype))
+			    error("only tasks can be posted");
+			  else if (flag_use_scheduler)
+			    /* If requested, replace post/task by references to
+			       an interface */
+			    handle_post(fc);
+			}
 		      break;
 		    }
 		}

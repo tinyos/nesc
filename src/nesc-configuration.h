@@ -18,6 +18,8 @@ Boston, MA 02111-1307, USA.  */
 #ifndef NESC_CONFIGURATION_H
 #define NESC_CONFIGURATION_H
 
+#include "nesc-cg.h"
+
 void process_configuration(configuration c);
 
 component_ref require_component(component_ref comp, word as);
@@ -26,5 +28,9 @@ void check_generic_arguments(expression args, typelist gparms);
 struct endp;
 typelist endpoint_args(struct endp *p);
 void component_scan(data_declaration cref, env_scanner *scan);
+
+void connect_interface(location l, cgraph cg, cgraph userg,
+		       struct endp from, struct endp to,
+		       bool reverse);
 
 #endif

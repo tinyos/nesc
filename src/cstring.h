@@ -36,6 +36,9 @@ typedef struct {
 /* Make a new cstring with a copy of s, length l */
 cstring make_cstring(region r, const char *s, int l);
 
+/* Make a new unintialised cstring of length l */
+cstring alloc_cstring(region r, int l);
+
 
 /* Make a new cstring with a copy of regular C string s */
 cstring str2cstring(region r, const char *s);

@@ -108,9 +108,9 @@ typelist endpoint_args(endp p)
   return NULL;
 }
 
-static void connect_interface(location l, cgraph cg, cgraph userg,
-			      struct endp from, struct endp to,
-			      bool reverse)
+void connect_interface(location l, cgraph cg, cgraph userg,
+		       struct endp from, struct endp to,
+		       bool reverse)
 {
   env_scanner scanfns;
   const char *fnname;
@@ -321,7 +321,7 @@ static bool lookup_endpoint(environment configuration_env, endpoint ep,
 	    {
 	      if (pid->next)
 		error_with_location(l, "arguments must be specified last");
-	      lep->args_node = pid;
+	      lep->args_node = pid->args;
 	    }
 
 	  switch (d->kind)
@@ -362,7 +362,7 @@ static bool lookup_endpoint(environment configuration_env, endpoint ep,
       typelist gparms = endpoint_args(lep);
 
       if (gparms)
-	check_generic_arguments(lep->args_node->args, gparms);
+	check_generic_arguments(lep->args_node, gparms);
       else
 	error_with_location(ep->location, "endpoint is not a parameterised interface");
     }

@@ -505,21 +505,21 @@ static bool find_reachable_functions(struct connections *c, gnode n,
     {
       /* First set of arguments is a condition if 'called' is generic */
       if (c->called->gparms && !gcond)
-	gcond = ep->args_node->args;
+	gcond = ep->args_node;
       else if (gargs)
 	{
 	  /* We already have some arguments, so this is a condition again.
 	     If the condition doesn't match gargs, then the call is
 	     filtered out. If they do match, we set gargs to null (we're
 	     back to a non-parameterised call) */
-	  if (constant_expression_list_compare(gargs, ep->args_node->args) != 0)
+	  if (constant_expression_list_compare(gargs, ep->args_node) != 0)
 	    return FALSE;
 	  gargs = NULL;
 	}
       else
 	{
 	  assert(!gargs);
-	  gargs = ep->args_node->args;
+	  gargs = ep->args_node;
 	}
     }
   if (graph_node_markedp(n))
@@ -1140,7 +1140,7 @@ static void prt_nido_resolver_function(dd_list modules)
   outputln("}");
 }
 
-void generate_c_code(nesc_declaration program, const char *target_name,
+void generate_c_code(const char *target_name,
 		     cgraph cg, dd_list modules, dd_list components)
 {
   dd_list_pos mod;

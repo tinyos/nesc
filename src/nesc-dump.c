@@ -270,7 +270,7 @@ static void dump_endp(const char *tag, endp ep)
   xml_tag(tag);
   nxml_ddecl_ref(ep->function ? ep->function : ep->interface);
   if (ep->args_node)
-    nxml_arguments(ep->args_node->args);
+    nxml_arguments(ep->args_node);
   xml_pop();
 }
 

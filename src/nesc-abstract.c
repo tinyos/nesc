@@ -575,8 +575,7 @@ static void instantiate_endp(endp ep)
   if (ep->function && ep->function->instantiation)
     ep->function = ep->function->instantiation;
   if (ep->args_node)
-    ep->args_node = CAST(parameterised_identifier,
-			 ep->args_node->instantiation);
+    ep->args_node = CAST(expression, ep->args_node->instantiation);
 }
 
 static void instantiate_cg(cgraph copy, cgraph original)
@@ -648,10 +647,10 @@ static AST_walker_result clone_interface_ref(AST_walker spec, void *data,
   return aw_done;
 }
 
-static AST_walker_result clone_configuration(AST_walker spec, void *data,
-					     configuration *n)
+static AST_walker_result clone_implementation(AST_walker spec, void *data,
+					      implementation *n)
 {
-  configuration new = clone(data, n);
+  implementation new = clone(data, n);
   nesc_declaration comp = current.container;
 
   /* Copy the components and connections */
@@ -688,7 +687,7 @@ static void init_clone(void)
   AST_walker_handle(clone_walker, kind_type_parm_decl, clone_type_parm_decl);
   AST_walker_handle(clone_walker, kind_typename, clone_typename);
   AST_walker_handle(clone_walker, kind_enumerator, clone_enumerator);
-  AST_walker_handle(clone_walker, kind_configuration, clone_configuration);
+  AST_walker_handle(clone_walker, kind_implementation, clone_implementation);
   AST_walker_handle(clone_walker, kind_component_ref, clone_component_ref);
   AST_walker_handle(clone_walker, kind_interface_ref, clone_interface_ref);
   AST_walker_handle(clone_walker, kind_tag_ref, clone_tag_ref);
@@ -952,7 +951,7 @@ static void check_cg(cgraph connections)
       endp ep = NODE_GET(endp, n);
 
       if (ep->args_node)
-	check_generic_arguments(ep->args_node->args, endpoint_args(ep));
+	check_generic_arguments(ep->args_node, endpoint_args(ep));
     }
 }
 
@@ -992,7 +991,7 @@ static bool fold_components(nesc_declaration cdecl, int pass)
   return done;
 }
 
-void fold_program(nesc_declaration program)
+void fold_program(nesc_declaration program, nesc_declaration scheduler)
 {
   int pass = 1;
   bool done;
@@ -1002,6 +1001,8 @@ void fold_program(nesc_declaration program)
       done = fold_constants_list(CAST(node, all_cdecls), pass);
       if (program)
 	done = fold_components(program, pass) && done;
+      if (scheduler)
+	done = fold_components(scheduler, pass) && done;
       pass++;
     }
   while (!done);

@@ -18,8 +18,18 @@ Boston, MA 02111-1307, USA. */
 #ifndef NESC_TASK_H
 #define NESC_TASK_H
 
-extern word scheduler_interface_name;
+extern const char *scheduler_name;
+extern const char *scheduler_interface_name;
+extern const char *scheduler_unique_name;
+extern const char *scheduler_interfacedef_name;
+extern const char *scheduler_run_name;
+extern const char *scheduler_post_name;
 
+extern nesc_declaration scheduler;
+extern declaration all_tasks;
+
+void load_scheduler(void);
+void wire_scheduler(module m);
 void handle_post(function_call fcall);
 void handle_task_definition(function_decl fdecl);
 void handle_task_declaration(variable_decl vdecl);

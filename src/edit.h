@@ -38,4 +38,8 @@ data_declaration add_temporary(region r, compound_stmt block, type t);
 
 word build_word(region r, const char *cword);
 
+expression build_string(region r, location loc, const char *s);
+expression build_function_call(region r, location loc,
+			       expression fn, expression arglist);
+
 #endif

@@ -56,15 +56,24 @@ void *xrealloc(void *p, size_t newsize)
   return x;
 }
 
-/* Make a new cstring with a copy of s, length l */
-cstring make_cstring(region r, const char *s, int l)
+/* Make a new unintialised cstring of length l */
+cstring alloc_cstring(region r, int l)
 {
   cstring cs;
 
   cs.data = rstralloc(r, l + 1);
-  memcpy(cs.data, s, l);
   cs.data[l] = '\0';
   cs.length = l;
+
+  return cs;
+}
+
+/* Make a new cstring with a copy of s, length l */
+cstring make_cstring(region r, const char *s, int l)
+{
+  cstring cs = alloc_cstring(r, l);
+
+  memcpy(cs.data, s, l);
 
   return cs;
 }

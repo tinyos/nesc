@@ -121,3 +121,55 @@ word build_word(region r, const char *cword)
 {
   return new_word(r, dummy_location, str2cstring(r, cword));
 }
+
+static void wchar_copy(wchar_t *chars, const char *s, size_t l)
+{
+  size_t i;
+
+  for (i = 0; i < l; i++)
+    chars[i] = s[i];
+  chars[l] = 0;
+}
+
+static string_cst build_string_cst(region r, location loc, const char *s)
+{
+  size_t l = strlen(s);
+  wchar_t *chars = rarrayalloc(r, l + 1, wchar_t);
+
+  wchar_copy(chars, s, l);
+  return new_string_cst(r, loc, str2cstring(r, "oops"), chars, l);
+}
+
+expression build_string(region r, location loc, const char *str)
+{
+  string s = new_string(r, loc, build_string_cst(r, loc, str), NULL);
+  size_t total_length;
+
+  total_length = strlen(str);
+  s->ddecl = declare_string(NULL, FALSE, total_length);
+  s->type = s->ddecl->type;
+  wchar_copy((wchar_t *)s->ddecl->chars, str, total_length);
+  s->static_address = foldaddress_string(s);
+  s->lvalue = TRUE;
+
+  return CAST(expression, s);
+}
+
+expression build_function_call(region r, location loc,
+			       expression fn, expression arglist)
+{
+  expression result = CAST(expression, new_function_call(r, loc, fn, arglist, NULL, normal_call));
+  type fntype = type_default_conversion(fn->type), rettype;
+
+  if (type_pointer(fntype))
+    /* All function types come this way because default_conversion makes
+       them into pointers to functions... */
+    fntype = type_points_to(fntype);
+
+  rettype = type_function_return_type(fntype);
+  result->type = rettype;
+  result->cst = fold_function_call(result, 0);
+
+  return result;
+}
+

@@ -39,6 +39,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-constants.h"
 #include "nesc-dump.h"
 #include "nesc-network.h"
+#include "nesc-task.h"
 #include "edit.h"
 #include "machine.h"
 
@@ -134,7 +135,7 @@ static void connect(location loc, nesc_declaration cdecl, cgraph cg,
     }
 }
 
-static void connect_graphs(region r, nesc_declaration program,
+static void connect_graphs(region r, nesc_declaration program, nesc_declaration scheduler,
 			   cgraph *cg, cgraph *userg, dd_list *modules, dd_list *components)
 {
   *cg = new_cgraph(r);
@@ -144,6 +145,8 @@ static void connect_graphs(region r, nesc_declaration program,
 
   push_instance(program);
   connect(toplevel_location, program, *cg, *userg, *modules, *components);
+  if (scheduler)
+    connect(toplevel_location, scheduler, *cg, *userg, *modules, *components);
   pop_instance();
 }
 
@@ -326,9 +329,13 @@ void nesc_compile(const char *filename, const char *target_name)
   init_abstract();
   init_nesc_constants();
   init_network();
+  init_task();
 
   for (includes = includelist; includes; includes = includes->next)
     require_c(toplevel_location, includes->name);
+
+  if (flag_use_scheduler)
+    load_scheduler();
 
   if (nesc_filename(filename))
     /* We need to assume some language - it will get fixed once we
@@ -342,14 +349,14 @@ void nesc_compile(const char *filename, const char *target_name)
 
   if (program && program->kind == l_component && !program->abstract)
     {
-      connect_graphs(parse_region, program, &cg, &userg, &modules, &components);
+      connect_graphs(parse_region, program, scheduler, &cg, &userg, &modules, &components);
       current.container = NULL;
-      fold_program(program);
+      fold_program(program, scheduler);
       gencode = TRUE;
     }
   else 
     /* The "program" is a C file, interface or abstract component */
-    fold_program(NULL);
+    fold_program(NULL, NULL);
 
   if (errorcount)
     return;
@@ -374,5 +381,5 @@ void nesc_compile(const char *filename, const char *target_name)
   if (dump_selected())
     dump_info(program, cg, userg, modules, components);
   if (gencode)
-    generate_c_code(program, target_name, cg, modules, components);
+    generate_c_code(target_name, cg, modules, components);
 }

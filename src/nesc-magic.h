@@ -8,6 +8,8 @@
 #ifndef NESC_MAGIC_H
 #define NESC_MAGIC_H
 
+extern data_declaration magic_unique, magic_uniqueCount;
+
 void init_magic_functions(void);
 
 data_declaration get_magic(function_call fcall);

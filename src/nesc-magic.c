@@ -8,9 +8,11 @@
 #include "constants.h"
 #include "unparse.h"
 
-static void declare_magic(const char *name,
-			  type return_type, typelist argument_types,
-			  known_cst (*magic_fold)(function_call fcall, int pass))
+data_declaration magic_unique, magic_uniqueCount;
+
+static data_declaration 
+declare_magic(const char *name, type return_type, typelist argument_types,
+	      known_cst (*magic_fold)(function_call fcall, int pass))
 {
   struct data_declaration tempdecl;
   type ftype = make_function_type(return_type, argument_types, FALSE, FALSE);
@@ -20,7 +22,7 @@ static void declare_magic(const char *name,
   tempdecl.magic_fold = magic_fold;
   tempdecl.ftype = function_normal;
 
-  declare(global_env, &tempdecl, FALSE);
+  return declare(global_env, &tempdecl, FALSE);
 }
 
 data_declaration get_magic(function_call fcall)
@@ -159,9 +161,10 @@ static void unique_init(void)
 
   string_args = new_typelist(parse_region);
   typelist_append(string_args, make_pointer_type(char_type));
-  declare_magic("unique", unsigned_int_type, string_args, unique_fold);
-  declare_magic("uniqueCount", unsigned_int_type, string_args,
-		uniqueCount_fold);
+  magic_unique = declare_magic("unique", unsigned_int_type, string_args,
+			       unique_fold);
+  magic_uniqueCount = declare_magic("uniqueCount", unsigned_int_type,
+				    string_args, uniqueCount_fold);
   unique_region = newregion();
   unique_env = new_env(unique_region, NULL);
 }
