@@ -73,12 +73,20 @@ extern cval cval_zero; /* A zero value. Use cval_cast to make the desired
 			  kind of constant */
 extern cval cval_one; /* A one value. Use cval_cast to make the desired 
 			  kind of constant */
-extern cval cval_bitsperbyte; /* BITSPERBYTE */
+extern cval cval_bitsperbyte; /* BITSPERBYTE, unsigned */
 
 void cval_init(void);
 
 cval make_cval_signed(largest_int i, type t);
 cval make_cval_unsigned(largest_uint i, type t);
+
+cval make_type_cval(size_t s);
+/* Effects: Make a cval representing a type size. This is special-cased
+     because we need to make these for type sizes before any types are
+     available
+   Returns: A cval representing s, with size set to the target's size_t size
+*/
+
 cval make_cval_float(long double d);
 cval make_cval_complex(cval r, cval i);
 cval make_cval_address(data_declaration ddecl, label_declaration ldecl,

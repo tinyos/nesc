@@ -27,7 +27,8 @@ Boston, MA 02111-1307, USA. */
    one of: 
    - top: variable-sized types
    - unknown: derived from a template argument
-   - an unsigned number
+   - an unsigned number (preferably created with make_type_cval)
+     (note: must be a cval_uint!)
 
    These numbers represent bytes, except in field offsets which use bits
 */

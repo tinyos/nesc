@@ -188,11 +188,6 @@ static bool legal_array_size(cval c)
   return !cval_isinteger(c) || cval_intcompare(c, cval_zero) >= 0;
 }
 
-static cval make_type_cval(size_t s)
-{
-  return make_cval_unsigned(s, size_t_type);
-}
-
 static type copy_type(type t)
 {
   type nt = ralloc(types_region, struct type);
@@ -285,7 +280,7 @@ type make_function_type(type t, typelist argtypes, bool varargs,
   nt->u.fn.argtypes = argtypes;
   nt->u.fn.varargs = varargs;
   nt->u.fn.oldstyle = oldstyle;
-  nt->size = nt->alignment = cval_one;
+  nt->size = nt->alignment = make_type_cval(1);
   return nt;
 }
 
@@ -301,6 +296,7 @@ type make_tagged_type(tag_declaration d)
    (Note that we may make copies if this single instance for different alignments)
    Requires: must be called at most once for each pk, from types_init
 */
+
 static type make_primitive(int pk, int size, int alignment)
 {
   type nt = new_type(tk_primitive), ct;
@@ -429,9 +425,9 @@ void init_types(void)
 
   char_array_type = make_array_type(char_type, NULL);
   error_type = new_type(tk_error);
-  error_type->size = error_type->alignment = cval_one;
+  error_type->size = error_type->alignment = make_type_cval(1);
   void_type = new_type(tk_void);
-  void_type->size = void_type->alignment = cval_one;
+  void_type->size = void_type->alignment = make_type_cval(1);
   ptr_void_type = make_pointer_type(void_type);
 
   wchar_type = type_for_size_int(target->wchar_t_size, !target->wchar_t_signed);
@@ -731,7 +727,7 @@ cval type_array_size_cval(type t)
 
   if (t->u.array.size && (s = t->u.array.size->cst) &&
       (constant_integral(s) || constant_unknown(s)))
-    return s->cval;
+    return cval_cast(s->cval, size_t_type);
 
   return cval_top;
 }
@@ -1691,8 +1687,7 @@ cval type_size(type t)
     return t->u.tag->size;
 
   if (type_array(t))
-    return cval_times(t->u.array.size->cst->cval, 
-		      type_size(t->u.array.arrayof));
+    return cval_times(type_array_size_cval(t), type_size(t->u.array.arrayof));
 
   return t->size;
 }

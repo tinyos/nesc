@@ -28,6 +28,7 @@ Boston, MA 02111-1307, USA. */
    complex constants will be inefficient) */
 #include "parser.h"
 #include "cval.h"
+#include "machine.h"
 
 cval cval_top; /* The non-constant value */
 cval cval_unknown; /* The unknown value */
@@ -35,7 +36,7 @@ cval cval_zero; /* A zero value. Use cval_cast to make the desired kind of
 		   constant */
 cval cval_one; /* A one value. Use cval_cast to make the desired kind of
 		   constant */
-cval cval_bitsperbyte; /* BITSPERBYTE */
+cval cval_bitsperbyte; /* BITSPERBYTE, unsigned */
 
 /* We use cval_invalid_address to mark those places where a constant
    is computed which is "not computable at load time"
@@ -84,6 +85,22 @@ cval make_cval_signed(largest_int i, type t)
   c.kind = cval_sint;
   c.si = i;
   c.isize = type_size_int(t);
+  return c;
+}
+
+cval make_type_cval(size_t s)
+/* Effects: Make a cval representing a type size. This is special-cased
+     because we need to make these for type sizes before any types are
+     available
+   Returns: A cval representing s, with size set to the target's size_t size
+*/
+{
+  cval c;
+
+  c.kind = cval_uint;
+  c.ui = s;
+  c.isize = target->size_t_size;
+
   return c;
 }
 
@@ -980,7 +997,8 @@ void cval_print(FILE *f, cval c)
 
 cval cval_align_to(cval n, cval alignment)
 {
-  cval count = cval_divide(cval_sub(cval_add(n, alignment), cval_one),
+  cval count = cval_divide(cval_sub(cval_add(n, alignment),
+				    make_type_cval(1)),
 			   alignment);
 
   return cval_times(count, alignment);

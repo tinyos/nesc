@@ -2874,7 +2874,7 @@ cval check_bitfield_width(field_declaration fdecl)
       else if (width == 0 && fdecl->name)
 	errormsg = "zero width for bit-field `%s'";
       else
-	bitwidth = cwidth->cval;
+	bitwidth = cval_cast(cwidth->cval, size_t_type);
     }
 
   if (printmsg && errormsg)
@@ -2888,11 +2888,14 @@ cval check_bitfield_width(field_declaration fdecl)
    Returns t */
 void layout_struct(tag_declaration tdecl)
 {
-  cval offset = cval_zero, alignment = cval_bitsperbyte, size = cval_zero;
+  cval offset, alignment, size;
   bool isunion = tdecl->kind == kind_union_ref;
   field_declaration fdecl;
   declaration dlist;
   field_decl flist;
+
+  offset = size = make_type_cval(0);
+  alignment = cval_bitsperbyte;
   
   // We scan all the fields of the struct (field), but we also need to scan
   // the declaration of the struct to handle anonymous struct/union
@@ -2982,7 +2985,7 @@ void layout_struct(tag_declaration tdecl)
 	  else if (!cval_boolvalue(bitwidth)) /* ie, 0 */
 	    {
 	      offset = cval_align_to(offset, falign);
-	      falign = cval_one; /* No structure alignment implications */
+	      falign = make_type_cval(1); /* No structure alignment implications */
 	    }
 	  else
 	    {
@@ -2995,7 +2998,7 @@ void layout_struct(tag_declaration tdecl)
 		  */
 		  cval val1 = cval_sub(cval_add(cval_add(offset, bitwidth),
 						falign),
-				       cval_one);
+				       make_type_cval(1));
 		  cval val2 = cval_sub(cval_divide(val1, falign),
 				       cval_divide(offset, falign));
 
