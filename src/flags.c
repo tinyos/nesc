@@ -217,6 +217,10 @@ char *cmdline_nesc_path;
    varargs functions */
 int flag_no_debug;
 
+/* Nonzero to suppress automatic addition of inline keywords 
+   (but the "wiring" functions are still marked inline) */
+int flag_no_inline;
+
 /* Nonzero means to output macro defs in the generated C file */
 int flag_save_macros;
 

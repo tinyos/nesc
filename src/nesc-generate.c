@@ -382,6 +382,8 @@ static void prt_nesc_connection_function(struct connections *c)
 {
   type return_type = function_return_type(c->called);
 
+  set_fixed_location(c->called->ast->location);
+
   prt_ncf_header(c, return_type);
 
   if (c->called->gparms)
@@ -399,6 +401,8 @@ static void prt_nesc_connection_function(struct connections *c)
     }
 
   prt_ncf_trailer(return_type);
+
+  clear_fixed_location();
 }
 
 void prt_nesc_called_function_hdr(data_declaration fndecl, void *data)

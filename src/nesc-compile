@@ -29,6 +29,10 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	    $verbose = 1 if /^-v/;
 	}
 
+	if (/^-g$/) {
+	    push @nesc_args, "-fnesc-no-inline";
+	}
+
 	if (/^-I/) {
 	    ($i, $idir) = &extractarg($i);
 	    push @nesc_args, "-I$idir";
@@ -78,8 +82,6 @@ if ($ctarget eq "") {
 
 if ($objtarget eq "") {
     $objtarget = $source;
-    $objtarget =~ s/\.td$/.o/ unless $asmonly;
-    $objtarget =~ s/\.td$/.s/ if $asmonly;
     $objtarget =~ s/\.nc$/.o/ unless $asmonly;
     $objtarget =~ s/\.nc$/.s/ if $asmonly;
 }
@@ -94,7 +96,6 @@ if ($nocompile) {
 }
 unshift @nesc_args, "nesc1";
 
-print STDERR join(" ", @nesc_args), "\n" if $verbose;
 &vsystem(@nesc_args);
 if ($? != 0) {
     unlink $ctarget;
@@ -102,49 +103,15 @@ if ($? != 0) {
 }
 exit 0 if $nocompile;
 
-if ($target eq "avr") {
-    $asmtarget1 = $ctarget;
-    $asmtarget1 =~ s/\.c$/.s/;
-
-    $asmtarget2 = $objtarget;
-    $asmtarget2 =~ s/\.o$/.s/ unless $asmonly;
-
-    push @gcc_args, "-o";
-    push @gcc_args, $asmtarget1;
-    push @gcc_args, "-S";
-    push @gcc_args, $ctarget;
-    unshift @gcc_args, "avr-gcc";
-    &vsystem(@gcc_args);
-    unlink $ctarget if $delcfile;
-    if ($? != 0) {
-	unlink $asmtarget1;
-	exit 2;
-    }
-    print STDERR "sed -e 's/\\\$/./g' $asmtarget1 > $asmtarget2\n" if $verbose;
-    open(SED, $asmtarget1);
-    open(OSED, ">$asmtarget2");
-    while (<SED>) {
-	s/\$/./g;
-	print OSED;
-    }
-    close SED;
-    close OSED;
-    unlink $asmtarget1;
-    unless ($asmonly) {
-	&vsystem("avr-as", "-o", $objtarget, $asmtarget2);
-	unlink $asmtarget2;
-    }
-}
-else {
-    push @gcc_args, "-o";
-    push @gcc_args, $objtarget;
-    push @gcc_args, "-S" if $asmonly;
-    push @gcc_args, "-c" unless $asmonly;
-    push @gcc_args, $ctarget;
-    unshift @gcc_args, "gcc";
-    &vsystem(@gcc_args);
-    unlink $ctarget if $delcfile;
-}
+push @gcc_args, "-o";
+push @gcc_args, $objtarget;
+push @gcc_args, "-S" if $asmonly;
+push @gcc_args, "-c" unless $asmonly;
+push @gcc_args, $ctarget;
+unshift @gcc_args, "-B$ENV{NCDIR}";
+unshift @gcc_args, $ENV{NESC_GCC};
+&vsystem(@gcc_args);
+unlink $ctarget if $delcfile;
 
 exit 2 if $?;
 exit 0;

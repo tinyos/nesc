@@ -42,6 +42,7 @@ static FILE *of;
 static bool no_line_directives;
 static int indent_level;
 static struct location output_loc;
+static location fixed_location;
 static bool at_line_start;
 
 /* separator used between module name and function name */
@@ -58,7 +59,6 @@ typedef struct prt_closure {
   const char *name;
   struct prt_closure *parent;
 } *prt_closure;
-
 
 void indent(void)
 {
@@ -80,8 +80,11 @@ static void output_indentation(void)
 void newline(void)
 {
   putc('\n', of);
-  output_loc.lineno++;
   at_line_start = TRUE;
+  if (fixed_location)
+    fprintf(of, "#line %lu\n", fixed_location->lineno);
+  else
+    output_loc.lineno++;
 }
 
 void startline(void)
@@ -207,6 +210,9 @@ static void output_stripped_string_dollar(const char *s)
 
 static void output_line_directive(location l, bool include_filename)
 {
+  if (fixed_location)
+    return;
+
   startline_noindent();
   if (include_filename)
     {
@@ -218,7 +224,7 @@ static void output_line_directive(location l, bool include_filename)
     outputln("#line %lu", l->lineno);
 }
 
-static void set_location(location l)
+void set_location(location l)
 {
   /* Ignore dummy locations */
   if (l->filename == dummy_location->filename || no_line_directives)
@@ -241,6 +247,19 @@ static void set_location(location l)
     }
 
   output_loc = *l;
+}
+
+void set_fixed_location(location l)
+{
+  assert(l->filename != dummy_location->filename);
+
+  set_location(l);
+  fixed_location = l;
+}
+
+void clear_fixed_location(void)
+{
+  fixed_location = NULL;
 }
 
 struct location output_location(void)

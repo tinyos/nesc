@@ -57,6 +57,7 @@ static char *lang_options[] =
   "-fnesc-nido-tosnodes=",
   "-fnesc-path=",
   "-fnesc-no-debug",
+  "-fnesc-no-inline",
   "-fnesc-save-macros",
   "-fnesc-msg=",
   "-fnesc-target=",
@@ -211,6 +212,10 @@ static void c_decode_option(char *p)
   else if (!strcmp (p, "-fnesc-no-debug"))
     {
       flag_no_debug = 1;
+    }
+  else if (!strcmp (p, "-fnesc-no-inline"))
+    {
+      flag_no_inline = 1;
     }
   else if (!strcmp (p, "-fnesc-verbose"))
     {

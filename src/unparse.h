@@ -31,6 +31,9 @@ void set_function_separator(char *sep);
 void enable_documentation_mode(void);
 void disable_documentation_mode(void);
 
+void set_location(location l);
+void set_fixed_location(location l);
+void clear_fixed_location(void);
 struct location output_location(void);
 void output(char *format, ...) __attribute__((format (printf, 1, 2)));
 void outputln(char *format, ...) __attribute__((format (printf, 1, 2)));

@@ -18,6 +18,7 @@ Boston, MA 02111-1307, USA.  */
 #include "parser.h"
 #include "nesc-inline.h"
 #include "constants.h"
+#include "flags.h"
 
 struct inline_node
 {
@@ -359,24 +360,24 @@ void inline_functions(cgraph callgraph)
 	inline_function(n, in);
     }
 
-  if (!getenv("NOINLINE"))
-  /* Inline small fns and single-call fns */
-  graph_scan_nodes (n, ig)
-    {
-      struct inline_node *in = NODE_GET(struct inline_node *, n);
+  if (!flag_no_inline)
+    /* Inline small fns and single-call fns */
+    graph_scan_nodes (n, ig)
+      {
+	struct inline_node *in = NODE_GET(struct inline_node *, n);
       
-      if (in->fn->definition && !in->fn->isinline)
-	{
-	  gedge e;
-	  size_t edgecount = 0;
+	if (in->fn->definition && !in->fn->isinline)
+	  {
+	    gedge e;
+	    size_t edgecount = 0;
 
-	  graph_scan_in (e, n)
-	    edgecount++;
+	    graph_scan_in (e, n)
+	      edgecount++;
       
-	  if (in->size <= 15 || edgecount == 1)
-	    inline_function(n, in);
-	}
-    }
+	    if (in->size <= 15 || edgecount == 1)
+	      inline_function(n, in);
+	  }
+      }
   deleteregion(igr);
 }
 

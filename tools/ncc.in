@@ -32,6 +32,7 @@ $TOSDIR = $ENV{"TOSDIR"} if defined($ENV{"TOSDIR"});
 
 # Runtime configuration
 $ENV{"PATH"} = "$NCDIR:$ENV{PATH}";
+$ENV{"NCDIR"} = $NCDIR;
 
 # Have fun with the arguments
 
@@ -163,6 +164,7 @@ unshift @new_args, map "-DBOARD_\U$_", @boards;
 unshift @new_args, "-DPLATFORM_\U$target";
 unshift @new_args, "-specs=$NCDIR/tdspecs";
 unshift @new_args, $gcc;
+$ENV{NESC_GCC} = $gcc;
 
 if (!$nostdinc) {
     push @new_args, map "-I$TOSDIR/sensorboards/$_", @boards;
