@@ -1452,6 +1452,14 @@ expression make_function_call(location loc, expression fn, expression arglist)
   if (fntype == error_type)
     return result;
 
+  /* Hack for __nesc_enable_interrupt (see nesc-uses.h) */
+  if (is_identifier(fn) && CAST(identifier, fn)->ddecl == enable_interrupt)
+    {
+      current.function_decl->ddecl->call_contexts = c_call_nonatomic;
+      if (current.in_atomic)
+	warning("call to __nesc_enable_interrupt within an atomic statement");
+    }
+
   if (type_pointer(fntype))
     /* All function types come this way because default_conversion makes
        them into pointers to functions... */

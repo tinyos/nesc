@@ -44,6 +44,22 @@ typedef struct iduse
 
 extern dd_list nglobal_uses;
 
+/* Declaration of __nesc_enable_interrupt function. Data-race detection
+   and duplicate atomic suppression needs to be aware of these calls to
+   function correctly.
+
+   The current implementation is simplistic (conservative and unsafe):
+   If function X calls __nesc_enable_interrupt, we assume that:
+   - there are non-atomic calls to X
+   - calls made from inside an atomic statement in X are still atomic
+     (i.e., we assume there is no way to reach a statement inside 'atomic'
+     from the __nesc_enable_interrupt() call. We do issue a warning when
+     __nesc_enable_interrupt() is called from within an atomic statement).
+
+   The proper behaviour would be to analyse X's control flow graph.
+*/
+extern data_declaration enable_interrupt;
+
 void collect_uses(declaration decls);
 
 context exe_context(context c);

@@ -25,6 +25,7 @@ Boston, MA 02111-1307, USA. */
 
 static region rr;
 dd_list nglobal_uses;
+data_declaration enable_interrupt;
 
 /* IDEAS: track fields of structs
  */
@@ -525,7 +526,13 @@ void collect_uses(declaration decls)
 
 void init_uses(void)
 {
+  type ei_type;
+
   rr = parse_region;
   nglobal_uses = dd_new_list(rr);
   init_collect_uses_walker();
+
+  ei_type = build_function_type(parse_region, void_type, NULL);
+  enable_interrupt =
+    declare_function(dummy_location, "__nesc_enable_interrupt", ei_type);
 }

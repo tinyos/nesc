@@ -2073,6 +2073,15 @@ void prt_atomic_stmt(atomic_stmt s)
 {
   struct location hack;
 
+  /* If the function's context is c_call_atomic, we can remove this
+     function (note that the function context only gets set if you
+     check for data races...). */
+  if (current.function_decl->ddecl->call_contexts == c_call_atomic)
+    {
+      prt_statement(s->stmt);
+      return;
+    }
+
   set_location(s->location);
   outputln("{ __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();");
   indent();
