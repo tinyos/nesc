@@ -2156,8 +2156,27 @@ void generate_docs(const char *filename, cgraph cg)
     find_currdir_prefix(original_wd);
 
     // cd to the docdir 
-    mkdir(docdir, 0755);
-    assert(chdir(docdir) == 0);
+    {
+      char *pos=strchr(docdir, dirsep);
+      if(pos == docdir) pos=strchr(docdir+1, dirsep); // skip the first '/' of an absolute path
+      while(pos != NULL) {
+        *pos = '\0';
+        if(mkdir(docdir, 0755) != 0  &&  errno != EEXIST) {
+          perror("mkdir");
+          fatal("error making parent directory of docdir '%s'\n", docdir);
+        }
+        *pos = dirsep;
+        pos = strchr(pos+1, dirsep);
+      }
+    }
+    if(mkdir(docdir, 0755) != 0  &&  errno != EEXIST) {
+      perror("mkdir");
+      fatal("error making docdir '%s'\n", docdir);
+    }
+    if(chdir(docdir) != 0) {
+      perror("chdir");
+      fatal("error changing directory to docdir '%s'\n", docdir);
+    }
   }
 
 
