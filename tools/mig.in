@@ -42,18 +42,19 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	    # pass option and arg through unchanged
 	    $opt = substr $_, 1, 1;
 	    ($i, $arg) = &extractarg($i);
-	    push @new_args, "-$opt$arg";
+	    push @args, "-$opt$arg";
 	}
 	elsif ($i < $#ARGV &&
 	       (/^-idirafter$/ || /^-include$/ || /^-imacros$/ ||
 		/^-iprefix$/ || /^-iwithprefix$/ || /^-iwithprefixbefore$/ ||
 		/^-isystem$/ || /^-Xlinker$/)) {
 	    # convert argument filename which is in next arg
-	    push @new_args, $_;
-	    push @new_args, $ARGV[++$i];
+	    push @args, $_;
+	    push @args, $ARGV[++$i];
 	}
 	else {
-	    push @new_args, $_;
+	    push @args, $_;
+	    $verbose = 1 if /^-v$/;
 	}
     }
     else {
@@ -74,7 +75,7 @@ push @args, "-x";
 push @args, "nesc";
 push @args, $cfile;
 
-#print STDERR join(" ", @args), "\n";
+print STDERR join(" ", @args), "\n" if $verbose;
 open(NESC, '-|', join(" ", @args)) or die "ncc not found";
 @spec = <NESC>;
 close NESC;
