@@ -854,7 +854,11 @@ typedef enum {
   in_main,
   in_return,
   in_param,
-  in_author
+  in_author,
+  in_version,
+  in_modified,
+  in_signals,
+  in_see_also
 } docstring_context;
 
 static void output_docstring(char *docstring, location loc)
@@ -872,10 +876,9 @@ static void output_docstring(char *docstring, location loc)
     // output the rest, if there are no more @ directives
     if(at == NULL) {
       output(pos);
-      if(context == in_param)
-        output("</menu></menu>\n");
+      if(context == in_param) output("</menu></menu>\n");
       if(context != in_main) 
-        output("</dl>\n");
+        output("</td></tr></table>\n");
       return;
     }
 
@@ -892,33 +895,42 @@ static void output_docstring(char *docstring, location loc)
       
       if( len==strlen("return") && !strncasecmp("return",pos,len) ) {
         pos += len;
-        if(context == in_param)
-          output("</menu></menu>\n");
-        if(context == in_main)
-          output("<p><dl>\n");
-        if(context != in_return)
-          output("<dt><b>Returns:</b>\n");
-        context = in_return;
-        output("<dd>");
+        if(context == in_param) output("</menu>\n");
+        if(context == in_main) output("<table border=\"0\" cellpadding=\"0\">\n");
+        else                   output("</td></tr>\n");
+
+        if(context != in_return) {
+          output("<tr valign=\"top\"><td><b>Returns:</b></td>\n<td>");
+          context = in_return;
+        } else {
+          output("<tr><td>&nbsp;</td>\n<td>");
+        }
       }
       
       else if( len==strlen("param") && !strncasecmp("param",pos,len) ) {
         pos += len;
       
-        if(context == in_main)
-          output("<p><dl>\n");
-        if(context != in_param)
-          output("<dt><b>Parameters:</b>\n<menu><menu>\n");
-        context = in_param;
+        //if(context == in_param) output("</menu>\n");
+        if(context == in_main) output("<table border=\"0\" cellpadding=\"0\">\n");
+
+        if(context != in_param) {
+          output("</td></tr>\n");
+          output("<tr valign=\"top\"><td><br><b>Parameters:</b></td>\n<td><menu>");
+          output("<p STYLE=\"text-indent: -1cm\">");
+          context = in_param;
+        } else {
+          //output("<tr><td>&nbsp;</td>\n<td><menu><menu>");
+          //output("<tr><td>&nbsp;</td>\n<td>");
+          output("</p><p STYLE=\"text-indent: -1cm\">");
+        }
 
         // print out the parameter name, plus a separator
-        output("<dd>");
         pos += strspn(pos, whitespace);
         len = strcspn(pos, whitespace);
         // Null terminate the name
         *(pos + len) = '\0';
 
-        output("<p STYLE=\"text-indent: -1cm\">");
+        //output("<p STYLE=\"text-indent: -1cm\">");
         output("<b>%*s</b>",len,pos);
         output(" - ");
         // Restore to spaced text.
@@ -928,15 +940,84 @@ static void output_docstring(char *docstring, location loc)
 
       else if( len==strlen("author") && !strncasecmp("author",pos,len) ) {
         pos += len;
-        if(context == in_param)
-          output("</menu></menu>\n");
 
-        if(context == in_main)
-          output("<p><dl>\n");
-        if(context != in_author)
-          output("<dt><b>Author:</b>\n");
-        context = in_author;
-        output("<dd>");
+        if(context == in_param) output("</menu>\n");
+        if(context == in_main) output("<table border=\"0\" cellpadding=\"0\">\n");
+        else                   output("</td></tr>\n");
+
+        if(context != in_author) {
+          output("<tr valign=\"top\"><td><b>Author:</b>\n<td>");
+          context = in_author;
+        } else {
+          output("<tr valign=\"top\"><td>&nbsp;</td>\n<td>");
+        }
+      }
+
+      else if( len==strlen("version") && !strncasecmp("version",pos,len) ) {
+        pos += len;
+
+        if(context == in_param) output("</menu>\n");
+        if(context == in_main) output("<table border=\"0\" cellpadding=\"0\">\n");
+        else                   output("</td></tr>\n");
+
+        if(context != in_version) {
+          output("<tr valign=\"top\"><td><b>Version:</b>\n<td>");
+          context = in_version;
+        } else {
+          output("<tr valign=\"top\"><td>&nbsp;</td>\n<td>");
+        }
+      }
+
+      else if( len==strlen("modified") && !strncasecmp("modified",pos,len) ) {
+        pos += len;
+
+        if(context == in_param) output("</menu>\n");
+        if(context == in_main) output("<table border=\"0\" cellpadding=\"0\">\n");
+        else                   output("</td></tr>\n");
+
+        if(context != in_modified) {
+          output("<tr valign=\"top\"><td><b>Modified:</b>\n<td>");
+          context = in_modified;
+        } else {
+          output("<tr valign=\"top\"><td>&nbsp;</td>\n<td>");
+        }
+      }
+
+      else if( len==strlen("signals") && !strncasecmp("signals",pos,len) ) {
+        pos += len;
+
+        if(context == in_param) output("</menu>\n");
+        if(context == in_main) output("<table border=\"0\" cellpadding=\"0\">\n");
+        else                   output("</td></tr>\n");
+
+        if(context != in_signals) {
+          output("<tr valign=\"top\"><td><b>Events signaled:</b>\n<td>");
+          context = in_signals;
+        } else {
+          output("<tr valign=\"top\"><td>&nbsp;</td>\n<td>");
+        }
+
+        // FIXME: should print warnings for things (a) not mentioned
+        // or (b) extraneously mentioned
+
+        // FIXME: should add hrefs to the events (?)
+      }
+
+      else if( len==strlen("see") && !strncasecmp("see",pos,len) ) {
+        pos += len;
+
+        if(context == in_param) output("</menu>\n");
+        if(context == in_main) output("<table border=\"0\" cellpadding=\"0\">\n");
+        else                   output("</td></tr>\n");
+
+        if(context != in_see_also) {
+          output("<tr valign=\"top\"><td><b>See also:</b>\n<td>");
+          context = in_see_also;
+        } else {
+          output("<tr valign=\"top\"><td>&nbsp;</td>\n<td>");
+        }
+
+        // FIXME: should add hrefs when possible
       }
 
       // output a warning, and print the bogus directive as-is
