@@ -55,6 +55,22 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	    push @boards, $1;
 	    $strip = 1;
 	}
+	elsif (/^-docdir=(.*)/) {
+            $docdir = $1;
+	    $strip = 1;
+	}
+	elsif (/^-topdir=(.*)/) {
+            push @topdirs, $1;
+	    $strip = 1;
+	}
+	elsif (/^-graphviz=(.*)/) {
+            if($1 =~ /^y/i) {
+                $use_graphviz = 1;
+            } else {
+                $use_graphviz = 0;
+            }
+	    $strip = 1;
+	}
 	elsif (/^-print-tosdir$/) {
 	    $print_tosdir = 1;
 	    $strip = 1;
@@ -73,6 +89,10 @@ if ($print_tosdir)
 $target = "pc" if !defined($target);
 @boards = ("basicsb") if !defined(@boards);
 
+
+#
+# target options 
+#
 if ($target eq "pc") {
     $gcc = "gcc";
     push @new_args, "-fnesc-target=pc";
@@ -98,6 +118,33 @@ elsif ($target eq "rene2") {
 else {
     &fail("unknown target $target\n(known targets are pc, mica, mica128, rene2)");
 }
+
+
+#
+# documentation generation options
+#
+if( defined($docdir) ) {
+    # add the doc output dir
+    push @new_args, "-fnesc-docdir=$docdir";
+    
+    # get the directory above TOSDIR
+    my ($tosparent) = ($TOSDIR =~ m!^(.*)/.*?$!);
+    push @topdirs, $tosparent;
+
+    # add top level dirs, to strip out of package names
+    foreach my $dir (expand_symlinks(@topdirs)) {
+        push @new_args, "-fnesc-topdir=$dir";
+    }
+
+    # add graphviz option
+    if( defined($use_graphviz) ) {
+        push @new_args, "-fnesc-docs-use-graphviz" if($use_graphviz);
+    } else {
+        my $dot = `which dot 2>&1`;
+        push @new_args, "-fnesc-docs-use-graphviz" if($dot !~ /^\s*$/);
+    }
+}
+
 
 unshift @new_args, map "-DBOARD_\U$_", @boards;
 unshift @new_args, "-DPLATFORM_\U$target";
@@ -184,4 +231,36 @@ sub winpath {
     chop $path;
 
     return $path;
+}
+
+#
+# Expand symlinks along the path.  
+#
+# FIXME: This should really either be part of nesc1, or should be done
+# away with altogether, in favor of Java-style package names.
+#
+sub expand_symlinks { my @dirs = @_; my @ret = ();
+
+    foreach my $dir (@dirs) {
+        my @partials = ("");
+        foreach my $subdir (split('/', $dir)) {
+            next if($subdir =~ /^\s*$/);
+            my @temp = ();
+            foreach my $d (@partials) {
+                push @temp, "$d/$subdir";
+                if ( -l "$d/$subdir" ) {
+                    my $link = readlink("$d/$subdir");
+                    if ($link =~ m!^/!) {
+                        push @temp, $link;
+                    } else {
+                        push @temp, "$d/$link";
+                    }
+                }
+            }
+            @partials = @temp;
+        }
+        push @ret, @partials;
+    }
+
+    return @ret;
 }
