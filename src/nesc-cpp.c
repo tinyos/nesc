@@ -39,6 +39,21 @@ struct cpp_option {
 static struct cpp_option *saved_options;
 static int saved_options_count;
 
+static void cpp_unlink(const char *name)
+{
+  static bool checkedDebug;
+  static bool nounlink;
+
+  if (!checkedDebug)
+    {
+      checkedDebug = TRUE;
+      nounlink = getenv("NESC_KEEP_CPP") != NULL;
+    }
+
+  if (!nounlink)
+    unlink(name);
+}
+
 void save_option(const char *option)
 {
   struct cpp_option *newopt;
@@ -151,8 +166,8 @@ static FILE *exec_gcc(char *gcc_output_template, bool redirect_errors,
 
 void preprocess_cleanup(void)
 {
-  unlink(cpp_macros);
-  unlink(kwd_macros);
+  cpp_unlink(cpp_macros);
+  cpp_unlink(kwd_macros);
 }
 
 void create_nesc_keyword_macros(const char *macro_filename)
@@ -214,7 +229,7 @@ void select_macros_mode(void)
 	}
       fclose(gcc_version);
     }
-  unlink(gcc_version_name);
+  cpp_unlink(gcc_version_name);
 }
 
 void preprocess_init(void)
@@ -338,6 +353,6 @@ void preprocess_file_end(void)
       fclose(macros_file);
       macros_file = NULL;
     }
-  unlink(current.preprocessed_file);
+  cpp_unlink(current.preprocessed_file);
 }
 

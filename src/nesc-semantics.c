@@ -187,7 +187,11 @@ environment compile(location loc, source_language l,
     }
 
   if (!f)
-    env = new_environment(parse_region, global_env, TRUE, FALSE);
+    {
+      env = new_environment(parse_region, global_env, TRUE, FALSE);
+      if (container)
+	container->env = env;
+    }
   else
     {	
       set_input(f, path);
@@ -195,6 +199,8 @@ environment compile(location loc, source_language l,
       start_lex(l);
       start_semantics(l, container, parent_env);
       env = current.env;
+      if (container)
+	container->env = env;
       parse();
       end_input();
 
@@ -232,9 +238,8 @@ nesc_decl dummy_nesc_decl(source_language sl, const char *name)
   return nd;
 }
 
-void build(nesc_declaration decl, environment env, nesc_decl ast)
+void build(nesc_declaration decl, nesc_decl ast)
 {
-  decl->env = env;
   decl->ast = ast;
 
   if (ast->docstring)
@@ -260,7 +265,6 @@ nesc_declaration load(source_language sl, location l,
   const char *element = name_is_path ? element_name(parse_region, name) : name;
   const char *actual_name;
   nesc_declaration decl;
-  environment env;
 
   decl = new_nesc_declaration(parse_region, sl, element);
     
@@ -268,16 +272,9 @@ nesc_declaration load(source_language sl, location l,
   nesc_declare(decl);
 
   parsed_nesc_decl = NULL;
-  env = compile(l, sl, name, name_is_path, decl, global_env);
+  compile(l, sl, name, name_is_path, decl, global_env);
   if (!parsed_nesc_decl)
     parsed_nesc_decl = dummy_nesc_decl(sl, element);
-
-  /* Patch decl->kind to match loaded kind. Our caller will report the
-     appropriate error. */
-  if (is_interface(parsed_nesc_decl))
-    decl->kind = l_interface;
-  else
-    decl->kind = l_component;
 
   actual_name = parsed_nesc_decl->word1->cstring.data;
   if (strcmp(element, actual_name))
@@ -288,7 +285,7 @@ nesc_declaration load(source_language sl, location l,
 			language_name(decl->kind),
 			actual_name);
 
-  build(decl, env, parsed_nesc_decl);
+  build(decl, parsed_nesc_decl);
 
   return decl;
 }

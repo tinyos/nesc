@@ -22,7 +22,7 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	$ENV{AVARICE_ARGS} = "$ENV{AVARICE_ARGS} --capture";
 	splice @ARGV, $i, 1;
 	# Don't load an executable
-	$exe = "";
+	$capture = 1;
 	$i--;
     }
     elsif (!($arg =~ /^-/)) {
@@ -30,6 +30,8 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	break;
     }
 }
+
+$exe = "" if $capture;
 
 system "start-avarice $exe";
 unshift @ARGV, ($debugger, "-x", "$datadir/avarice/gdb-avarice-script" );

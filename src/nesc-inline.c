@@ -351,6 +351,9 @@ void inline_functions(cgraph callgraph)
   ggraph ig = make_ig(igr, callgraph);
   gnode n;
 
+  if (flag_no_inline)
+    return;
+
   /* Inline all stub functions */
   graph_scan_nodes (n, ig)
     {
@@ -360,24 +363,23 @@ void inline_functions(cgraph callgraph)
 	inline_function(n, in);
     }
 
-  if (!flag_no_inline)
-    /* Inline small fns and single-call fns */
-    graph_scan_nodes (n, ig)
-      {
-	struct inline_node *in = NODE_GET(struct inline_node *, n);
+  /* Inline small fns and single-call fns */
+  graph_scan_nodes (n, ig)
+    {
+      struct inline_node *in = NODE_GET(struct inline_node *, n);
       
-	if (in->fn->definition && !in->fn->isinline)
-	  {
-	    gedge e;
-	    size_t edgecount = 0;
+      if (in->fn->definition && !in->fn->isinline)
+	{
+	  gedge e;
+	  size_t edgecount = 0;
 
-	    graph_scan_in (e, n)
-	      edgecount++;
+	  graph_scan_in (e, n)
+	    edgecount++;
       
-	    if (in->size <= 15 || edgecount == 1)
-	      inline_function(n, in);
-	  }
-      }
+	  if (in->size <= 15 || edgecount == 1)
+	    inline_function(n, in);
+	}
+    }
   deleteregion(igr);
 }
 

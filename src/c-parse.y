@@ -422,7 +422,9 @@ include_list:
 
 interface: 
           includes_list
-	  INTERFACE { $<u.docstring>$ = get_docstring(); } 
+	  INTERFACE { $<u.docstring>$ = get_docstring(); 
+		      /* force matching kind in current nesc declaration */
+		      current.container->kind = l_interface; } 
 	  idword '{' datadef_list '}' 
 		{
 		  parsed_nesc_decl = CAST(nesc_decl, new_interface(pr, $2.location, $4, $<u.docstring>3, declaration_reverse($6)));
@@ -468,7 +470,9 @@ component:
 	;
 
 module: 
-	  MODULE { $<u.docstring>$ = get_docstring(); } 
+	  MODULE { $<u.docstring>$ = get_docstring(); 
+		   /* force matching kind in current nesc declaration */
+	  	   current.container->kind = l_component; } 
 	  idword '{' requires_or_provides_list '}' imodule
 		{ 
 		  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $1.location, $3, $<u.docstring>2, rp_interface_reverse($5), $7));
@@ -476,7 +480,9 @@ module:
 	;
 
 configuration:
-	  CONFIGURATION { $<u.docstring>$ = get_docstring(); } 
+	  CONFIGURATION { $<u.docstring>$ = get_docstring(); 
+	  		  /* force matching kind in current nesc declaration */
+			  current.container->kind = l_component; } 
 	  idword '{' requires_or_provides_list '}' iconfiguration
 	        { 
 		  parsed_nesc_decl = CAST(nesc_decl, new_component(pr, $1.location, $3, $<u.docstring>2, rp_interface_reverse($5), $7));
