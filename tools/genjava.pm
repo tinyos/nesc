@@ -125,21 +125,31 @@ sub gen() {
 	$javafield = $field;
 	$javafield =~ s/\./_/g;
 	if (!@$amax) {
-          print "      s += \"  [$field=0x\"+Long.toHexString(get_$javafield())+\"]\\n\";\n";
+	  ($javatype, $java_access, $arrayspec) = &javabasetype($type, $bitlength, 0);
+	  if ($javatype eq "float") {
+	    print "      s += \"  [$field=\"+Float.toString(get_$javafield())+\"]\\n\";\n";
+	  } else {
+	    print "      s += \"  [$field=0x\"+Long.toHexString(get_$javafield())+\"]\\n\";\n";
+	  }
 	} elsif (@$amax == 1 && $$amax[0] != 0) {
+	  ($javatype, $java_access, $arrayspec) = &javabasetype($type, $bitlength, @$amax);
           print "      s += \"  [$field=\";\n";
           print "      for (int i = 0; i < $$amax[0]; i++) {\n";
-	  if ($bitlength > 32) {
-	    print "        s += \"0x\"+Long.toHexString(getElement_$javafield(i))+\" \";\n";
-	  }
-	  elsif (bitlength > 16) {
-	    print "        s += \"0x\"+Long.toHexString(getElement_$javafield(i) & 0xffffffff)+\" \";\n";
-	  }
-	  elsif (bitlength > 8) {
-	    print "        s += \"0x\"+Long.toHexString(getElement_$javafield(i) & 0xffff)+\" \";\n";
-	  }
-	  else {
-	    print "        s += \"0x\"+Long.toHexString(getElement_$javafield(i) & 0xff)+\" \";\n";
+	  if ($javatype eq "float") {
+	    print "        s += Float.toString(getElement_$javafield(i))+\" \";\n";
+	  } else {
+	    if ($bitlength > 32) {
+	      print "        s += \"0x\"+Long.toHexString(getElement_$javafield(i))+\" \";\n";
+	    }
+	    elsif (bitlength > 16) {
+	      print "        s += \"0x\"+Long.toHexString(getElement_$javafield(i) & 0xffffffff)+\" \";\n";
+	    }
+	    elsif (bitlength > 8) {
+	      print "        s += \"0x\"+Long.toHexString(getElement_$javafield(i) & 0xffff)+\" \";\n";
+	    }
+	    else {
+	      print "        s += \"0x\"+Long.toHexString(getElement_$javafield(i) & 0xff)+\" \";\n";
+	    }
 	  }
           print "      }\n";
           print "      s += \"]\\n\";\n";
