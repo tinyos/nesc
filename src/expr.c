@@ -32,6 +32,7 @@ Boston, MA 02111-1307, USA. */
 #include "nesc-module.h"
 #include "nesc-component.h"
 #include "nesc-magic.h"
+#include "nesc-semantics.h"
 
 /* Return TRUE if TTL and TTR are pointers to types that are equivalent,
    ignoring their qualifiers.  */
@@ -53,7 +54,7 @@ static bool compatible_pointer_types(type tl, type tr)
 }
 
 static void warn_for_assignment(const char *msg, const char *opname,
-				const char *function, int argnum)
+				data_declaration fdecl, int argnum)
 {
   static char argstring[] = "passing arg %d of `%s'";
   static char argnofun[] =  "passing arg %d";
@@ -62,8 +63,10 @@ static void warn_for_assignment(const char *msg, const char *opname,
     {
       char *tmpname;
 
-      if (function)
+      if (fdecl)
 	{
+	  const char *function = decl_printname(fdecl);
+
 	  /* Function name is known; supply it.  */
 	  tmpname = (char *)alloca(strlen(function) + sizeof(argstring) + 25 /*%d*/ + 1);
 	  sprintf(tmpname, argstring, argnum, function);
@@ -289,7 +292,7 @@ static bool assignable_pointer_targets(type tt1, type tt2, bool pedantic)
 
 static void ptrconversion_warnings(type ttl, type ttr, expression rhs,
 				   const char *context,
-				   const char *funname, int parmnum,
+				   data_declaration fdecl, int parmnum,
 				   bool pedantic)
 {
   if (pedantic
@@ -297,7 +300,7 @@ static void ptrconversion_warnings(type ttl, type ttr, expression rhs,
 	  (type_function(ttl) && type_void(ttr) &&
 	   !(rhs && definite_null(rhs)))))
     warn_for_assignment("ANSI forbids %s between function pointer and `void *'",
-			context, funname, parmnum);
+			context, fdecl, parmnum);
 
   /* Const and volatile mean something different for function
      types, so the usual warnings are not appropriate.  */
@@ -310,32 +313,32 @@ static void ptrconversion_warnings(type ttl, type ttr, expression rhs,
 	 vice-versa.  */
       if (type_const(ttl) && !type_const(ttr))
 	warn_for_assignment("%s makes `const *' function pointer from non-const",
-			    context, funname, parmnum);
+			    context, fdecl, parmnum);
       if (type_volatile(ttl) && !type_volatile(ttr))
 	warn_for_assignment("%s makes `volatile *' function pointer from non-volatile",
-			    context, funname, parmnum);
+			    context, fdecl, parmnum);
     }
   else if (!type_function(ttl) && !type_function(ttr))
     {
       if (!type_const(ttl) && type_const(ttr))
 	warn_for_assignment("%s discards `const' from pointer target type",
-			    context, funname, parmnum);
+			    context, fdecl, parmnum);
       if (!type_volatile(ttl) && type_volatile(ttr))
 	warn_for_assignment("%s discards `volatile' from pointer target type",
-			    context, funname, parmnum);
+			    context, fdecl, parmnum);
 
       /* If this is not a case of ignoring a mismatch in signedness,
 	 no warning.  */
       if (!assignable_pointer_targets(ttl, ttr, FALSE) && pedantic)
 	warn_for_assignment("pointer targets in %s differ in signedness",
-			    context, funname, parmnum);
+			    context, fdecl, parmnum);
     }
 }
 
 /* Return TRUE if no error and lhstype and rhstype are not error_type */
 bool check_assignment(type lhstype, type rhstype, expression rhs,
 		      const char *context, data_declaration fundecl,
-		      const char *funname, int parmnum)
+		      int parmnum)
 {
   bool zerorhs = rhs && definite_zero(rhs);
 
@@ -417,7 +420,7 @@ bool check_assignment(type lhstype, type rhstype, expression rhs,
 	      type ttl = type_points_to(marginal_field->type),
 		ttr = type_points_to(rhstype);
 
-	      ptrconversion_warnings(ttl, ttr, rhs, context, funname, parmnum,
+	      ptrconversion_warnings(ttl, ttr, rhs, context, fundecl, parmnum,
 				     FALSE);
 	    }
 	  
@@ -438,11 +441,11 @@ bool check_assignment(type lhstype, type rhstype, expression rhs,
 	 Meanwhile, the lhs target must have all the qualifiers of the rhs.  */
       if (goodmatch || (type_equal_unqualified(make_unsigned_type(ttl),
 					       make_unsigned_type(ttr))))
-	ptrconversion_warnings(ttl, ttr, rhs, context, funname, parmnum,
+	ptrconversion_warnings(ttl, ttr, rhs, context, fundecl, parmnum,
 			       pedantic);
       else
 	warn_for_assignment("%s from incompatible pointer type",
-			    context, funname, parmnum);
+			    context, fundecl, parmnum);
 
       return check_conversion(lhstype, rhstype);
     }
@@ -451,19 +454,20 @@ bool check_assignment(type lhstype, type rhstype, expression rhs,
     {
       if (!zerorhs)
 	warn_for_assignment("%s makes pointer from integer without a cast",
-			    context, funname, parmnum);
+			    context, fundecl, parmnum);
       return check_conversion(lhstype, rhstype);
     }
   else if (type_integral(lhstype) && type_pointer(rhstype))
     {
       warn_for_assignment("%s makes integer from pointer without a cast",
-			  context, funname, parmnum);
+			  context, fundecl, parmnum);
       return check_conversion(lhstype, rhstype);
     }
 
   if (!context)
-    if (funname)
-      error("incompatible type for argument %d of `%s'", parmnum, funname);
+    if (fundecl)
+      error("incompatible type for argument %d of `%s'", parmnum,
+	    decl_printname(fundecl));
     else
       error("incompatible type for argument %d of indirect function call",
 	    parmnum);
@@ -1173,7 +1177,7 @@ expression make_assign(location loc, int binop, expression e1, expression e2)
 	}
 
       if (check_writable_lvalue(e1, "assignment") &&
-	  check_assignment(e1->type, t2, rhs, "assignment", NULL, NULL, 0))
+	  check_assignment(e1->type, t2, rhs, "assignment", NULL, 0))
 	result->type = make_qualified_type(e1->type, no_qualifiers);
     }
 
@@ -1250,7 +1254,7 @@ expression make_compound_expr(location loc, statement block)
 }
 
 bool check_arguments(type fntype, expression arglist,
-		     data_declaration fundecl, const char *name)
+		     data_declaration fundecl)
 {
   typelist_scanner parmtypes;
   int parmnum = 1;
@@ -1273,21 +1277,21 @@ bool check_arguments(type fntype, expression arglist,
 		{
 		  if (type_integer(parmtype) && type_floating(argtype))
 		    warn_for_assignment("%s as integer rather than floating due to prototype",
-					NULL, name, parmnum);
+					NULL, fundecl, parmnum);
 		  else if (type_floating(parmtype) && type_integer(argtype))
 		    warn_for_assignment ("%s as floating rather than integer due to prototype",
-					 NULL, name, parmnum);
+					 NULL, fundecl, parmnum);
 		  else if (type_complex(parmtype) && type_floating(argtype))
 		    warn_for_assignment ("%s as complex rather than floating due to prototype",
-					NULL, name, parmnum);
+					NULL, fundecl, parmnum);
 		  else if (type_floating(parmtype) && type_complex(argtype))
 		    warn_for_assignment ("%s as floating rather than complex due to prototype",
-					NULL, name, parmnum);
+					NULL, fundecl, parmnum);
 		  /* Warn if any argument is passed as `float',
 		     since without a prototype it would be `double'.  */
 		  else if (type_float(parmtype) && type_floating(argtype))
 		    warn_for_assignment ("%s as `float' rather than `double' due to prototype",
-					NULL, name, parmnum);
+					NULL, fundecl, parmnum);
 #if 0
 		  else
 		    {
@@ -1304,22 +1308,24 @@ bool check_arguments(type fntype, expression arglist,
 #endif
 		}
 	      check_assignment(parmtype, default_conversion_for_assignment(arglist),
-			       arglist, NULL, fundecl, name, parmnum);
+			       arglist, NULL, fundecl, parmnum);
 	    }
 	  parmnum++;
 	  arglist = CAST(expression, arglist->next);
 	}
       if (parmtype)
 	{
-	  if (name)
-	    error("too few arguments to function `%s'", name);
+	  if (fundecl)
+	    error("too few arguments to function `%s'",
+		  decl_printname(fundecl));
 	  else
 	    error("too few arguments to function");
 	}
       else if (arglist && !type_function_varargs(fntype))
 	{
-	  if (name)
-	    error("too many arguments to function `%s'", name);
+	  if (fundecl)
+	    error("too many arguments to function `%s'",
+		  decl_printname(fundecl));
 	  else
 	    error("too many arguments to function");
 	}
@@ -1339,7 +1345,6 @@ expression make_function_call(location loc, expression fn, expression arglist)
 {
   expression result = CAST(expression, new_function_call(parse_region, loc, fn, arglist, NULL, c_call));
   type fntype = default_conversion(fn), rettype;
-  char *funname;
   data_declaration fundecl;
   bool argumentsok;
 
@@ -1358,23 +1363,19 @@ expression make_function_call(location loc, expression fn, expression arglist)
       return result;
     }
 
-  funname = NULL;
   fundecl = NULL;
 
-  /* XXX: This code could be extended for interface.function to make for
-     nicer error messages */
   if (is_identifier(fn))
     {
       identifier fnid = CAST(identifier, fn);
 
       if (fnid->ddecl->kind == decl_function)
-	{
-	  funname = fnid->cstring.data;
-	  fundecl = fnid->ddecl;
-	}
+	fundecl = fnid->ddecl;
     }
+  else if (is_interface_deref(fn))
+    fundecl = CAST(interface_deref, fn)->ddecl;
 
-  argumentsok = check_arguments(fntype, arglist, fundecl, funname);
+  argumentsok = check_arguments(fntype, arglist, fundecl);
 
   rettype = type_function_return_type(fntype);
   result->type = rettype;

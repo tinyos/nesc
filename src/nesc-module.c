@@ -27,7 +27,7 @@ expression make_generic_call(location loc, expression iref, expression args)
 {
   expression result = CAST(expression, new_generic_call(parse_region, loc, iref, args));
 
-  check_arguments(iref->type, args, NULL, NULL);
+  check_arguments(iref->type, args, NULL);
   result->type = type_function_return_type(iref->type);
 
   return result;

@@ -58,11 +58,11 @@ string make_string(location loc, expression string_components);
 /* Return TRUE if no error and lhstype and rhstype are not error_type */
 bool check_assignment(type lhstype, type rhstype, expression rhs,
 		      const char *context, data_declaration fundecl,
-		      const char *funname, int parmnum);
+		      int parmnum);
 
 bool check_conversion(type to, type from);
 bool check_arguments(type fntype, expression arglist,
-		     data_declaration fundecl, const char *name);
+		     data_declaration fundecl);
 
 type default_conversion(expression e);
 type default_conversion_for_assignment(expression e);

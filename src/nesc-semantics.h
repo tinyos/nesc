@@ -70,4 +70,15 @@ bool is_module_variable(data_declaration ddecl);
 /* Returns: TRUE if ddecl is a module variable
  */
 
+const char *make_intf_printname(const char *iname, const char *fname);
+/* Returns: string "iname.fname" allocated in current.fileregion
+ */
+
+const char *decl_printname(data_declaration ddecl);
+/* Returns: The printable name for ddecl 
+     (interface.name for commands or events in interfaces,
+      just the name otherwise)
+     Any necessary memory is allocated in current.fileregion
+*/
+
 #endif

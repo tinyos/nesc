@@ -586,7 +586,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
   int specbits = 0, nclasses = 0;
   type_quals specquals = no_qualifiers;
   bool longlong = FALSE, defaultp;
-  const char *printname;
+  const char *printname, *iname;
   type_element spec;
   type t = NULL;
   bool modified;
@@ -597,8 +597,13 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
   /* We get the name now so that we have a name for error messages */
   if (ointf)
     *ointf = NULL;
-  *oname = declarator_name(d);
-  printname = *oname ? *oname : "type name";
+  declarator_name(d, oname, &iname);
+  if (!*oname)
+    printname = "type name";
+  else if (iname)
+    printname = make_intf_printname(iname, *oname);
+  else
+    printname = *oname;
 
   *oclass = 0;
 
@@ -1185,8 +1190,12 @@ void show_previous_decl(void (*message)(declaration d, const char *format, ...),
 {
   if (olddecl->kind == decl_function && olddecl->ftype == function_implicit)
     message(olddecl->ast, "previous implicit declaration of `%s'", olddecl->name);
+  else if (ddecl_is_command_or_event(olddecl))
+    message(olddecl->definition, "previous declaration of `%s'",
+	    decl_printname(olddecl));
   else
-    message(olddecl->ast, "previous declaration of `%s'", olddecl->name);
+    message(olddecl->ast, "previous declaration of `%s'",
+	    decl_printname(olddecl));
 }
 
 /* Handle when a new declaration NEWDECL
@@ -1206,7 +1215,6 @@ static int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
   type oldtype = olddecl->type;
   type newtype = newdecl->type;
   char *errmsg = 0;
-  const char *name = olddecl->name;
   void (*previous_message)(declaration d, const char *format, ...) = NULL;
   bool types_match;
 
@@ -1222,7 +1230,7 @@ static int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
 	(flag_traditional && different_binding_level) || olddecl->islimbo;
 
       warning_or_error(iswarning,
-		       "`%s' redeclared as different kind of symbol", name);
+		       "`%s' redeclared as different kind of symbol", decl_printname(olddecl));
       show_previous_decl(iswarning ? warning_with_decl : error_with_decl, olddecl);
       newdecl->shadowed = olddecl;
       return 0;
@@ -1257,7 +1265,7 @@ static int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
 	       looks_like_malloc_redeclaration(newtype, oldtype)))
     {
       if (pedantic)
-	pedwarn_with_decl(newdecl->ast, "conflicting types for `%s'", name);
+	pedwarn_with_decl(newdecl->ast, "conflicting types for `%s'", decl_printname(olddecl));
       /* Make sure we keep void * as ret type, not char *.  */
       if (type_void(type_points_to(type_function_return_type(oldtype))))
 	newdecl->type = newtype = oldtype;
@@ -1281,7 +1289,7 @@ static int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
       previous_message =
 	olddecl->islimbo ? warning_with_decl : error_with_decl;
 
-      message("conflicting types for `%s'", name);
+      message("conflicting types for `%s'", decl_printname(olddecl));
       /* Check for function type mismatch
 	 involving an empty arglist vs a nonempty one.  */
       if (newdecl->kind == decl_function
@@ -1321,13 +1329,13 @@ static int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
       errmsg = redeclaration_error_message(newdecl, olddecl, newinitialised);
       if (errmsg)
 	{
-	  error_with_decl(newdecl->ast, errmsg, name);
+	  error_with_decl(newdecl->ast, errmsg, decl_printname(olddecl));
 	  previous_message = error_with_decl;
 	}
       else if (newdecl->kind == decl_typedef &&
 	       (olddecl->in_system_header || newdecl->in_system_header))
 	{
-	  warning_with_decl(newdecl->ast, "redefinition of `%s'", name);
+	  warning_with_decl(newdecl->ast, "redefinition of `%s'", decl_printname(olddecl));
 	  previous_message = warning_with_decl;
 	}
       else if (olddecl->kind == decl_function
@@ -1372,14 +1380,14 @@ static int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
 	  if (errmsg)
 	    {
 	      warning_or_error_with_decl(olddecl->islimbo, newdecl->ast,
-					 errmsg, name, nargs);
+					 errmsg, decl_printname(olddecl), nargs);
 	      warning_or_error_with_decl(olddecl->islimbo, olddecl->ast,
 			      "doesn't match non-prototype definition here");
 	    }
 	  else
 	    {
 	      warning_with_decl(newdecl->ast, "prototype for `%s' follows",
-				name);
+				decl_printname(olddecl));
 	      warning_with_decl(olddecl->ast, "non-prototype definition here");
 	    }
 	}
@@ -1392,12 +1400,12 @@ static int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
 	    {
 	      if (olddecl->isused)
 		{
-		  warning("`%s' declared inline after being called", name);
+		  warning("`%s' declared inline after being called", decl_printname(olddecl));
 		  previous_message = warning_with_decl;
 		}
 	      if (olddecl->definition)
 		{
-		  warning("`%s' declared inline after its definition", name);
+		  warning("`%s' declared inline after its definition", decl_printname(olddecl));
 		  previous_message = warning_with_decl;
 		}
 	    }
@@ -1406,13 +1414,13 @@ static int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
 	  if (newdecl->ftype == function_static &&
 	      olddecl->ftype == function_implicit)
 	    {
-	      pedwarn("`%s' was declared implicitly `extern' and later `static'", name);
+	      pedwarn("`%s' was declared implicitly `extern' and later `static'", decl_printname(olddecl));
 	      previous_message = pedwarn_with_decl;
 	    }
 	  else if (newdecl->ftype == function_static &&
 		   olddecl->ftype == function_normal)
 	    {
-	      pedwarn("static declaration for `%s' follows non-static", name);
+	      pedwarn("static declaration for `%s' follows non-static", decl_printname(olddecl));
 	      previous_message = pedwarn_with_decl;
 	    }
 	}
@@ -1423,19 +1431,19 @@ static int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
 	  if (pedantic &&
 	      olddecl->isexternalscope && !newdecl->isexternalscope)
 	    {
-	      pedwarn("static declaration for `%s' follows non-static", name);
+	      pedwarn("static declaration for `%s' follows non-static", decl_printname(olddecl));
 	      previous_message = pedwarn_with_decl;
 	    }
 	  /* Warn when const declaration follows a non-const declaration */
 	  if (!type_const(oldtype) && type_const(newtype))
-	    warning("const declaration for `%s' follows non-const", name);
+	    warning("const declaration for `%s' follows non-const", decl_printname(olddecl));
 	  /* These bits are logically part of the type, for variables. */
 	  else if (pedantic && 
 		   (type_const(oldtype) != type_const(newtype)
 		    || type_volatile(oldtype) != type_volatile(newtype)))
 	    {
 	      pedwarn("type qualifiers for `%s' conflict with previous decl",
-		      name);
+		      decl_printname(olddecl));
 	      previous_message = pedwarn_with_decl;
 	    }
 	}
@@ -1446,7 +1454,7 @@ static int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
   if (errmsg == 0 && warn_redundant_decls && !olddecl->islimbo &&
       !(olddecl->isfilescoperef && !newdecl->isfilescoperef))
     {
-      warning_with_decl(newdecl->ast, "redundant redeclaration of `%s' in same scope", name);
+      warning_with_decl(newdecl->ast, "redundant redeclaration of `%s' in same scope", decl_printname(olddecl));
       previous_message = warning_with_decl;
     }
 
@@ -2268,20 +2276,24 @@ void pop_label_level(void)
   assert(current.function_decl->scoped_labels);
 }
 
-const char *declarator_name(declarator d)
+void declarator_name(declarator d, const char **oname, const char **iname)
 {
+  *oname = *iname = NULL;
   while (d)
     {
       switch (d->kind)
 	{
 	case kind_identifier_declarator:
-	  return CAST(identifier_declarator, d)->cstring.data;
+	  *oname = CAST(identifier_declarator, d)->cstring.data;
+	  return;
+	case kind_interface_ref_declarator:
+	  *iname = CAST(interface_ref_declarator, d)->word1->cstring.data;
+	  /* fall through */
 	default:
 	  d = CAST(nested_declarator, d)->declarator;
 	  break;
 	}
     }
-  return NULL;
 }
 
 dd_list check_parameter(data_declaration dd,
@@ -2669,7 +2681,7 @@ declaration finish_decl(declaration decl, expression init)
 	}
       else
 	check_assignment(dd->type, default_conversion_for_assignment(init),
-			 init, "initialization", NULL, NULL, 0);
+			 init, "initialization", NULL, 0);
 
       if (is_module_variable(dd) && init)
 	error("initialisers not allowed on module variables");
@@ -3558,6 +3570,8 @@ void note_identifier_use(data_declaration ddecl)
 
 void init_semantics(void)
 {
+  current.fileregion = parse_region;
+
   global_uses = dd_new_list(parse_region);
   spontaneous_calls = dd_new_list(parse_region);
 

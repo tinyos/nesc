@@ -72,7 +72,7 @@ void check_return(expression e)
     }
   else
     {
-      check_assignment(ret, default_conversion_for_assignment(e), e, "return", NULL, NULL, 0);
+      check_assignment(ret, default_conversion_for_assignment(e), e, "return", NULL, 0);
       /* XXX: Missing warning about returning address of local var */
     }
 }

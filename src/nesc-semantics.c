@@ -198,10 +198,12 @@ environment compile(location loc, source_language l,
 
       start_lex(l);
       start_semantics(l, container, parent_env);
+      current.fileregion = newregion();
       env = current.env;
       if (container)
 	container->env = env;
       parse();
+      deleteregion_ptr(&current.fileregion);
       end_input();
 
       preprocess_file_end();
@@ -299,5 +301,28 @@ bool is_module_variable(data_declaration ddecl)
      /* static var in module function */
      (ddecl->vtype == variable_static && ddecl->container_function &&
       ddecl->container_function->container)); 
+}
+
+const char *make_intf_printname(const char *iname, const char *fname)
+/* Returns: string "iname.fname" allocated in current.fileregion
+ */
+{
+  size_t ilen = strlen(iname);
+  size_t dlen = strlen(fname);
+  char *fullname = rstralloc(current.fileregion, ilen + dlen + 2);
+
+  memcpy(fullname, iname, ilen);
+  fullname[ilen] = '.';
+  strcpy(fullname + ilen + 1, fname);
+
+  return fullname;
+}
+
+const char *decl_printname(data_declaration ddecl)
+{
+  if (ddecl_is_command_or_event(ddecl) && ddecl->interface)
+    return make_intf_printname(ddecl->interface->name, ddecl->name);
+  else
+    return ddecl->name;
 }
 

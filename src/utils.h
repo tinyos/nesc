@@ -25,6 +25,9 @@ Boston, MA 02111-1307, USA. */
 #include "array.h"
 #include "cstring.h"
 
+void renew_region(region *r);
+/* Effects: Delete region *r (if not null), allocate a new region in *r */
+
 void *xmalloc(size_t size);
 void *xrealloc(void *p, size_t newsize);
 

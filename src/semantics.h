@@ -147,7 +147,7 @@ char *rid_name(rid r);
    label. Otherwise attach l2 to the end of l1 */
 statement chain_with_labels(statement l1, statement l2);
 
-const char *declarator_name(declarator d);
+void declarator_name(declarator d, const char **oname, const char **iname);
 
 data_declaration lookup_id(const char *s, bool this_level_only);
 
@@ -186,6 +186,9 @@ void start_semantics(source_language l, nesc_declaration container,
 
 struct semantic_state
 {
+  region fileregion;		/* A per-file region.
+				   "Renewed" at the start of each file and
+				   of each implementation section */
   source_language language;	/* The current language */
   environment env;		/* The current environment */
   nesc_declaration container;	/* The nesC entity being compiled (NULL for C) */

@@ -80,9 +80,11 @@ void print_error_function(const char *file)
 	fprintf (stderr, "At top level:\n");
       else
 	{
-	  const char *name =
-	    declarator_name(current.function_decl->declarator);
-	  fprintf (stderr, "In function `%s':\n", name);
+	  const char *name, *iname;
+
+	  declarator_name(current.function_decl->declarator, &name, &iname);
+	  fprintf (stderr, "In function `%s%s%s':\n",
+		   iname ? iname : "", iname ? "." : "", name);
 	}
 
       last_error_function = current.function_decl;

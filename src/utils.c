@@ -22,6 +22,14 @@ Boston, MA 02111-1307, USA. */
 #include "parser.h"
 #include "utils.h"
 
+void renew_region(region *r)
+/* Effects: Delete region *r (if not null), allocate a new region in *r */
+{
+  if (*r)
+    deleteregion_ptr(r);
+  *r = newregion();
+}
+
 void *xmalloc(size_t size)
 {
 #ifdef BWGC

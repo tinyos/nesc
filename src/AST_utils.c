@@ -249,3 +249,4 @@ expression build_identifier(region r, location loc, data_declaration id)
 
   return CAST(expression, e);
 }
+
