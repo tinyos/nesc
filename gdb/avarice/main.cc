@@ -115,7 +115,6 @@ static void usage(const char *progname)
     exit(1);
 }
 
-
 int main(int argc, char **argv)
 {
     int sock;
@@ -253,6 +252,8 @@ int main(int argc, char **argv)
 	unixCheck(child, "Failed to fork");
 	if (child != 0)
 	  _exit(0);
+	else
+	  unixCheck(setsid(), "setsid failed - weird bug");
     }
 
     // Connection request on original socket.
