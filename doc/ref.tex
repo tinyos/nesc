@@ -1,0 +1,340 @@
+% ponder: should I define a minimum reachable fn defn ?
+% (this def affects what ``missing connection'' errors you get)
+
+\documentclass[11pt]{article}
+
+\usepackage{fullpage}
+
+\begin{document}
+
+\section{Introduction}
+
+1 para goal (execution model embodies TinyOS concepts, TinyOS implemented
+in nesC)
+
+``whole program'' compilation
+
+1 para introduce basic language concepts:
+- components
+- interfaces
+- based on ANSI C (footnote will evolve to C99)
+
+1 para this not tutorial, see blah for that
+
+\section{Notation}
+
+fonts, bold, italics, etc
+
+\section{Concepts}
+
+component
+
+interface type
+
+commands, events; will use ``interface function'' to denote both (or just
+function when unambiguous)
+
+interface instance: simple or parameterised
+
+interface parameter: parameter to an interface.
+
+note on interface terminology (use interface when unambiguous)
+
+provided/used (for interface instances)
+
+module
+
+configuration
+
+connection
+
+tasks
+
+scopes: standard C global, per-block, per-function scopes; additional
+per-component-specification scope, per-component-implementation scope
+
+extents: standard C ones: indefinite, per-function, per-block
+
+compile-time error
+
+undefined behaviour
+
+\section{Component Specification}
+
+provides/uses spec-element or { list of spec-element }
+
+spec-element is single intf, or a command or event (latter two only
+occasionally used, intf strongly encouraged)
+
+single intf instance or 
+
+intf instance is:
+
+simple: interface foo as bar, interface foo shorthand
+
+parameterised: interface foo as bar[parameter_list], also shorthand.
+parameter_list must name integral types (does not include enums).
+% why no enums?
+
+command, event have optional [parameter_list] too; command, event
+behave like unnamed interface with that single function in it
+
+compile-time error if multiple instances w/ same name
+
+\section{Interface Types}
+
+interfaces are bidirectional
+
+interfaces contain commands, events which have C function signatures
+(command, event function like storage class specifiers)
+
+a component that provides an interface must implement its commands 
+(or compile-time error)
+
+a component that uses an interface must implement its events 
+(or compile-time error)
+
+note: a compinent that provides or uses an interface can call any
+of its commands and signal any of its events.
+
+give simple example (SendMsg)
+
+\section{Modules}
+
+name space:
+C (see C section below)
+specification
+implementation (top level)
+function, block as in standard C
+
+implementation level decls have indefinite extent, per-component-impl
+scope; can be standard C decls + tasks, commands, events; redeclaration
+rules are the same as for C's global scope.
+
+Preprocessing notes:
+- #define's in a module have per-module scope
+
+- #include in a module does pure textual inclusion (as it should), so for
+instance #include <math.h> will declare, e.g., sin() as a function declared
+in this module. Use the includes directive instead (see Section foo).
+
+one change from C: () function sig == (void), (void) is an error
+
+tasks: must have signature `task void taskname()'; must be called with post
+taskname(). Semantics: tasks will not execute concurrently with each other
+and only start execution when processor ``idle''. See discussion of
+concurrency for more info.
+
+commands, events: explain syntax here, esp. interface parameters.
+defining, calling. execution of commands, events is immediate (like a
+function call), see configuration section for explanation of what gets
+called (and with what interface parameter values).
+
+default commands, events: explain syntax; called if no configuration
+connects corresponding interfaces. If no default, no connection and a
+possibly reachable call (footnote: compiler may not report missing
+connections for unreachable code), then compile-time error
+
+compile-time error if name unknown interface, or unknown command/event
+of interface, or don't include correct parameter declarations/arguments
+for commands/events of parameterised interfaces (or parameterised
+commands/events)
+
+\section{Configurations}
+
+discussion below talks about interface instances only for clarity, but
+rules for a provided or used interface instance X are the same as for
+provided or used command or event Y.
+
+name space
+C
+configuration specification
+components list
+
+two parts: list of components and wiring.
+
+\subsection{Included components}
+list of components: optional renaming for convenience and easier component
+subsitution (no need to change wiring); these components are called the
+``internal components'' in the rest of this section.
+
+compile-time error if use the same name for two internal components (e.g.,
+components foo, bar as foo)
+
+Components are not multiply instantiated: if the same component is used
+in two different configurations you still get only one instance of that
+component (``foo as bar'' does not change this).
+
+\subsection{Wiring}
+
+- connect an interface instance of this configuration with an interface
+instance of an internal component (``equate'')
+- connect a provided interface instance of this configuration to a used
+interface instance of this configuration (``pass through'')
+- connect a used interface instance or an internal componment to a provided
+interface instance of an internal component (``link'')
+
+It is legal to wire the same interface multiple times. See the discussion
+of wiring semantics below for more details.
+
+All provided and used interfaces of this configuration must be wired in the
+wiring section (or compile-time error). However, all interfaces of the
+internal components need not be wired (note: they may be wired in another
+configuration, or they may be left unwired if the modules have the
+appropriate default event or command handlers).
+
+interface instance specification: `interface instance'  optional_parameter_values
+
+interface instance:
+- <name> for interface instances of this configuration
+- <component name>.<interface instance> (component name is the
+optionally renamed name from the list of components): name a particular
+instance of a configuration
+- <component name> only: see implicit connections discussion below (note:
+this form cannot be used when parameter values are specified)
+- compile-time error if none of the above
+
+optional_parameter_values: '[' val1, ..., valn ']'. interface instance name
+must specify parameterised interface with n parameters, val1 through valn
+must be compile-time integer constants (note: see the discussion of
+compile-time-constant-functions below). parameter value n must be in the
+range of the corresponding parameter type. compile-time error for all
+these failures.
+
+an intf instance spec is parameterised if the interface instance name
+named a parmaterised interface instance and no parameter values were
+specified.
+
+syntax:
+equate: intf-spec1 `=' intf-spec2. compile-time error if not both 
+provided or both used. exactly one of the two intfs must belong
+to this configuration, compile-time error otherwise. 
+
+pass through, link: intf-spec1 `->' intf-spec2 (or, equivalently
+intf-spec2 `<-' intf-spec1). intf-spec1 must be used, intf-spec2
+must be provided, compile-time error otherwise. Note: somewhat
+counter-intuitive for pass through.
+
+In both cases, intf-spec1 and intf-spec2 must be:
+- instances of the same interface type
+- either: neither is parameterised, or both are and the specified interface
+instances have identical parameter types
+
+\subsection{Implicit Connections}
+
+It is possible to write `component1 <-/=/-> component2.interfaceinstance2',
+or `component1.interfaceinstance1 <-/=/-> component2'. This syntax iterates
+through the interface instances of component1 (resp. component2) to find
+all interfaceinstance1s (resp. interfaceinstance2s) which would form a
+valid connection. A compile-time error is reported if no such
+interfaceinstance1 (resp. interfaceinstance2) can be found, or if more
+than one such match can be found.
+
+give examples
+
+\subsection{Wiring Semantics}
+
+explain the directed-graph based semantics
+
+per-configuration graph
+
+whole-program graph
+
+meaning of command, event call (graph exploration). two possible
+compile-time errors: 
+- no reachable command or event defn and no default handler at callee.
+- cycle in whole-program graph
+
+multiple reachable commands/events: arbitrary sequential call order,
+arbitrary result (of one of the calls) 
+% should I specify the result is at least the result of the last call?
+
+parameterised calls:
+- from non-parameterised to parameterised: parameter values collected
+from configuration
+- from parameterised to non-parameterised: conditional call based on
+values specified at call site and in configuration (must be =)
+- from parameterised to parameterised: values passed through
+
+parameterised calls meet multiple connections:
+- parameterised to multiple non-parameterised: ``dispatch table''. must
+provide default handler.
+- parameterised to multiple non-parameterised and at least one
+parameterised: ``dispatch table'' for non-parameterised. as above
+for parameterised. default handler not required.
+
+\section{C}
+
+C namespace is populated by:
+- loading tos.h 
+- loading .h files specified by includes directives at start of
+interfaces, modules and configurations
+
+All declarations and macros in these .h files are placed in the C name
+space and are therefore known to all subsequently loaded components,
+interfaces and C files.
+
+Once foo.h has been loaded by `includes foo', subsequent `includes foo'
+directives are ignored.
+
+Example of use: includes fooTypes at start of interface foo will load
+fooTypes.h. All components that use or provide foo will then automatically
+see the types defined in fooTypes.h.
+
+\section{Miscellaneous}
+
+\subsection{Component and Interface Type Name Space}
+
+Components and interface types share a name space; this name space is 
+global and distinct from the C global name space. Compile-time error
+if expected interface foo and found component foo.
+
+\subsection{Attributes}
+
+explain basic syntax (ref gcc)
+
+C
+
+spontaneous
+
+\subsection{Compile-time Constant Functions}
+
+extension to C (to easily add new kinds of constant expressions in a familiar
+syntax).
+
+unique(``string'')
+
+am_type()
+
+\subsection{Files}
+
+components or interface foo is found in foo.nc
+
+C file foo is found in foo.h
+
+implementation of nesC uses search path for these files, see man page for
+details
+
+\subsection{Compilation Model}
+
+compilation of component loads and checks all code specified directly
+and indirectly by a single component, then outputs a single C file
+containing all that code. May freely assume that only functions marked
+spontaneous are entry points to this code (typical use: main and 
+interrupt handlers are marked spontaneous).
+
+\section{Concurrency}
+
+\section{Grammar}
+
+new nesC keywords: as, call, command, components, configuration, event, 
+implementation, interface, module, post, provides, signal, task, uses, 
+includes
+
+the nesC keywords are not reserved in C files. Corresponding C symbols are
+accessible in nesC files by prefixing them with __nesc_keyword (e.g.,
+__nesc_keyword_as).
+
+identifier prefixes reserved: __nesc for nesC, TOS_ and TOSH_ for TinyOS
+
+\end{document}
