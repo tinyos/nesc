@@ -30,7 +30,7 @@ typedef struct {
 	 cval_float, cval_float_complex,
 	 cval_uint, cval_uint_complex,
 	 cval_sint, cval_sint_complex } kind;
-#if 1
+#ifdef USE_UNNAMED_UNION
   union {
     struct {
       long double d, d_i; /* for cval_float */
@@ -40,7 +40,7 @@ typedef struct {
       union {
 	largest_int si;
 	largest_uint ui;
-      } r;
+      };
       union {
 	largest_int si_i;
 	largest_uint ui_i;
@@ -48,11 +48,10 @@ typedef struct {
 	  struct data_declaration *ddecl; /* for cval_address */
 	  struct label_declaration *ldecl;  /* for cval_address */
 	};
-      } c;
+      };
     };
   };
 #else
-  /* Could be a union */
   long double d, d_i; /* for cval_float */
   struct data_declaration *ddecl; /* for cval_address */
   struct label_declaration *ldecl;  /* for cval_address */

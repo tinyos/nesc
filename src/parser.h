@@ -29,16 +29,6 @@ Boston, MA 02111-1307, USA. */
 #include <assert.h>
 #include <stdarg.h>
 #include <stddef.h>
-#ifdef HAVE_ALLOCA_H
-#include <alloca.h>
-#else
-#ifdef __GNUC__
-#define alloca __builtin_alloca
-void *alloca(size_t n);
-#else
-#error need alloca
-#endif
-#endif
 
 #include "config.h"
 #include "array.h"

@@ -63,4 +63,19 @@ typedef unsigned char bool;
 #define SUCCESS_EXIT_CODE 0
 #define FATAL_EXIT_CODE 33
 
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#else
+#ifdef __GNUC__
+#define alloca __builtin_alloca
+void *alloca(size_t n);
+#else
+#error need alloca
+#endif
+#endif
+
+#if __GNUC__ >= 3 && __GNUC_MINOR__ >= 1
+#define USE_UNNAMED_UNION
+#endif
+
 #endif
