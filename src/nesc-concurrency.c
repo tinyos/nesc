@@ -110,11 +110,15 @@ static dd_list find_async_variables(region r, cgraph callgraph)
 	    context c = i->u->c;
 
 	    if (id->kind == decl_variable && !id->islocal &&
-		!id->async_access &&
 		c & (c_read | c_write))
 	      {
-		id->async_access = TRUE;
-		dd_add_last(r, avars, id);
+		if (!id->async_access)
+		  {
+		    id->async_access = TRUE;
+		    dd_add_last(r, avars, id);
+		  }
+		if (c & c_write)
+		  id->async_write = TRUE;
 	      }
 	  }
     }
@@ -169,8 +173,14 @@ static void check_async_vars(dd_list avars)
 	dd_scan (ause, v->nuses)
 	  {
 	    use u = DD_GET(use, ause);
+	    context bad_contexts = c_write;
 
-	    if (!(u->c & c_atomic) && u->c & (c_read | c_write))
+	    /* If there are no writes in async contexts, then reads
+	       need not be protected */
+	    if (v->async_write)
+	      bad_contexts |= c_read;
+
+	    if (!(u->c & c_atomic) && u->c & bad_contexts)
 	      {
 		const char *cname;
 
@@ -181,7 +191,8 @@ static void check_async_vars(dd_list avars)
 			    v->name);
 		  }
 
-		if ((u->c & (c_read | c_write)) == (c_read | c_write))
+		if ((u->c & (c_read | c_write)) == (c_read | c_write) &&
+		    v->async_write)
 		  cname = "r/w";
 		else if (u->c & c_read)
 		  cname = "read";

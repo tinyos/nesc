@@ -139,7 +139,7 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->makeinline = FALSE;
   dd->container_function = NULL;
   dd->use_summary = 0;
-  dd->async_access = FALSE;
+  dd->async_access = dd->async_write = FALSE;
   dd->norace = FALSE;
   dd->instantiation = NULL;
 }
