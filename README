@@ -48,7 +48,7 @@ The following is a summary of the changes in nesC 1.1:
     a .sensor file in the .../tos/sensorboards/Y directory
     (as with .platform, .sensor is just perl code so can modify the
     variables used by ncc to achieve whatever effect is necessary)
-  o set-mode-id works for programs greater than 64K
+  o set-mote-id works for programs greater than 64K
 
 - New tool to extract (enum) constants from C code: ncg. Usage is similar
   to mig.
