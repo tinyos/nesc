@@ -121,34 +121,35 @@ sub gen() {
 	if (!@$amax) {
 	  ($csharptype, $csharp_access, $arrayspec) = &csharpbasetype($type, $bitlength, 0);
 	  if ($csharptype eq "float") {
-	    print "        s += string.format(\"  [$field={0}]\\n\", get_$csfield());\n";
+	    print "        s += string.Format(\"  [$field={0}]\\n\", get_$csfield());\n";
 	  } else {
-	    print "        s += string.format(\"  [$field={0:x}]\\n\", get_$csfield());\n";
+	    print "        s += string.Format(\"  [$field={0:x}]\\n\", get_$csfield());\n";
 	  }
 	} elsif (@$amax == 1 && $$amax[0] != 0) {
 	  ($cstype, $csharp_access, $arrayspec) = &csharpbasetype($type, $bitlength, @$amax);
           print "        s += \"  [$field=\";\n";
           print "        for (int i = 0; i < $$amax[0]; i++) {\n";
-	  if ($cstype eq "float") {
-	    print "          s += string.format(\"{0} \", get_$csfield());\n";
-	  } else {
-	    if ($bitlength > 32) {
-	      print "          s += string.format(\"{0:x} \", get_$csfield() & 0xffffffffffffffff);\n";
-	    }
-	    elsif (bitlength > 16) {
-	      print "          s += string.format(\"{0:x} \", get_$csfield() & 0xffffffff);\n";
-	    }
-	    elsif (bitlength > 8) {
-	      print "          s += string.format(\"{0:x} \", get_$csfield() & 0xffff);\n";
-	    }
-	    else {
-	      print "          s += string.format(\"{0:x} \", get_$csfield() & 0xff);\n";
-	    }
-	  }
+	  print "          s += string.Format(\"{0} \", get_$csfield());\n";
+#	  if ($cstype eq "float") {
+#	    print "          s += string.Format(\"{0} \", get_$csfield());\n";
+#	  } else {
+#	    if ($bitlength > 32) {
+#	      print "          s += string.Format(\"{0:x} \", get_$csfield() & 0xffffffffffffffff);\n";
+#	    }
+#	    elsif (bitlength > 16) {
+#	      print "          s += string.Format(\"{0:x} \", get_$csfield() & 0xffffffff);\n";
+#	    }
+#	    elsif (bitlength > 8) {
+#	      print "          s += string.Format(\"{0:x} \", get_$csfield() & 0xffff);\n";
+#	    }
+#	    else {
+#	      print "          s += string.Format(\"{0:x} \", get_$csfield() & 0xff);\n";
+#	    }
+#	  }
           print "        }\n";
           print "        s += \"]\\n\";\n";
 	}
-        print "      } catch (ArrayIndexOutOfBoundsException aioobe) { /* Skip field */ }\n";
+        print "      } catch (IndexOutOfRangeException aioobe) { /* Skip field */ }\n";
     }
     print "      return s;\n";
     print "    }\n\n";
@@ -385,11 +386,11 @@ sub gen() {
 	  print "     * for the given dimension.\n";
 	  print "     */\n";
 	  print "    public static int numElements_$csfield(int dimension) {\n";
-	  print "      int array_dims[] = { ";
+	  print "      int[] array_dims = { ";
 	  foreach $e (@$amax) { print "$e, "; }
 	  print " };\n";
-	  print "        if (dimension < 0 || dimension >= $arraydims) throw new ArrayIndexOutOfBoundsException();\n";
-	  print "        if (array_dims[dimension] == 0) throw new IllegalArgumentException(\"Array dimension \"+dimension+\" has unknown size\");\n";
+	  print "        if (dimension < 0 || dimension >= $arraydims) throw new IndexOutOfRangeException();\n";
+	  print "        if (array_dims[dimension] == 0) throw new ArgumentException(\"Array dimension \"+dimension+\" has unknown size\");\n";
 	  print "        return array_dims[dimension];\n";
 	  print "    }\n\n";
 
@@ -400,13 +401,13 @@ sub gen() {
 	      print "     */\n";
 	      print "    public void setString_$csfield(string s) { \n";
 	      if ($amax[0] != 0) {
-                print "         int len = Math.min(s.length(), $$amax[0]-1);\n";
+                print "         int len = Math.Min(s.Length, $$amax[0]-1);\n";
 	      } else {
-                print "         int len = s.length();\n";
+                print "         int len = s.Length;\n";
 	      }
 	      print "         int i;\n";
 	      print "         for (i = 0; i < len; i++) {\n";
-	      print "             setElement_$csfield(i, ($cstype)s.charAt(i));\n";
+	      print "             setElement_$csfield(i, ($cstype)s[i]);\n";
               print "         }\n";
 	      print "         setElement_$csfield(i, ($cstype)0); //null terminate\n";
 	      print "    }\n\n";
@@ -416,12 +417,12 @@ sub gen() {
 	      print "     */\n";
 	      print "    public string getString_$csfield() { \n";
 	      if ($$amax[0] == 0) {
-                print "         char carr[] = new char[tinyos.message.Message.MAX_CONVERTED_STRING_LENGTH];\n";
+                print "         char[] carr = new char[tinyos.message.Message.MAX_CONVERTED_STRING_LENGTH];\n";
 	      } else {
-                print "         char carr[] = new char[Math.min(tinyos.message.Message.MAX_CONVERTED_STRING_LENGTH,$$amax[0])];\n";
+                print "         char[] carr = new char[Math.Min(tinyos.message.Message.MAX_CONVERTED_STRING_LENGTH,$$amax[0])];\n";
               }
 	      print "         int i;\n";
-	      print "         for (i = 0; i < carr.length; i++) {\n";
+	      print "         for (i = 0; i < carr.Length; i++) {\n";
 	      print "             if ((char)getElement_$csfield(i) == (char)0) break;\n";
 	      print "             carr[i] = (char)getElement_$csfield(i);\n";
               print "         }\n";
@@ -450,7 +451,7 @@ sub csharpbasetype()
     }
     elsif ($basetype eq "I") {
       $acc = "SIntElement";
-      if ($bitlength <= 8) { $cstype = "sbyte"; }
+      if ($bitlength <= 8) { $cstype = "byte"; }
       elsif ($bitlength <= 16) { $cstype = "short"; }
       elsif ($bitlength <= 32) { $cstype = "int"; }
       else { $cstype = "long"; }
@@ -481,10 +482,10 @@ sub printoffset()
 	# (they represent variable size arrays. Normally they should only
 	# occur as the first-dimension of the last element of the structure)
 	if ($$max[$i - 1] != 0) {
-	    print "        if (index$i < 0 || index$i >= $$max[$i - 1]) throw new ArrayIndexOutOfBoundsException();\n";
+	    print "        if (index$i < 0 || index$i >= $$max[$i - 1]) throw new IndexOutOfRangeException();\n";
 	}
 	else {
-	    print "        if (index$i < 0) throw new ArrayIndexOutOfBoundsException();\n";
+	    print "        if (index$i < 0) throw new IndexOutOfRangeException();\n";
 	}
 	print "        offset += $$aoffset[$i - 1] + index$i * $$bitsize[$i - 1];\n";
     }
@@ -501,7 +502,7 @@ sub printarrayget() {
   # Check whether array has known size
   for ($i = 0; $i < @$amax; $i++) {
     if ($$amax[$i] == 0) {
-      print "        throw new IllegalArgumentException(\"Cannot get field as array - unknown size\");\n";
+      print "        throw new ArgumentException(\"Cannot get field as array - unknown size\");\n";
       return;
     }
   }
@@ -543,7 +544,7 @@ sub printarrayset() {
   $indent = " ";
   $val = "";
   for ($i = 0; $i < @$amax; $i++) {
-    print "      $indent for (int index$i = 0; index$i < value$val.length; index$i++) {\n";
+    print "      $indent for (int index$i = 0; index$i < value$val.Length; index$i++) {\n";
     $val = $val . "[index$i]";
     $indent = $indent . "  ";
   }
