@@ -13,6 +13,9 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * A complex floating point type.
+ */
 public class Xtype_complex_float extends SimpleType
 {
 }

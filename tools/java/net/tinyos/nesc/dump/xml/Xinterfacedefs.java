@@ -14,9 +14,12 @@ package net.tinyos.nesc.dump.xml;
 import org.xml.sax.*;
 import java.util.*;
 
+/**
+ * Top-level interface definition list.
+ */
 public class Xinterfacedefs extends NDList
 {
-    public static LinkedList list;
+    public static LinkedList/*Xinterfacedef*/ list;
 
     public NDElement end() {
 	list = l;

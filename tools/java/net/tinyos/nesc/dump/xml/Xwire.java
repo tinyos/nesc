@@ -13,10 +13,29 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * An edge in a wiring graph.
+ * @see net.tinyos.nesc.dump.xml.WiringGraph
+ * @see net.tinyos.nesc.dump.xml.WiringEndpoint
+ * @see net.tinyos.nesc.dump.xml.WiringNode
+ */
 public class Xwire extends NDElement
 {
-    public WiringEndpoint from, to;
-    public Location location; /* may be null */
+    /**
+     * The origin of this wire.
+     */
+    public WiringEndpoint from;
+
+    /**
+     * The destination of this wire.
+     */
+    public WiringEndpoint to;
+
+    /**
+     * The source code location which created this wire. null in
+     * function-level wiring graphs.
+     */
+    public Location location;
 
     public NDElement start(Attributes attrs) {
 	location = Location.decode(attrs.getValue("loc"));
@@ -49,10 +68,35 @@ public class Xwire extends NDElement
     }
 
 
+    /**
+     * Try to follow this edge forwards from 'position'. Return true if
+     * this edge can be followed. If the edge can be followed, update
+     * 'position' to reflect the results of following the edge.
+     * <p>
+     * The position's node must match this edge's starting node ('from' 
+     * field).
+     * <p>
+     * An edge cannot be followed if 'position' specifies a particular
+     * interface from a parameterised interface (i.e., has arguments),
+     * and this edge specifies a different interface (i.e., has different
+     * arguments in its 'from' endpoint).
+     */
     public boolean followForwards(WiringEndpoint position) {
 	return follow(position, from, to);
     }
 
+    /**
+     * Try to follow this edge backwards from 'position'. Return true if
+     * this edge can be followed. If the edge can be followed, update
+     * 'position' to reflect the results of following the edge.
+     * <p>
+     * The position's node must match this edge's ending node ('to' field).
+     * <p>
+     * An edge cannot be followed if 'position' specifies a particular
+     * interface from a parameterised interface (i.e., has arguments),
+     * and this edge specifies a different interface (i.e., has different
+     * arguments in its 'to' endpoint).
+     */
     public boolean followBackwards(WiringEndpoint position) {
 	return follow(position, to, from);
     }

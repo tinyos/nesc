@@ -13,6 +13,9 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * The void type.
+ */
 public class Xtype_void extends SimpleType
 {
 }

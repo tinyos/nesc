@@ -18,6 +18,12 @@ package net.tinyos.nesc.dump.xml;
  * <p>
  * equals() is defined on Constant objects. Unknown and non constant
  * objects compare different with every other constant (including themselves).
+ * <p>
+ * Note that constants (ex: 32, "fun", 2+3) are different from C initialisers
+ * (ex: { 1, 2, { .x = 3 } }). An initialiser is represented by an object of
+ * type Value. Constants can appear in initialisers (see Xvalue). 
+ * @see net.tinyos.nesc.dump.xml.Value
+ * @see net.tinyos.nesc.dump.xml.Xvalue
  */
 abstract public class Constant
 {

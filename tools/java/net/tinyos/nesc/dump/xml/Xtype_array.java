@@ -13,9 +13,20 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * A C array type.
+ */
 public class Xtype_array extends Type
 {
+    /**
+     * Base type for the array.
+     */
     public Type subType;
+
+    /**
+     * Length of the array. Might be a non-constant for arrays of unspecified
+     * length.
+     */
     public Constant length;
 
     public NDElement start(Attributes attrs) {

@@ -13,7 +13,9 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-/* Component declaration inside a configuration */
+/**
+ * Component declaration inside a configuration 
+ */
 public class Xinternal_component extends DataDefinition
 {
 }

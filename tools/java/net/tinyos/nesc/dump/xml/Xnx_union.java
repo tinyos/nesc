@@ -11,18 +11,11 @@
 
 package net.tinyos.nesc.dump.xml;
 
-import net.tinyos.nesc.dump.*;
 import org.xml.sax.*;
 
 /**
- * Class for attribute references. These objects go away, replaced by the
- * object representing the definition.
- * @see net.tinyos.nesc.dump.xml.Xattribute
- * @see net.tinyos.nesc.dump.xml.Definition
+ * An external-representation union.
  */
-public class Xnw_union_ref extends NDElement
+public class Xnx_union extends StructureDefinition
 {
-    public NDElement start(NDReader reader, Attributes attrs) {
-	return TagDefinition.lookup(reader, attrs, "nw_union");
-    }
 }

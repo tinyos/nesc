@@ -13,8 +13,14 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * A tagged (enum, struct, etc) type.
+ */
 public class Xtype_tag extends Type
 {
+    /**
+     * The tagged type's definition.
+     */
     public TagDefinition tag;
 
     public void child(NDElement subElement) {

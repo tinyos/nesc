@@ -17,6 +17,8 @@ import org.xml.sax.*;
  * Base class for elements representing C initialisers (the {} stuff in
  *  struct foo x = { ... }
  * Attributes use these initialisers too.
+ * <p>
+ * equals() is defined only for initialisers representing C constants.
  */
 abstract public class Value extends NDElement
 {

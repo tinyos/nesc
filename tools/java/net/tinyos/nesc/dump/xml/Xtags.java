@@ -14,9 +14,12 @@ package net.tinyos.nesc.dump.xml;
 import org.xml.sax.*;
 import java.util.*;
 
+/**
+ * Top-level tag-based (enum, struct, etc) types list.
+ */
 public class Xtags extends NDList
 {
-    public static LinkedList list;
+    public static LinkedList/*TagDefinition*/ list;
 
     public NDElement end() {
 	list = l;

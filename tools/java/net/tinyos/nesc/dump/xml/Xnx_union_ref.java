@@ -11,8 +11,18 @@
 
 package net.tinyos.nesc.dump.xml;
 
+import net.tinyos.nesc.dump.*;
 import org.xml.sax.*;
 
-public class Xnw_union extends StructureDefinition
+/**
+ * Class for external-representation union references. These objects go
+ * away, replaced by the Xnx_union object representing the definition.
+ * @see net.tinyos.nesc.dump.xml.Xnx_union
+ * @see net.tinyos.nesc.dump.xml.Definition
+ */
+public class Xnx_union_ref extends NDElement
 {
+    public NDElement start(NDReader reader, Attributes attrs) {
+	return TagDefinition.lookup(reader, attrs, "nw_union");
+    }
 }

@@ -13,6 +13,9 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
-public class Xnw_struct extends StructureDefinition
+/**
+ * An external-representation structure.
+ */
+public class Xnx_struct extends StructureDefinition
 {
 }

@@ -11,6 +11,9 @@
 
 package net.tinyos.nesc.dump.xml;
 
+/**
+ * Class representing "known constants"
+ */
 abstract public class KnownConstant extends Constant
 {
     public boolean known() {

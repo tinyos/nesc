@@ -13,6 +13,9 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * A C typedef.
+ */
 public class Xtypedef extends DataDefinition
 {
 }

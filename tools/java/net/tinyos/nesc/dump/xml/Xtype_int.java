@@ -13,6 +13,19 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * An integer type.
+ */
 public class Xtype_int extends SimpleType
 {
+    /**
+     * True if the integer type is unsigned.
+     */
+    public boolean unsignedType;
+
+    public NDElement start(Attributes attrs) {
+	super.start(attrs);
+	unsignedType = boolDecode("unsigned");
+	return this;
+    }
 }

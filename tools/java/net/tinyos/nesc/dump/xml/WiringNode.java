@@ -21,7 +21,7 @@ import java.util.*;
  */
 public class WiringNode
 {
-    static LinkedList empty = new LinkedList();
+    static LinkedList/*Xwire*/ empty = new LinkedList();
 
     LinkedList/*Xwire*/ outgoing, incoming;
 

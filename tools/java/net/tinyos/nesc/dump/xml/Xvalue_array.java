@@ -14,9 +14,15 @@ package net.tinyos.nesc.dump.xml;
 import org.xml.sax.*;
 import java.util.*;
 
+/**
+ * An initialiser for an array.
+ */
 public class Xvalue_array extends Value
 {
-    public LinkedList elements = new LinkedList();
+    /**
+     * The individual array element initialisers.
+     */
+    public LinkedList/*Xarray_element*/ elements = new LinkedList();
 
     public void child(NDElement subElement) {
 	super.child(subElement);

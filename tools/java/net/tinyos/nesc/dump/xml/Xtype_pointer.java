@@ -13,8 +13,14 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * A pointer type.
+ */
 public class Xtype_pointer extends Type
 {
+    /**
+     * The type pointed to.
+     */
     public Type subType;
 
     public void child(NDElement subElement) {

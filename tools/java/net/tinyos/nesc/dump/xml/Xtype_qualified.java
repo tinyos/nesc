@@ -13,10 +13,30 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * A qualfied (const, volatile, restrict) type.
+ */
 public class Xtype_qualified extends Type
 {
+    /**
+     * The type that is qualified.
+     */
     public Type subType;
-    public boolean qconst, qvolatile, qrestrict;
+
+    /**
+     * true if the subType is qualified with const.
+     */
+    public boolean qconst;
+    
+    /**
+     * true if the subType is qualified with volatile.
+     */
+    public boolean qvolatile;
+
+    /**
+     * true if the subType is qualified with restrict.
+     */
+    public boolean qrestrict;
 
     public NDElement start(Attributes attrs) {
 	super.start(attrs);

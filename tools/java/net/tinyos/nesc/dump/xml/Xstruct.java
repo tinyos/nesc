@@ -13,6 +13,9 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * A C struct definition.
+ */
 public class Xstruct extends StructureDefinition
 {
 }

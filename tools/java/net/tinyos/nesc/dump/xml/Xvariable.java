@@ -13,6 +13,9 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * A C variable.
+ */
 public class Xvariable extends DataDefinition
 {
 }

@@ -13,8 +13,15 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * A function, interface or component parameter list specfication.
+ */
 public class Xparameters extends NDList
 {
+    /**
+     * (valid for functions only) true if the function is a variable-argument
+     * list function (e.g., printf)
+     */
     public boolean varargs;
 
     public void child(NDElement subElement) {

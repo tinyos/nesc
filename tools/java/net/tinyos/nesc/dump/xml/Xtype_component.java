@@ -13,8 +13,15 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * Type of internal component references in configurations. Each component
+ * in a configuration has its own separate (singleton) type.
+ */
 public class Xtype_component extends Type
 {
+    /**
+     * What internal component this is the type of.
+     */
     public Xinternal_component component;
 
     public void child(NDElement subElement) {

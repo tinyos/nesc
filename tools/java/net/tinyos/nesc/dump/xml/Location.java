@@ -84,10 +84,9 @@ public class Location
      * source code locations may or may not be represented by the same
      * Location object.
      */
-    public Location make(int lineno, String filename, String instance) {
-	this.lineno = lineno;
-	this.filename = filename;
-	this.instance = instance;
+    public static Location make(int lineno, String filename, String instance) {
+	/* For now, not trying to do any location sharing. */
+	return new Location(lineno, filename, instance);
     }
 
     public String toString() {

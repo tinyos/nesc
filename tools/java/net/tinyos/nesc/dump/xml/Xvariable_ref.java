@@ -15,9 +15,9 @@ import net.tinyos.nesc.dump.*;
 import org.xml.sax.*;
 
 /**
- * Class for attribute references. These objects go away, replaced by the
- * object representing the definition.
- * @see net.tinyos.nesc.dump.xml.Xattribute
+ * Class for C variable references. These objects go away, replaced by the
+ * Xvariable object representing the definition.
+ * @see net.tinyos.nesc.dump.xml.Xvariable
  * @see net.tinyos.nesc.dump.xml.Definition
  */
 public class Xvariable_ref extends NDElement

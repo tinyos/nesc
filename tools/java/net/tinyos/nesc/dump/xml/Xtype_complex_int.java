@@ -13,6 +13,20 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * A complex integer type.
+ */
 public class Xtype_complex_int extends SimpleType
 {
+    /**
+     * True if the base integer type is unsigned.
+     */
+    public boolean unsignedType;
+
+    public NDElement start(Attributes attrs) {
+	super.start(attrs);
+	unsignedType = boolDecode("unsigned");
+	return this;
+    }
 }
+

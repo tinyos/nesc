@@ -14,9 +14,20 @@ package net.tinyos.nesc.dump.xml;
 import net.tinyos.nesc.dump.*;
 import org.xml.sax.*;
 
+/**
+ * Elements of a structure initialiser (Xvalue_structured)
+ * @see net.tinyos.nesc.dump.xml.Xvalue_structured
+ */
 public class Xstructured_element extends NDElement
 {
+    /**
+     * What field is being initialised.
+     */
     public Xfield field;
+
+    /**
+     * Initialiser value.
+     */
     public Value value;
 
     public NDElement start(NDReader reader, Attributes attrs) {

@@ -13,8 +13,14 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * Top-level wiring graph.
+ */
 public class Xwiring extends NDElement
 {
+    /**
+     * The application's wiring graph
+     */
     public static WiringGraph wg = new WiringGraph();
 
     public void child(NDElement subElement) {

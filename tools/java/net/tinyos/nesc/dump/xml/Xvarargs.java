@@ -13,6 +13,11 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * Placeholder marking variable-argument functions in parameter lists.
+ * Goes away.
+ * @see net.tinyos.nesc.dump.xml.Xparameters
+ */
 public class Xvarargs extends NDElement
 {
 }

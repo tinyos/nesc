@@ -14,11 +14,30 @@ package net.tinyos.nesc.dump.xml;
 import org.xml.sax.*;
 import java.util.*;
 
+/**
+ * A function type.
+ */
 public class Xtype_function extends Type
 {
-    public LinkedList/*Type*/ parameters; /* null for oldstyle */
+    /**
+     * Parameters of the function. null iff oldstyle is true.
+     */
+    public LinkedList/*Type*/ parameters;
+
+    /**
+     * Return type of this function.
+     */
     public Type returns;
-    public boolean varargs, oldstyle;
+
+    /**
+     * True for variable-argument functions (e.g., printf).
+     */
+    public boolean varargs;
+
+    /**
+     * True for old-style function types (no parameter types specified).
+     */
+    public boolean oldstyle;
 
     public NDElement start(Attributes attrs) {
 	super.start(attrs);

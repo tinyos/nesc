@@ -15,9 +15,10 @@ import net.tinyos.nesc.dump.*;
 import org.xml.sax.*;
 
 /**
- * Class for attribute references. These objects go away, replaced by the
- * object representing the definition.
- * @see net.tinyos.nesc.dump.xml.Xattribute
+ * Class for internal-to-a-configuration component references. These
+ * objects go away, replaced by the Xinternal_component object representing
+ * the definition.
+ * @see net.tinyos.nesc.dump.xml.Xinternal_component
  * @see net.tinyos.nesc.dump.xml.Definition
  */
 public class Xinternal_component_ref extends NDElement

@@ -14,9 +14,16 @@ package net.tinyos.nesc.dump.xml;
 import org.xml.sax.*;
 import java.util.*;
 
+/**
+ * An initialiser for a structure.
+ */
 public class Xvalue_structured extends Value
 {
-    public LinkedList fields = new LinkedList();
+    /**
+     * The initialisers for the structure's fields. Note that not all
+     * fields need be initialised.
+     */
+    public LinkedList/*Xstructured_element*/ fields = new LinkedList();
 
     public void child(NDElement subElement) {
 	super.child(subElement);

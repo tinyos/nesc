@@ -81,10 +81,10 @@ public class NDReader extends DefaultHandler
     public boolean parse(InputSource source) throws IOException {
 	try {
 	    parser.parse(source);
-	    return TRUE;
+	    return true;
 	}
 	catch (SAXException e) {
-	    return FALSE;
+	    return false;
 	}
     }
 
@@ -187,8 +187,10 @@ public class NDReader extends DefaultHandler
      */
     public static void main(String[] args) throws IOException {
 	try {
-	    NDElement t = new NDReader().parse(args[0]);
-	    System.out.println("" + t);
+	    if (new NDReader().parse(args[0]))
+		System.out.println("parse ok");
+	    else
+		System.out.println("parse exceptions occured");
 	}
 	catch (SAXException e) {
 	    System.err.println("no xml reader found");

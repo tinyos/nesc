@@ -13,8 +13,14 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * A type variable.
+ */
 public class Xtype_var extends Type
 {
+    /**
+     * A typedef object which uniquely identifies this type variable.
+     */
     public Xtypedef var;
 
     public void child(NDElement subElement) {

@@ -15,9 +15,9 @@ import net.tinyos.nesc.dump.*;
 import org.xml.sax.*;
 
 /**
- * Class for attribute references. These objects go away, replaced by the
- * object representing the definition.
- * @see net.tinyos.nesc.dump.xml.Xattribute
+ * Class for C structure references. These objects go away, replaced by the
+ * Xstruct object representing the definition.
+ * @see net.tinyos.nesc.dump.xml.Xstruct
  * @see net.tinyos.nesc.dump.xml.Definition
  */
 public class Xstruct_ref extends NDElement

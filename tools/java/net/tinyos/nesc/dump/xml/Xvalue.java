@@ -13,8 +13,14 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * A constant in a C initialiser.
+ */
 public class Xvalue extends Value
 {
+    /**
+     * Constant's value.
+     */
     public Constant cst;
 
     public NDElement start(Attributes attrs) {

@@ -18,6 +18,7 @@ import org.xml.sax.*;
  *
  * @see net.tinyos.nesc.dump.xml.WiringGraph
  * @see net.tinyos.nesc.dump.xml.WiringNode
+ * @see net.tinyos.nesc.dump.xml.Xwire
  */
 public class WiringEndpoint extends NDElement
 {
@@ -29,7 +30,7 @@ public class WiringEndpoint extends NDElement
     /**
      * Arguments to the graph node for this endpoint. May be null.
      */
-    public Xarguments arguments; /* optional */
+    public Xarguments arguments;
 
     public void child(NDElement subElement) {
 	if (subElement instanceof DataDefinition)

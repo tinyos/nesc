@@ -15,9 +15,9 @@ import net.tinyos.nesc.dump.*;
 import org.xml.sax.*;
 
 /**
- * Class for attribute references. These objects go away, replaced by the
- * object representing the definition.
- * @see net.tinyos.nesc.dump.xml.Xattribute
+ * Class for C typedef references. These objects go away, replaced by the
+ * Xtypedef object representing the definition.
+ * @see net.tinyos.nesc.dump.xml.Xtypedef
  * @see net.tinyos.nesc.dump.xml.Definition
  */
 public class Xtypedef_ref extends NDElement

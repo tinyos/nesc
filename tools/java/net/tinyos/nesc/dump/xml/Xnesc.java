@@ -13,6 +13,15 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+/**
+ * Top-level XML dump element. Doesn't do anything useful, see the elements
+ * which can be embedded here to actually get at the dumped information.
+ * @see net.tinyos.nesc.dump.xml.Xwiring
+ * @see net.tinyos.nesc.dump.xml.Xcomponents
+ * @see net.tinyos.nesc.dump.xml.Xinterfaces
+ * @see net.tinyos.nesc.dump.xml.Xinterfacedefs
+ * @see net.tinyos.nesc.dump.xml.Xtags
+ */
 public class Xnesc extends NDElement
 {
 }
