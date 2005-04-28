@@ -1,0 +1,176 @@
+.TH nescc 1 "April 27, 2004"
+.LO 1
+.SH NAME
+nescc - nesC compiler
+.SH SYNOPSIS
+
+\fBnescc\fR [\fB-gcc=\fIgcc-name\fR] [\fB-fnesc-target=\fIarchitecture\fR]
+    [\fB-docdir=\fIdir\fR] [\fB-topdir=\fIdir\fR] [\fB-graphviz=y\fI|\fBn\fR]
+    [\fB-fnesc-simulate\fR] 
+    [\fB-fnesc-nido-tosnodes=\fIn\fR] [\fB-fnesc-nido-motenumber=\fIexpression\fR]
+    [\fB-fnesc-cfile=\fIfile\fR] [\fB-fnesc-no-inline\fR]
+    [\fB--version\fR] [\fB-fnesc-verbose\fR] [\fB-Wnesc-\fI...\fR]
+    [\fB-fnesc-dump=\fIspecification\fR] [\fB-fnesc-dumpfile=\fIfile\fR]
+    [\fB-fnesc-scheduler=\fIspecification\fR]
+    [any gcc option] \fIfiles\fR...
+.SH DESCRIPTION
+
+\fBnescc\fR is an extension to \fBgcc\fR that knows how to compile nesC
+applications. If invoked on regular C files, it behaves exactly like
+\fBgcc\fR. When invoked on a nesC component or interface (\fB.nc\fR
+extension) file it compiles and links (except if the usual \fB-c\fR,
+\fB-S\fR, \fB-E\fR or \fB-fsyntax-only\fR options are used) that component
+with the other files specified on the command line.
+.SH OPTIONS
+
+\fBnescc\fR accepts all \fBgcc\fR options, and some additional nesC
+specific options:
+.TP
+\fB-gcc=\fIgcc-name\fR
+Specify which gcc compiler to use to compile and link any C files, either
+explicitly specified, or generated as the output of the nesC-to-C compiler.
+This option supports cross-compilation of nesC code (the usual mode of
+operation...).
+.TP
+\fB-fnesc-target=\fIarchitecture\fR
+Specify the target architecture to compile for. Currently supported
+platforms are \fBavr\fR (the Atmel AVR family), \fBmsp430\fR (the TI MSP430
+family) and \fBself\fR (the machine the nesC compiler is running on).
+If you use the \fBenv\fR target, the architecture details are read from
+the \fBNESC_MACHINE\fR environment variable. See the separate env target
+documentation for details.
+.TP
+\fB-docdir=\fIdir\fR 
+Generate documentation for the compiled component in directory \fIdir\fR.
+.TP
+\fB-topdir=\fIdir\fR 
+Specify directory paths that should be stripped from the source file names
+when generating "package names" for the documentation files.  The directory
+above \fBTOSDIR\fR is automatically added, so this option is only needed for
+directories outside the main TinyOS distribution.
+.TP
+\fB-graphviz=y\fR|\fBn\fR 
+Explicitly enable or disable the use of the graphviz tool in the generated
+documentation. Without this option, graphviz is enabled iff the \fBdot\fR
+program is found in the current path. Use of graphviz requires \fBdot\fR.  The
+documentation generation tool checks the version of \fBdot\fR, and enables
+client-side image maps, if supported.
+.TP
+\fB-fnesc-simulate\fR
+Compile for a simulation environment.
+.TP
+\fB-fnesc-nido-tosnodes=\fIn\fR, \fB-fnesc-nido-motenumber=\fIexpression\fR
+When \fB-fnesc-simulate\fR is specified, the nesC program is compiled for a
+simulation environment, where a single executable will simulate \fIn\fR
+nodes. Specifically, in the generated code, each global variable becomes an
+\fIn\fR element array, and all accesses to global variables are indexed
+with \fIexpression\fR.
+.TP
+\fB-fnesc-no-inline\fR
+Disabled the automatic inlining of all small functions, and of all functions
+with a single call site.
+.TP
+\fB-fnesc-cfile=\fIfile\fR 
+Specify a file in which to save the C code generated when compiling a
+component. Note: if you specify two components on the command line, then
+the C code from the second one will overwrite the C code from the first.
+.TP
+\fB--version\fR
+Print the version of \fBnescc\fR and of the selected gcc compiler
+(see \fB-gcc\fR).
+.TP
+\fB-fnesc-include=\fIheader-file\fR
+Include the specified file before compiling a nesC component. Behaves
+as if \fBincludes \fIheader-file\fB;\fR was included at the start of
+that component.
+.TP
+\fB-fnesc-dump=\fIspecification\fR
+Output information on the compiled programs structure, and in particular
+its user-specified attributes. For more details, see the separate nesC
+dump documentation.
+.TP
+\fB-fnesc-dumpfile=\fIfile\fR
+Where to output the information requested by \fB-fnesc-dump\fR. Defaults to
+stdout.
+.TP
+\fB-fnesc-verbose\fR
+Be more verbose than \fB-v\fR.
+.TP
+\fB-fnesc-scheduler=\fIcomponent\fR,\fIunique-string\fR,\fIinterface-name\fR,\fIinterface-definition\fR,\fIrun-event\fR,\fIpost-command\fR
+By default, nesC compiles uses of \fBtask void \fItaskname\fB() ...\fR to
+\fBvoid \fItaskname\fB()\fR, and \fBpost \fItaskname()\fR to
+\fBTOS_post(\fItaskname\fB)\fR. 
+
+With this option, each task gets its own \fIinterface-definition\fR
+interface, the task implementation is transformed into a \fIrun-event\fR
+event and posts becomes a call to the \fIpost-command\fR command. This
+per-task interface is automatically connected to the parameterised
+\fIinterface-name\fR interface of scheduler component \fIcomponent\fR. The
+parameter id for the connection is chosen with
+\fBunique("\fIunique-string\fB")\fR.
+.PP
+There are a number of warnings specific to nesC, specified with
+\fB-Wnesc-\fR (all these warnings are off by
+default):
+.TP
+\fB-Wnesc-fnptr\fR
+Warn when function pointers are used (use of function pointers is
+deprecated in nesC and leads to inaccurate data race detection).
+.TP
+\fB-Wnesc-async\fR 
+Warn when interrupt handlers call commands or events not annotated with
+\fBasync\fR.
+.TP
+\fB-Wnesc-data-race\fR
+Warn about potential data races.
+.TP
+\fB-Wnesc-combine\fR
+Warn when configuration wiring leads to "fan-out" and the function return
+type does not have a combining function defined.
+.TP
+\fB-Wnesc-docstring\fR
+Warn when unexpected documentation strings (starting with \fB/**\fR) are
+seen.
+.TP
+\fB-Wnesc-all\fR
+Turns on \fB-Wnesc-fnptr\fR, \fB-Wnesc-async\fR, \fB-Wnesc-combine\fR 
+and\fB-Wnesc-data-race\fR.
+.TP
+\fB-Wnesc-error\fR
+Turns the \fB-Wnesc-fnptr\fR, \fB-Wnesc-async\fR, \fB-Wnesc-combine\fR and
+\fB-Wnesc-data-race\fR warnings into errors.
+.PP
+When compiling a nesC component, the nesC compiler recognizes the gcc C
+language (\fB-f...\fR) and warning (\fB-W...\fR) options. The \fB-S\fR,
+\fB-c\fR and \fB-o\fR options work as usual, the \fB-x\fR option accepts
+\fBnesc\fR. The \fB-v\fR option causes the nesC compiler to print out the
+paths of all components and interfaces that are loaded. Directories can be
+added to nesC\fRs search path with \fB-I\fR.
+.SH EXAMPLES
+
+If you wish to compile a component Bar.nc to a C file, you can do:
+.IP
+nescc -c -o /dev/null -fnesc-cfile=Bar.c Bar.nc
+.SH PREPROCESSOR SYMBOLS
+
+\fBnescc\fR defines the following preprocessor symbols:
+.TP
+\fBNESC\fR (since v1.1) 
+set to XYZ where x.yz is the nesC version
+.SH ENVIRONMENT VARIABLES
+
+.TP
+.B NESCPATH 
+A colon separated list of additional search directories for
+nesC components.
+.SH SEE ALSO
+
+.IR gcc (1),
+platform-specific gcc
+.SH NOTES
+
+The warnings for the new nesC 1.1 features (see \fB-Wnesc-all\fR) are off
+by default to increase compatibility with nesC 1.0 code. To match the
+language specification in the nesC 1.1 reference manual, you should compile
+with \fB-Wnesc-all\fR and \fB-Wnesc-error\fR. These options will become the
+default in future releases.

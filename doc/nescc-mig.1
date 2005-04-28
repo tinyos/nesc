@@ -1,0 +1,163 @@
+.TH nescc-mig 1 "April 27, 2004"
+.LO 1
+.SH NAME
+
+nescc-mig - message interface generator for nesC
+.SH SYNOPSIS
+
+\fBnescc-mig\fR [any nescc option] [tool-specific options]
+          [\fB-o\fR \fIoutput-file\fR] [\fB-nescc=\fIdriver\fR]
+          \fItool\fR \fImsg-format-file\fR \fImessage-type\fR
+.SH DESCRIPTION
+
+\fBnescc-mig\fR is a tool to generate code to process nesC messages (which
+are specified by C types). The \fItool\fR argument specifies what tool
+should be generated, the \fImessage-type\fR specifies the C type of the
+message you wish to process and \fImsg-format-file\fR specifies a nesC file
+which uses that type. The message type must be defined with \fBstruct
+\fImessage-type\fR, \fBnx_struct \fImessage-type\fR, \fBunion
+\fImessage-type\fR, \fBnx_union \fImessage-type\fR.
+
+When used with types whose layout is platform-dependent (i.e., not defined
+with \fBnx_struct\fR or \fBnx_union\fR), it is important to specify the
+correct \fBnescc\fR target architecture option
+(\fB-fnesc-target=\fI...\fR). If you are invoking \fBnescc-mig\fR 
+indirectly via \fBmig\fR, you can use the \fBncc\fR \fB-target=\fI...\fR
+option instead.
+
+If an enum constant named \fBAM_\fImessage_type\fR (with \fImessage_type\fR
+capitalized) is found, then the value of that constant is assumed to be the
+active message type for \fImessage-type\fR. If you need access to other
+constants from your nesC application, please consult the \fBnescc-ncg\fR man
+page.
+
+The current tools are \fBjava\fR and \fBcsharp\fR, which generate java and
+C# classes that encode and decode messages. 
+.SH OPTIONS
+You can pass any \fBnescc\fR option, as well as
+.TP
+\fB-o \fIoutput-file\fR  
+Specify the file in which to output the generated code.
+.TP
+\fB-nescc=\fIdriver\fR
+Use \fIdriver\fR instead of \fBnescc\fR to extract type layout information.
+For example, if you specify \fB-nescc=ncc\fR, you can use \fBnescc-mig\fR
+to extract type information from TinyOS applications (which are normally
+compiled with \fBncc\fR).
+.TP
+tool-specific options
+See below.
+
+.SH JAVA TOOL
+
+This tool generates a java class to encode or decode a nesC message,
+basing itself on the net.tinyos.message infrastructure. It accepts the 
+following options:
+.TP
+\fB-java-classname=\fIfull-class-name\fR  
+This option is required and specifies the package and name of the generated
+class. If the \fIfull-class-name\fR has no '.', then no package directive is
+included in the output.
+.TP
+\fB-java-extends=\fIclass-name\fR
+Specify the class the generated class will extend. The default is
+\fBnet.tinyos.message.Message\fR.
+.PP
+For each field
+\fIfname\fR of structure \fImessage-type\fR, there are the following methods
+(the bit offset and size methods are useful for structures containing
+bitfields):
+.IP *
+\fBget_\fIfname\fR: get field's value
+.IP *
+\fBset_\fIfname\fR: set field's value
+.IP *
+\fBoffsetBits_\fIfname\fR: return bit offset of field in \fImessage-type\fR
+.IP *
+\fBoffset_\fIfname\fR: return byte offset of field in \fImessage-type\fR 
+.IP *
+\fBsizeBits_\fIfname\fR: return size in bits of field (not for arrays)
+.IP *
+\fBsize_\fIfname\fR: return size in bytes of field (not for arrays)
+(absent if \fIfname\fR is a bitfield)
+.IP *
+\fBisSigned_\fIfname\fR: return true if \fIfname\fR is of a signed type
+.IP *
+\fBisArray_\fIfname\fR: return true if \fIfname\fR is an array
+.PP
+Embedded structures in \fImessage-type\fR are expanded, using _ to
+separate the structure name and its fields.
+
+A number of extra methods are present for fields that are arrays:
+.IP *
+\fBgetElement_\fIfname\fR: get an element of the array
+.IP *
+\fBsetElement_\fIfname\fR: set an element of the array
+.IP *
+\fBelementSize_\fIfname\fR: return size in bytes of array elements
+.IP *
+\fBelementSizeBits_\fIfname\fR: return size in bits of array elements
+.IP *
+\fBnumDimensions_\fIfname\fR: return number of dimensions of the array
+.IP *
+\fBnumElements_\fIfname\fR: return number of elements of the array for a given
+dimension (left-most dimension is numbered 0) - the dimension is optional 
+for 1-dimensional arrays
+.IP *
+\fBtotalSize_\fIfname\fR: return size in bytes of the array (absent if the array
+is variable-size)
+.IP *
+\fBtotalSizeBits_\fIfname\fR: return size in bits of the array (absent if the array
+is variable-size)
+.PP
+If the array is 1-dimensional and the elements are one byte, then the
+following methods exist:
+.IP *
+\fBgetString_\fIfname\fR: build a Java string from the array assuming it contains
+a C-style null-terminated string
+.IP *
+\fBsetString_\fIfname\fR: set the array to a C-style null-terminated string given
+a java string
+.PP
+The \fBgetElement_...\fR, \fBsetElement_...\fR, \fBoffset_...\fR and
+\fBoffsetBits_...\fR methods take one argument per array dimension. These
+methods report errors if the array index is out of bounds. If an array has
+a maximum size of 0, mig assumes it represents a variable-size array and
+does not check the corresponding array index.
+
+The data for a message is stored in an array, with explicit base and length
+information. The constructors can either allocate this array, receive it as
+an explicit argument or extract if from another message. The base and
+length can also be optionally passed to these constructors.  
+
+The optional length argument overrides the default size of
+sizeof(message-type); this is useful for variable-size messages. The use of
+an explicit base is helpful for messages embedded in other messages.
+
+The generated class also has an amType() method which returns the message's
+active message type, or -1 if no AM_\fImessage_type\fR constant was found.
+.SH C# TOOL
+This tool generates a C# class to encode or decode a nesC message. It
+accepts the following options:
+.TP
+\fB-csharp-classname=\fIfull-class-name\fR  
+This option is required and specifies the namespace and name of the generated
+class. If the \fIfull-class-name\fR has no '.', then no namespace directive is
+included in the output.
+.TP
+\fB-csharp-extends=\fIclass-name\fR
+Specify the class the generated class will extend. The default is
+\fBtinyos.message.Message\fR.
+
+The methods in the generated class are the same as for the Java tool.
+
+.SH ERRORS
+
+\fBnescc-mig\fR reports an error if \fBnescc\fR cannot compile
+\fImsg-format-file\fR, if \fImessage-type\fR isn't found or if it contains
+pointers.
+.SH SEE ALSO
+
+.IR mig (1),
+.IR nescc (1),
+.IR nescc-ncg (1)

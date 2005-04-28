@@ -1,0 +1,74 @@
+.TH nescc-ncg 1 "April 27, 2004"
+.LO 1
+.SH NAME
+
+nescc-ncg - extract constants from nesC files
+.SH SYNOPSIS
+
+\fBnescc-ncg\fR [any nescc option] [tool-specific options]
+          [\fB-o\fR \fIoutput-file\fR] [\fB-nescc=\fIdriver\fR]
+          \fItool\fR \fInesC-file\fR \fIfilenames-or-constant-names...\fR
+.SH DESCRIPTION
+
+\fBnescc-ncg\fR is a tool to extract constants from nesC files for use with
+other applications. It is typically used in conjunction with
+\fBnescc-mig\fR (which generates code to process nesC messages) to extract
+constants that are used in particular messages (e.g., constants
+representing various commands).
+
+The \fItool\fR argument specifies what tool should be generated, the
+\fInesC-file\fR specifies a nesC file which uses the constants you want to
+extract.  If your constants are all in a single .h file that does not
+depend on any other files, then you can specify the .h file directly as the
+\fImsg-format-file\fR. Note that if some of your constants are defined
+with \fBunique(...)\fR or \fBuniqueCount(...)\fR, you must specify your
+whole application as the \fInesC-file\fR, or you will not get the 
+correct constant values.
+
+Each \fIfilenames-or-constant-names\fR is either a constant name (if it
+consists only of letters, numbers and _) or a filename. In the former case,
+the specified constant will be extracted, in the latter case all constants
+from the specified C file will be extracted. Only constants declared in C
+files will be found by \fBnescc-ncg\fR.
+
+Currently there is only one tool, \fBjava\fR, which generates a java class
+that contains the values of the requested constants. 
+.SH OPTIONS
+You can pass any \fBnescc\fR option, as well as
+.TP
+\fB-o \fIoutput-file\fR  
+Specify the file in which to output the generated code.
+.TP
+\fB-nescc=\fIdriver\fR
+Use \fIdriver\fR instead of \fBnescc\fR to extract constants.
+For example, if you specify \fB-nescc=ncc\fR, you can use \fBnescc-ncg\fR
+to extract constants from TinyOS applications (which are normally
+compiled with \fBncc\fR).
+.TP
+tool-specific options
+See below.
+.SH JAVA TOOL
+
+This tool generates a java class with the values of the requested constants.
+These constants will be \fBpublic final static\fR and have a type chosen
+from \fBbyte, short, char, int, long\fR (the chosen type will be the 
+first one in this list that can hold the constants value - this reduces
+the need for casts).
+
+The java tool accepts the following options:
+.TP
+\fB-java-classname=\fIfull-class-name\fR  
+This option is required and specifies the package and name of the generated
+class. If the \fIfull-class-name\fR has no '.', then no package directive is
+included in the output.
+.TP
+\fB-java-extends=\fIclass-name\fR
+Specify the class the generated class will extend. The default is
+\fBObject\fR.
+.SH ERRORS
+
+\fBnescc-ncg\fR reports an error if ncc cannot compile \fInesC-file\fR.
+.SH SEE ALSO
+
+.IR nescc (1),
+.IR nescc-mig (1)
