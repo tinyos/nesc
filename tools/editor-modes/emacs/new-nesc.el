@@ -66,8 +66,13 @@
 (c-lang-defconst c-other-decl-kwds
   nesc (append '("includes") (c-lang-const c-other-decl-kwds)))
 
+(c-lang-defconst c-other-kwds
+  nesc (append '("new") (c-lang-const c-other-kwds)))
+
 (c-lang-defconst c-block-stmt-1-kwds
   nesc (append '("atomic") (c-lang-const c-block-stmt-1-kwds)))
+
+(c-lang-defconst c-recognize-knr-p nesc nil)
 
 ;; This gives post, call, signal a slightly incorrect priority
 (c-lang-defconst c-operators
