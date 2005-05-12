@@ -41,7 +41,7 @@
      '("abstract" "as" "atomic" "async"
        "call" "command" "components" "configuration" 
        "event" "implementation" "interface" "includes" 
-       "module" "norace" "post" "provides"
+       "module" "norace" "nx_struct" "nx_union" "post" "provides"
        "signal" "task" "uses" ) t)))
 
 (setq nesc-font-lock-keywords-1
@@ -78,7 +78,7 @@
   (c-populate-syntax-table nesc-mode-syntax-table))
 
 (defconst c-nesC-comment-start-regexp c-C++-comment-start-regexp)
-(defconst c-nesC-class-kwds "struct\\|union\\|implementation")
+(defconst c-nesC-class-kwds "nx_struct\\|nx_union\\|struct\\|union\\|implementation")
 (defconst c-nesC-class-key (c-paren-re c-nesC-class-kwds))
 
 (defvar cc-imenu-nesc-generic-expression

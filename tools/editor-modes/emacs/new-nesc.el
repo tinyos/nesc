@@ -48,8 +48,16 @@
       (put 'nesc-mode 'c-fallback-mode 'c-mode)))
 
 (c-lang-defconst c-class-decl-kwds
-  nesc (append '("interface" "implementation")
+  nesc (append '("interface" "implementation" "nx_struct" "nx_union")
 	       (c-lang-const c-class-decl-kwds)))
+
+(c-lang-defconst c-type-prefix-kwds
+  nesc (append '("nx_struct" "nx_union")
+	       (c-lang-const c-type-prefix-kwds)))
+
+(c-lang-defconst c-block-decls-with-vars
+  nesc (append '("nx_struct" "nx_union")
+	       (c-lang-const c-block-decls-with-vars)))
 
 (c-lang-defconst c-brace-list-decl-kwds
   nesc (append '("module" "configuration" "provides" "uses")
