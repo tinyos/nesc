@@ -178,9 +178,9 @@ sub gen() {
 	}
 
         # Determine if signed
-	if ($basetype eq "U") {
+	if ($basetype eq "U" || $basetype eq "BU") {
 	  $signed = 0; $signedstr = ", unsigned";
-	} elsif ($basetype eq "I") {
+	} elsif ($basetype eq "I" || $basetype eq "BI") {
 	  $signed = 1; $signedstr = ", signed";
 	} elsif ($basetype eq "F" || $basetype eq "D" || $basetype eq "LD") {
 	  $signed = 1; $signstr = "";
@@ -442,15 +442,17 @@ sub csharpbasetype()
     my $cstype, $acc;
 
     # Pick the C# type whose range is closest to the corresponding C type
-    if ($basetype eq "U") {
-      $acc = "UIntElement";
+    if ($basetype eq "U" || $basetype eq "BU") {
+      $acc = "UIntElement" if $basetype eq "U";
+      $acc = "UIntBEElement" if $basetype eq "BU";
       if ($bitlength <= 8) { $cstype = "byte"; }
       elsif ($bitlength <= 16) { $cstype = "ushort"; }
       elsif ($bitlength <= 32) { $cstype = "uint"; }
       else { $cstype = "ulong"; }
     }
-    elsif ($basetype eq "I") {
-      $acc = "SIntElement";
+    elsif ($basetype eq "I" || $basetype eq "BI") {
+      $acc = "SIntElement" if $basetype eq "I";
+      $acc = "SIntBEElement" if $basetype eq "BI";
       if ($bitlength <= 8) { $cstype = "byte"; }
       elsif ($bitlength <= 16) { $cstype = "short"; }
       elsif ($bitlength <= 32) { $cstype = "int"; }

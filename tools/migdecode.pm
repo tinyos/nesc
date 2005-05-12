@@ -23,7 +23,7 @@ true;
 # $amtype = active message type (-1 if unknown)
 # @fields: array of field-specs. Each field-spec is a reference to an array:
 #   0: name
-#   1: base_type (U, I, F, D, LD)
+#   1: base_type (U, I, BU, BI, F, D, LD)
 #   2: length (in bits)
 #   3-6: field access spec, as follows:
 #     3: base_offset
