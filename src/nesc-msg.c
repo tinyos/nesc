@@ -45,8 +45,10 @@ static void dump_type(type t)
       t = make_base_type(t);
     }
 
+  if (type_network_base_type(t))
+    printf("N%s", type_network_base_decl(t)->name);
   /* Enums treated as ints for now */
-  if (type_integer(t))
+  else if (type_integer(t))
     if (type_unsigned(t))
       printf("U");
     else
@@ -58,9 +60,15 @@ static void dump_type(type t)
   else if (type_long_double(t))
     printf("LD");
   else if (type_union(t))
-    printf("AU");
+    if (type_network(t))
+      printf("ANU");
+    else
+      printf("AU");
   else if (type_struct(t))
-    printf("AS");
+    if (type_network(t))
+      printf("ANS");
+    else
+      printf("AS");
   else if (type_pointer(t))
     printf("U");
   else
