@@ -39,7 +39,7 @@ case $host in
 esac
 AC_SUBST(CYGWINHACKS)
 
-AM_INIT_AUTOMAKE(nesc, 1.2alpha8)
+AM_INIT_AUTOMAKE(nesc, 1.2alpha9)
 
 AC_CONFIG_SUBDIRS(src)
 

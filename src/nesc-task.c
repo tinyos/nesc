@@ -266,6 +266,7 @@ static expression build_taskid(module m, data_declaration taskdecl)
   /* Build unique("task-unique-string") */
   unique_fn = build_identifier(r, loc, magic_unique);
   unique_args = build_string(r, loc, scheduler_unique_name);
+  default_conversion(unique_args);
   unique_id = build_function_call(r, loc, unique_fn, unique_args);
 
   /* Build, declare enumerator taskdecl */

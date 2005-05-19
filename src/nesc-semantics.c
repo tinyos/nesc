@@ -224,8 +224,9 @@ nesc_decl dummy_nesc_decl(source_language sl, location loc, const char *name,
   switch (sl)
     {
     case l_component: {
+      environment env = new_environment(parse_region, global_env, TRUE, FALSE);
       implementation impl = CAST(implementation,
-	new_module(parse_region, loc, NULL, NULL));
+	new_module(parse_region, loc, env, NULL));
       nd = CAST(nesc_decl,
 		new_component(parse_region, dummy_location, wname, NULL, FALSE, NULL, NULL, impl));
       break;
