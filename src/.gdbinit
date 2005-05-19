@@ -9,7 +9,7 @@ define pname
 end
 
 define regress
-  cd ../regress/$arg0
+  cd ../nregress/$arg0
 end
 
 define app

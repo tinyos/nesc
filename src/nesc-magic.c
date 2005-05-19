@@ -58,7 +58,7 @@ known_cst fold_magic(function_call fcall, int pass)
 
 	  scan_expression (arg, fcall->args)
 	    {
-	      if (!(arg->cst || is_string(arg)))
+	      if (!arg->cst)
 		{
 		  error("argument %d to magic function `%s' is not constant",
 			argn, called->name);
@@ -79,25 +79,40 @@ known_cst fold_magic(function_call fcall, int pass)
 static env unique_env;
 static region unique_region;
 
+static data_declaration string_ddecl(expression s)
+{
+  if (s->cst && constant_address(s->cst))
+    {
+      data_declaration sdecl = cval_ddecl(s->cst->cval);
+
+      /* Must be an offsetless string */
+      if (sdecl && sdecl->kind == decl_magic_string &&
+	  cval_knownbool(s->cst->cval))
+	return sdecl;
+    }
+  return NULL;
+}
+
 static unsigned int *unique_parse(const char *uname, function_call fcall)
 {
-  expression name = fcall->args;
+  data_declaration name_ddecl = string_ddecl(fcall->args);
   unsigned int *lastval;
   const wchar_t *name_wstr;
   char *name_str;
   int length_as_str;
+  location loc = fcall->location;
 
-  if (!is_string(name))
+  if (!name_ddecl)
     {
-      error("argument to `%s' must be a string", uname);
+      error_with_location(loc, "argument to `%s' must be a string", uname);
       return NULL;
     }
 
-  name_wstr = CAST(string, name)->ddecl->chars;
+  name_wstr = name_ddecl->chars;
   length_as_str = wcs_mb_size(name_wstr);
   if (length_as_str < 0)
     {
-      error("can't handle this string as argument to `%s'", uname);
+      error_with_location(loc, "can't handle this string as argument to `%s'", uname);
       return NULL;
     }
   name_str = alloca(length_as_str);
@@ -117,42 +132,46 @@ static unsigned int *unique_parse(const char *uname, function_call fcall)
 
 static known_cst unique_fold(function_call fcall, int pass)
 {
-  unsigned int *lastval = unique_parse("unique", fcall);
+  unsigned int *lastval;
 
-  if (lastval)
-    {
-      /* On pass 0, we don't know the value
-	 On pass 1, we pick a value
-	 On subsequent passes, we stick to our choice
-      */
-      if (pass == 0)
-	return make_unknown_cst(cval_unknown_number, unsigned_int_type);
-      else if (pass == 1)
-	return make_unsigned_cst((*lastval)++, unsigned_int_type);
-      else
-	return fcall->cst;
-    }
-  else
+  /* On pass 0, we don't know the value (and we can't even look for
+     lastval yet, as we may be in a generic component passing a 
+     string argument to unique)
+     On pass 1, we look for lastval and pick a value
+     On subsequent passes, we stick to our choice
+  */
+  if (pass == 0)
+    return make_unknown_cst(cval_unknown_number, unsigned_int_type);
+
+  lastval = unique_parse("unique", fcall);
+  if (!lastval)
     return NULL;
+
+  if (pass == 1)
+    return make_unsigned_cst((*lastval)++, unsigned_int_type);
+  else
+    return fcall->cst;
 }
 
 static known_cst uniqueCount_fold(function_call fcall, int pass)
 {
-  unsigned int *lastval = unique_parse("unique", fcall);
+  unsigned int *lastval;
 
-  if (lastval)
-    {
-      /* On pass 0, we don't know the value
-	 On pass 1, we still don't know (haven't seen all uniques)
-	 On pass 2 and subsequent, we get the value from the unique env
-      */
-      if (pass < 2)
-	return make_unknown_cst(cval_unknown_number, unsigned_int_type);
-      else
-	return make_unsigned_cst(*lastval, unsigned_int_type);
-    }
-  else
+  /* On pass 0, we don't know the value (and we can't even look for
+     lastval yet, as we may be in a generic component passing a 
+     string argument to uniqueCount)
+     On pass 1, we still don't know (haven't seen all uniques)
+     On pass 2 and subsequent, we get the value from the unique env
+  */
+
+  if (pass < 2)
+    return make_unknown_cst(cval_unknown_number, unsigned_int_type);
+
+  lastval = unique_parse("uniqueCount", fcall);
+  if (!lastval)
     return NULL;
+
+  return make_unsigned_cst(*lastval, unsigned_int_type);
 }
 
 static void unique_init(void)
