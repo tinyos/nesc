@@ -28,6 +28,7 @@ Boston, MA 02111-1307, USA.  */
 #include "flags.h"
 #include "semantics.h"
 #include "c-parse.h"
+#include "input.h"
 
 static region opt_region;
 
@@ -428,11 +429,12 @@ void handle_directive(const char *directive, const char *args)
 {
   const char *arg2;
 
-  if (!(strcmp(directive, "define") == 0 || strcmp(directive, "undef") == 0))
+  /* If the filename starts with <, these are special macros (built in
+     or from the command line) */
+  if (input_file_stack && input_file_stack->l.filename[0] == '<')
     return;
 
-  if (strncmp(args, "__STDC__ ", 9) == 0 ||
-      strncmp(args, "__STDC_HOSTED__ ", 16) == 0)
+  if (!(strcmp(directive, "define") == 0 || strcmp(directive, "undef") == 0))
     return;
 
   arg2 = strchr(args, ' ');

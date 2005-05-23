@@ -2008,11 +2008,10 @@ bool start_function(type_element elements, declarator d, attribute attribs,
       error("return-type is an incomplete type");
 
       /* Yuck */
-      actual_function_type = 
-	make_function_type(void_type,
-			   type_function_arguments(actual_function_type),
-			   type_function_varargs(actual_function_type),
-			   type_function_oldstyle(actual_function_type));
+      t = make_function_type(void_type,
+			     type_function_arguments(actual_function_type),
+			     type_function_varargs(actual_function_type),
+			     type_function_oldstyle(actual_function_type));
       if (type_generic(function_type))
 	t = make_generic_type(t, type_function_arguments(function_type));
 
@@ -3560,102 +3559,6 @@ asttype make_type(type_element elements, declarator d)
   return t;
 }
 
-
-/* Save the rest of the line in the directives list. Return '\n' */
-int save_directive(char *directive)
-{
-  static char *directive_buffer = NULL;
-  static unsigned buffer_length = 0;
-  char *p;
-  char *buffer_limit;
-  int looking_for = 0;
-  int char_escaped = 0;
-
-  if (buffer_length == 0)
-    {
-      directive_buffer = (char *)xmalloc (128);
-      buffer_length = 128;
-    }
-
-  buffer_limit = &directive_buffer[buffer_length];
-
-  for (p = directive_buffer; ; )
-    {
-      int c;
-
-      /* Make buffer bigger if it is full.  */
-      if (p >= buffer_limit)
-        {
-	  unsigned bytes_used = (p - directive_buffer);
-
-	  buffer_length *= 2;
-	  directive_buffer
-	    = (char *)xrealloc (directive_buffer, buffer_length);
-	  p = &directive_buffer[bytes_used];
-	  buffer_limit = &directive_buffer[buffer_length];
-        }
-
-      c = lex_getc();
-
-      /* Discard initial whitespace.  */
-      if ((c == ' ' || c == '\t') && p == directive_buffer)
-	continue;
-
-      /* Detect the end of the directive.  */
-      if (c == EOF)
-	c = '\0';
-
-      if (looking_for == 0 && c == '\n' && !char_escaped)
-	{
-          lex_ungetc(c);
-	  c = '\0';
-	}
-
-      if (c == '\n')
-	input_file_stack->l.lineno++;
-
-      *p++ = c;
-
-      if (c == '\0')
-	break;
-
-      if (c == '/')
-	{
-	  int c2 = lex_getc();
-
-	  if (c2 == '/')
-	    {
-	      --p;
-	      skip_cpp_comment();
-	    }
-	  else if (c2 == '*')
-	    {
-	      --p;
-	      skip_c_comment();
-	    }
-	  else
-	    lex_ungetc(c2);
-	}
-
-      /* Handle string and character constant syntax.  */
-      if (looking_for)
-	{
-	  if (looking_for == c && !char_escaped)
-	    looking_for = 0;	/* Found terminator... stop looking.  */
-	}
-      else
-        if (c == '\'' || c == '"')
-	  looking_for = c;	/* Don't stop buffering until we see another
-				   another one of these (or an EOF).  */
-
-      /* Handle backslash.  */
-      char_escaped = (c == '\\' && ! char_escaped);
-    }
-
-  handle_directive(directive, directive_buffer);
-
-  return ' ';
-}
 
 /* Returns name of r */
 static char *rid_name_int(int id)

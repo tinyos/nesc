@@ -144,9 +144,6 @@ declaration make_enumerator(location loc, cstring id, expression value);
 /* Create and return type 'elements d' where d is an absolute declarator */
 asttype make_type(type_element elements, declarator d);
 
-/* Save the rest of the line in the directives list. Return '\n' */
-int save_directive(char *directive);
-
 /* Returns name of r */
 char *rid_name(rid r);
 

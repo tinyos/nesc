@@ -130,7 +130,7 @@ static wchar_array string_array;
 static char_array docstring_array;
 
 static char *extend_token_buffer(char *);
-int check_newline(void);
+static int check_newline(void);
 
 /* Do not insert generated code into the source, instead, include it.
    This allows us to build gcc automatically even for targets that
@@ -713,12 +713,109 @@ static int token_intvalue(struct yystype *lvalp)
   return constant_sint_value(lvalp->u.constant->cst);
 }
 
+/* Save the rest of the line in the directives list. Return '\n' */
+int save_directive(char *directive)
+{
+  static char *directive_buffer = NULL;
+  static unsigned buffer_length = 0;
+  char *p;
+  char *buffer_limit;
+  int looking_for = 0;
+  int char_escaped = 0;
+  int ret, c;
+
+  if (buffer_length == 0)
+    {
+      directive_buffer = (char *)xmalloc (128);
+      buffer_length = 128;
+    }
+
+  buffer_limit = &directive_buffer[buffer_length];
+
+  /* Discard initial whitespace.  */
+  do
+    c = lex_getc();
+  while (c == ' ' || c == '\t');
+
+  for (p = directive_buffer; ; )
+    {
+      /* Make buffer bigger if it is full.  */
+      if (p >= buffer_limit)
+        {
+	  unsigned bytes_used = (p - directive_buffer);
+
+	  buffer_length *= 2;
+	  directive_buffer
+	    = (char *)xrealloc (directive_buffer, buffer_length);
+	  p = &directive_buffer[bytes_used];
+	  buffer_limit = &directive_buffer[buffer_length];
+        }
+
+      /* Detect the end of the directive.  */
+      if (c == EOF)
+	{
+	  ret = ' ';
+	  break;
+	}
+
+      if (looking_for == 0 && c == '\n' && !char_escaped)
+	{
+	  ret = c;
+	  break;
+	}
+
+      if (c == '\n')
+	input_file_stack->l.lineno++;
+
+      *p++ = c;
+
+      if (c == '/')
+	{
+	  int c2 = lex_getc();
+
+	  if (c2 == '/')
+	    {
+	      --p;
+	      skip_cpp_comment();
+	    }
+	  else if (c2 == '*')
+	    {
+	      --p;
+	      skip_c_comment();
+	    }
+	  else
+	    lex_ungetc(c2);
+	}
+
+      /* Handle string and character constant syntax.  */
+      if (looking_for)
+	{
+	  if (looking_for == c && !char_escaped)
+	    looking_for = 0;	/* Found terminator... stop looking.  */
+	}
+      else
+        if (c == '\'' || c == '"')
+	  looking_for = c;	/* Don't stop buffering until we see another
+				   another one of these (or an EOF).  */
+
+      /* Handle backslash.  */
+      char_escaped = (c == '\\' && ! char_escaped);
+
+      c = lex_getc();
+    }
+
+  *p = '\0';
+  handle_directive(directive, directive_buffer);
+
+  return ret;
+}
+
 /* At the beginning of a line, increment the line number
    and process any #-directive on this line.
    If the line is a #-directive, read the entire line and return a newline.
    Otherwise, return the line's first non-whitespace character.  */
 
-int
+static int
 check_newline ()
 {
   int c;
