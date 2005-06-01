@@ -1067,6 +1067,15 @@ void check_init_element(expression init)
   if (!check_constant_once(init, cst_any))
     return;
 
+  /* XXX: process_init_element set the ivalue top iv_base for strings used
+     to initialise arrays. So we need to special case here too. We don't
+     need to do anything, as this only happened for string constants, which
+     are clearly constant ;-)
+
+     See string_flag test in that function. */
+  if (is_init_list(init))
+    return;
+
   /* Arrays are "constant" if they have a static address 
      (see default_conversion on arrays) - this essentially handles the
      case of string constants */
