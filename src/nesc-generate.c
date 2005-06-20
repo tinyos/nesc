@@ -43,6 +43,7 @@ static void prt_nesc_function_hdr(data_declaration fn_decl,
   data_decl fn_dd = CAST(data_decl, ifn_vd->parent);
 
   prt_diff_info(fn_decl);
+  set_location(fn_dd->location);
   if (!is_binary_component(fn_decl->container->impl))
     output("static ");
   prt_type_elements(fn_dd->modifiers, FALSE);
@@ -117,7 +118,7 @@ static type function_return_type(data_declaration fndecl)
 
 void prt_ncf_header(struct connections *c, type return_type)
 {
-  if (c->called->makeinline)
+  if (c->called->makeinline && flag_no_inline < 2)
     output("inline ");
   prt_nesc_function_hdr(c->called, 0);
   outputln("{");

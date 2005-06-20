@@ -257,6 +257,8 @@ static void output_line_directive(location l, bool include_filename)
     }
   else
     outputln("#line %lu", l->lineno);
+
+  output_loc = *l;
 }
 
 void set_location(location l)
@@ -281,8 +283,6 @@ void set_location(location l)
       else
 	output_line_directive(l, FALSE);
     }
-
-  output_loc = *l;
 }
 
 void set_fixed_location(location l)
@@ -578,7 +578,7 @@ static pte_options prefix_decl(data_declaration ddecl)
     {
       if (ddecl->ftype != function_static)
 	output("static ");
-      if (ddecl->makeinline)
+      if (ddecl->makeinline && flag_no_inline < 2)
 	output("inline ");
       return pte_noextern;
     }
@@ -674,6 +674,10 @@ void prt_data_decl(data_decl d)
 	  if (prt_network_typedef(d, vdd))
 	    continue;
 
+	  if (type_task(vdecl->type) && vdecl->interface)
+	    continue;
+
+	  set_location(vdd->location);
 	  extraopts = prefix_decl(vdecl);
 	}
 
@@ -718,6 +722,7 @@ void prt_function_decl(function_decl d)
   if (d->ddecl->isused && !d->ddecl->suppress_definition)
     {
       prt_diff_info(d->ddecl);
+      set_location(d->location);
       prefix_decl(d->ddecl);
       prt_declarator(d->declarator, d->modifiers, d->attributes, d->ddecl,
 		     psd_print_default);
@@ -735,6 +740,7 @@ void prt_function_body(function_decl d)
       current.container = d->ddecl->container;
 
       prt_diff_info(d->ddecl);
+      set_location(d->location);
       prefix_decl(d->ddecl);
       prt_declarator(d->declarator, d->modifiers, d->attributes, d->ddecl,
 		     psd_print_default);
