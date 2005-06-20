@@ -1,4 +1,4 @@
-/* This file is part of the nesC compiler.
+/* This file is part of the nesC compiler. 
 
 This file is derived from the RC Compiler. It is thus
    Copyright (C) 2000-2001 The Regents of the University of California.
