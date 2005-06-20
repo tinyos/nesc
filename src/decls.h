@@ -175,7 +175,9 @@ struct data_declaration {
      and f calls g outside an atomic statement, then 
       g->call_contexts == c_call_atomic
   */
-  call_contexts call_contexts;	       
+  call_contexts call_contexts;
+  call_contexts extra_contexts;	/* Some extra, hidden call contexts (used to
+				   support __nesc_enable_interrupt) */
   bool makeinline;		/* Mark this function inline when generating code */
   gnode ig_node;		/* inline-graph node for this function */
   struct data_declaration *interface;	/* nesC: interface this cmd/event belongs to */

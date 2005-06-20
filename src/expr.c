@@ -1467,7 +1467,7 @@ expression make_function_call(location loc, expression fn, expression arglist)
   /* Hack for __nesc_enable_interrupt (see nesc-uses.h) */
   if (is_identifier(fn) && CAST(identifier, fn)->ddecl == enable_interrupt)
     {
-      current.function_decl->ddecl->call_contexts = c_call_nonatomic;
+      current.function_decl->ddecl->extra_contexts |= c_call_nonatomic;
       if (current.in_atomic)
 	warning("call to __nesc_enable_interrupt within an atomic statement");
     }
@@ -1618,7 +1618,7 @@ expression make_array_ref(location loc, expression array, expression index)
       result->static_address = fold_binary(atype, result);
     }
 
-  if (!type_integer(itype))
+  if (!type_integer(itype) && itype != error_type)
     error("array subscript is not an integer");
 
   return result;

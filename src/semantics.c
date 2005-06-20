@@ -145,7 +145,7 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->async_access = dd->async_write = FALSE;
   dd->norace = FALSE;
   dd->instantiation = NULL;
-  dd->call_contexts = 0;
+  dd->call_contexts = dd->extra_contexts = 0;
   dd->printed = FALSE;
   dd->dumped = FALSE;
   dd->encoder = dd->decoder = NULL;
