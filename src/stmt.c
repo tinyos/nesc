@@ -115,7 +115,7 @@ statement make_return(location loc, expression arg)
 
       pushlevel(FALSE);
       temp = CAST(declaration,
-		  build_declaration(parse_region, current.env, arg->type,
+		  build_declaration(parse_region, current.env, current_return_type(),
 				    "__nesc_temp", arg, &ddecl));
       arg = build_identifier(parse_region, loc, ddecl);
     }
