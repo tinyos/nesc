@@ -162,11 +162,15 @@ sub basetype()
     my ($type) = @_;
     my $basetype;
 
-    $type =~ /([A-Z]*)$/ or die;
+    $type =~ /([A-Za-z0-9_]+)$/ or die;
     $basetype = $1;
 
-    return "PUSH" if $basetype eq "AS" || $basetype eq "AU";
+    return "PUSH" if $basetype =~ /^AN?[SU]$/;
     return "POP" if $basetype eq "AX";
+    return "U" if $basetype =~ /^Nnxle_u/;
+    return "I" if $basetype =~ /^Nnxle_/;
+    return "BU" if $basetype =~ /^Nnx_u/;
+    return "BI" if $basetype =~ /^Nnx_/;
 
     return $basetype;
 }

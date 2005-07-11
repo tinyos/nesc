@@ -129,7 +129,8 @@ static void rec_contexts(gnode n, int call_contexts)
 {
   gedge edge;
   data_declaration fn = NODE_GET(endp, n)->function;
-  int new_context = fn->call_contexts | call_contexts | fn->spontaneous;
+  int new_context = fn->call_contexts | fn->extra_contexts |
+    call_contexts | fn->spontaneous;
 
   if (new_context == fn->call_contexts)
     return;
