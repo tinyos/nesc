@@ -91,7 +91,7 @@ push @args, "nesc";
 push @args, $cfile;
 
 print STDERR join(" ", @args), "\n" if $verbose;
-open(NESC, '-|', join(" ", @args)) or die "$args[0] not found";
+open(NESC, '-|', @args) or die "$args[0] not found";
 @allcsts = <NESC>;
 close NESC;
 

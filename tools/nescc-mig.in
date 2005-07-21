@@ -86,7 +86,7 @@ push @args, "nesc";
 push @args, $cfile;
 
 print STDERR join(" ", @args), "\n" if $verbose;
-open(NESC, '-|', join(" ", @args)) or die "ncc not found";
+open(NESC, '-|', @args) or die "ncc not found";
 @spec = <NESC>;
 close NESC;
 
