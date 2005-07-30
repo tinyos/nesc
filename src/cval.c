@@ -1070,6 +1070,7 @@ void cval_debug(cval c)
 	printf(" - %lld", -c.si);
       printf(">");
     default:
+      printf("[size: %u]", (unsigned)c.isize);
       cval_print(stdout, c);
     }
   printf("\n");
