@@ -488,6 +488,29 @@ void nxml_value(ivalue value)
     }
 }
 
+void nxml_doc(const char *short_doc, const char *long_doc, location loc)
+{
+  if (!short_doc)
+    return;
+  indentedtag_start("documentation");
+  xml_attr_loc(loc);
+  xml_tag_end();
+  xnewline();
+  xml_tag("short");
+  xqputs(short_doc);
+  xml_pop();
+  xnewline();
+  if (long_doc)
+    {
+      xml_tag("long");
+      xqputs(long_doc);
+      xml_pop();
+      xnewline();
+    }
+  indentedtag_pop();
+}
+
+
 /* Incremental list creation support */
 
 struct xml_list

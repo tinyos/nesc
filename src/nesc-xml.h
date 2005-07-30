@@ -72,6 +72,7 @@ void nxml_ndecl_ref(nesc_declaration ndecl);
 void nxml_value(ivalue value);
 void nxml_arguments(expression arguments);
 void nxml_instance(nesc_declaration ndecl);
+void nxml_doc(const char *short_doc, const char *long_doc, location loc);
 
 /* Incremental list creation support */
 xml_list new_xml_list(region r, bool *changed, bool (*addfilter)(void *entry));

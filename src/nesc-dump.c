@@ -50,6 +50,8 @@ static const char *dumpfile;
 
 /* What to output */
 enum { wiring_none, wiring_user, wiring_functions } wiring = wiring_none;
+bool configuration_wiring;
+bool component_declarations;
 
 /* More OOish stuff to manage dump requests of concrete nesC internal
    objects (components, tags, etc). The lists array contains the currently
@@ -63,12 +65,16 @@ static bool ndecl_addfilter(void *entry);
 static bool ddecl_addfilter(void *entry);
 
 static void dump_component(void *entry);
-static void dump_interface(void *entry);
+static void dump_ddecl_void(void *entry);
 static void dump_interfacedef(void *entry);
 static void dump_tag(void *entry);
 
 static void select_components(xml_list l, nd_option opt, dd_list comps);
 static void select_interfaces(xml_list l, nd_option opt, dd_list comps);
+static void select_variables(xml_list l, nd_option opt, dd_list comps);
+static void select_constants(xml_list l, nd_option opt, dd_list comps);
+static void select_functions(xml_list l, nd_option opt, dd_list comps);
+static void select_typedefs(xml_list l, nd_option opt, dd_list comps);
 static void select_interfacedefs(xml_list l, nd_option opt, dd_list comps);
 static void select_tags(xml_list l, nd_option opt, dd_list comps);
 
@@ -98,9 +104,13 @@ static struct {
   xml_list l; /* The list of entries of this kind */
 } lists[] = {
   { "components", ndecl_addfilter, select_components, dump_component, &xl_components },
-  { "interfaces", ddecl_addfilter, select_interfaces, dump_interface, &xl_interfaces },
+  { "interfaces", ddecl_addfilter, select_interfaces, dump_ddecl_void, &xl_interfaces },
   { "interfacedefs", ndecl_addfilter, select_interfacedefs, dump_interfacedef, &xl_interfacedefs },
-  { "tags", tdecl_addfilter, select_tags, dump_tag, &xl_tags }
+  { "tags", tdecl_addfilter, select_tags, dump_tag, &xl_tags },
+  { "variables", ddecl_addfilter, select_variables, dump_ddecl_void, &xl_variables },
+  { "constants", ddecl_addfilter, select_constants, dump_ddecl_void, &xl_constants },
+  { "functions", ddecl_addfilter, select_functions, dump_ddecl_void, &xl_functions },
+  { "typedefs", ddecl_addfilter, select_typedefs, dump_ddecl_void, &xl_typedefs }
 };
 
 #define NLISTS (sizeof lists / sizeof *lists)
@@ -158,6 +168,8 @@ static void dump_attributes(dd_list/*nesc_attribute*/ attributes)
     }
 }
 
+static void dump_parameters(const char *name, declaration parms);
+
 void dump_ddecl(data_declaration ddecl)
 {
   switch (ddecl->kind)
@@ -165,7 +177,9 @@ void dump_ddecl(data_declaration ddecl)
     case decl_variable: indentedtag_start("variable"); break;
     case decl_constant:
       indentedtag_start("constant");
-      xml_attr_cval("cst", ddecl->value->cval);
+      if (ddecl->value) /* generic components args are constants, but have
+			   no value */
+	xml_attr_cval("cst", ddecl->value->cval);
       break;
     case decl_function:
       indentedtag_start("function");
@@ -184,7 +198,8 @@ void dump_ddecl(data_declaration ddecl)
     case decl_component_ref: indentedtag_start("internal-component"); break;
     default: assert(0);
     }
-  xml_attr("name", ddecl->name);
+  if (ddecl->name) /* Parameter names may be omitted in declarations */
+    xml_attr("name", ddecl->name);
   xml_attr_ptr("ref", ddecl);
   xml_attr_loc((ddecl->definition ? ddecl->definition : ddecl->ast)->location);
   xml_tag_end();
@@ -192,6 +207,9 @@ void dump_ddecl(data_declaration ddecl)
   /* Symbols have either a nesC container, a containing function, containing
      interface or none of these (global symbols) */
   xstartline();
+  if (ddecl->short_docstring)
+    nxml_doc(ddecl->short_docstring, ddecl->long_docstring, ddecl->doc_location);
+
   if (ddecl->container)
     nxml_ndecl_ref(ddecl->container);
   if (ddecl->container_function)
@@ -223,9 +241,21 @@ void dump_ddecl(data_declaration ddecl)
 	break;
       }
     case decl_function:
-      if (ddecl->interface)
-	nxml_ddecl_ref(ddecl->interface);
-      break;
+      {
+	if (ddecl->interface)
+	  nxml_ddecl_ref(ddecl->interface);
+	/* Builtin functions have no real AST */
+	if (!is_error_decl(ddecl->ast))
+	  {
+	    function_declarator fdecl = ddecl_get_fdeclarator(ddecl);
+
+	    if (fdecl->parms) /* absent in old-style functions */
+	      dump_parameters("parameters", fdecl->parms);
+	    if (fdecl->gparms)
+	      dump_parameters("instance-parameters", fdecl->gparms);
+	  }
+	break;
+      }
     default: break;
     }
 
@@ -292,7 +322,7 @@ static void dump_wiring(cgraph cg)
   gnode from;
   gedge wire;
 
-  /* Print complete wiring graph */
+  /* Print a wiring graph */
   indentedtag("wiring");
   graph_scan_nodes (from, cgraph_graph(cg))
     {
@@ -300,6 +330,20 @@ static void dump_wiring(cgraph cg)
 	dump_wire(EDGE_GET(location, wire), from, graph_edge_to(wire));
     }
   indentedtag_pop();
+}
+
+static void dump_ndecl_doc(nesc_declaration ndecl)
+{
+  if (ndecl->short_docstring)
+    nxml_doc(ndecl->short_docstring, ndecl->long_docstring, ndecl->ast->location);
+}
+
+static void do_wiring(cgraph cg, cgraph userg)
+{
+  if (wiring == wiring_functions)
+    dump_wiring(cg);
+  if (wiring == wiring_user)
+    dump_wiring(userg);
 }
 
 static void dump_component(void *entry)
@@ -316,16 +360,26 @@ static void dump_component(void *entry)
   xml_tag_end();
   xnewline();
 
+  dump_ndecl_doc(comp);
+
   if (comp->original)
     nxml_instance(comp);
   if (comp->abstract)
     dump_parameters("parameters", comp->parameters);
   xml_qtag(comp->configuration ? "configuration" : "module");
   dump_attributes(comp->attributes);
+
+  if (comp->configuration && configuration_wiring)
+    do_wiring(comp->connections, comp->user_connections);
+
+  if (component_declarations)
+    {
+    }
+
   indentedtag_pop();
 }
 
-static void dump_interface(void *entry)
+static void dump_ddecl_void(void *entry)
 {
   dump_ddecl(entry);
 }
@@ -341,6 +395,8 @@ static void dump_interfacedef(void *entry)
   xml_attr("qname", idef->name);
   xml_attr_loc(idef->ast->location);
   xml_tag_end();
+
+  dump_ndecl_doc(idef);
 
   if (idef->abstract)
     dump_parameters("parameters", idef->parameters);
@@ -438,64 +494,7 @@ static void dump_list(const char *name, xml_list l,
   indentedtag_pop();
 }
 
-/* The toplevel requests supported by -fnesc-dump */
-/* ---------------------------------------------- */
-/* Most of these are handled via the lists system (see above) */
-
-static void select_components(xml_list l, nd_option opt, dd_list comps)
-{
-  dd_list_pos scan_components;
-
-  if (!comps)
-    {
-      error("components can only be requested on an actual program");
-      return;
-    }
-
-  dd_scan (scan_components, comps)
-    {
-      nesc_declaration comp = DD_GET(nesc_declaration, scan_components);
-
-      if (dump_filter_ndecl(comp))
-	xml_list_add(l, comp);
-    }
-}
-
-static void process_component_interfaces(xml_list l, nesc_declaration comp)
-{
-  env_scanner scan;
-  const char *name;
-  void *decl;
-
-  env_scan(comp->env->id_env, &scan);
-  while (env_next(&scan, &name, &decl))
-    {
-      data_declaration ddecl = decl;
-
-      if (ddecl->kind == decl_interface_ref && dump_filter_ddecl(ddecl))
-	xml_list_add(l, ddecl);
-    }
-}
-
-static void select_interfaces(xml_list l, nd_option opt, dd_list comps)
-{
-  dd_list_pos scan_components;
-
-  if (!comps)
-    {
-      error("interfaces can only be requested on an actual program");
-      return;
-    }
-
-  dd_scan (scan_components, comps)
-    {
-      nesc_declaration comp = DD_GET(nesc_declaration, scan_components);
-
-      process_component_interfaces(l, comp);
-    }
-}
-
-static void add_defs(int kind, xml_list l)
+static void source_ndecl_iterate(int kind, int processkind, xml_list l, void (*process)(int kind, xml_list l, nesc_declaration ndecl))
 {
   env_scanner scanenv;
   const char *name;
@@ -506,23 +505,110 @@ static void add_defs(int kind, xml_list l)
     {
       nesc_declaration ndecl = val;
 
-      if (ndecl->kind == kind && dump_filter_ndecl(ndecl))
-	xml_list_add(l, ndecl);
+      if (ndecl->kind == kind)
+	process(processkind, l, ndecl);
     }
 }
 
-static void select_interfacedefs(xml_list l, nd_option opt, dd_list comps)
-{
-  add_defs(l_interface, l);
-}
-
-static void select_tags(xml_list l, nd_option opt, dd_list comps)
+static void add_ddecls_from_env(int kind, xml_list l, struct environment *env)
 {
   env_scanner scan;
   const char *name;
   void *decl;
 
-  env_scan(global_env->tag_env, &scan);
+  env_scan(env->id_env, &scan);
+  while (env_next(&scan, &name, &decl))
+    {
+      data_declaration ddecl = decl;
+
+      if (ddecl->kind == kind && dump_filter_ddecl(ddecl))
+	xml_list_add(l, ddecl);
+    }
+}
+
+static void add_ddecls_from_component(int kind, xml_list l, nesc_declaration comp)
+{
+  add_ddecls_from_env(kind, l, comp->env);
+  add_ddecls_from_env(kind, l, comp->impl->ienv);
+}
+
+static void select_ddecls(int kind, xml_list l, dd_list comps)
+{
+  dd_list_pos scan;
+
+  add_ddecls_from_env(kind, l, global_env);
+
+  if (comps)
+    dd_scan (scan, comps)
+      add_ddecls_from_component(kind, l, DD_GET(nesc_declaration, scan));
+
+  source_ndecl_iterate(l_component, kind, l, add_ddecls_from_component);
+}
+
+/* The toplevel requests supported by -fnesc-dump */
+/* ---------------------------------------------- */
+/* Most of these are handled via the lists system (see above) */
+
+static void add_component(int dummy, xml_list l, nesc_declaration comp)
+{
+  if (dump_filter_ndecl(comp))
+    xml_list_add(l, comp);
+}
+
+static void select_components(xml_list l, nd_option opt, dd_list comps)
+{
+  dd_list_pos scan_components;
+
+  if (comps)
+    dd_scan (scan_components, comps)
+      add_component(0, l, DD_GET(nesc_declaration, scan_components));
+
+  source_ndecl_iterate(l_component, 0, l, add_component);
+}
+
+static void add_interfacedef(int dummy, xml_list l, nesc_declaration ndecl)
+{
+  if (dump_filter_ndecl(ndecl))
+    xml_list_add(l, ndecl);
+}
+
+static void select_interfacedefs(xml_list l, nd_option opt, dd_list comps)
+{
+  source_ndecl_iterate(l_interface, 0, l, add_interfacedef);
+}
+
+static void select_interfaces(xml_list l, nd_option opt, dd_list comps)
+{
+  select_ddecls(decl_interface_ref, l, comps);
+}
+
+static void select_variables(xml_list l, nd_option opt, dd_list comps)
+{
+  select_ddecls(decl_variable, l, comps);
+}
+
+static void select_constants(xml_list l, nd_option opt, dd_list comps)
+{
+  select_ddecls(decl_constant, l, comps);
+}
+
+static void select_functions(xml_list l, nd_option opt, dd_list comps)
+{
+  select_ddecls(decl_function, l, comps);
+}
+
+static void select_typedefs(xml_list l, nd_option opt, dd_list comps)
+{
+  select_ddecls(decl_typedef, l, comps);
+}
+
+static void add_tags_from_env(xml_list l, struct environment *env)
+{
+  env_scanner scan;
+  const char *name;
+  void *decl;
+
+  env_scan(env->tag_env, &scan);
   while (env_next(&scan, &name, &decl))
     {
       tag_declaration tdecl = decl;
@@ -530,6 +616,25 @@ static void select_tags(xml_list l, nd_option opt, dd_list comps)
       if (dump_filter_tdecl(tdecl))
 	xml_list_add(l, tdecl);
     }
+}
+
+static void add_tags_from_component(int dummy, xml_list l, nesc_declaration comp)
+{
+  add_tags_from_env(l, comp->env);
+  add_tags_from_env(l, comp->impl->ienv);
+}
+
+static void select_tags(xml_list l, nd_option opt, dd_list comps)
+{
+  dd_list_pos scan_components;
+
+  add_tags_from_env(l, global_env);
+
+  if (comps)
+    dd_scan (scan_components, comps)
+      add_tags_from_component(0, l, DD_GET(nesc_declaration, scan_components));
+
+  source_ndecl_iterate(l_component, 0, l, add_tags_from_component);
 }
 
 static void select_wiring(nd_option opt, dd_list comps)
@@ -550,6 +655,8 @@ static void select_wiring(nd_option opt, dd_list comps)
 
 	if (!strcmp(req, "functions"))
 	  wiring = wiring_functions;
+	else if (!strcmp(req, "configurations"))
+	  configuration_wiring = TRUE;
 	else
 	  error("unknown wiring request for `%s'", req);
       }
@@ -619,14 +726,6 @@ void select_dumpfile(char *name)
 bool dump_selected(void)
 {
   return opts != NULL;
-}
-
-static void do_wiring(cgraph cg, cgraph userg)
-{
-  if (wiring == wiring_functions)
-    dump_wiring(cg);
-  if (wiring == wiring_user)
-    dump_wiring(userg);
 }
 
 static void do_lists(void)
