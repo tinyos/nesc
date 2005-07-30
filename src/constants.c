@@ -412,6 +412,8 @@ known_cst foldaddress_field_ref(expression e)
   field_ref fref = CAST(field_ref, e);
   field_declaration fdecl = fref->fdecl;
   known_cst object = fref->arg1->static_address;
+  cval field_offset;
+  type pftype;
 
   if (!object || cval_istop(fdecl->offset) || !cval_istop(fdecl->bitwidth))
     return NULL;
@@ -419,9 +421,14 @@ known_cst foldaddress_field_ref(expression e)
   if (constant_unknown(object))
     return make_unknown_cst(object->cval, object->type);
 
-  return make_cst(cval_add(object->cval,
-			   cval_divide(fdecl->offset, cval_bitsperbyte)),
-		  make_pointer_type(fdecl->type));
+  pftype = make_pointer_type(fdecl->type);
+  field_offset = cval_divide(fdecl->offset, cval_bitsperbyte);
+
+  /* Conceivably, size_t could be smaller than pointers. So we cast
+     the offset to the pointer-to-field type (we are assuming that is
+     the same size as the pointer to base-struct type) */
+  return make_cst(cval_add(object->cval, cval_cast(field_offset, pftype)),
+		  pftype);
 }
 
 #ifndef HAVE_STRTOLD
