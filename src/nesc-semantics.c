@@ -331,6 +331,24 @@ bool is_module_variable(data_declaration ddecl)
     (ddecl->container || is_module_local_static(ddecl));
 }
 
+nesc_declaration ddecl_container(data_declaration ddecl)
+{
+  while (ddecl->container_function)
+    ddecl = ddecl->container_function;
+
+  return ddecl->container;
+}
+
+nesc_declaration tdecl_container(tag_declaration tdecl)
+{
+#if 0
+  if (tdecl->container_function)
+    return ddecl_container(tdecl->container_function);
+  else
+#endif
+    return tdecl->container;
+}
+
 const char *make_intf_printname(const char *iname, const char *fname)
 /* Returns: string "iname.fname" allocated in current.fileregion
  */

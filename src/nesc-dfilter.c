@@ -22,6 +22,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-dump.h"
 #include "nesc-dspec.h"
 #include "nesc-dspec-int.h"
+#include "nesc-semantics.h"
 
 /* Filters for XML dump requests. Current filters:
      file(globexp): match containing file name (unix-style file matching)
@@ -30,6 +31,15 @@ Boston, MA 02111-1307, USA.  */
        in the namelist
      component(cname): match containing component name
      global(): match items from the global (C) scope
+     instance(): match items in instances of generic components
+     abstract(): match items that are not fully instantiated
+       !global() && !abstract() && !instances(): "in a non-generic component"
+       abstract() && !instance(): "in a generic component"
+       !abstract() && instance(): "in a fully instantiated generic
+         component (i.e., shows up in the generated C code)"
+       abstract() && instance(): "a partially instantiated generic component,
+         i.e., a generic component instantiated within a 
+	 generic configuration"
 
   Filters can be combined with and, or, not.
 */
@@ -180,6 +190,46 @@ static bool ftdecl_global(ndf_op op, tag_declaration tdecl)
   return !tdecl->container /* && !tdecl->container_function*/;
 }
 
+static bool is_instance(nesc_declaration ndecl)
+{
+  return ndecl && ndecl->arguments;
+}
+
+static bool fddecl_instance(ndf_op op, data_declaration ddecl)
+{
+  return is_instance(ddecl_container(ddecl));
+}
+
+static bool fndecl_instance(ndf_op op, nesc_declaration ndecl)
+{
+  return is_instance(ndecl);
+}
+
+static bool ftdecl_instance(ndf_op op, tag_declaration tdecl)
+{
+  return is_instance(tdecl_container(tdecl));
+}
+
+static bool is_abstract(nesc_declaration ndecl)
+{
+  return ndecl && ndecl->abstract;
+}
+
+static bool fddecl_abstract(ndf_op op, data_declaration ddecl)
+{
+  return is_abstract(ddecl_container(ddecl));
+}
+
+static bool fndecl_abstract(ndf_op op, nesc_declaration ndecl)
+{
+  return is_abstract(ndecl);
+}
+
+static bool ftdecl_abstract(ndf_op op, tag_declaration tdecl)
+{
+  return is_abstract(tdecl_container(tdecl));
+}
+
 static struct filter_op {
   const char *name;
   const char *args; /* Argument specification (see top) */
@@ -196,6 +246,8 @@ static struct filter_op {
   { "name", "t", fcompile_name, fddecl_name, fndecl_name, ftdecl_name },
   { "component", "t", NULL, fddecl_component, fndecl_component, ftdecl_component },
   { "global", "", NULL, fddecl_global, fndecl_global, ftdecl_global },
+  { "instance", "", NULL, fddecl_instance, fndecl_instance, ftdecl_instance },
+  { "abstract", "", NULL, fddecl_abstract, fndecl_abstract, ftdecl_abstract },
   { "attribute", "*t", NULL, fddecl_attribute, fndecl_attribute, ftdecl_attribute }
 };
 
