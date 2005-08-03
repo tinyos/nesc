@@ -213,7 +213,7 @@ bool nesc_option(char *p)
     }
   else if (!strcmp (p, "fnesc-no-inline"))
     {
-      flag_no_inline = 1;
+      flag_no_inline++;
     }
   else if (!strcmp (p, "fnesc-verbose"))
     {
