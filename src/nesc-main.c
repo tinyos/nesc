@@ -372,7 +372,9 @@ void nesc_compile(const char *filename, const char *target_name)
 
   if (docs_requested())
     {
-      if (program)
+      if (generic_used)
+	error("documentation system does not yet support generic components and interfaces");
+      else if (program)
 	generate_docs(filename, cg);
       else
 	error("documentation requested on a C file ");

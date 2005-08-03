@@ -58,4 +58,7 @@ void copy_interface_functions(region r, nesc_declaration container,
 			      data_declaration iref, environment fns);
 
 
+extern bool generic_used;	/* Hack to prevent doc generation until
+				   new doc system built */
+
 #endif

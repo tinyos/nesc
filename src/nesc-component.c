@@ -32,6 +32,8 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-abstract.h"
 #include "attributes.h"
 
+bool generic_used;
+
 void interface_scan(data_declaration iref, env_scanner *scan)
 {
   env_scan(iref->functions->id_env, scan);
@@ -180,6 +182,8 @@ void declare_interface_ref(interface_ref iref, declaration gparms,
 
   if (idecl->abstract)
     {
+      generic_used = TRUE;
+
       check_abstract_arguments("interface", ddecl,
 			       idecl->parameters, iref->args);
       ddecl->itype = interface_copy(parse_region, iref,
