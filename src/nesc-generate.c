@@ -443,6 +443,15 @@ void prt_nesc_called_function_hdr(data_declaration fndecl, void *data)
       prt_nesc_function_hdr(fndecl, 0);
       outputln(";");
     }
+  /* This is a handy place to check that all binary entry points are
+     callable */
+  if (!fndecl->defined && fndecl->uncallable &&
+      is_binary_component(fndecl->container->impl))
+    error("binary entry point %s%s%s.%s is not fully wired",
+	  fndecl->container->instance_name, 
+	  fndecl->interface ? "." : "",
+	  fndecl->interface ? fndecl->interface->name : "",
+	  fndecl->name);
 }
 
 void prt_nesc_called_function_headers(cgraph cg, nesc_declaration mod)
