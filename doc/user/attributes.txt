@@ -1,0 +1,340 @@
+Introduction
+============
+
+nesC 1.2 allows programmers to attach attributes to nesC programs. This
+allows:
+- simple language extensions without reserving lots of keywords and burdening
+  the syntax (e.g., "wire at most once")
+- user-specified annotations which would then be accessible to user-built
+  tools (e.g., mark a set of interfaces as "configuration interfaces" to
+  build a pc-side configuration tool for a specific app)
+
+These attributes are inspired by the annotations in Java 1.5
+(see http://jcp.org/aboutJava/communityprocess/review/jsr175/ for details).
+
+User-defined attributes have no direct effect on code generation. Instead,
+the nesC compiler can output information on the program and its use of
+attributes for use in external tools. This information is also useful for
+tools that do not rely on attributes.
+
+
+Attribute declaration and use
+=============================
+
+An attribute has a name, and associated values. Attributes are declared
+like a struct whose name starts with '@'. The struct's fields are the
+values associated with the attribute:
+  struct @atmostonce { } // "wired at-most-once", with no associated values
+  struct @section { char *name; } // "linker section", with section name
+
+An attribute can be used on:
+- declarations (variables, typedefs, functions, interface instances, etc)
+- component and interface definitions
+
+For variables, typedefs and interface instances, the attribute is placed at
+the end of the declaration (before the initialiser for variables):
+  typedef int mytype @special();
+  int fun @veryspecial("yes") = 22;
+  provides interface Fun as Bar[int id] @rpcinterface();
+
+For functions, it is placed after the end of the argument list (in either
+a prototype or in an implementation):
+  int magic(int bar) @magicfunction(99);
+  void moremagic(void) @magicfunction(100) { }
+
+For component and interface definitions it is placed after the (optional)
+arguments: 
+  interface Fun<t> @special() { ... }
+  module Small @runaway("now") { ...
+
+As the example shows, an attribute use takes the form
+  @<attribute_name>(<attribute parameters>)
+
+The attribute parameters must be a valid initialiser for the struct
+defining <attribute_name>. For instance, in
+  struct @big {
+    char *name;
+    int args[4];
+  };
+valid attributes uses include:
+  @big()                    // use default values
+  @big("yes", 1, 2, 3, 99) 
+  @big("no!", { 1, 2 })     // args[2] and args[3] have default values
+  @big( .args = { 9 }, .name = "explicit"); // use field names
+
+
+or they can use the java 1.5-like @attribute-name(value) syntax:
+
+  int main() @spontaneous @section("foo") { ... }
+
+
+Currently, any declared attribute can be used on any entity. Future
+versions of nesC may allow a particular attribute to be restricted, e.g.,
+to variables.
+
+Extracting information from a nesC program
+==========================================
+
+The -fnesc-dump= options to ncc (and nescc) are used to specify what
+information you wish to extract from a nesC program. Note that to
+successfully extract information, the nesC program must compile without
+error (with one exception: unwired functions and interfaces are allowed).
+
+The information is output in XML. The doc/dump directory contains a schema
+description for this XML output. The information is sent to the file
+specified by the -fnesc-dumpfile= option, or to stdout if no such option is
+used.
+
+You can ask for the following information:
+- components (includes both generic components and their instances)
+- interface definitions
+- interfaces (provided and used in components)
+- functions (both C and module functions)
+- variables, enum constants, typedefs (again, both from C and modules)
+- wiring graphs (for the whole program and for individual configurations)
+
+Dump request syntax
+-------------------
+
+A dump request has the form
+  -fnesc-dump=REQUEST
+or
+  -fnesc-dump=REQUEST(ARGUMENTS)
+
+where REQUEST specifies what information you want to collect, and ARGUMENTS
+includes options and filters for that request. Filters, described below,
+allow you to extract only the information you want, e.g., all interfaces
+with attribute @special, rather than all interfaces of the program. Options
+are used by some REQUESTs to modify their behaviour. Multiple arguments are
+separated by commas; multiple filter arguments are implicitly and-ed
+together.
+
+Because parentheses are meaningful to most shells, you will have to escape
+them in arguments to ncc, either with \, or by surrounding the whole
+arguments in '':
+  -fnesc-dump=components\(wiring\)
+or
+  '-fnesc-dump=components(wiring)'
+
+A single call to ncc may include multiple -fnesc-dump arguments. The
+information selected by all of these will be collected together and output
+as a single XML document.
+
+Dump requests
+-------------
+
+This section gives a high-level overview of the information collected by
+each dump request. For details on what information is available for each
+individual item (component, variable, etc), please see the XML schema (note
+that items always include the attributes that have been attached to
+them). It is often also helpful to examine the output on a sample program,
+but note that, e.g., unlike the schema definition, this will not
+necessarily tell you which fields are sometimes present and sometimes
+absent.
+
+REQUEST: "components"
+OPTIONS: "wiring"
+FILTERS: yes
+Returns the components used in a program. This includes:
+- all the non-generic components
+- all instances of generic components
+- all generic components instantiated by the program
+If the "wiring" option is included, wiring graphs for configurations will
+be output.
+
+REQUEST: "interfacedefs"
+OPTIONS: none
+FILTERS: yes
+Returns the interface definitions used in a program. To find out which
+interfaces are provided or used by which components, see the "interfaces"
+request.
+
+REQUEST: "interfaces"
+OPTIONS: none
+FILTERS: yes
+Returns the interfaces provided and used by components.
+
+REQUEST: "functions"
+OPTIONS: none
+FILTERS: yes
+Returns the functions defined in C files and in components, including commands
+and events defined outside interfaces.
+
+REQUEST: "variables"
+OPTIONS: none
+FILTERS: yes
+Returns the variables defined in C files and at the top-level inside
+components (i.e., this does not include function parameters and local
+variables).
+
+REQUEST: "constants"
+OPTIONS: none
+FILTERS: yes
+Returns the enum constants defined in C files and at the top-level inside 
+components.
+
+REQUEST: "typedefs"
+OPTIONS: none
+FILTERS: yes
+Returns the typedefs defined in C files and at the top-level inside 
+components.
+
+REQUEST: "tags"
+OPTIONS: none
+FILTERS: yes
+Returns the tagged types (struct, union, enum) defined in C files and at 
+the top-level inside components.
+
+REQUEST: "wiring"
+OPTIONS: "functions"
+FILTERS: no
+Return the application's wiring graph.
+If you specify the "functions" option, this graph will be in terms of the
+program's individual commands and events, i.e., interfaces are
+expanded. You may be surprised at how parameterised commands and events are
+handled when the "functions" option is used: there are edges from nodes
+representing the command (or event) for all possible parameter values to
+nodes representing to the command (event) with specific parameter values.
+
+REQUEST: "referenced"
+OPTIONS: "components", "interfacedefs", "interfaces", "functions",
+         "variables", "constants", "typedefs", "tags"
+FILTERS: no
+At least one option must be used. Many of the items described above refer
+to other items, e.g., interfaces refer to the interface definitions they
+are an instance of and to the component to which they belong. By including
+"referenced(components, interfacedefs)", any components and interface
+definitions referred to from an interface that is being output will also
+be output. This helps reduce the size and complexity of the XML output
+when you are using filters (see the examples below), by only including
+the components referenced from interfaces of interest, rather than all
+components. Note that "referenced" is recursive: if you have asked for
+referenced components, and this causes the inclusion of a component A
+which refers to a component B, then component B will also be included.
+
+
+Dump filters
+------------
+
+A tool can always simply ask for all XML information to be output, but this
+might be slow and unwieldy, and would force the external tool to do its own
+filtering, e.g., for interfaces with a particular attribute. To simplify
+external tool implementations, the nesC dump facility includes boolean
+filters which are applied before adding items requested by -fnesc-dump
+requests. Note however that items added because of a "referenced" request
+are not currently filtered.
+
+Filters are boolean expression built with (), |, &, ! (with the usual
+meanings) and base filters which take the form
+  NAME(ARGUMENTS)
+where the ARGUMENTS are strings and numbers separated by commas. Strings
+that look like numbers, contain commas, white space, parentheses, ", |, &
+and ! must be surrounded by "'s, other strings can be entered without
+surrounding "'s.  Within "'s, \ can be used to escape " and other
+characters.
+
+Note that the parentheses are not optional. A 0-argument filter is NAME().
+
+FILTER: "file"
+ARGUMENT: unix-style (* and ?) file pattern
+True if the file containing the item matches the file pattern.
+
+FILTER: "name"
+ARGUMENT: regular expression
+True if the item name matches the regular expression.
+
+FILTER: "component"
+ARGUMENT: component name
+True if the item's component is the same as the filter's argument
+(exact string matching).
+
+FILTER: "global"
+ARGUMENT: none
+True if the item is in C's global scope.
+
+FILTER: "instance"
+ARGUMENT: none
+True if the item is in a generic component instance (see the discussion of
+generic components).
+
+FILTER: "abstract"
+ARGUMENT: none
+True if the item is in a generic component (see the discussion of generic
+components).
+
+FILTER: "attribute"
+ARGUMENT: list of attribute names
+True if the item contains any of the attributes from the argument list
+(exact string matching).
+
+
+Generic components
+------------------
+
+Because generic components are instantiated at compile-time, it is possible
+to get information on all instances of generic components, and on the items
+contained within them. Some tools may be interested in this information,
+but others may be more interested in information from the generic 
+component that was instantiated (e.g., a tool that gives you the filenames
+of all components used in your program).
+
+To help distinguish between these cases at dump time, nesC includes two
+filters: "abstract()" and "instance()". These can be used both to filter
+components themselves, and also to filter items (such as variables,
+interfaces, etc) which are found inside them. These two filters cover the
+four possible categories of components:
+
+!abstract() & !instance(): a regular (not generic) component
+!abstract() & instance(): an instance of a generic component in your program
+abstract() & !instance(): a generic component
+abstract() & instance(): if a generic configuration A includes an 
+  instantiation of a generic component B, the instance of B in A can be
+  considered partially instantiated. It will be fully instantiated when
+  A itself is instantiated... (the dump system does not normally return
+  such components, but they are reachable from the wiring graph of a
+  generic configuration).
+
+
+
+Examples
+--------
+
+o Collect everything, and send it to file big.xml:
+
+  ncc -fnesc-dump=components(wiring)
+      -fnesc-dump=interfacedefs
+      -fnesc-dump=interfaces
+      -fnesc-dump=functions
+      -fnesc-dump=typedefs
+      -fnesc-dump=variables
+      -fnesc-dump=constants
+      -fnesc-dump=typedefs
+      -fnesc-dump=tags
+      -fnesc-dump=wiring
+      -fnesc-dumpfile=big.xml
+      MyApp.nc
+
+o Find specification elements (interfaces, commands, events) with the @rpc
+  attribute:
+
+  ncc '-fnesc-dump=interfaces(attribute(rpc))'
+      '-fnesc-dump=functions(attribute(rpc))' MyApp.nc
+
+  (note that this would also return any functions in modules which
+  incorrectly(?) used the @rpc attribute)
+
+o Find specification elements with the @rpc attribute, but exclude
+  those from generic components (i.e., we care about the interfaces
+  on actual components, not those in the generic components that we
+  instantiated):
+
+  ncc '-fnesc-dump=interfaces(attribute(rpc) & !abstract())'
+      '-fnesc-dump=functions(attribute(rpc) & !abstract())' MyApp.nc
+
+o The same as above, but we also need some information on the components
+  these interfaces, commands and events belong to:
+
+  ncc '-fnesc-dump=interfaces(attribute(rpc) & !abstract())'
+      '-fnesc-dump=functions(attribute(rpc) & !abstract())' 
+      '-fnesc-dump=referenced(components)' MyApp.nc
+
