@@ -558,6 +558,20 @@ static void add_component(int dummy, xml_list l, nesc_declaration comp)
 static void select_components(xml_list l, nd_option opt, dd_list comps)
 {
   dd_list_pos scan_components;
+  nd_arg arg;
+
+  scan_nd_arg (arg, opt->args)
+    if (is_nd_token(arg))
+      {
+	const char *req = nd_tokenval(arg);
+
+	if (!strcmp(req, "wiring"))
+	  configuration_wiring = TRUE;
+	else
+	  error("unknown components option `%s'", req);
+      }
+    else
+      error("bad components option");
 
   if (comps)
     dd_scan (scan_components, comps)
@@ -655,8 +669,6 @@ static void select_wiring(nd_option opt, dd_list comps)
 
 	if (!strcmp(req, "functions"))
 	  wiring = wiring_functions;
-	else if (!strcmp(req, "configurations"))
-	  configuration_wiring = TRUE;
 	else
 	  error("unknown wiring request for `%s'", req);
       }

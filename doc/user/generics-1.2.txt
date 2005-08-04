@@ -141,10 +141,10 @@ other generic components:
 One restriction: type arguments to generic components and interfaces can
 not be of array, function or incomplete type.
 
-The only operations that can be performed on a value of a type parameter
-are copying it, and passing it as an argument to some function. If a
-generic component needs some functionality on its type parameter, it can
-express that need by using an appropriate interface:
+By default, the only operations that can be performed on a value of a type
+parameter are copying it, and passing it as an argument to some
+function. If a generic component needs some functionality on its type
+parameter, it can express that need by using an appropriate interface:
 
   interface Compare<t> {
     command bool lessthan(t x1, t x2);
@@ -161,6 +161,25 @@ express that need by using an appropriate interface:
       if (call Compare.lessthan(x1, x2))
 	...
   }
+
+It is also possible to declare, using the special @integer() and @number()
+attributes, that a type parameter is of an integral (respectively numerical)
+type. In that case, all the operations allowed on integers (respectively,
+integers and floating-point numbers) are allowed:
+
+  generic module Sort(typedef t @number()) { }
+  implementation {
+    ...
+    void f() {
+      t x1, x2; 
+      ...
+      if (x1 < x2)
+	...
+  }
+
+Of course, the type argument to Sort must then be an integral or floating-point
+type.
+
 
 Types in Component Specifications and Other Changes
 ===================================================

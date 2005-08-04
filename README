@@ -1,18 +1,30 @@
-This is an alpha (early testing) release of the  1.2 version of nesC. 
+This is a beta release of the  1.2 version of nesC. 
 
-Installation instructions are in INSTALL. Note that nesC includes a patched
-GNU assembler for the AVR (to support debugging).  An appopriate version of
-the assembler is installed in ncc's support directory (usually
-/usr/local/lib/ncc) based on your installed version of avr-gcc (2.11.2 for
-avr-gcc up to 3.1.1, 2.13.2.1 for later avr-gcc's).
+Installation instructions are in INSTALL. Note that nesC needs patched
+versions of the GNU assemblers for the avr and msp430 architectures. These
+patched versions can be found at www.tinyos.net (look for the avr-binutils
+and msp430-binutils distributions) - they are no longer distributed with
+nesC.
 
 Changes in nesC 1.2
 ===================
-- generic components and interfaces. See doc/user/generics-1.2.txt
-- attributes. See doc/users/attributes.txt
-- binary components. See doc/users/binary-components.txt
+- generic components and interfaces. See doc/user/generics-1.2.txt. 
+  nesdoc does not support generic components and interfaces (this should be 
+  supported in the next release).
+- attributes. See doc/user/attributes.txt.
+- binary components. See doc/user/binary-components.txt.
 - external types, a revamp of nesC 1.1.3's network types. See 
-  doc/users/network-types.txt
+  doc/user/network-types.txt.
+- "includes" is deprecated - use #include instead; note that you
+  must use #ifndef/#define/#endif for #include'd files in the usual
+  C style.
+- macros in included files now work in ways that are similar to C
+  (as long as you use #include instead of includes).
+- support for compiling task/post into an interface + wiring: this
+  allows the scheduler to be implemented as a component.
+- the patched AVR assembler has been unbundled from nesC
+- the ncc, mig and nesdoc scripts have been unbundled from nesC (they
+  are now distributed with the other TinyOS tools).
 
 Changes in nesC 1.1.3
 =====================

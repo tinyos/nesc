@@ -3,16 +3,15 @@ AUTOMAKE_OPTIONS = foreign
 dist_man_MANS = nescc.1 nescc-mig.1 nescc-ncg.1
 
 EXTRA_DIST =					\
+	COPYING-DOC				\
+	COPYRIGHT				\
 	debugging.html				\
-	debugging_files/complete-setup.jpg	\
-	debugging_files/jtagpod.jpg		\
-	debugging_files/micamod.jpg		\
-	debugging_files/progboard.jpg		\
+	$(wildcard debugging_files/*.jpg)	\
+	$(wildcard dump/*.dsd)			\
 	envtarget.html				\
-	user/binary-components.txt		\
-	user/generics-1.2.txt			\
-	user/network-types.txt			\
-	ref.pdf
+	nesc-debugging.html			\
+	ref.pdf					\
+	$(wildcard user/*.txt)			\
 
 ref.pdf: ref.tex
 	pdflatex ref.tex
