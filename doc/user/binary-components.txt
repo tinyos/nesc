@@ -25,6 +25,11 @@ nesC application including Foo, the nesC compiler will:
 
 - These symbols are named 'component-name$interface-name$command-or-event-name'
 
+- The compiler requires that all commands and events used by Foo (including
+  all commands in used interfaces and all events in provided interfaces) 
+  be fully wired (in particular, parameterised interfaces must be wired
+  as a whole and not just for individual values)
+
 In this example, if interface A is
   interface A {
     command int request();
@@ -124,3 +129,39 @@ Some issues you should be aware of when building and using binary components:
   (e.g., 'nescc -gcc=avr-gcc') rather than avr-gcc or msp430-gcc to compile
   your C code. nescc will invoke your-gcc, but with a custom assembler
   which accepts '$'.
+
+- 'default' commands and events do not work across binary component
+  boundaries: the decision to call a default command is made at
+  compile-time based on whether or not the command is wired. A call
+  to a command in a binary component is always assumed wired, so the
+  default command will never be called (the same applies to events, of
+  course).
+
+  This is most likely to cause surprises with parameterised interfaces. The
+  following code:
+
+    component BinaryA {
+      provides interface A[int id];
+    }
+
+    module UseA {
+      uses interface A;
+    }
+    implementation {
+      void f() {
+	call A.request();
+      }
+      event void A.done(int val) {
+      }
+    }
+
+    configuration WireA { }
+    implementation {
+      components UseA, BinaryA;
+      UseA.A -> BinaryA.A[10];
+    }
+
+  will produce the error
+    binary entry point BinaryA.A.done is not fully wired
+  as even if the binary implementation of BinaryA had a default handler for
+  BinaryA.A.done, the compiler would not know when it should be called.
