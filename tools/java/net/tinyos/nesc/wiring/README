@@ -1,0 +1,70 @@
+A sample application using the Java nesC XML parsing classes to verify
+wiring constraints. A wiring constraint expresses requirements on the
+number of paths to and from a particular point in an application's wiring
+graph. They can be used, e.g., to ensure that an initialisation interface
+is always wired, or that only one other component wires to an interface
+which represents a non-shareable hardware resource such as a timer.
+
+These constraints are defined in terms of the per-function wiring graph of
+the program. In the per-function wiring graph, interfaces are replaced by
+separate nodes for each command and event. An edge from interface instance
+A to interface instance B is replaced by edges from the commands of A to
+the commands of B and from the events of B to the events of A (reflecting
+the fact that commands and events go in opposite directions). A command
+in a provided interface and an event in a used interface are considered
+provided in the per-function wiring graph; a command in a used interface
+and an event in a provided interface are considered used.
+
+A wiring constraint expresses constraints on the number of paths to (for
+provided commands and events) or from (for used commands and events) nodes
+in the per-function wiring graph. There are three constraints: at-most-once
+(<= 1), at-least-once (>= 1) and exactly-once (= 1).
+
+Examples:
+  module Foo {
+    /* we want to ensure Foo is initialised */
+    provides interface StdControl @atleastonce();
+  } ...
+
+  module HardwareClockM {
+    /* the hardware clock is not shareable, but it doesn't have to be used */
+    provides interface Clock @atmostonce();
+  } ...
+
+  configuration WeirdClock {
+    /* The clock interface can have only one user. Note that it *is*
+       multiply wired in WeirdClock - this does not contradict the
+       @atmostonce() annotation which applies to components wiring to
+       WeirdClock.Clock */
+    provides interface Clock @atmostonce();
+  }
+  implementation {
+    components HWClock1, HWClock2;
+    Clock = HWClock1.Clock;
+    Clock = HWClock2.Clock;
+  }
+
+To use WiringCheck, you need to first declare the @atmostonce(),
+@atleaseonce() and @exactlyonce() attributes in tos.h:
+
+  struct @atomostonce() { };
+  struct @exactlyonce() { };
+  struct @atleastonce() { };
+
+and then use these annotations on provided or used interfaces, as desired
+(see doc/user/attributes.txt for more information on attributes).
+
+To run WiringCheck on your application, compile with these additional
+options to ncc:
+  -fnesc-dump=wiring 
+  '-fnesc-dump=interfaces(!abstract())'
+  '-fnesc-dump=referenced(interfacedefs, components)'
+  -fnesc-dumpfile=/tmp/wiring.xml
+
+and then execute
+  java net.tinyos.nesc.wiring.WiringCheck </tmp/wiring.xml
+to verify your wiring annotations.
+
+The currently version of WiringCheck only verifies annotations on
+interfaces; adding annotations on commands on events would be
+straightforward.

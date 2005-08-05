@@ -18,10 +18,15 @@
 AUTOMAKE_OPTIONS = foreign
 
 ncclibdir=$(libdir)/ncc
-editordir=$(ncclibdir)/editor-modes
+nccdatadir=$(datadir)/ncc
+editordir=$(nccdatadir)/editor-modes
 emacsdir=$(editordir)/emacs
 vimdir=$(editordir)/vim
 kdedir=$(editordir)/kde
+javadir=$(nccdatadir)/java
+dumpdir=$(javadir)/net/tinyos/nesc/dump
+dumpxmldir=$(javadir)/net/tinyos/nesc/dump/xml
+wiringdir=$(javadir)/net/tinyos/nesc/wiring
 
 bin_SCRIPTS = nescc-mig nescc-ncg nescc nescc-diff
 
@@ -41,9 +46,23 @@ kde_DATA = 					\
 	editor-modes/kde/nesc.xml		\
 	editor-modes/kde/readme.txt
 
+wiring_DATA = 					\
+	java/net/tinyos/nesc/wiring/README	\
+	$(wildcard java/net/tinyos/nesc/wiring/*.java)
+
+dump_DATA = 					\
+	java/net/tinyos/nesc/dump/README	\
+	$(wildcard java/net/tinyos/nesc/dump/*.java)
+
+dumpxml_DATA = 					\
+	$(wildcard java/net/tinyos/nesc/dump/xml/*.java)
+
 EXTRA_DIST =					\
 	$(ncclib_DATA)				\
 	$(ncclib_SCRIPTS)			\
 	$(emacs_DATA)				\
 	$(vim_DATA)				\
-	$(kde_DATA)
+	$(kde_DATA)				\
+	$(wiring_DATA)				\
+	$(dump_DATA)				\
+	$(dumpxml_DATA)

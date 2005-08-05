@@ -17,6 +17,14 @@ the nesC compiler can output information on the program and its use of
 attributes for use in external tools. This information is also useful for
 tools that do not rely on attributes.
 
+Finally, nesC includes some Java classes for parsing the nesC XML output
+into a set of Java objects, and a sample Java application using this
+framework to verify "at-most-once", "at-least-once" and "exactly-once"
+wiring constraints. The Java XML parsing classes are found in 
+  tools/java/net/tinyos/nesc/dump
+and the wiring-check application is in
+  tools/java/net/tinyos/nesc/wiring
+Please see the README files in those directories for more details.
 
 Attribute declaration and use
 =============================

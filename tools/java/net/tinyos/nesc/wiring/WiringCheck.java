@@ -19,7 +19,7 @@ import org.xml.sax.*;
 
 /* Expects an xml dump of:
      wiring 
-     interfaces
+     interfaces(!abstract())
      referenced(interfacedefs, components)
 */
 public class WiringCheck
