@@ -4,33 +4,12 @@ set -e
 
 srcdir=src
 
-if [ -x /usr/bin/aclocal-1.5 ]; then
-  ACLOCAL="/usr/bin/aclocal-1.5"
-else
-  ACLOCAL="aclocal"
-fi
-
-if [ -x /usr/bin/automake-1.5 ]; then
-  AUTOMAKE="/usr/bin/automake-1.5"
-else
-  AUTOMAKE="automake"
-fi
-
-if [ -x /usr/bin/autoconf-2.53 ]; then
-  AUTOCONF="/usr/bin/autoconf-2.53"
-elif [ -x /usr/local/bin/autoconf-new ]; then
-  AUTOCONF="/usr/local/bin/autoconf-new"
-else
-  AUTOCONF="autoconf"
-fi
-
-if [ -x /usr/bin/autoheader-2.53 ]; then
-  AUTOHEADER="/usr/bin/autoheader-2.53"
-elif [ -x /usr/local/bin/autoheader-new ]; then
-  AUTOHEADER="/usr/local/bin/autoheader-new"
-else
-  AUTOHEADER="autoheader"
-fi
+# Use defaults now. Hopefully nobody uses really old versions
+# anymore,
+ACLOCAL="aclocal"
+AUTOMAKE="automake"
+AUTOCONF="autoconf"
+AUTOHEADER="autoheader"
 
 
 set -x
