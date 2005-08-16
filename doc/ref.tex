@@ -122,6 +122,11 @@ values).
 compile-time), and can take constant and type arguments (e.g., a generic queue
 component would take type and queue size arguments).
 
+\item Component specifications can include type and enum constant
+declarations; component selections and wiring statements can be
+interspersed in configurations; configuration implementations can refer to
+the types and enum constants of the components they include.
+
 \item Binary components: programs can now use components defined in 
 binary form. The same functionality supports encapsulating a set of
 components as a single binary component for use in other programs.
@@ -265,10 +270,11 @@ arguments. Components can only be connected via two interfaces with the
 same type.
 
 A component's \emph{specification} is the set of interfaces that it
-provides and uses. Component specifications can also contain \emph{bare}
-commands and events (i.e., not contained in an interface), to simplify the
-exposition we defer discussion of these to Section~\ref{sec:bare}. Each
-provided or used interface has a name and an interface type.
+provides and uses. Each provided or used interface has a name and an
+interface type. Component specifications can also contain \emph{bare}
+commands and events (i.e., not contained in an interface), \kw{typedef}s
+and tagged type declarations; to simplify the exposition we defer
+discussion of these to Sections~\ref{sec:bare} and~\ref{sec:spec-other}.
 
 For instance, the following source code
 \begin{quote} \begin{verbatim}
@@ -398,8 +404,9 @@ C type. Example interface types are \kw{interface SendMsg} and
 
 The first part of a component's definition (see Section~\ref{sec:component})
 is its \emph{specification}, a declaration of provided or used
-specification elements, where each element is an interface (or,
-Section~\ref{sec:bare}, a bare command or event):
+specification elements, where each element is an interface, 
+a bare command or event (Section~\ref{sec:bare}) or a declaration
+(Section~\ref{sec:spec-other}):
 \begin{quote} \grammarshift \em \begin{tabbing}
 \grammarindent
 component-specification:\\
@@ -554,6 +561,32 @@ definitions.
 Module \code{M} of Figure~\ref{fig:wiring}
 (Section~\ref{sec:wiring-semantics}) shows an example of a component
 specification with a bare command.
+
+\subsection{Other Declarations in Specifications}
+\label{sec:spec-other}
+
+A component specification can also include regular declarations (these
+belong to the specification scope):
+\begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
+uses-provides: \emph{also}\\
+\>	declaration\\
+\end{tabbing} \end{quote}
+
+These declarations must be either \kw{typedef}s, or tagged type
+declarations. For example,
+\begin{quote} \begin{verbatim}
+module Fun {
+  typedef int fun_t;
+  enum { MYNUMBER = 42 };
+}
+implementation { ... }
+\end{verbatim}
+\end{quote}
+
+Note that declaration of an \kw{enum} implicitly places enum constants
+in the component's specification scope.
+
 
 \subsection{Command and Event Terminology}
 
@@ -916,16 +949,30 @@ be fully wired.
 
 Configurations implement a component specification by selecting regular
 components or instantiating generic components, and then connecting
-(``wiring'') these components together. The implementation section of
-a configuration has two parts:
+(``wiring'') these components together. The implementation section of a
+configuration consists of a list of configuration elements:
 \begin{quote} \grammarshift \em \begin{tabbing}
 \grammarindent
 configuration-implementation:\\
-\>	\kw{implementation} \kw{\{} component-list\opt connection-list\opt \kw{\}}\\
+\>	\kw{implementation} \kw{\{} configuration-element-list\opt \kw{\}}\\
+\\
+configuration-element-list:\\
+\>	configuration-element\\
+\>	configuration-element-list configuration-element\\
+\\
+configuration-element:\\
+\>	components\\
+\>	connection\\
+\>	declaration\\
+\\
 \end{tabbing} \end{quote}
-The \emph{component-list} lists the components that are used to build this
-configuration, the \emph{connection-list} specifies how these components
-are wired to each other and to the configuration's specification.
+
+A \emph{components} element specifies the components that are used to build
+this configuration (Section~\ref{sec:config-components}), a
+\emph{connection} specifies a single wiring statement
+(Section~\ref{sec:wiring}), and a \emph{declaration} can declare a
+\kw{typedef} or tagged type (other C declarations are compile-time errors)
+(Section~\ref{sec:config-decls}).
 
 A configuration $C$'s wiring statements connects two sets of specification
 elements:
@@ -939,7 +986,7 @@ in $C$. We refer to these as \emph{internal} specification elements.
 \subsection{Included components}
 \label{sec:config-components}
 
-The \emph{component-list} specifies the components used to build this
+A \emph{components} elements specifies some components used to build this
 configuration. These can be:
 \begin{itemize}
 \item A non-generic component $X$. Non-generic components are implicitly
@@ -952,13 +999,9 @@ configuration represent different components (see
 Section~\ref{sec:generic-components}).
 \end{itemize}
 
-This \emph{component-list} has the following syntax:
+The syntax of \emph{components} is as follows:
 \begin{quote} \grammarshift \em \begin{tabbing}
 \grammarindent
-component-list:\\
-\>	components\\
-\>	component-list components\\
-\\
 components:\\
 \>	\kw{components} component-line \kw{;}\\
 \\
@@ -995,8 +1038,8 @@ a string constant.
 constant whose value is in the range of the parameter type.
 \end{itemize}
 
-Within the \emph{connection-list}, a component specified in the 
-\emph{component-list} is referred to by:
+Within a \emph{connection}, a component specified in 
+\emph{components} is referred to by:
 \begin{itemize}
 \item The name explicitly specified by the \code{X as Y} syntax
 (\emph{instance-name}). Use of \kw{as} is necessary, e.g., when
@@ -1005,7 +1048,7 @@ configuration.
 \item The name of the component definition (\code{components new X(), Y;} is
 the same as \code{components new X() as X, Y as Y;}).
 \end{itemize}
-The names specified by the \emph{connection-list} belong to the object name
+The names specified by \emph{components} elements belong to the object name
 space of the component's implementation scope (Section~\ref{sec:scoping}).
 
 This \code{NoWiring} configuration:
@@ -1033,10 +1076,6 @@ statements dictate which functions get called by the \kw{call} and
 \kw{signal} expressions found in modules. 
 \begin{quote} \grammarshift \em \begin{tabbing}
 \grammarindent
-connection-list:\\
-\>	connection\\
-\>	connection-list connection\\
-\\
 connection:\\
 \>	endpoint \kw{=} endpoint\\
 \>	endpoint \kw{->} endpoint\\
@@ -1162,6 +1201,44 @@ module M1 {                              module M2 {
               }
 \end{verbatim} \end{quote}
 The \code{M2.SC -> M1} line is equivalent to \code{M2.SC -> M1.StdControl}.
+
+\subsection{Declarations in Configurations}
+\label{sec:config-decls}
+
+As we saw above, like component specifications
+(Section~\ref{sec:spec-other}), configurations can include \kw{typedef} and
+tagged type declarations. These declarations belong to the configuration's
+implementation scope.
+
+Additionally, a configuration can refer to the \kw{typedef}s and enum
+constants of the components that it includes. To support this, the
+syntax for referring to  \kw{typedef}s is extended as follows:
+\begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
+typedef-name: \emph{also one of}\\
+\>	identifier \kw{.} identifier
+\end{tabbing} \end{quote}
+where the first identifier must refer to one of the configuration's
+components with an appropriate \kw{typedef} in its
+specification. Similarly, enum constants are referenced by extending C's
+field-reference syntax to allow the object to be the name of one of the
+configuration's components.
+
+For example:
+\begin{quote} \begin{verbatim}
+module M {
+  typedef int t;
+  enum { MAGIC = 54 };
+} ...
+
+configuration C { }
+implementation {
+  components M as Someone;
+
+  typedef Someone.t Ct;
+  enum { GREATERMAGIC = Someone.MAGIC + 1 };
+}
+\end{verbatim} \end{quote}
 
 \subsection{Examples}
 
@@ -1553,7 +1630,7 @@ inadvertently.
 \section{Attributes}
 \label{sec:attributes}
 
-All C and \nesc declarations can be decorated with \kw{attributes}
+All C and \nesc declarations can be decorated with \emph{attributes}
 (inspired by Java 1.5's attributes~\cite{java-attributes}) that:
 \begin{itemize}
 \item Avoid reserving lots of keywords and burdening the syntax. For
@@ -1585,7 +1662,7 @@ A use of an attribute specifies the attribute's name and gives an initialiser
 \begin{quote} \grammarshift
 \em \begin{tabbing}
 \grammarindent
-nesc-attribute:\\
+attribute:\\
 \>	\kw{@} identifier \kw{(} initializer-list \kw{)}\\
 \end{tabbing}
 \end{quote}
@@ -1659,6 +1736,12 @@ Note that neither \code{@hwevent()} or \code{@atomic\_hwevent()} provide any
 linkage of $f$ with a particular interrupt handler. The mechanism by
 which that is achieved is platform-specific.
 
+Inside a function with the \code{@atomic\_hwevent()} attribute, a call to a
+function named \code{\_\_nesc\_enable\_interrupt()} is assumed to terminate
+the implicit \kw{atomic} statement. This is useful for interrupt handlers
+which must start with interrupts disabled, but can reenable interrupts
+after a little work.
+
 \item \code{@combine($fnname$)}: This attribute specifies the combining
 function for a type in a \kw{typedef} declaration. The combining function
 specifies how to combine the multiple results of a call to a command
@@ -1677,6 +1760,9 @@ Section~\ref{sec:wiring-semantics} for the detailed semantics.
 
 A compile-time error occurs if the combining function $c$ for a type $t$
 does not have the following type: \code{$t$ $c$($t$, $t$)}.
+
+\item \code{@integer()}, \code{@number()}: declare properties of generic
+component type parameters. See Section~\ref{sec:type-parameters}.
 
 \end{itemize}
 
@@ -1712,7 +1798,7 @@ size and endianness. These types are \code{nx\_int$N$\_t},
 \code{nx\_uint$N$\_t}, \code{nxle\_int$N$\_t}, \code{nxle\_uint$N$\_t} for $N =
 8, 16, 32, 64$. The \code{nx\_} types are big-endian, the \code{nxle\_} types
 are little endian, the \code{int} types are signed and the \code{uint}
-types are unsigned.
+types are unsigned. Note that these types are not keywords.
 
 \item External array types are any array built from an external type, using 
 the usual C syntax, e.g, \code{nx\_int16\_t x[10]}.
@@ -2067,52 +2153,43 @@ rules'', Section~\ref{sec:imported}, for a quick summary of references to
 the K\&R grammar).
 
 The following additional keywords are used by \nesc: \kw{as}, \kw{atomic},
-\kw{async}, \kw{call}, \kw{command}, \kw{components}, \kw{configuration},
-\kw{event}, \kw{generic}, \kw{implementation}, \kw{includes},
-\kw{interface}, \kw{module}, \kw{new}, \kw{norace}, \kw{post},
-\kw{provides}, \kw{signal}, \kw{task}, \kw{uses}. The following keywords
-are reserved for future use: \kw{abstract}, \kw{component}, \kw{extends}.
-
-These \nesc keywords are not reserved in C files. The corresponding C
-symbols are accessible in \nesc files by prefixing them with
-\kw{\_\_nesc\_}\emph{keyword} (e.g., \kw{\_\_nesc\_keyword\_as}).
+\kw{async}, \kw{call}, \kw{command}, \kw{component}, \kw{components},
+\kw{configuration}, \kw{event}, \kw{generic}, \kw{implementation},
+\kw{includes}, \kw{interface}, \kw{module}, \kw{new}, \kw{norace},
+\kw{nx\_struct}, \kw{nx\_union}, \kw{post}, \kw{provides}, \kw{signal},
+\kw{task}, \kw{uses}. The following keywords are reserved for future use:
+\kw{abstract} and \kw{extends}.
 
 \nesc reserves all identifiers starting with \kw{\_\_nesc} for internal
-use. \tinyos reserves all identifiers starting with \kw{TOS\_} and
-\kw{TOSH\_}.
+use.
 
-\nesc files follow the \emph{nesC-file} production; \file{.h} files included
-via the \kw{includes} directive follow the \emph{translation-unit}
-directive from K\&R. 
+\nesc files follow the \emph{nesC-file} production; \file{.h} files loaded
+before the program's main component (see Section~\ref{sec:app}) follow the
+\emph{translation-unit} directive from K\&R and do not reserve any of
+the \nesc keywords except for \kw{nx\_struct} and \kw{nx\_union}.
 
 New rules: \em \begin{tabbing}
 \grammarindent
 nesC-file: \\
-\>	includes-list\opt interface-definition\\
-\>	includes-list\opt component\\
-\\
-includes-list:\\
-\>	includes\\
-\>	includes-list includes\\
-\\
-includes:\\
-\>	\kw{includes} identifier-list \kw{;}\\
+\>	translation-unit\opt interface-definition\\
+\>	translation-unit\opt component\\
 \\
 interface-definition:\\
-\>	\kw{interface} identifier type-parameters\opt\kw{\{} declaration-list \kw{\}}\\
+\>	\kw{interface} identifier type-parameters\opt attributes\opt \kw{\{} declaration-list \kw{\}}\\
 \\
 type-parameters:\\
 \>	\kw{<} type-parameter-list \kw{>}\\
 \\
 type-parameter-list:\\
-\>	identifier\\
-\>	type-parameter-list \kw{,} identifier\\
+\>	identifier attributes\opt\\
+\>	type-parameter-list \kw{,} identifier attributes\opt\\
 \\
 component:\\
-\>	comp-kind identifier comp-parameters\opt component-specification implementation\\
+\>	comp-kind identifier comp-parameters\opt attributes\opt component-specification implementation\opt\\
 \\
 comp-kind:\\
 \>	\kw{module}\\
+\>	\kw{component}\\
 \>	\kw{configuration}\\
 \>	\kw{generic module}\\
 \>	\kw{generic configuration}\\
@@ -2130,17 +2207,22 @@ component-parameter-list:\\
 \\
 component-parameter:\\
 \>	parameter-declaration\\
-\>	\kw{typedef} identifier\\
+\>	\kw{typedef} identifier attributes\opt\\
 \\
 module-implementation:\\
 \>	\kw{implementation} \kw{\{} translation-unit \kw{\}}\\
 \\
 configuration-implementation:\\
-\>	\kw{implementation} \kw{\{} component-list\opt connection-list\opt \kw{\}}\\
+\>	\kw{implementation} \kw{\{} configuration-element-list\opt \kw{\}}\\
 \\
-component-list:\\
+configuration-element-list:\\
+\>	configuration-element\\
+\>	configuration-element-list configuration-element\\
+\\
+configuration-element:\\
 \>	components\\
-\>	component-list components\\
+\>	connection\\
+\>	declaration\\
 \\
 components:\\
 \>	\kw{components} component-line \kw{;}\\
@@ -2163,10 +2245,6 @@ component-argument-list:\\
 component-argument:\\
 \>	expression\\
 \>	type-name\\
-\\
-connection-list:\\
-\>	connection\\
-\>	connection-list connection\\
 \\
 connection:\\
 \>	endpoint \kw{=} endpoint\\
@@ -2191,6 +2269,7 @@ uses-provides-list:\\
 uses-provides:\\
 \>	\kw{uses} specification-element-list\\
 \>	\kw{provides} specification-element-list\\
+\>	declaration\\
 \\
 specification-element-list:\\
 \>	specification-element\\
@@ -2202,7 +2281,7 @@ specification-elements:\\
 \\
 specification-element:\\
 \>	declaration\\
-\>	interface-type instance-name\opt instance-parameters\opt\\
+\>	interface-type instance-name\opt instance-parameters\opt attributes\opt\\
 \\
 interface-type:\\
 \>	\kw{interface} identifier type-arguments\opt\\
@@ -2215,12 +2294,22 @@ type-argument-list:\\
 \>	type-argument-list \kw{,} type-name\\
 \\
 instance-parameters:\\
-\>	\kw{[} parameter-type-list \kw{]}
+\>	\kw{[} parameter-type-list \kw{]}\\
+\\
+attributes:\\
+\>	attributes attribute\\
+\>	attribute\\
+\\
+attribute:\\
+\>	\kw{@} identifier \kw{(} initializer-list \kw{)}\\
 \end{tabbing} \rm
 
 Changed rules: 
 \em \begin{tabbing}
 \grammarindent
+typedef-name: \emph{also one of}\\
+\>	identifier \kw{.} identifier
+\\
 storage-class-specifier: \emph{also one of}\\
 \>	\kw{command} \kw{event} \kw{async} \kw{task} \kw{norace}\\
 \\
@@ -2231,27 +2320,30 @@ direct-declarator: \emph{also}\\
 \>	identifier \kw{.} identifier \\
 \>	direct-declarator instance-parameters \kw{(} parameter-type-list \kw{)}\\
 \\
-init-declarator-list: \emph{also}\\
-\>	init-declarator attributes\\
-\>	init-declarator-list \kw{,} init-declarator attributes\\
+struct-or-union-specifier: \emph{also one of}\\
+\>	\kw{struct} \kw{@} identifier \kw{\{} struct-declaration-list \kw{\}}\\
+\>	struct-or-union identifier attributes \kw{\{} struct-declaration-list \kw{\}}\\
+\\
+struct-or-union: \emph{also one of}\\
+\>	\kw{nx\_struct}\\
+\>	\kw{nx\_union}\\
+\\
+enum-specifier: \emph{also one of}\\
+\>	\kw{enum} identifier attributes \kw{\{} enumerator-list \kw{\}}\\
+\\
+init-declarator: \emph{also}\\
+\>	declarator attributes\\
+\>	declarator attributes \kw{=} initializer\\
+\\
+struct-declarator: \emph{also}\\
+\>	declarator attributes\\
+\>	declarator \kw{:} constant-expression attributes \\
+\\
+parameter-declaration: \emph{also}\\
+\>	declaration-specifiers declarator attributes\\
 \\
 function-definition: \emph{also}\\
 \>	declaration-specifiers\opt declarator attributes declaration-list\opt compound-statement\\
-\\
-attributes:\\
-\>	attribute\\
-\>	attributes attribute\\
-\\
-attribute:\\
-\>	\kw{\_\_attribute\_\_} \kw{(} \kw{(} attribute-list \kw{)} \kw{)}\\
-\\
-attribute-list:\\
-\>	single-attribute\\
-\>	attribute-list \kw{,} single-attribute\\
-\\
-single-attribute:\\
-\>	identifier\\
-\>	identifier \kw{(} argument-expression-list \kw{)}\\
 \\
 statement: \emph{also}\\
 \>	atomic-statement\\
@@ -2272,55 +2364,71 @@ call-kind: \emph{one of}\\
 \>	\kw{call} \kw{signal} \kw{post}
 \end{tabbing} \rm
 
+Note that like like regular typedefs, the extended rule for
+\emph{typedef-name} (to refer to types from other components) cannot be
+directly used in a LALR(1) parser.
+
 \subsection{Imported Rules}
 \label{sec:imported}
 
 This list is for reference purposes only:
 \begin{itemize}
-\item \emph{translation-unit}: A list of C declarations and function
-definitions.
+\item \emph{argument-expression-list}: A list of comma-separated
+expressions.
 
-\item \emph{declaration-list}: A list of C declarations.
+\item \emph{compound-stmt}: A C \{ \} block statement.
 
 \item \emph{declaration}: A C declaration.
 
-\item \emph{parameter-declaration}: A function parameter declaration.
+\item \emph{declaration-list}: A list of C declarations.
 
 \item \emph{declaration-specifiers}: A list of storage classes, type
 specifiers and type qualifiers.
 
+\item \emph{declarator}: The part of a C declaration that specifies
+the array, function and pointer parts of the declared entity's type.
+
 \item \emph{direct-declarator}: Like \emph{declarator}, but with no
 leading pointer-type specification.
+
+\item \emph{enumerator-list}: List of constant declarations inside an
+\kw{enum}.
+
+\item \emph{expression}: Any C expression.
+
+\item \emph{identifier}: Any C identifier.
 
 \item \emph{init-declarator}: The part of a C declaration that specifies
 the array, function and pointer parts of the declared entity's type, and
 its initialiser (if any).
 
-\item \emph{declarator}: The part of a C declaration that specifies
-the array, function and pointer parts of the declared entity's type.
+\item \emph{initializer}: An initializer for a variable declaration.
 
-\item \emph{storage-class-specifier}: A storage class specification for
-a C declaration.
+\item \emph{initializer-list}: An initializer for a compound type without
+the enclosing \kw{\{}, kw{\}}.
+
+\item \emph{parameter-declaration}: A function parameter declaration.
 
 \item \emph{parameter-type-list}: Specification of a function's parameters.
-
-\item \emph{type-name}: A C type specification.
-
-\item \emph{compound-stmt}: A C \{ \} block statement.
-
-\item \emph{statement}: Any C statement.
-
-\item \emph{argument-expression-list}: A list of comma-separated
-expressions.
-
-\item \emph{expression}: Any C expression.
 
 \item \emph{postfix-expression}: A restricted class of C expressions.
 
 \item \emph{primary}: An identifier, constant, string or parenthesised
 expression.
 
-\item \emph{identifier}: Any C identifier.
+\item \emph{statement}: Any C statement.
+
+\item \emph{storage-class-specifier}: A storage class specification for
+a C declaration.
+
+\item \emph{struct-declaration-list}: Declarations inside a \kw{struct}
+or \kw{union}.
+
+\item \emph{translation-unit}: A list of C declarations and function
+definitions.
+
+\item \emph{type-name}: A C type specification.
+
 \end{itemize}
 
 \section{Glossary}
@@ -2507,4 +2615,4 @@ elements specified by a configuration.
 % LocalWords:  BarType constant's XService lvalue gcc's gcc init fnname nesc nx
 % LocalWords:  TOSH initialiser parenthesised recognise attribute's nxle nescc
 % LocalWords:  initialisers bitfields initialised ifndef endif componentname
-% LocalWords:  functionname
+% LocalWords:  functionname reenable LALR
