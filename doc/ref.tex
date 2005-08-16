@@ -27,7 +27,7 @@
 
 \title{\nesc 1.2 Language Reference Manual}
 \author{David Gay, Philip Levis, David Culler, Eric Brewer}
-\date{July 2004}
+\date{August 2005}
 
 \maketitle
 
@@ -95,17 +95,19 @@ Section~\ref{sec:changes} summarises the new features in \nesc since v1.0.
 Section~\ref{sec:notation} presents the notation used in the reference
 manual, and Section~\ref{sec:scoping} the scoping and naming rules of
 \nesc. Sections~\ref{sec:interface} and~\ref{sec:component} present
-interfaces and components, while Sections~\ref{sec:module}
-and~\ref{sec:configuration} explain how components are
-implemented. Section~\ref{sec:concurrency} presents \nesc's concurrency
-model and data-race detection. Section~\ref{sec:app} explains how C files,
-\nesc interfaces and components are assembled into an
-application. Section~\ref{sec:misc} covers the remaining miscellaneous
-features of \nesc. Finally, Appendix~\ref{sec:grammar} fully defines
-\nesc's grammar (as an extension to the C grammar from Appendix~A of
-Kernighan and Ritchie (K\&R) ~\cite[pp234--239]{kandr}), and
-Appendix~\ref{sec:glossary} is a glossary of the terms used in this
-reference manual.
+interfaces and components, while
+Sections~\ref{sec:module},~\ref{sec:binary} and~\ref{sec:configuration}
+explain how components are implemented. Section~\ref{sec:concurrency}
+presents \nesc's concurrency model and data-race
+detection. Sections~\ref{sec:attributes},~\ref{sec:external-types}
+and~\ref{sec:misc} cover the extensions to C allowed in \nesc
+programs. Section~\ref{sec:app} explains how C files, \nesc interfaces and
+components are assembled into an application and how \nesc programs
+interact with the preprocessor and linker. Finally,
+Appendix~\ref{sec:grammar} fully defines \nesc's grammar (as an extension
+to the C grammar from Appendix~A of Kernighan and Ritchie (K\&R)
+~\cite[pp234--239]{kandr}), and Appendix~\ref{sec:glossary} gives a
+glossary of terms used in this reference manual.
 
 \section{Changes}
 \label{sec:changes}
@@ -119,6 +121,28 @@ values).
 \item Generic components: components can now be instantiated (at
 compile-time), and can take constant and type arguments (e.g., a generic queue
 component would take type and queue size arguments).
+
+\item Binary components: programs can now use components defined in 
+binary form. The same functionality supports encapsulating a set of
+components as a single binary component for use in other programs.
+
+\item External types: types with a platform-independent representation
+and no alignment representation can now be defined in nesC (these
+are useful, e.g., for defining packet representations).
+
+\item Attributes: declarations may be decorated with attributes. 
+Information on attribute use may be extracted for use in external
+programs. Details on this extraction process is beyond the scope
+of this language reference manual; see the nesC compiler documentation
+for details. Some predefined attributes have meaning to the nesC
+compiler. Use of \kw{\_\_attribute\_\_} for nesC-specific features
+is deprecated (for details on these deprecated usages, see Section~10.3
+of the nesC 1.1 reference manual).
+
+\item \kw{includes} is deprecated and components can be preceded by
+arbitrary C declarations and macros. As a result, \kw{\#include} behaves
+in a more comprehensible fashion. For details on \kw{includes}, see
+Section~9 of the nesC 1.1 reference manual.
 
 \item \kw{return} can be used within \kw{atomic} statements (the atomic
 statement is implicitly terminated by the \kw{return}).
@@ -145,7 +169,7 @@ automatically combined by new type-specific combiner functions.
 (Section~\ref{sec:constant-functions}) which counts uses of \code{unique}.
 
 \item The \kw{NESC} preprocessor symbol indicates the language version. It
-is 110 for \nesc 1.1, 120 for \nesc 1.2.
+is at least 110 for \nesc 1.1, at least 120 for \nesc 1.2.
  
 \end{enumerate}
 
@@ -563,11 +587,12 @@ specification and an implementation:
 \begin{quote} \grammarshift \em \begin{tabbing}
 \grammarindent
 component:\\
-\>	comp-kind identifier comp-parameters\opt component-specification implementation\\
+\>	comp-kind identifier comp-parameters\opt component-specification implementation\opt\\
 \\
 comp-kind:\\
 \>	\kw{module}\\
 \>	\kw{configuration}\\
+\>	\kw{component}\\
 \>	\kw{generic module}\\
 \>	\kw{generic configuration}\\
 \\
@@ -578,18 +603,21 @@ implementation:\\
 
 The component name belongs to the component name space of the global scope,
 hence must be distinct from other components and from interface
-definitions. There are two ways a component can be implemented:
+definitions. There are three ways a component can be implemented:
 \emph{modules} are components which are implemented with C code
-(Section~\ref{sec:module}), \emph{configurations} are components which are
-implemented by assembling other components
-(Section~\ref{sec:configuration}). Components with parameters are called
-\emph{generic components}, they must be instantiated in a configuration
-before they can be used (Section~\ref{sec:configuration}). Components
-without parameters exist as a single instance which is implicitly
-instantiated. The component's definition must reflect these distinctions
-(the \emph{comp-kind} rule): for instance, a generic module \code{A} is
-defined with \code{generic module A() \{}\ldots, a non-generic
-configuration \code{B} is defined with \code{configuration B \{}\ldots
+(Section~\ref{sec:module}), \emph{binary components} are components which
+are only available in binary form (Section~\ref{sec:binary}), and
+\emph{configurations} are components which are implemented by assembling
+other components (Section~\ref{sec:configuration}).
+
+Components with parameters are called \emph{generic components}, they must
+be instantiated in a configuration before they can be used
+(Section~\ref{sec:configuration}). Components without parameters exist as a
+single instance which is implicitly instantiated. The component's
+definition must reflect these distinctions (the \emph{comp-kind} rule): for
+instance, a generic module \code{A} is defined with \code{generic module
+A() \{}\ldots, a non-generic configuration \code{B} is defined with
+\code{configuration B \{}\ldots Binary components cannot be generic.
 
 \subsection{Generic Components}
 \label{sec:generic-components}
@@ -616,7 +644,10 @@ of arithmetic or \code{char[]} type. These parameters can be used as
 follows:
 \begin{itemize}
 \item Type parameters can be used as if the argument was of some unknown
-\kw{typedef}'d type (for more details, see Section~\ref{sec:type-parameters}).
+\kw{typedef}'d type. Additionally, type parameters can be restricted to
+integral or numerical types, allowing integral or numerical operations to
+be used on the type. For more details, see
+Section~\ref{sec:type-parameters}.
 \item Non-type parameters are constants of some unknown value (for more
 details, see Section~\ref{sec:constant-folding}); they can be used in any
 constant expression. They cannot be assigned to.
@@ -637,11 +668,12 @@ details when generic components get instantiated.
 
 Some examples (with simple specifications):
 \begin{quote}
-  \begin{verbatim}
+\begin{verbatim}
 module A { provides interface X; } ...
+component B { uses interface X } // no implementation for binary components!
 generic configuration B() { uses interface Y; } ...
 generic module AQueue(int n, typedef t) { provides interface Queue<t>; } ...
-  \end{verbatim}
+\end{verbatim}
 \end{quote}
 \code{A} is a simple module, \code{B} a generic configuration with no
 arguments but which can be instantiated multiple times, \code{AQueue}
@@ -859,6 +891,25 @@ but before actually returning from the function.
 
 Section~\ref{sec:concurrency} discusses the relation between \kw{atomic}, 
 \nesc's concurrency model, and the data-race detector.
+
+\section{Component Implementation: Binary Components}
+\label{sec:binary}
+
+Binary components are declared with the \kw{component} keyword and
+have no \kw{implementation} section. Instead, program's using binary
+components must be linked with an object file providing the binary
+component's implementation --- this object file might be the result
+of compiling a different \nesc program.
+
+This object file must provide definitions for the provided commands
+and events of the binary component, and can call its used commands
+and events. For more details on external linkage rules for \nesc,
+see Section~\ref{sec:linkage}.
+
+Note that \kw{default} commands and events (see Sections~\ref{sec:module}
+and~\ref{sec:wiring-semantics}) do not work across binary component
+boundaries --- the used commands and events of a binary component must
+be fully wired.
 
 \section{Component Implementation: Configurations}
 \label{sec:configuration}
@@ -1499,128 +1550,184 @@ that was not declared with \kw{async}. This ensures that code that was not
 written to execute safely in an interrupt handler is not called
 inadvertently.
 
-\section{\nesc Applications}
-\label{sec:app}
+\section{Attributes}
+\label{sec:attributes}
 
-A \nesc application has three parts: a list of C declarations and
-definitions, a set of interface definitions and a set of components
-(non-generic components and instantiated generic components).
-
-The C declarations and definitions, interfaces and components that form
-a \nesc application are determined by an on-demand loading process. The
-input to the \nesc compiler is a single non-generic component $K$. The
-\nesc compiler first loads a user-specified set of C
-files\footnote{\kw{ncc}, the TinyOS frontend for \nesc always loads the
-TinyOS \file{tos.h} file.} (Section~\ref{sec:load-c}), then loads component
-$K$ (Section~\ref{sec:load-component}). The code for the application is all
-the C code loaded and all the components generated as a result of loading
-these two files. A \nesc compiler can assume that all calls to functions,
-commands or events not marked with the \code{spontaneous}, \code{hwevent}
-or \code{atomic\_hwevent} attributes (Section~\ref{sec:attributes}) occur
-in the loaded code (i.e., there are no ``invisible'' calls to any other
-functions).\footnote{The current \nesc compiler uses this
-information to eliminate unreachable code.}
-
-During preprocessing of loaded files, \nesc defines the \kw{NESC} symbol to
-a number XYZ which identifies the version of the \nesc language and compiler.
-For \nesc 1.1, XYZ is at least 110.\footnote{The \kw{NESC} symbol was not
-defined in earlier versions of \nesc.}
-
-Part of the process of loading a C file, \nesc component or interface
-definition involves locating the corresponding source file. The mechanism
-used to locate files is outside the scope of this reference manual; for
-details on how this works in the current compiler please see the \file{ncc}
-man page.
-
-\subsection{Loading C file $X$}
-\label{sec:load-c}
-
-If $X$ has already been loaded, nothing more is done. Otherwise, file $X$.h
-is located and preprocessed. Changes made to C macros (via \code{\#define}
-and \code{\#undef}) are visible to all subsequently preprocessed files. The C
-declarations and definitions from the preprocessed $X$.h file are entered
-into the C global scope, and are therefore visible to all subsequently
-processed C files, interfaces and components.
-
-\subsection{Loading Component $K$}
-\label{sec:load-component}
-
-If $K$ has already been loaded, nothing more is done. Otherwise, file
-$K$.nc is located and preprocessed. Changes made to C macros (via
-\code{\#define} and \code{\#undef}) are discarded. The preprocessed file is
-parsed using the following grammar: \begin{quote} \grammarshift \em \begin{tabbing}
-\grammarindent
-nesC-file: \\
-\>	includes-list\opt interface\\
-\>	includes-list\opt module\\
-\>	includes-list\opt configuration\\
-\\
-includes-list:\\
-\>	includes\\
-\>	includes-list includes\\
-\\
-includes:\\
-\>	\kw{includes} identifier-list \kw{;}\\
-\end{tabbing} \end{quote}
-If $K$.nc does not define module $K$ or configuration $K$, a
-compile-time error is reported. Otherwise, all C files specified by the
-\emph{includes-list} are loaded (Section~\ref{sec:load-c}). Note that
-as file $K$.nc has already been loaded, macros defined in these files cannot
-be used in $K$.nc (though they will be visible for subsequently loaded files).
-
-Next, all interface definitions used in the component's specification are
-loaded (Section~\ref{sec:load-intf}). Next, the component specification is
-processed (Section~\ref{sec:component-spec}). If $K$ is a configuration, all
-component definitions used (Section~\ref{sec:config-components}) in $K$ are
-loaded (Section~\ref{sec:load-component}). The implementation of $K$ is
-then checked according to the rules of Section~\ref{sec:module} or
-Section~\ref{sec:configuration}.
-
-Finally, $K$ is processed to produce a set of output components via the
-following algorithm:
-
-Expand($K$):
+All C and \nesc declarations can be decorated with \kw{attributes}
+(inspired by Java 1.5's attributes~\cite{java-attributes}) that:
 \begin{itemize}
-\item If $K$ is a generic component, no component is output.
+\item Avoid reserving lots of keywords and burdening the syntax. For
+ example, \code{@integer()} is used to mark generic component type arguments
+ that must be integer types (Section~\ref{sec:type-parameters}).
 
-\item If $K$ is a non-generic module, $K$ is output.
-
-\item If $K$ is a non-generic configuration: for each component
-instantiation $\kw{new}\ L(a_1, \ldots, a_n)$ in $K$, a new component $X$ is
-created according to the rules of Section~\ref{sec:generic-components} and
-Expand($X$) is called recursively (instantiating further generic components
-if $L$ contained component instantiations). Then $K$ is output.
+\item Allow user-specified annotations which are accessible to external tools.
+The mechanism by which these user-specified attributes are accessed is
+beyond the scope of this reference manual; please see the \nesc compiler
+manual for details.
 \end{itemize}
 
-\subsection{Loading Interface Definition $I$}
-\label{sec:load-intf}
+User-defined attributes must be declared prior to use, and have no effect
+on code generation. The language-defined attributes are implicitly
+declared; their effects are described in Section~\ref{sec:attributes}.
 
-If $I$ has already been loaded, nothing more is done. Otherwise, file
-$I$.nc is located and preprocessed. Changes made to C macros (via
-\code{\#define} and \code{\#undef}) are discarded. The preprocessed file is
-parsed following the \emph{nesC-file} production above. If $I$.nc does not
-define \code{interface $I$} a compile-time error is reported. Otherwise,
-all C files specified by the \emph{includes-list} are loaded
-(Section~\ref{sec:load-c}) (as with components, macros defined in these C
-files cannot be used in $I$.nc as it has already been preprocessed). Then
-$I$'s definition is processed (Section~\ref{sec:interface}).
+An attribute declaration is simply a \kw{struct} declaration where the
+\kw{struct}'s name is preceded by \code{@}:
+\begin{quote} \grammarshift
+\em \begin{tabbing}
+\grammarindent
+struct-or-union-specifier: \emph{also one of}\\
+\>	\kw{struct} \kw{@} identifier \kw{\{} struct-declaration-list \kw{\}}\\
+\end{tabbing}
+\end{quote}
 
-As an example of including C files in components or interfaces, interface
-definition \code{Bar} might include C file \file{BarTypes.h} which defines types
-used in \code{Bar}:
+A use of an attribute specifies the attribute's name and gives an initialiser
+(in parentheses) that must be valid for attribute's declaration:
+\begin{quote} \grammarshift
+\em \begin{tabbing}
+\grammarindent
+nesc-attribute:\\
+\>	\kw{@} identifier \kw{(} initializer-list \kw{)}\\
+\end{tabbing}
+\end{quote}
 
+
+Attributes can be placed on all C and \nesc declarations and definitions.
+Generally, attributes appear after the annotated object's name and
+associated arguments, but before any other syntactic elements (e.g.,
+initialisers, function bodies, etc). See Appendix~\ref{sec:grammar} for the
+full set of rules. The attributes of $x$ are the union of all attributes on
+all declarations and definitions of $x$.
+
+Example:
+\begin{quote}
+\begin{verbatim}
+struct @myattr {
+  int x;
+  char *why;
+};
+
+extern int z @myattr(5, "fun"); // simple use
+
+// a second attribute on z at it's definition
+int z @myattr(3, "morefun") = 22;
+
+// use on a function, with a C99-style initialiser
+void f(void) @myattr(.x=5, .why="for f") {
+   ...
+}
+
+// use in a module, with an empty initialiser
+module X {
+  provides interface I @myattr();
+}
+...
+\end{verbatim}
+\end{quote}
+
+\subsection{\nesc Attributes}
+
+\nesc includes seven predefined attributes with various effects. Except
+where otherwise specified, these take no arguments:
+
+\begin{itemize}
+\item \code{@C()}: This attribute is used for a C declaration or definition
+$d$ at the top-level of a module (it is ignored for all other
+declarations). It specifies that $d$'s should appear in the global C scope
+rather than in the module's per-component-implementation scope. This allows
+$d$ to be used (e.g., called if it is a function) from C code.
+
+\item \code{@spontaneous()}: This attribute can be used on any function $f$
+(in modules or C code). It indicates that there are calls $f$ that are not
+visible in the source code. The C \code{main} function is a typical
+example. Section~\ref{sec:app} discusses how the \nesc compiler uses the
+\code{spontaneous} attribute during compilation.
+
+\item \code{@hwevent()}: This attribute can be used on any function $f$ (in
+modules or C code). It indicates that $f$ is an interrupt handler, i.e.,
+that there are spontaneous calls to $f$ and that $f$ is AC
+(Section~\ref{sec:concurrency}). The use of \code{@hwevent()} implies
+\code{@spontaneous()}.
+
+\item \code{@atomic\_hwevent()}: This attribute can be used on any function
+$f$ (in modules or C code). This behaves the same as \code{@hwevent()}, but,
+additionally, informs \nesc that the body of $f$ behaves as if it were an
+\kw{atomic} statement (on typical hardware this means that this interrupt
+handler runs with interrupts disabled). The use of \code{@atomic\_hwevent()}
+implies \code{@spontaneous()}.
+
+Note that neither \code{@hwevent()} or \code{@atomic\_hwevent()} provide any
+linkage of $f$ with a particular interrupt handler. The mechanism by
+which that is achieved is platform-specific.
+
+\item \code{@combine($fnname$)}: This attribute specifies the combining
+function for a type in a \kw{typedef} declaration. The combining function
+specifies how to combine the multiple results of a call to a command
+or event which has ``fan-out''. For example:
+\begin{verbatim}
+  typedef uint8_t result_t __attribute__((combine(rcombine)));
+
+  result_t rcombine(result_t r1, result_t r2)
+  {
+    return r1 == FAIL ? FAIL : r2;
+  }
+\end{verbatim}
+specifies logical-and-like behaviour when combining commands (or events)
+whose result type is \code{result\_t}. See
+Section~\ref{sec:wiring-semantics} for the detailed semantics.
+
+A compile-time error occurs if the combining function $c$ for a type $t$
+does not have the following type: \code{$t$ $c$($t$, $t$)}.
+
+\end{itemize}
+
+Example of attribute use:
 \begin{quote} \begin{verbatim}
-Bar.nc:                                        BarTypes.h:      
-includes BarTypes;                             typedef struct { 
-interface Bar {                                  int x;         
-  command result_t bar(BarType arg1);            double y;      
-}                                              } BarType;
+module RealMain { ... }
+implementation {
+  int main(int argc, char **argv) @C() @spontaneous() {
+    ...
+  }
+}
 \end{verbatim} \end{quote}
 
-The definition of interface \code{Bar} can refer to \code{BarType}, as can
-any component that uses or provides interface \code{Bar} (interface
-\code{Bar}, and hence \file{BarTypes.h}, are loaded before any such
-component's specification or implementation are processed).
+This example declares that function \code{main} should actually appear
+in the C global scope (\code{@C()}), so that the linker can find it. It
+also declares that \code{main} can be called even though there are no
+function calls to \code{main} anywhere in the program
+(\code{@spontaneous()}). 
+
+\section{External Types}
+\label{sec:external-types}
+
+External types are an extension to C that allows definition of types with a
+platform-independent representation and no alignment restriction (i.e., an
+arbitrary \code{char} array can be cast to, and accessed via, an external
+type). They are intended for communication with entities external to
+the \nesc program (e.g., other devices via a network), hence their name.
+
+\nesc has three kinds of external types:
+\begin{itemize}
+\item External base types are 2's complement integral types with a fixed
+size and endianness. These types are \code{nx\_int$N$\_t},
+\code{nx\_uint$N$\_t}, \code{nxle\_int$N$\_t}, \code{nxle\_uint$N$\_t} for $N =
+8, 16, 32, 64$. The \code{nx\_} types are big-endian, the \code{nxle\_} types
+are little endian, the \code{int} types are signed and the \code{uint}
+types are unsigned.
+
+\item External array types are any array built from an external type, using 
+the usual C syntax, e.g, \code{nx\_int16\_t x[10]}.
+
+\code External structures and unions are declared like C structures and
+unions, but using the \code{nx\_struct} and \code{nx\_union} keywords. An
+external structure can only contain external types as elements. Currently,
+external structures and unions cannot contain bitfields.
+\end{itemize}
+
+External types have no alignment restrictions and external structures
+contain no padding. External types can be used exactly like regular C
+types.\footnote{The current \nesc compiler does not support using external
+base types in casts, as function arguments and results, or to declare
+initialised variables.}
 
 \section{Miscellaneous}
 \label{sec:misc}
@@ -1751,6 +1858,15 @@ simple: a value of type $t$ is assignable to an lvalue of type $t$ (extends
 A.7.17 in K\&R~\cite{kandr}) and type $t$ is only equivalent to itself (extends
 A.8.10 in K\&R~\cite{kandr}).
 
+If a type parameter $t$ has the \code{@number()} attribute
+(Section~\ref{sec:attributes}), the corresponding argument must be a
+numerical (integral or floating-point) type, and all numerical operations
+(i.e., those valid for floating-point types) are allowed on type $t$.
+
+If a type parameter $t$ has the \code{@integer()} attribute
+(Section~\ref{sec:attributes}), the corresponding argument must be an
+integral type, and all integral operations are allowed on type $t$.
+
 \subsection{Functions with no arguments, old-style C declarations}
 \label{sec:misc-void}
 
@@ -1768,122 +1884,177 @@ Note that neither of these changes apply to C files (so that existing
 
 \nesc allows // comments in C, interface and component files.
 
-\subsection{Attributes}
-\label{sec:attributes}
+\section{\nesc Applications}
+\label{sec:app}
 
-\nesc uses gcc's\footnote{http://gcc.gnu.org} \kw{\_\_attribute\_\_} syntax
-for declaring some properties of functions, variables and typedefs. These
-attributes can be placed either on declarations (after the declarator) or
-function definitions (after the parameter list).\footnote{gcc doesn't
-allow attributes after the parameter list in function definitions.} The
-attributes of $x$ are the union of all attributes on all declarations and
-definitions of $x$.
+A \nesc application has two executable parts: C declarations and
+definitions, and a set of components (non-generic components and
+instantiated generic components). The components are connected
+to each other via interfaces specified by a set of interface
+definitions. 
 
-The attribute syntax in \nesc is:
-\begin{quote} \grammarshift \em \begin{tabbing}
-\grammarindent
-init-declarator-list: \emph{also}\\
-\>	init-declarator attributes\\
-\>	init-declarator-list \kw{,} init-declarator attributes\\
-\\
-function-definition: \emph{also}\\
-\>	declaration-specifiers\opt declarator attributes declaration-list\opt compound-statement\\
-\\
-attributes:\\
-\>	attribute\\
-\>	attributes attribute\\
-\\
-attribute:\\
-\>	\kw{\_\_attribute\_\_} \kw{(} \kw{(} attribute-list \kw{)} \kw{)}\\
-\\
-attribute-list:\\
-\>	single-attribute\\
-\>	attribute-list \kw{,} single-attribute\\
-\\
-single-attribute:\\
-\>	identifier\\
-\>	identifier \kw{(} argument-expression-list \kw{)}\\
-\end{tabbing} \end{quote}
-
-\nesc supports five attributes:
+The C declarations and definitions, interfaces and components that form a
+\nesc application are determined by an on-demand loading process. The input
+to the \nesc compiler is a single non-generic component $K$. The \nesc
+compiler first loads a user-specified set of C files\footnote{\kw{ncc}, the
+TinyOS frontend for \nesc always loads the TinyOS \file{tos.h} file.}
+(Section~\ref{sec:load-c}), then loads the component definition for $K$
+(Section~\ref{sec:load-component}). The resulting program contains:
 \begin{itemize}
-\item \code{C}: This attribute is used for a C declaration or definition
-$d$ at the top-level of a module (it is ignored for all other
-declarations). It specifies that $d$'s should appear in the global C scope
-rather than in the module's per-component-implementation scope. This allows
-$d$ to be used (e.g., called if it is a function) from C code.
-
-\item \code{spontaneous}: This attribute can be used on any function $f$
-(in modules or C code). It indicates that there are calls $f$ that are not
-visible in the source code. The C \code{main} function is a typical
-example. Section~\ref{sec:app} discusses how the \nesc compiler uses the
-\code{spontaneous} attribute during compilation.
-
-\item \code{hwevent}: This attribute can be used on any function $f$ (in
-modules or C code). It indicates that $f$ is an interrupt handler, i.e.,
-that there are spontaneous calls to $f$ and that $f$ is AC
-(Section~\ref{sec:concurrency}). The use of \code{hwevent} implies
-\code{spontaneous}.
-
-\item \code{atomic\_hwevent}: This attribute can be used on any function
-$f$ (in modules or C code). This behaves the same as \code{hwevent}, but,
-additionally, informs \nesc that the body of $f$ behaves as if it were an
-\kw{atomic} statement (on typical hardware this means that this interrupt
-handler runs with interrupts disabled). The use of \code{atomic\_hwevent}
-implies \code{spontaneous}.
-
-Note that neither \code{hwevent} or \code{atomic\_hwevent} provide any
-linkage of $f$ with a particular interrupt handler. The mechanism by
-which that is achieved is platform-specific.
-
-\item \code{hwevent}: This attribute can be used on any function
-$f$ (in modules or C code). It indicates that $f$ is an interrupt
-handling function, invoked automatically by the hardware. This implies
-that $f$ is both \code{spontaneous} and asynchronous code (AC).
-
-\item \code{atomic\_hwevent}: This attribute can be used on any function $f$
-(in modules or C code). It indicates that $f$ is an interrupt handling
-function, invoked automatically by the hardware, with interrupts
-disabled. This implies that $f$ is both \code{spontaneous} and asynchronous
-code (AC), and, additionally, that the body of $f$ runs as if it was
-wrapped in an \code{atomic} statement.
-
-\item \code{combine($fnname$)}: This attribute specifies the combining
-function for a type in a \kw{typedef} declaration. The combining function
-specifies how to combine the multiple results of a call to a command
-or event which has ``fan-out''. For example:
-\begin{verbatim}
-  typedef uint8_t result_t __attribute__((combine(rcombine)));
-
-  result_t rcombine(result_t r1, result_t r2)
-  {
-    return r1 == FAIL ? FAIL : r2;
-  }
-\end{verbatim}
-specifies logical-and-like behaviour when combining commands (or events)
-whose result type is \code{result\_t}. See
-Section~\ref{sec:wiring-semantics} for the detailed semantics.
-
-A compile-time error occurs if the combining function $c$ for a type $t$
-does not have the following type: \code{$t$ $c$($t$, $t$)}.
-
+\item All C declarations from the initially loaded C files
+(Section~\ref{sec:load-c}).
+\item All C declarations from all component and interface definitions
+(Sections~\ref{sec:load-component} and~\ref{sec:load-intf}).
+\item All components output by the rules of Section~\ref{sec:load-component}.
 \end{itemize}
 
-Example of attribute use:
-\begin{quote} \begin{verbatim}
-module RealMain { ... }
-implementation {
-  int main(int argc, char **argv) __attribute__((C, spontaneous)) {
-    ...
-  }
-}
-\end{verbatim} \end{quote}
+Section~\ref{sec:cpp} discusses the interactions between \nesc and the C
+preprocessor. The external linkage rules for a compiled \nesc program are
+given in Section~\ref{sec:linkage}. The process by which C files, \nesc
+component and interface definitions are located is outside the scope of
+this reference manual; for details see the \file{ncc} and \kw{nescc} man
+pages.
 
-This example declares that function \code{main} should actually appear
-in the C global scope (\code{C}), so that the linker can find it. It
-also declares that \code{main} can be called even though there are no
-function calls to \code{main} anywhere in the program
-(\code{spontaneous}). 
+
+\subsection{Loading C file $X.h$}
+\label{sec:load-c}
+
+File $X.h$ is located and preprocessed. Changes made to C macros (via
+\code{\#define} and \code{\#undef}) are visible to all subsequently
+preprocessed files. The C declarations and definitions from the
+preprocessed $X$.h file are entered into the C global scope, and are
+therefore visible to all subsequently processed C files, interfaces and
+components. 
+
+The \nesc keywords are not reserved when a C file is loaded in this
+fashion.
+
+\subsection{Loading Component Definition $K$}
+\label{sec:load-component}
+
+If $K$ has already been loaded, nothing more is done. Otherwise, file
+$K$.nc is located and preprocessed. Changes made to C macros (via
+\code{\#define} and \code{\#undef}) before the \kw{component}, \kw{module}
+and \kw{configuration} keyword are preserved and visible to all
+subsequently loaded files; changes made after this point are discarded. The
+preprocessed file is parsed using the following grammar 
+(\emph{translation-unit} is a list of C declarations and function definitions):
+\begin{quote} \grammarshift \em \begin{tabbing}
+\grammarindent
+nesC-file: \\
+\>	translation-unit\opt interface\\
+\>	translation-unit\opt module\\
+\>	translation-unit\opt configuration
+\end{tabbing} \end{quote}
+Note that the \nesc keywords are reserved while parsing the C code in
+\emph{translation-unit}. If $K$.nc does not define module $K$ or
+configuration $K$, a compile-time error is reported.
+
+The component's definition is then processed
+(Sections~\ref{sec:component-spec},~\ref{sec:configuration},
+and~\ref{sec:module}). All referenced component and interface definitions
+are loaded (see also Section~\ref{sec:load-intf}) during this processing.
+C declarations and definitions from a referenced component or interface
+definition $D$ are available after the first reference to $D$. Note
+however that macros defined in $D$ are not available in $K$ as $K$
+was already preprocessed (see Section~\ref{sec:cpp} for more discussion
+of macros in \nesc).
+
+Finally, the set of components output by $K$ is defined by the following
+algorithm:
+
+Expand($K$):
+\begin{itemize}
+\item If $K$ is a generic component, no component is output.
+
+\item If $K$ is a non-generic module, $K$ is output.
+
+\item If $K$ is a non-generic configuration: for each component
+instantiation $\kw{new}\ L(a_1, \ldots, a_n)$ in $K$, a new component $X$ is
+created according to the rules of Section~\ref{sec:generic-components} and
+Expand($X$) is called recursively (instantiating further generic components
+if $L$ contained component instantiations). Then $K$ is output.
+\end{itemize}
+
+\subsection{Loading Interface Definition $I$}
+\label{sec:load-intf}
+
+If $I$ has already been loaded, nothing more is done. Otherwise, file
+$I$.nc is located and preprocessed. Changes made to C macros (via
+\code{\#define} and \code{\#undef}) before the \kw{interface} keyword are
+preserved and visible to all subsequently loaded files; changes made after
+this point are discarded. The preprocessed file is parsed following the
+\emph{nesC-file} production above. If $I$.nc does not define
+\code{interface $I$} a compile-time error is reported. Then
+$I$'s definition is processed (Section~\ref{sec:interface}).
+
+\subsection{\nesc and the C Preprocessor}
+\label{sec:cpp}
+
+During preprocessing, \nesc defines the \kw{NESC} symbol to a number XYZ
+which identifies the version of the \nesc language and compiler.  For \nesc
+1.2, XYZ is at least 120.\footnote{The \kw{NESC} symbol was not defined in
+versions of \nesc prior to 1.1.}
+
+The loading of component and interface definitions is driven by syntactic
+rules; as a result it must happen after preprocessing. Thus if a component
+$X$ references, e.g., an interface $I$, macros defined in $I$ cannot be
+used in $X$ even though $I$'s C declarations can be. We suggest the
+following structure to avoid confusion:
+\begin{enumerate}
+\item All C declarations, function definitions and macros should be placed
+in a \file{.h} file, e.g., \file{I.h}. This file should be wrapped in the
+usual \code{\#ifndef I\_H} / \code{\#define I\_H} / \code{\#endif} way.
+
+\item The file(s) with which the \file{.h} file is naturally associated
+(e.g., an interface \code{I}) should \code{\#include "I.h"}).
+\label{sec:cpp-natural}
+
+\item Files which wish to use the macros defined in the \file{.h} file
+should \code{\#include} it.
+
+\item Files which wish to use the C declarations and definitions from
+the \file{.h} file should \code{\#include} it if they do not reference one
+of the components or interfaces from point~\ref{sec:cpp-natural}.
+\end{enumerate}
+
+These rules are similar to how \code{\#include} is typically used in C.
+
+\subsection{External Linkage Rules}
+\label{sec:linkage}
+
+The following rules specify the external visibility of symbols defined
+in a nesC program:
+\begin{itemize}
+\item The external linkage of C variable declarations is the same as for C
+(note that this does not include variables declared inside modules).
+
+\item All function definitions marked with \code{spontaneous},
+\code{hwevent} or \code{atomic\_hwevent} attributes
+(Section~\ref{sec:attributes}) are external definitions.
+
+\item All used commands and events of binary components are external
+definitions.
+
+\item All non-static C function declarations without a definition
+are external references.
+
+\item All provided commands and events of binary components are
+external references.
+\end{itemize}
+
+The external names of C declarations, and of function definitions
+inside modules using the \kw{C} attribute, are the same as the
+corresponding C name. The external names of all other externally
+visible symbols is implementation-defined.\footnote{The current
+nesC compiler uses ``componentname\$functionname''.}
+
+The \nesc compiler can assume that only code reachable from external
+definitions will be executed (i.e., there are no ``invisible'' calls to any
+other functions).\footnote{The current \nesc compiler uses this information
+to eliminate unreachable code.}
+
+
 
 \appendix
 
@@ -2156,8 +2327,17 @@ expression.
 \label{sec:glossary}
 
 \begin{itemize}
+\item \emph{attribute}: a user-specified decoration that can be placed on C
+and nesC declarations. Attributes must be declared (see \emph{attribute
+kind}).
+
+\item \emph{attribute kind}: a declaration of an attribute, which
+specifies the attribute's arguments.
 
 \item \emph{bare command, bare event}: See \emph{command}.
+
+\item \emph{binary component}: a component provided in binary rather than
+source code form. Binary components cannot be generic.
 
 \item \emph{combining function}: C function that combines the multiple
 results of a command call (or event signal) in the presence of
@@ -2203,12 +2383,17 @@ extents: \emph{indefinite}, \emph{function}, and \emph{block}.
 \item \emph{external}: In a configuration $C$, describes a specification
 element from $C$'s specification. See internal.
 
+\item \emph{external type}: a special kind of type with a
+platform-independent representation and no alignment restrictions.
+
 \item \emph{fan-in}: Describes a provided command or event called from more
 than one place.
 
 \item \emph{fan-out}: Describes a used command or event connected to more
 than one command or event implementation. A \emph{combining function}
 combines the results of calls to these used commands or events.
+
+\item \emph{generic}: See \emph{component}, \emph{interface}.
 
 \item \emph{interface}: An instance of a particular \emph{interface type}
 in the \emph{specification} of a component. An interface has a name, a role
@@ -2228,12 +2413,13 @@ provided before a generic interface definition can be used as an
 Interfaces are bi-directional: the provider of an interface implements its
 commands, the user of an interface implements its events.
 
-\item \emph{interface type}: A reference to an interface definition,
-along with argument types if the definition is generic. \emph{Configurations}
-can only connect two interfaces if they have the same type.
+\item \emph{interface type}: A reference to an interface definition, along
+with argument types if the definition is generic. \emph{Configurations} can
+only connect two interface instances if they have the same interface type
+and instance parameters.
 
-\item \emph{instance parameter}: An instance parameter has a name and must
-be of integral type.
+\item \emph{instance parameter}: An instance parameter is a parameter added
+to an interface type. It has a name and must be of integral type.
 
 There is (conceptually) a separate interface for each distinct list of
 instance parameter values of a \emph{parameterised interface} (and,
@@ -2318,5 +2504,7 @@ elements specified by a configuration.
 % LocalWords:  initialisation ReceiveMsg GenericComm iff sizeof msg myTask stmt
 % LocalWords:  args NoWiring SecondQueue ccc callees call's concat bool norace
 % LocalWords:  unparameterised ncc frontend tos hwevent XYZ undef nesC BarTypes
-% LocalWords:  BarType constant's XService lvalue gcc's gcc init fnname nesc
-% LocalWords:  TOSH initialiser parenthesised
+% LocalWords:  BarType constant's XService lvalue gcc's gcc init fnname nesc nx
+% LocalWords:  TOSH initialiser parenthesised recognise attribute's nxle nescc
+% LocalWords:  initialisers bitfields initialised ifndef endif componentname
+% LocalWords:  functionname
