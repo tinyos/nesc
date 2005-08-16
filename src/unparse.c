@@ -1087,15 +1087,17 @@ void prt_tag_ref(tag_ref tr, pte_options options)
       if (tr->kind == kind_enum_ref)
         prt_enumerators(tr->fields, tr->tdecl);
       else
-	prt_fields(tr->fields);
+	{
+	  prt_fields(tr->fields);
+	  if (type_network(make_tagged_type(tr->tdecl)))
+	    output(" __attribute__((packed))");
+	}
     }
   if (tr->attributes)
     {
       output(" ");
       prt_type_elements(CAST(type_element, tr->attributes), 0);
     }
-  if (type_network(make_tagged_type(tr->tdecl)))
-    output(" __attribute__((packed))");
 }
 
 void prt_enumerators(declaration elist, tag_declaration tdecl)

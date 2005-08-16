@@ -37,6 +37,7 @@
 */
 #undef PRECLEAR
 
+#include "../autoconf.h"
 #include "stats.c"
 
 #include "regions.h"
@@ -44,7 +45,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#if SIZEOF_VOID_P > 4
+#define LARGE_ADDRESSES
+#endif
+
 #ifdef LARGE_ADDRESSES
+/* This supports up to 49 bit virtual addresses. If you have larger
+   virtual addresses, you will need to decrease MEMSLICE1 and
+   possibly adjust MEMSLICE2 */
 #define MAXMEMBITS 64
 #define MEMSLICE1 15
 #define MEMSLICE2 18
