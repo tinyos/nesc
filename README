@@ -11,7 +11,11 @@ Changes in nesC 1.2
 - generic components and interfaces. See doc/user/generics-1.2.txt. 
   nesdoc does not support generic components and interfaces (this should be 
   supported in the next release).
-- attributes. See doc/user/attributes.txt.
+- configuration implementations and component specifications can now 
+  include type and constant declarations; configuration implementations
+  can refer to these types and constants. These changes are described
+  alongside the generic component changes, in doc/user/generics-1.2.txt. 
+- attributes (Java 1.5-style). See doc/user/attributes.txt.
 - binary components. See doc/user/binary-components.txt.
 - external types, a revamp of nesC 1.1.3's network types. See 
   doc/user/network-types.txt.
@@ -22,7 +26,9 @@ Changes in nesC 1.2
   (as long as you use #include instead of includes).
 - support for compiling task/post into an interface + wiring: this
   allows the scheduler to be implemented as a component.
-- the patched AVR assembler has been unbundled from nesC
+- return can be used in atomic statements (implicitly terminating
+  the atomic statement).
+- the patched AVR assembler has been unbundled from nesC.
 - the ncc, mig and nesdoc scripts have been unbundled from nesC (they
   are now distributed with the other TinyOS tools).
 
