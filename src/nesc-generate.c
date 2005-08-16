@@ -1064,9 +1064,25 @@ void prt_nesc_interface_typedefs(nesc_declaration comp)
     }
 }
 
+void prt_nesc_typedefs(nesc_declaration comp);
+
+void prt_configuration_declarations(declaration dlist)
+{
+  declaration d;
+
+  scan_declaration (d, dlist)
+    if (is_component_ref(d))
+      prt_nesc_typedefs(CAST(component_ref, d)->cdecl);
+    else
+      prt_toplevel_declaration(d);
+}
+
 void prt_nesc_typedefs(nesc_declaration comp)
 {
   assert(!comp->abstract);
+  if (comp->printed)
+    return;
+  comp->printed = TRUE;
   if (comp->original)
     prt_typedefs(comp);
 
@@ -1077,8 +1093,8 @@ void prt_nesc_typedefs(nesc_declaration comp)
   if (!comp->configuration)
     prt_nesc_interface_typedefs(comp);
   else
-    /* Print declarations found in configurations */
-    prt_toplevel_declarations(CAST(configuration, comp->impl)->decls);
+    /* Recursively print declarations found in configurations */
+    prt_configuration_declarations(CAST(configuration, comp->impl)->decls);
 }
 
 static void prt_nido_resolver(variable_decl vd)
@@ -1155,7 +1171,7 @@ static void prt_nido_resolver_function(dd_list modules)
   outputln("}");
 }
 
-void generate_c_code(const char *target_name,
+void generate_c_code(const char *target_name, nesc_declaration program,
 		     cgraph cg, dd_list modules, dd_list components)
 {
   dd_list_pos mod;
@@ -1250,8 +1266,7 @@ void generate_c_code(const char *target_name,
   /* Typedefs for abstract module type arguments. This relies on the fact
      that abstract configurations are present in the components list ahead
      of the abstract modules that they instantiate */
-  dd_scan (mod, components)
-    prt_nesc_typedefs(DD_GET(nesc_declaration, mod));
+  prt_nesc_typedefs(program);
 
   dd_scan (mod, modules)
     prt_nesc_function_declarations(DD_GET(nesc_declaration, mod));

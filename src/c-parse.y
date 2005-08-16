@@ -28,7 +28,7 @@ Boston, MA 02111-1307, USA. */
    written by AT&T, but I have never seen it.  */
 
 %pure_parser
-
+%expect 8
 
 
 %{
@@ -1971,19 +1971,21 @@ tag:
 	;
 
 structuse:
-	  structkind tag
-		{ $$ = xref_tag($1.location, $1.i, $2); }
-	| ENUM tag
-		{ $$ = xref_tag($1.location, kind_enum_ref, $2); }
+	  structkind tag nesc_attributes
+		{ $$ = xref_tag($1.location, $1.i, $2); 
+		  if ($3) warning("attributes ignored"); }
+	| ENUM tag nesc_attributes
+		{ $$ = xref_tag($1.location, kind_enum_ref, $2);
+		  if ($3) warning("attributes ignored"); }
 	;
 
 structdef:
-	  structkind tag '{'
+	  structkind tag nesc_attributes '{'
 		{ $$ = start_struct($1.location, $1.i, $2);
 		  /* Start scope of tag before parsing components.  */
 		}
 	  component_decl_list '}' maybe_attribute 
-		{ $$ = finish_struct($<u.telement>4, $5, $7); }
+		{ $$ = finish_struct($<u.telement>5, $6, attribute_chain($3, $8)); }
 	| STRUCT '@' tag '{'
 		{ $$ = start_struct($1.location, kind_attribute_ref, $3);
 		  /* Start scope of tag before parsing components.  */
@@ -1994,10 +1996,10 @@ structdef:
 		{ $$ = finish_struct(start_struct($1.location, $1.i,
 						  NULL), $3, $5);
 		}
-	| ENUM tag '{'
+	| ENUM tag nesc_attributes '{'
 		{ $$ = start_enum($1.location, $2); }
 	  enumlist maybecomma_warn '}' maybe_attribute
-		{ $$ = finish_enum($<u.telement>4, declaration_reverse($5), $8); }
+		{ $$ = finish_enum($<u.telement>5, declaration_reverse($6), attribute_chain($3, $9)); }
 	| ENUM '{'
 		{ $$ = start_enum($1.location, NULL); }
 	  enumlist maybecomma_warn '}' maybe_attribute

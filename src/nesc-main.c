@@ -388,5 +388,5 @@ void nesc_compile(const char *filename, const char *target_name)
   if (dump_selected())
     dump_info(program, cg, userg, modules, components);
   if (gencode)
-    generate_c_code(target_name, cg, modules, components);
+    generate_c_code(target_name, program, cg, modules, components);
 }

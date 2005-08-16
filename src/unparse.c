@@ -1546,6 +1546,9 @@ void prt_unary(unary e, int context_priority)
 	  return;
 	}
     }
+
+  set_location(e->location);
+
   switch (e->kind)
     {
     case kind_dereference: op = "*"; break;
@@ -1566,10 +1569,12 @@ void prt_unary(unary e, int context_priority)
     case kind_postdecrement: postop = "--"; break;
     case kind_conjugate: case kind_bitnot: op = "~"; break;
     case kind_not: op = "!"; break;
+    case kind_component_deref: 
+      prt_plain_ddecl(CAST(component_deref, e)->ddecl, 0);
+      return;
     default: assert(0); return;
     }
 
-  set_location(e->location);
   OPEN(P_CAST);
   if (op)
     {
