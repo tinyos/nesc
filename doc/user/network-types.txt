@@ -1,13 +1,17 @@
-Part 1: Network Types
+Part 1: External Types
 =====================
 
-Network types are an extension to nesC for platform-independent networking:
-you can define your packet layout using syntax very similar to existing C
-type declarations, and just accesses it like a regular C type. The compiler
-ensures that this type has the same representation on all platforms and
-generates any necessary conversion code. For instance, the SurgeCmdMsg from
-the Surge application is defined and accessed as follows using network
-types:
+External types are an extension to nesC for platform-independent type
+representation: you can define your packet layout using syntax very similar
+to existing C type declarations, and just accesses it like a regular C
+type. The compiler ensures that this type has the same representation on
+all platforms and generates any necessary conversion code. Additionally,
+these types have no alignment restrictions. This makes them particularly
+suitable for defining and accessing network packets in a
+platform-independent way.
+
+For instance, the SurgeCmdMsg from the Surge application can be defined and
+accessed as follows using external types:
 
   typedef nx_struct {
     nx_uint8_t type;
@@ -23,42 +27,45 @@ types:
     timer_rate = pCmdMsg->args.newrate;
   ...
 
-More formally, nesC includes three kinds of network types. 
+More formally, nesC includes three kinds of external types. 
 
-  o Network base types are similar to the fixed size in8_t, uint16_t, etc
+  o External base types are similar to the fixed size in8_t, uint16_t, etc
     types. They include 8, 16, 32 and 64-bit signed and unsigned integers
     denoted by the types nx_[u]int[8/16/32/64]_t.  
 
-  o Network array types are any array built from a network type, using 
+  o External array types are any array built from an external type, using 
     the usual C syntax, e.g, nx_int16_t x[10]. 
 
-  o Network structures are declared like C structures and unions, but 
+  o External structures are declared like C structures and unions, but 
     using the nx_struct and nx_union keywords (as in the SurgeCmdMsg 
-    example above). A network structure can only contain network types
+    example above). An external structure can only contain external types
     as elements. 
 
-All these network types can be used exactly like regular C types, with a
+All these external types can be used exactly like regular C types, with a
 few restrictions (which will be lifted in future versions): 
-  o Network structures cannot contain bitfields.  
-  o Network base types cannot be used in casts, as function arguments
+  o External structures cannot contain bitfields.  
+  o External base types cannot be used in casts, as function arguments
     and results, or to declare initialised variables. Note that you can
-    generally simply use the corresponding non-network type, such as
+    generally simply use the corresponding non-external type, such as
     uint16_t, instead.
 
-Network types have no alignment restrictions, network structures contain no
-padding, and the network base types use a 2's complement, little-endian
-representation. Thus their representation is platform-independent, and any
-arbitrary section of memory can be accessed via a network type. Future
-versions will also include big-endian base types.
+External types have no alignment restrictions, external structures contain
+no padding, and the external base types use a 2's complement, big-endian
+representation (there are also little-endian versions of the base types
+available, using the nxle_ prefix, but their use is discouraged for
+networking purposes). Thus their representation is platform-independent,
+and any arbitrary section of memory can be accessed via an external
+type.
 
 Part 2: Implementation
 ======================
 
-In the generated C code for nesC programs using network types, we simply
-define a C type for each network base type, translate nx_struct and
-nx_union to struct and union and leave array types unchanged.
+In the generated C code for nesC programs using external types, we simply
+define a C type for each external base type, translate nx_struct and
+nx_union to struct and union and leave array types unchanged. The external
+base types are replaced by structures containing char arrays.
 
-Reads and writes of network base types are replaced by calls to inline
+Reads and writes of external base types are replaced by calls to inline
 functions like NTOH32 in the example below.  For instance, the example
 from Surge becomes:
 

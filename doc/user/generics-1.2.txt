@@ -181,14 +181,15 @@ Of course, the type argument to Sort must then be an integral or floating-point
 type.
 
 
-Types in Component Specifications and Other Changes
-===================================================
+Type and constants in Component Specifications and Other Changes
+================================================================
 
-As part of the changes for generic components, nesC now allows types to be
-defined in the specification of a component (both in generic and
-non-generic components). These types can be used in the component in which
-they are defined, and in configurations that include the component (as
-arguments to generic components). For example,
+As part of the changes for generic components, nesC now allows types and
+enum constants to be defined in the specification of a component (both in
+generic and non-generic components). These types can be used in the
+component in which they are defined, and in configurations that include the
+component (as arguments to generic components or to define other types and
+constants). For example,
 
   interface Send<t> {
     command result_t send(t x);
@@ -234,4 +235,35 @@ body of a configuration, so MyRadioStack could also be written as:
     components new QueueOf(MyMessageTypePtr) as MyQueue;
     ...
   }
+
+Note that you can refer to typedefs and enum constants in other components,
+but not to struct, union or enum tags, i.e.,
+
+  module Fun {
+    struct silly { int x; };
+  } implementation { ... }
+
+  configuration Barf { }
+  implementation {
+    components Fun;
+
+    typedef struct Fun.silly baz;
+  }
+
+is not allowed, but
+
+  module Legalfun {
+    typedef enum { ONE = 2 } sillier;
+  } implementation { ... }
+
+  configuration Ok { }
+  implementation {
+    components Legalfun;
+
+    typedef Legalfun.sillier baz;
+    enum { THREE = Legalfun.ONE };
+  }
+
+is.
+
 
