@@ -306,3 +306,40 @@ conditional conditional_lvalue(expression e)
   else
     return NULL;
 }
+
+data_declaration string_ddecl(expression s)
+{
+  if (s->cst && constant_address(s->cst))
+    {
+      data_declaration sdecl = cval_ddecl(s->cst->cval);
+
+      /* Must be an offsetless string */
+      if (sdecl && sdecl->kind == decl_magic_string &&
+	  cval_knownbool(s->cst->cval))
+	return sdecl;
+    }
+  return NULL;
+}
+
+char *ddecl2str(region r, data_declaration ddecl)
+/* Returns: a newly allocated string (in region r) for the string
+     specified by ddecl, or NULL if str contains wide characters
+   Requires: ddecl->kind == decl_magic_string
+*/
+{
+  const wchar_t *wstr;
+  char *str;
+  int length_as_str;
+
+  wstr = ddecl->chars;
+  length_as_str = wcs_mb_size(wstr);
+  if (length_as_str < 0)
+    return NULL;
+
+  str = rstralloc(r, length_as_str);
+  length_as_str = wcstombs(str, wstr, length_as_str);
+  assert(length_as_str >= 0);
+  str[length_as_str] = '\0';
+
+  return str;
+}

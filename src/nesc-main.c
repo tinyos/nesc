@@ -335,6 +335,7 @@ void nesc_compile(const char *filename, const char *target_name)
   init_abstract();
   init_nesc_constants();
   init_network();
+  init_internal_nesc_attributes();
 
   for (includes = includelist; includes; includes = includes->next)
     require_c(toplevel_location, includes->name);

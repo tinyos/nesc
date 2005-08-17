@@ -73,4 +73,12 @@ const char *tagkind_name(int tagkind);
 
 conditional conditional_lvalue(expression e);
 
+data_declaration string_ddecl(expression s);
+
+char *ddecl2str(region r, data_declaration str);
+/* Returns: a newly allocated string (in region r) for the string
+     specified by str, or NULL if str contains wide characters
+   Requires: str->kind == decl_magic_string
+*/
+
 #endif

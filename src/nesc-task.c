@@ -28,6 +28,7 @@ Boston, MA 02111-1307, USA. */
 #include "nesc-c.h"
 #include "nesc-magic.h"
 #include "edit.h"
+#include "expr.h"
 
 static char *scheduler_name;
 static char *scheduler_unique_name;

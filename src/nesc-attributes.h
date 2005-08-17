@@ -26,6 +26,11 @@ void define_internal_attribute(const char *name,
        define_internal_attribute("integer", handle_integer_attribute, NULL);
 */
 
+ivalue lookup_attribute_field(nesc_attribute attr, const char *name);
+/* Returns: The initialiser for field name in attr, or NULL if it's not
+     found 
+*/
+
 bool handle_nesc_type_attribute(nesc_attribute attr, type *t);
 void handle_nesc_decl_attribute(nesc_attribute attr, data_declaration ddecl);
 void handle_nesc_field_attribute(nesc_attribute attr, field_declaration fdecl);

@@ -30,7 +30,9 @@ Boston, MA 02111-1307, USA.  */
 #include "edit.h"
 #include "c-parse.h"
 #include "semantics.h"
+#include "nesc-attributes.h"
 #include "attributes.h"
+#include "init.h"
 
 #include <errno.h>
 
@@ -593,3 +595,77 @@ data_declaration original_declaration(data_declaration d)
   return d;
 }
 
+static void attr_C_decl(nesc_attribute attr, data_declaration ddecl)
+{
+  if (!ddecl->isexternalscope)
+    error_with_location(attr->location, "`@C()' is for symbols with external scope only");
+  else
+    ddecl->Cname = TRUE;
+}
+
+static bool require_function(nesc_attribute attr, data_declaration ddecl)
+{
+  if (ddecl->kind == decl_function && ddecl->ftype == function_normal)
+    return TRUE;
+
+  error_with_location(attr->location, "`@%s()' is for external functions only", attr->word1->cstring.data);
+  return FALSE;
+}
+
+static void attr_hwevent_decl(nesc_attribute attr, data_declaration ddecl)
+{
+  if (require_function(attr, ddecl))
+    {
+      ddecl->async = TRUE;
+      ddecl->spontaneous = c_call_nonatomic;
+    }
+}
+
+static void attr_atomic_hwevent_decl(nesc_attribute attr, data_declaration ddecl)
+{
+  if (require_function(attr, ddecl))
+    {
+      ddecl->async = TRUE;
+      ddecl->spontaneous = c_call_atomic;
+    }
+}
+
+
+static void attr_spontaneous_decl(nesc_attribute attr, data_declaration ddecl)
+{
+  if (require_function(attr, ddecl))
+    {
+      /* The test avoids overriding the effect of atomic_hwevent */
+      if (!ddecl->spontaneous)
+	ddecl->spontaneous = c_call_nonatomic;
+    }
+}
+
+static void attr_combine_decl(nesc_attribute attr, data_declaration ddecl)
+{
+  ivalue fn_init = lookup_attribute_field(attr, "fn");
+  data_declaration fn_name_ddecl;
+  char *fn_name;
+
+  if (fn_init && fn_init->kind == iv_base &&
+      (fn_name_ddecl = string_ddecl(fn_init->u.base.expr)) &&
+      (fn_name = ddecl2str(parse_region, fn_name_ddecl)))
+    {
+      if (ddecl->kind == decl_typedef)
+	handle_combine_attribute(attr->location, fn_name, &ddecl->type);
+      else
+	error_with_location(attr->location, "@combine(\"function-name\") can only be used with typedef");
+    }
+  else
+    error_with_location(attr->location, "usage is @combine(\"function-name\")");
+}
+
+void init_internal_nesc_attributes(void)
+{
+  define_internal_attribute("C", NULL, attr_C_decl, NULL, NULL, NULL);
+  define_internal_attribute("hwevent", NULL, attr_hwevent_decl, NULL, NULL, NULL);
+  define_internal_attribute("atomic_hwevent", NULL, attr_atomic_hwevent_decl, NULL, NULL, NULL);
+  define_internal_attribute("spontaneous", NULL, attr_spontaneous_decl, NULL, NULL, NULL);
+  define_internal_attribute("combine", NULL, attr_combine_decl, NULL, NULL,
+			    "fn", make_pointer_type(char_type), NULL);
+}

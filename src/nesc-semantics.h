@@ -22,6 +22,10 @@ struct environment;
 
 #include "nesc-decls.h"
 
+void init_internal_nesc_attributes(void);
+/* Effects: Define internal nesC @-style attributes
+ */
+
 bool nesc_filename(const char *name);
 
 const char *element_name(region r, const char *path);

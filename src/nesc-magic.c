@@ -79,27 +79,11 @@ known_cst fold_magic(function_call fcall, int pass)
 static env unique_env;
 static region unique_region;
 
-static data_declaration string_ddecl(expression s)
-{
-  if (s->cst && constant_address(s->cst))
-    {
-      data_declaration sdecl = cval_ddecl(s->cst->cval);
-
-      /* Must be an offsetless string */
-      if (sdecl && sdecl->kind == decl_magic_string &&
-	  cval_knownbool(s->cst->cval))
-	return sdecl;
-    }
-  return NULL;
-}
-
 static unsigned int *unique_parse(const char *uname, function_call fcall)
 {
   data_declaration name_ddecl = string_ddecl(fcall->args);
   unsigned int *lastval;
-  const wchar_t *name_wstr;
   char *name_str;
-  int length_as_str;
   location loc = fcall->location;
 
   if (!name_ddecl)
@@ -108,16 +92,12 @@ static unsigned int *unique_parse(const char *uname, function_call fcall)
       return NULL;
     }
 
-  name_wstr = name_ddecl->chars;
-  length_as_str = wcs_mb_size(name_wstr);
-  if (length_as_str < 0)
+  name_str = ddecl2str(current.fileregion, name_ddecl);
+  if (!name_str)
     {
       error_with_location(loc, "can't handle this string as argument to `%s'", uname);
       return NULL;
     }
-  name_str = alloca(length_as_str);
-  length_as_str = wcstombs(name_str, name_wstr, length_as_str);
-  assert(length_as_str >= 0);
 
   lastval = env_lookup(unique_env, name_str, FALSE);
   if (!lastval)
