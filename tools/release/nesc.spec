@@ -29,7 +29,7 @@ syntax, abundant error reporting, and Java-like interfaces.
 %setup -q
 
 %build
-./configure TOSDIR=/usr/local/src/tinyos-1.x/tos/ --prefix=%{theprefix}
+./configure --prefix=%{theprefix}
 make 
 
 %install

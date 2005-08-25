@@ -50,20 +50,6 @@ if test -z "$pathperl" ; then
   AC_MSG_ERROR(I can't find perl); 
 fi
 
-if test "z$TOSDIR" = "z"; then
-  if test -d ../tos; then
-    TOSDIR=../tos
-  elif test -d ../../tos; then
-    TOSDIR=../../tos
-  elif test -d $HOME/nest/tos; then
-    TOSDIR=$HOME/nest/tos
-  else
-    AC_MSG_ERROR(I can't find the tos directory);
-  fi
-fi
-TOSDIR=`(cd $TOSDIR;pwd)`
-AC_SUBST(TOSDIR)
-
 AC_OUTPUT(
 	Makefile
 	doc/Makefile

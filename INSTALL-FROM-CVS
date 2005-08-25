@@ -6,9 +6,7 @@ gperf
 
 Directions: in this directory
 ./Bootstrap (once only after checkout)
-./configure TOSDIR=<location of your TinyOS tos directory>
-  (note: if you don't specify TOSDIR, configure will try and find a directory
-         named ../tos, then ../../tos, then $HOME/nest/tos before failing)
+./configure
 make
 
 To install:
