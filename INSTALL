@@ -9,6 +9,7 @@ To install a nesC editor mode (currently, emacs, vim, kde):
 Read <installdir>/lib/ncc/editor-modes/<your-editor-name>/readme.txt
 
 To use nesC with TinyOS, you need to install the ncc, mig, etc TinyOS
-frontends for nesC. These are found in tinyos-1.x/tools/src/ncc. Please
-follow the installation directions you find there.
+frontends for nesC. These are found in tinyos-1.x/tools/src/ncc (for TinyOS
+1.x) and in tinyos-2.x/tools (for TinyOS 2.x). Please follow the
+installation directions you find there.
 
