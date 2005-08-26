@@ -5,12 +5,12 @@
 # must be %{target}-%{version}.
 # 
 
-%define version 1.1.2b
+%define version 1.2
 %define theprefix /usr
 
 Summary: nesC compiler 
 Name: nesc
-Version: 1.1.2b
+Version: 1.2
 Release: 1
 License: GNU GPL Version 2
 Packager: TinyOS Group, UC Berkeley
