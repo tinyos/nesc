@@ -20,8 +20,6 @@ import java.util.*;
  */
 public class Xfield extends Definition
 {
-    static protected DefinitionTable defs = new DefinitionTable();
-
     /**
      * Name of the field. Note that it may not be unique (because of
      * anonymous structs/unions collapsed into the containing struct).
@@ -72,7 +70,7 @@ public class Xfield extends Definition
     }
 
     public synchronized NDElement start(Attributes attrs) {
-	Xfield me = (Xfield)defs.define(attrs.getValue("ref"), attrs, this);
+	Xfield me = (Xfield)Xnesc.defsXfield.define(attrs.getValue("ref"), attrs, this);
 	me.bitOffset = Constant.decode(attrs.getValue("bit-offset"));
 	me.packed = boolDecode(attrs.getValue("packed"));
 	String s = attrs.getValue("size");
@@ -86,7 +84,7 @@ public class Xfield extends Definition
     }
 
     static synchronized Definition lookup(NDReader reader, Attributes attrs) {
-	return defs.lookup(reader, attrs.getValue("ref"), attrs, "field");
+	return Xnesc.defsXfield.lookup(reader, attrs.getValue("ref"), attrs, "field");
     }
 
     public void child(NDElement subElement) {

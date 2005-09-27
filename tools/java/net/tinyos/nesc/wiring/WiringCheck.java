@@ -118,7 +118,7 @@ public class WiringCheck
     }
 
     void checkWiring() {
-	ListIterator toCheck = Xinterfaces.list.listIterator();
+	ListIterator toCheck = Xnesc.interfaceList.listIterator();
 
 	while (toCheck.hasNext()) {
 	    int min = -1, max = -1;

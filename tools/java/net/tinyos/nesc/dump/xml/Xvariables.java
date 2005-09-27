@@ -19,10 +19,8 @@ import java.util.*;
  */
 public class Xvariables extends NDList
 {
-    public static LinkedList/*Xvariable*/ list;
-
     public NDElement end() {
-	list = l;
+        Xnesc.variableList = l;
 	return this;
     }
 }

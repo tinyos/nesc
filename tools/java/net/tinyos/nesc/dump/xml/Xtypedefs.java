@@ -19,10 +19,8 @@ import java.util.*;
  */
 public class Xtypedefs extends NDList
 {
-    public static LinkedList/*Xtypedef*/ list;
-
     public NDElement end() {
-	list = l;
+        Xnesc.typedefList = l;
 	return this;
     }
 }

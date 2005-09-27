@@ -13,6 +13,8 @@ package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
 
+import java.util.*;
+
 /**
  * Top-level XML dump element. Doesn't do anything useful, see the elements
  * which can be embedded here to actually get at the dumped information.
@@ -24,4 +26,33 @@ import org.xml.sax.*;
  */
 public class Xnesc extends NDElement
 {
+    public static LinkedList/*Xinterface*/ interfaceList;
+    public static LinkedList/*Xcomponent*/ componentList;
+    public static LinkedList/*Xconstant*/ constantList;
+    public static LinkedList/*Xfunction*/ functionList;
+    public static LinkedList/*Xinterfacedef*/ interfacedefList;
+    public static LinkedList/*TagDefinition*/ tagList;
+    public static LinkedList/*Xtypedef*/ typedefList;
+    public static LinkedList/*Xvariable*/ variableList;
+
+    public static DefinitionTable defsDataDefinition = new DefinitionTable();
+    public static DefinitionTable defsNescDefinition = new DefinitionTable();
+    public static DefinitionTable defsTagDefinition = new DefinitionTable();
+    public static DefinitionTable defsXfield = new DefinitionTable();
+    
+    public static void reset() {
+        interfaceList = null;
+        componentList = null;
+        constantList = null;
+        functionList = null;
+        interfacedefList = null;
+        tagList = null;
+        typedefList = null;
+        variableList = null;
+
+        defsDataDefinition = new DefinitionTable();
+        defsNescDefinition = new DefinitionTable();
+        defsTagDefinition = new DefinitionTable();
+        defsXfield = new DefinitionTable();
+    }
 }

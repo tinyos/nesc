@@ -19,10 +19,8 @@ import java.util.*;
  */
 public class Xconstants extends NDList
 {
-    public static LinkedList/*Xconstant*/ list;
-
     public NDElement end() {
-	list = l;
+        Xnesc.constantList = l;
 	return this;
     }
 }

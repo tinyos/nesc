@@ -20,8 +20,6 @@ import java.util.*;
  */
 abstract public class NescDefinition extends Definition
 {
-    static protected DefinitionTable defs = new DefinitionTable();
-
     /**
      * Name of this nesC component or interface definition. For instances
      * of generic components, this is the full instantiation path. Globally
@@ -35,12 +33,12 @@ abstract public class NescDefinition extends Definition
     }
 
     public synchronized NDElement start(Attributes attrs) {
-	return defs.define(attrs.getValue("qname"), attrs, this);
+	return Xnesc.defsNescDefinition.define(attrs.getValue("qname"), attrs, this);
     }
 
     static synchronized Definition lookup(Attributes attrs, NDReader reader,
 					  String elementName) {
-	return defs.lookup(reader, attrs.getValue("qname"), attrs, elementName);
+	return Xnesc.defsNescDefinition.lookup(reader, attrs.getValue("qname"), attrs, elementName);
     }
 
     public String toString() {

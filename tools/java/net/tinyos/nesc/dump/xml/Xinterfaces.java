@@ -19,10 +19,8 @@ import java.util.*;
  */
 public class Xinterfaces extends NDList
 {
-    public static LinkedList/*Xinterface*/ list;
-
     public NDElement end() {
-	list = l;
+        Xnesc.interfaceList = l;
 	return this;
     }
 }

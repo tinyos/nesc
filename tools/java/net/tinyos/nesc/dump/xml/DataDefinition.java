@@ -22,8 +22,6 @@ import java.util.*;
  */
 abstract public class DataDefinition extends CDefinition
 {
-    static protected DefinitionTable defs = new DefinitionTable();
-
     /**
      * Name of this object. Not globally unique.
      */
@@ -47,12 +45,12 @@ abstract public class DataDefinition extends CDefinition
     }
 
     public synchronized NDElement start(Attributes attrs) {
-	return defs.define(attrs.getValue("ref"), attrs, this);
+	return Xnesc.defsDataDefinition.define(attrs.getValue("ref"), attrs, this);
     }
 
     static synchronized Definition lookup(NDReader reader, Attributes attrs, 
 					  String elementName) {
-	return defs.lookup(reader, attrs.getValue("ref"), attrs, elementName);
+	return Xnesc.defsDataDefinition.lookup(reader, attrs.getValue("ref"), attrs, elementName);
     }
 
     public void child(NDElement subElement) {

@@ -19,10 +19,8 @@ import java.util.*;
  */
 public class Xfunctions extends NDList
 {
-    public static LinkedList/*Xfunction*/ list;
-
     public NDElement end() {
-	list = l;
+        Xnesc.functionList = l;
 	return this;
     }
 }

@@ -19,10 +19,8 @@ import java.util.*;
  */
 public class Xtags extends NDList
 {
-    public static LinkedList/*TagDefinition*/ list;
-
     public NDElement end() {
-	list = l;
+        Xnesc.tagList = l;
 	return this;
     }
 }

@@ -42,7 +42,9 @@ public class Xinterface extends DataDefinition
     public LinkedList/*Xfunction*/ functions;
 
     public NDElement start(Attributes attrs) {
-	Xinterface me = (Xinterface)super.start(attrs);
+	
+    NDElement temp = super.start(attrs);
+    Xinterface me = (Xinterface) temp;
 	me.provided = attrs.getValue("provided").equals("1");
 	return me;
     }

@@ -18,13 +18,8 @@ import java.util.*;
  */
 public class Xcomponents extends NDList
 {
-    /**
-     * The list of all components in the dump.
-     */
-    public static LinkedList/*Xcomponent*/ list;
-
     public NDElement end() {
-	list = l;
+        Xnesc.componentList = l;
 	return this;
     }
 }
