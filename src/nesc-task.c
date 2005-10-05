@@ -90,6 +90,7 @@ static void declare_scheduler_interface(data_declaration task_decl)
   word task_name;
   interface_ref task_interface;
   rp_interface task_uses;
+  int osection;
 
   /* We save the task's replacement interface in its interface field... */
   if (task_decl->interface)
@@ -100,8 +101,10 @@ static void declare_scheduler_interface(data_declaration task_decl)
   task_name = new_word(r, loc, str2cstring(r, task_decl->name));
   task_interface = new_interface_ref(r, loc, make_scheduler_interfacedef_name(loc),
 				     NULL, task_name, NULL, NULL, NULL);
+  osection = current.spec_section;
   current.spec_section = spec_uses;
   declare_interface_ref(task_interface, NULL, current.container->env, NULL);
+  current.spec_section = osection;
   task_decl->interface = task_interface->ddecl;
 
   /* Build the 'uses <interface>' AST, add it to the component */
