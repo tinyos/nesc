@@ -338,7 +338,7 @@ static void dump_ndecl_doc(nesc_declaration ndecl)
     nxml_doc(ndecl->short_docstring, ndecl->long_docstring, ndecl->ast->location);
 }
 
-static void do_wiring(cgraph cg, cgraph userg)
+static void do_wiring(int wiring, cgraph cg, cgraph userg)
 {
   if (wiring == wiring_functions)
     dump_wiring(cg);
@@ -370,7 +370,7 @@ static void dump_component(void *entry)
   dump_attributes(comp->attributes);
 
   if (comp->configuration && configuration_wiring)
-    do_wiring(comp->connections, comp->user_connections);
+    do_wiring(wiring_user, comp->connections, comp->user_connections);
 
   if (component_declarations)
     {
@@ -789,7 +789,7 @@ void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
      This repeated collection of items is supported by the xml_list type
      (from nesc-xml.c) */
   xml_start_dummy();
-  do_wiring(cg, userg);
+  do_wiring(wiring, cg, userg);
   for (;;)
     {
       do_lists();
@@ -819,7 +819,7 @@ void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
   xml_attr("xmlns", "http://www.tinyos.net/nesC");
   xml_tag_end(); xnewline();
 
-  do_wiring(cg, userg);
+  do_wiring(wiring, cg, userg);
   do_lists();
 
   indentedtag_pop();
