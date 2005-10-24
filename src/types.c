@@ -2037,6 +2037,7 @@ type make_network_base_type(data_declaration def)
   type nt = copy_type(def->type);
 
   nt->network = TRUE;
+  nt->alignment = make_type_cval(1);
   nt->basedecl = def;
 
   return nt;
