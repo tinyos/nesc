@@ -5,7 +5,9 @@
 </head>
 <body>
 <h1>Debugging nesC code with the AVR JTAG ICE</h1>
-The Atmel ATMEGA 128 processor offers in-circuit debugging through its
+<i>Note: we do not currently support the JTAG ICE mkII from Atmel.</i>
+
+<p>The Atmel ATMEGA 128 processor offers in-circuit debugging through its
 JTAG interface. This document explains how to setup your environment to
 allow gdb to be used with mica motes.&nbsp; A separate document, <a
  href="nesc-debugging.html">here</a>, describes how to debug nesC
@@ -54,7 +56,12 @@ You can clear this bit by passing the <span
 e.g., if using parallel port programming:<br>
 &nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">uisp
 -dprog=dapa --wr_fuse_h=19<br>
-    </span>Note that you may have to disable JTAG when using
+    </span>
+or, if using the MIB510 serial programming board,<br>
+&nbsp;&nbsp;&nbsp; <span style="font-family: monospace;">uisp
+-dprog=mib510 -dserial=/dev/ttys<i>N</I> -dpart=ATmega128 --wr_fuse_h=19<br>
+    </span>
+Note that you may have to disable JTAG when using
 sensorboards that use ADC4-ADC7, by passing the <span
  style="font-family: monospace;">--wr_fuse_h=59</span> option to uisp.<br>
   </li>
@@ -84,7 +91,7 @@ debugging environment. Please refer to the man pages for ice-gdb and
 ice-insight for more options.
 <hr>
 <address> <a href="mailto:szewczyk@cs.berkeley.edu">Robert Szewczyk</a>,
-13 Mar 2003, <a href="mailto:dgay@intle-research.net">David Gay</a>,
+13 Mar 2003, <a href="mailto:david.e.gay@intel.com">David Gay</a>,
 21 August 2003 </address>
 </body>
 </html>
