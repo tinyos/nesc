@@ -110,7 +110,7 @@ static void instantiate_ddecl_types(data_declaration ddecl)
 }
 
 static data_declaration hack_interface;
-static bool hack_required;
+static int hack_required;
 
 static void clone_ddecl(data_declaration ddecl)
 {
@@ -141,8 +141,11 @@ static void clone_ddecl(data_declaration ddecl)
   copy->shadowed = ddecl;
   copy->container = current.container;
   copy->interface = hack_interface;
-  if (ddecl_is_command_or_event(copy))
-    copy->defined = (copy->ftype == function_command) ^ hack_required;
+  /* This hack_required thing is ugly. It's used when instantiating
+     generic interfaces, to match the used/provides at the particular
+     instantiation. */
+  if (ddecl_is_command_or_event(copy) && hack_required)
+    copy->defined = (copy->ftype == function_command) ^ (hack_required - 1);
   instantiate_ddecl_types(copy);
 }
 
@@ -1254,9 +1257,9 @@ nesc_declaration interface_copy(region r, interface_ref iref,
 
   copy = nesc_declaration_copy(r, intf, iref->args, copy_is_abstract,
 			       iref->ddecl);
-  hack_required = iref->ddecl->required;
+  hack_required = 1 + iref->ddecl->required;
   copy->ast = CAST(nesc_decl, instantiate_ast_list(r, CAST(node, intf->ast)));
-  hack_required = FALSE;
+  hack_required = 0;
   hack_interface = NULL;
   current = old;
   
