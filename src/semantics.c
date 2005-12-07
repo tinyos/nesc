@@ -145,6 +145,7 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->async_access = dd->async_write = FALSE;
   dd->norace = FALSE;
   dd->instantiation = NULL;
+  dd->instanceof = NULL;
   dd->call_contexts = dd->extra_contexts = 0;
   dd->printed = FALSE;
   dd->dumped = FALSE;
@@ -274,6 +275,7 @@ tag_declaration declare_tag_env(environment env, tag_ref t)
   tdecl->size_cc = FALSE;
   tdecl->container = NULL;
   tdecl->dumped = FALSE;
+  tdecl->instanceof = NULL;
 #endif
 
   if (name)

@@ -87,6 +87,7 @@ typedef struct tag_declaration {
   /* In abstract configurations or modules: The latest instantiation
      of this declaration */
   struct tag_declaration *instantiation;
+  struct tag_declaration *instanceof; /* Inside instantiated components: what this tag is an instance of */
 } *tag_declaration;
 
 typedef enum { decl_variable, decl_constant, decl_function,
@@ -118,6 +119,7 @@ struct data_declaration {
   /* In abstract configurations or modules: The latest instantiation
      of this declaration */
   struct data_declaration *instantiation;
+  struct data_declaration *instanceof; /* Inside instantiated components: what this decl is an instance of */
 
   /* interface/module/configuration this declaration belongs to.
      NULL for declarations from C files */

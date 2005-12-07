@@ -138,7 +138,7 @@ static void clone_ddecl(data_declaration ddecl)
   copy->instantiation = NULL;
   copy->fn_uses = NULL;
   copy->nuses = NULL;
-  copy->shadowed = ddecl;
+  copy->instanceof = ddecl;
   copy->container = current.container;
   copy->interface = hack_interface;
   /* This hack_required thing is ugly. It's used when instantiating
@@ -197,7 +197,7 @@ static void forward_tdecl(region r, tag_ref tref)
   copy->reptype = tdecl->reptype;
   if (tdecl->defined)
     copy_fields(r, copy, tdecl);
-  copy->shadowed = tdecl;
+  copy->instanceof = tdecl;
   copy->defined = tdecl->defined;
   copy->fields_const = tdecl->fields_const;
   copy->fields_volatile = tdecl->fields_volatile;
@@ -623,9 +623,9 @@ static void set_ddecl_instantiation1(data_declaration fndecl, void *data)
      (the copy from the actual interface type) point to fndecl.
      We may have to go two deep for abstract modules in abstract
      configurations (but don't get fooled by generic interfaces) */
-  orig = fndecl->shadowed;
-  if (orig->shadowed && orig->shadowed->container->kind == l_component)
-    orig = orig->shadowed;
+  orig = fndecl->instanceof;
+  if (orig->instanceof && orig->instanceof->container->kind == l_component)
+    orig = orig->instanceof;
 
   orig->instantiation = fndecl;
 }
@@ -639,14 +639,6 @@ static void set_env_instantiations(environment env)
   env_scan(env->id_env, &scan);
   while (env_next(&scan, &name, &entry))
     set_ddecl_instantiation1(entry, NULL);
-#if 0
-    {
-      data_declaration ddecl = entry, orig = original_declaration(ddecl);
-
-      assert(ddecl != orig);
-      orig->instantiation = ddecl;
-    }
-#endif
 }
 
 static void set_specification_instantiations(nesc_declaration component)
@@ -658,7 +650,7 @@ static void set_specification_instantiations(nesc_declaration component)
      Also instantiate the types in the copies
 
      The original data_declarations can be found by following the
-     shadowed fields. We may have to follow these one deep (abstract
+     instanceof fields. We may have to follow these one deep (abstract
      modules in configurations) or two deep (abstract modules in
      abstract configurations)...
 */
@@ -669,7 +661,7 @@ static void set_specification_instantiations(nesc_declaration component)
 static void set_ddecl_instantiation2(data_declaration fndecl, void *data)
 {
   /* We just make the decl fndecl is a copy of point back to fndecl */
-  fndecl->shadowed->instantiation = fndecl;
+  fndecl->instanceof->instantiation = fndecl;
 }
 
 static void set_specification_instantiations_shallow(nesc_declaration component)

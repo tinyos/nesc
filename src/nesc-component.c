@@ -127,7 +127,7 @@ void copy_interface_functions(region r, nesc_declaration container,
       fncopy = declare(icopy, fndecl, FALSE);
       fncopy->fn_uses = NULL;
       fncopy->nuses = NULL;
-      fncopy->shadowed = fndecl;
+      fncopy->instanceof = fndecl;
       fncopy->container = container;
       fncopy->interface = iref;
       /* required events and provided commands are defined */

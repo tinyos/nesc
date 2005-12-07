@@ -114,7 +114,6 @@ declaration declare_type_parameter(location l, cstring id, attribute attribs,
 expression make_type_argument(asttype t);
 
 nesc_declaration original_component(nesc_declaration c);
-data_declaration original_declaration(data_declaration d);
 
 /* Some macros to make nesc_error easier to deal with */
 #define nesc_warning (nesc_error ? error : warning)
