@@ -33,6 +33,10 @@ abstract public class Constant
      * @return An object representing the constant encoded by s
      */
     public static Constant decode(String s) {
+	/* Constants un in generic components don't have a known value */
+	if (s == null)
+	    return new UnknownConstant();
+
 	switch (s.charAt(0)) {
 	case 'I': return new IntegerConstant(s);
 	case 'F': return new FloatConstant(s);

@@ -66,10 +66,10 @@ abstract public class Definition extends NDElement
      */
     public boolean definitionAvailable;
 
-    /* (definition only) The attributes on this nesC object */
+    /** (definition only) The attributes on this nesC object */
     public LinkedList/*Xattribute_value*/ attributes;
 
-    /* (definition only) The source code location where this object
+    /** (definition only) The source code location where this object
        is defined. May be null. */
     public Location location;
 
