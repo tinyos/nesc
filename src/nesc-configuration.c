@@ -116,7 +116,7 @@ void connect_interface(location l, cgraph cg, cgraph userg,
   const char *fnname;
   void *fnentry;
 
-  if (reverse)
+  if (to.interface->required ^ reverse)
     connect_userg(l, userg, to, from);
   else
     connect_userg(l, userg, from, to);
