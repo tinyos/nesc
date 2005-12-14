@@ -141,9 +141,9 @@ public class WiringCheck
 	    WiringNode checkNode = Xwiring.wg.lookup(check1);
 
 	    if (providing)
-		reported = check1Wire(new WiringScanForwards(checkNode), min, max);
+		reported = check1Wire(new WiringScanBackwards(checkNode), min, max);
 	    if (using && !reported)
-		check1Wire(new WiringScanBackwards(checkNode), min, max);
+		check1Wire(new WiringScanForwards(checkNode), min, max);
 	}
     }
 
