@@ -63,8 +63,6 @@ public class WiringCheck
 	int count = 0;
 	WiringScan temp = null;
 
-	//System.err.println("fcount " + count + " @ " + position);
-
 	while (out.hasNext()) {
 	    Xwire e = (Xwire)out.next();
 
@@ -78,6 +76,8 @@ public class WiringCheck
 		count += count(temp);
 	    }
 	}
+	//System.err.println("fcount " + count + " @ " + position);
+
 	return count;
     }
 
@@ -140,6 +140,7 @@ public class WiringCheck
 	    boolean using = contains(check1, !check1.provided);
 	    WiringNode checkNode = Xwiring.wg.lookup(check1);
 
+	    //System.err.println("min " + min + ", max " + max + " " + providing + " " + using);
 	    if (providing)
 		reported = check1Wire(new WiringScanBackwards(checkNode), min, max);
 	    if (using && !reported)
