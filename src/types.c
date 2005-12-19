@@ -893,7 +893,11 @@ bool type_equal_unqualified(type t1, type t2)
   /* sameregion, traditional and parentptr qualifiers must always match */
   if ((t1->qualifiers & ~(const_qualifier | volatile_qualifier | restrict_qualifier | transparent_qualifier)) !=
       (t2->qualifiers & ~(const_qualifier | volatile_qualifier | restrict_qualifier | transparent_qualifier)))
-    return 0;
+    return FALSE;
+
+  /* Network base types are identified by their declaration */
+  if (t1->basedecl || t2->basedecl)
+    return t1->basedecl == t2->basedecl;
 
   switch (t1->kind)
     {
@@ -1142,6 +1146,10 @@ bool type_compatible_unqualified(type t1, type t2)
   if ((t1->qualifiers & ~(const_qualifier | volatile_qualifier | restrict_qualifier | transparent_qualifier)) !=
       (t2->qualifiers & ~(const_qualifier | volatile_qualifier | restrict_qualifier | transparent_qualifier)))
     return 0;
+
+  /* Network base types are identified by their declaration */
+  if (t1->basedecl || t2->basedecl)
+    return t1->basedecl == t2->basedecl;
 
   switch (t1->kind)
     {
