@@ -59,6 +59,16 @@ extern type error_type;
 
 void init_types(void);
 
+void set_typedef_type(data_declaration def, bool network);
+/* Requires: def->kind == decl_typedef
+   Effects: Sets def's type to remember the typedef it comes from
+     If network is true, the type becomes a network base type
+*/
+
+data_declaration type_typedef(type t);
+/* Returns: the typedef t comes from, or NULL if none
+*/
+
 /* Build types */
 
 /* Return the 'complex t' version of basic type t (one of the integral or
@@ -245,16 +255,6 @@ type make_generic_type(type t, typelist argtypes);
 
 type make_combiner_type(type t, data_declaration combiner);
 data_declaration type_combiner(type t);
-
-type make_network_base_type(data_declaration def);
-/* Requires: def->kind == decl_typedef
-   Effects: Makes a network base type based on the typedef 'def'
-*/
-
-data_declaration type_network_base_decl(type t);
-/* Requires: type_network_base_type(t)
-   Returns: t's definition
-*/
 
 bool type_network_base_type(type t);
 bool type_network(type t);

@@ -2698,9 +2698,8 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
   if (type_task(ddecl->type) && flag_use_scheduler)
     handle_task_declaration(vd);
 
-  /* XXX: Ugly hack. */
-  if (ddecl->basetype)
-    ddecl->type = make_network_base_type(ddecl);
+  if (ddecl->kind == decl_typedef)
+    set_typedef_type(ddecl, ddecl->basetype != NULL);
 
   set_doc_string(vd->ddecl, short_docstring, long_docstring, doc_location);
 

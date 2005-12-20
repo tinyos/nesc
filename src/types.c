@@ -896,7 +896,7 @@ bool type_equal_unqualified(type t1, type t2)
     return FALSE;
 
   /* Network base types are identified by their declaration */
-  if (t1->basedecl || t2->basedecl)
+  if (type_network_base_type(t1) || type_network_base_type(t2))
     return t1->basedecl == t2->basedecl;
 
   switch (t1->kind)
@@ -1148,7 +1148,7 @@ bool type_compatible_unqualified(type t1, type t2)
     return 0;
 
   /* Network base types are identified by their declaration */
-  if (t1->basedecl || t2->basedecl)
+  if (type_network_base_type(t1) || type_network_base_type(t2))
     return t1->basedecl == t2->basedecl;
 
   switch (t1->kind)
@@ -1646,7 +1646,7 @@ void type2ast(region r, location loc, type t, declarator inside,
 
   /* A network base type uses its typedef name (it is effectively a new
      type, not a typedef) */
-  if (t->basedecl)
+  if (type_network_base_type(t))
     {
       typename tname = new_typename(r, loc, t->basedecl);
 
@@ -2037,32 +2037,33 @@ data_declaration type_combiner(type t)
   return t->combiner;
 }
 
-type make_network_base_type(data_declaration def)
+void set_typedef_type(data_declaration def, bool network)
 /* Requires: def->kind == decl_typedef
-   Effects: Makes a network base type based on the typedef 'def'
+   Effects: Sets def's type to remember the typedef it comes from
+     If network is true, the type becomes a network base type
 */
 {
   type nt = copy_type(def->type);
 
-  nt->network = TRUE;
-  nt->alignment = make_type_cval(1);
+  if (network)
+    {
+      nt->network = TRUE;
+      nt->alignment = make_type_cval(1);
+    }
   nt->basedecl = def;
-
-  return nt;
+  def->type = nt;
 }
 
-data_declaration type_network_base_decl(type t)
-/* Requires: type_network_base_type(t)
-   Returns: t's definition
+data_declaration type_typedef(type t)
+/* Returns: the typedef t comes from, or NULL if none
 */
 {
-  assert(type_network_base_type(t));
   return t->basedecl;
 }
 
 bool type_network_base_type(type t)
 {
-  return t->basedecl != NULL;
+  return t->basedecl && t->network;
 }
 
 type type_network_platform_type(type t)
@@ -2070,7 +2071,8 @@ type type_network_platform_type(type t)
    Returns: t's non-network base type
 */
 {
-  return type_network_base_decl(t)->basetype;
+  assert(type_network_base_type(t));
+  return type_typedef(t)->basetype;
 }
 
 /* Type variables */
@@ -2342,9 +2344,21 @@ const char *type_name(region r, type t)
     return prefix;
 }
 
+static void nxml_typedef(data_declaration tdef)
+{
+  xindent();
+  xstartline();
+  xml_tag("typedef");
+  nxml_ddecl_ref(tdef);
+  xml_pop();
+  xnewline();
+  xunindent();
+}
+
 void nxml_type(type t)
 {
   type_quals quals = type_qualifiers(t) & (const_qualifier | volatile_qualifier | restrict_qualifier);
+  data_declaration tdef = type_typedef(t);
 
   xstartline();
 
@@ -2357,6 +2371,11 @@ void nxml_type(type t)
 #undef Q
       xml_tag_end();
       xnewline();
+      if (tdef)
+	{
+	  nxml_typedef(tdef);
+	  tdef = NULL;
+	}
     }
     
   switch (t->kind)
@@ -2417,20 +2436,20 @@ void nxml_type(type t)
   switch (t->kind)
     {
     default:
-      xml_tag_end_pop();
+      xml_tag_end();
       break;
 
     case tk_pointer: 
       xml_tag_end();
       xnewline(); xindent();
       nxml_type(t->u.pointsto);
-      xunindent(); xml_pop();
+      xunindent();
       break;
     case tk_array:
       xml_tag_end();
       xnewline(); xindent();
       nxml_type(t->u.array.arrayof);
-      xunindent(); xml_pop();
+      xunindent();
       break;
     case tk_function:
       xml_tag_end();
@@ -2438,29 +2457,28 @@ void nxml_type(type t)
       nxml_type(t->u.fn.returns);
       if (!t->u.fn.oldstyle)
 	nxml_typelist("function-parameters", t->u.fn.argtypes);
-      xunindent(); xml_pop();
+      xunindent();
       break;
     case tk_tagged:
       xml_tag_end();
       nxml_tdecl_ref(t->u.tag);
-      xml_pop();
       break;
     case tk_iref:
       xml_tag_end();
       nxml_ddecl_ref(t->u.iref);
-      xml_pop();
       break;
     case tk_cref:
       xml_tag_end();
       nxml_ddecl_ref(t->u.cref);
-      xml_pop();
       break;
     case tk_variable:
       xml_tag_end();
       nxml_ddecl_ref(t->u.tdecl);
-      xml_pop();
       break;
     }
+  if (tdef)
+    nxml_typedef(tdef);
+  xml_pop();
   xnewline();
 
   if (quals)

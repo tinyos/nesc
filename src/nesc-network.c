@@ -35,12 +35,12 @@ static void xtox_used(data_declaration transcoderfn, function_decl fn)
 
 static void hton_used(type t, function_decl fn)
 {
-  xtox_used(type_network_base_decl(t)->encoder, fn);
+  xtox_used(type_typedef(t)->encoder, fn);
 }
 
 static void ntoh_used(type t, function_decl fn)
 {
-  xtox_used(type_network_base_decl(t)->decoder, fn);
+  xtox_used(type_typedef(t)->decoder, fn);
 }
 
 static void validate_network_lvalue(expression e)
@@ -161,12 +161,12 @@ void handle_network_types(declaration decls)
 
 static void output_hton(type t)
 {
-  output_string(type_network_base_decl(t)->encoder->name);
+  output_string(type_typedef(t)->encoder->name);
 }
 
 static void output_ntoh(type t)
 {
-  output_string(type_network_base_decl(t)->decoder->name);
+  output_string(type_typedef(t)->decoder->name);
 }
 
 static bool prt_network_assignment(expression e)

@@ -46,7 +46,7 @@ static void dump_type(type t)
     }
 
   if (type_network_base_type(t))
-    printf("N%s", type_network_base_decl(t)->name);
+    printf("N%s", type_typedef(t)->name);
   /* Enums treated as ints for now */
   else if (type_integer(t))
     if (type_unsigned(t))

@@ -185,8 +185,14 @@ void dump_ddecl(data_declaration ddecl)
       indentedtag_start("function");
       switch (ddecl->ftype)
 	{
-	case function_event: xml_attr_noval("event"); break;
-	case function_command: xml_attr_noval("command"); break;
+	case function_event:
+	  xml_attr_noval("event");
+	  xml_attr_int("provided", ddecl->defined);
+	  break;
+	case function_command:
+	  xml_attr_noval("command");
+	  xml_attr_int("provided", ddecl->defined);
+	  break;
 	default: break;
 	}
       break;
@@ -272,13 +278,18 @@ static void dump_parameter(declaration parm)
       data_decl data = CAST(data_decl, parm);
       variable_decl vdecl = CAST(variable_decl, data->decls);
 
-
       pdecl = vdecl->ddecl;
     }
-  if (is_ellipsis_decl(parm))
+  else if (is_ellipsis_decl(parm))
     {
       xml_qtag("varargs");
       xnewline();
+    }
+  else if (is_type_parm_decl(parm))
+    {
+      type_parm_decl tp = CAST(type_parm_decl, parm);
+
+      pdecl = tp->ddecl;
     }
   if (pdecl)
     dump_ddecl(pdecl);
