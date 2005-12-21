@@ -759,7 +759,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	    }
 	  break;
 	case kind_struct_ref: case kind_union_ref: case kind_enum_ref:
-	case kind_nw_struct_ref: case kind_nw_union_ref:
+	case kind_nx_struct_ref: case kind_nx_union_ref:
 	  newtype = make_tagged_type(CAST(tag_ref, spec)->tdecl);
 	  break;
 	case kind_attribute_ref:
@@ -2699,7 +2699,22 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
     handle_task_declaration(vd);
 
   if (ddecl->kind == decl_typedef)
-    set_typedef_type(ddecl, ddecl->basetype != NULL);
+    {
+      /* typedefs of network base types need to copy the base type
+	 information (encoder, decoder, basetype) as we're overwriting
+	 the "basedecl" field in the type (we could avoid this by
+	 separating "decl for typedef" and "decl for network base type"
+	 in the type structure) */
+      if (type_network_base_type(ddecl->type) && ddecl->basetype == NULL)
+	{
+	  data_declaration nxbasedecl = type_typedef(ddecl->type);
+
+	  ddecl->basetype = nxbasedecl->basetype;
+	  ddecl->encoder = nxbasedecl->encoder;
+	  ddecl->decoder = nxbasedecl->decoder;
+	}
+      set_typedef_type(ddecl, ddecl->basetype != NULL);
+    }
 
   set_doc_string(vd->ddecl, short_docstring, long_docstring, doc_location);
 
@@ -2976,9 +2991,9 @@ cval check_bitfield_width(field_declaration fdecl)
   return bitwidth;
 }
 
-static bool is_nw_tag(tag_declaration tdecl)
+static bool is_nx_tag(tag_declaration tdecl)
 {
-  return tdecl->kind == kind_nw_struct_ref || tdecl->kind == kind_nw_union_ref;
+  return tdecl->kind == kind_nx_struct_ref || tdecl->kind == kind_nx_union_ref;
 }
 
 /* Finish definition of struct/union furnishing the fields and attribs.
@@ -2991,7 +3006,7 @@ void layout_struct(tag_declaration tdecl)
   field_declaration fdecl;
   declaration dlist;
   field_decl flist;
-  bool isnetwork = is_nw_tag(tdecl);
+  bool isnetwork = is_nx_tag(tdecl);
 
   offset = size = make_type_cval(0);
   alignment = cval_bitsperbyte;
@@ -3155,7 +3170,7 @@ type_element finish_struct(type_element t, declaration fields,
   bool hasmembers = FALSE;
   field_declaration *nextfield = &tdecl->fieldlist;
   declaration fdecl;
-  bool isnetwork = is_nw_tag(tdecl);
+  bool isnetwork = is_nx_tag(tdecl);
 
   s->fields = fields;
   s->attributes = attribs;
@@ -3181,7 +3196,7 @@ type_element finish_struct(type_element t, declaration fields,
 	    error_with_location(floc, "anonymous field has incomplete type");
 	  else if (anon_tdecl->name)
 	    warning_with_location(floc, "declaration does not declare anything");
-	  else if (isnetwork && !is_nw_tag(anon_tdecl))
+	  else if (isnetwork && !is_nx_tag(anon_tdecl))
 	    error_with_location(floc, "field `%s' must be a network type",
 				nice_field_name(NULL));
 	  else

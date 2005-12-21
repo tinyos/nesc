@@ -1067,7 +1067,7 @@ void prt_tag_ref(tag_ref tr, pte_options options)
   /* We just print attributes as structs, with a prefix on the name
      (__nesc_attr_). They will be ignored by the C compiler. */
   set_location(tr->location);
-  /* There's a #define for nw_struct, nw_union in the header (this is not
+  /* There's a #define for nx_struct, nx_union in the header (this is not
      an issue as these are keywords) */
   if (tr->kind == kind_attribute_ref)
     output("struct ");

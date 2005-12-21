@@ -84,8 +84,8 @@ union, UNION, NORID
 unsigned, TYPESPEC, RID_UNSIGNED
 void, TYPESPEC, RID_VOID
 while, WHILE, NORID
-nx_union, NW_UNION, NORID
-nx_struct, NW_STRUCT, NORID
+nx_union, NX_UNION, NORID
+nx_struct, NX_STRUCT, NORID
 
 define(K, `$1, $2, $3')
 include(nesc-keywords.h)

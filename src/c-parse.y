@@ -219,7 +219,7 @@ void yyerror();
 /* nesC reserved words */
 %token <u.itoken> ATOMIC USES INTERFACE COMPONENTS PROVIDES MODULE 
 %token <u.itoken> INCLUDES CONFIGURATION AS TASTNIOP IMPLEMENTATION CALL 
-%token <u.itoken> SIGNAL POST GENERIC NEW NW_STRUCT NW_UNION
+%token <u.itoken> SIGNAL POST GENERIC NEW NX_STRUCT NX_UNION
 /* words reserved for nesC's future. Some may never be used... */
 %token <u.itoken> ABSTRACT COMPONENT EXTENDS
 
@@ -2009,8 +2009,8 @@ structdef:
 structkind:
 	  STRUCT { $$ = $1; $$.i = kind_struct_ref; }
 	| UNION { $$ = $1; $$.i = kind_union_ref; }
-	| NW_STRUCT { $$ = $1; $$.i = kind_nw_struct_ref; }
-	| NW_UNION { $$ = $1; $$.i = kind_nw_union_ref; }
+	| NX_STRUCT { $$ = $1; $$.i = kind_nx_struct_ref; }
+	| NX_UNION { $$ = $1; $$.i = kind_nx_union_ref; }
 	;
 
 maybecomma:

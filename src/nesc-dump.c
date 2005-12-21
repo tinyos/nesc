@@ -360,14 +360,14 @@ static void do_wiring(int wiring, cgraph cg, cgraph userg)
 static void dump_component(void *entry)
 {
   nesc_declaration comp = entry;
-
-  /* We're not supposed to dump partially instantiated components
-     (i.e., generic components created inside generic configurations) */
-  assert(!(comp->original && comp->abstract));
+  /* Partially instantiated components (i.e., generic components created
+     inside generic configurations) need some special handling */
+  bool partially_instantiated = comp->original && comp->abstract;
 
   indentedtag_start("component");
   xml_attr("qname", comp->instance_name);
   xml_attr_loc(comp->ast->location);
+  xml_attr_bool("abstract", comp->abstract);
   xml_tag_end();
   xnewline();
 
@@ -375,15 +375,15 @@ static void dump_component(void *entry)
 
   if (comp->original)
     nxml_instance(comp);
-  if (comp->abstract)
+  else if (comp->abstract) /* not for partially instantiated components */
     dump_parameters("parameters", comp->parameters);
   xml_qtag(comp->configuration ? "configuration" : "module");
   dump_attributes(comp->attributes);
 
-  if (comp->configuration && configuration_wiring)
+  if (comp->configuration && configuration_wiring && !partially_instantiated)
     do_wiring(wiring_user, comp->connections, comp->user_connections);
 
-  if (component_declarations)
+  if (component_declarations && !partially_instantiated)
     {
     }
 

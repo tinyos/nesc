@@ -38,7 +38,7 @@ struct type
 	 tk_pointer, tk_function, tk_array, tk_iref, tk_variable,
 	 tk_cref } kind;
   type_quals qualifiers;
-  bool network;
+  enum { nx_no, nx_base, nx_derived } network;
   data_declaration combiner, basedecl;
 
   /* size is not used for aggregate types
@@ -214,7 +214,7 @@ static type new_type(int kind)
 
   nt->kind = kind;
   /*nt->qualifiers = 0;
-    nt->network = FALSE;
+    nt->network = nx_no;
     nt->size = nt->alignment = 0;
     nt->combiner = nt->basedecl = NULL;*/
   nt->size = nt->alignment = cval_top;
@@ -327,14 +327,15 @@ type make_tagged_type(tag_declaration d)
   type nt = new_type(tk_tagged);
 
   nt->u.tag = d;
-  nt->network = d->kind == kind_nw_struct_ref || d->kind == kind_nw_union_ref;
+  if (d->kind == kind_nx_struct_ref || d->kind == kind_nx_union_ref)
+    nt->network = nx_derived;
 
   return nt;
 }
 
 bool type_network(type t)
 {
-  return t->network;
+  return t->network != nx_no;
 }
 
 /* Make the single instance of pk, with specified size and alignment
@@ -724,7 +725,7 @@ bool type_tagged(type t)
 bool type_struct(type t)
 {
   return t->kind == tk_tagged &&
-    (t->u.tag->kind == kind_struct_ref || t->u.tag->kind == kind_nw_struct_ref);
+    (t->u.tag->kind == kind_struct_ref || t->u.tag->kind == kind_nx_struct_ref);
 }
 
 bool type_attribute(type t)
@@ -735,7 +736,7 @@ bool type_attribute(type t)
 bool type_union(type t)
 {
   return t->kind == tk_tagged && 
-    (t->u.tag->kind == kind_union_ref || t->u.tag->kind == kind_nw_union_ref);
+    (t->u.tag->kind == kind_union_ref || t->u.tag->kind == kind_nx_union_ref);
 }
 
 type type_function_return_type(type t)
@@ -2047,7 +2048,7 @@ void set_typedef_type(data_declaration def, bool network)
 
   if (network)
     {
-      nt->network = TRUE;
+      nt->network = nx_base;
       nt->alignment = make_type_cval(1);
     }
   nt->basedecl = def;
@@ -2063,7 +2064,7 @@ data_declaration type_typedef(type t)
 
 bool type_network_base_type(type t)
 {
-  return t->basedecl && t->network;
+  return t->basedecl && t->network == nx_base;
 }
 
 type type_network_platform_type(type t)
