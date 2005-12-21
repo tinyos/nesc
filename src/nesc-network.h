@@ -17,11 +17,15 @@ Boston, MA 02111-1307, USA. */
 
 #ifndef NESC_NETWORK_H
 
+/* Prefix for non-network version of network base types */
+#define NXBASE_PREFIX "__nesc_nxbase_"
+
 void handle_network_types(declaration decls);
 void init_network(void);
 
 void prt_network_routines(void);
 bool prt_network_expression(expression e);
 bool prt_network_typedef(data_decl d, variable_decl vd);
+bool prt_network_parameter_copies(function_decl fn);
 
 #endif

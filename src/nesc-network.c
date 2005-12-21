@@ -54,6 +54,23 @@ static void validate_network_lvalue(expression e)
 			"Conditional assignment not supported for network types");
 }
 
+/* Check if expression e is of network base type.  Parameters whose address
+   is not taken are actually of the base type (this should be extended to
+   all local vars whose address is not taken, but currently isn't) */
+static bool really_network_base(expression e)
+{
+  if (is_identifier(e))
+    {
+      identifier id = CAST(identifier, e);
+      data_declaration ddecl = id->ddecl;
+
+      if (ddecl->kind == decl_variable && ddecl->isparameter &&
+	  !(ddecl->use_summary & c_addressed))
+	return FALSE;
+    }
+  return e->type && type_network_base_type(e->type);
+}
+
 static data_declaration add_network_temporary(function_decl fn, type t)
 {
   /* See Weird hack comment in prt_network_assignment */
@@ -69,7 +86,7 @@ static AST_walker_result network_expression(AST_walker spec, void *data,
   expression e = *n;
   function_decl fn = data;
 
-  if (e->type && type_network_base_type(e->type) &&
+  if (really_network_base(e) &&
       (e->context & c_read) && !(e->context & c_write))
     ntoh_used(e->type, fn);
 
@@ -82,21 +99,20 @@ static AST_walker_result network_assignment(AST_walker spec, void *data,
   assignment a = *n;
   function_decl fn = data;
 
-  if (type_network_base_type(a->type))
+  if (really_network_base(a->arg1))
     {
       if (a->kind != kind_assign) /* op= reads too */
-	ntoh_used(a->type, fn);
+	{
+	  ntoh_used(a->type, fn);
+	  /* See problem/ugly hack comment in network_increment */
+	  /* op= needs a temp */
+	  if (!a->temp1)
+	    a->temp1 = add_network_temporary(fn, make_pointer_type(a->arg1->type));
+	}
       hton_used(a->type, fn);
     }
 
   validate_network_lvalue(a->arg1);
-  /* See problem/ugly hack comment in network_increment */
-  if (type_network_base_type(a->type) && !a->temp1)
-    {
-      /* op= needs a temp */
-      if (a->kind != kind_assign)
-	a->temp1 = add_network_temporary(fn, make_pointer_type(a->arg1->type));
-    }
 
   return aw_walk;
 }
@@ -107,28 +123,28 @@ static AST_walker_result network_increment(AST_walker spec, void *data,
   increment i = *n;
   function_decl fn = data;
 
-  if (type_network_base_type(i->type))
+  if (really_network_base(i->arg1))
     {
       ntoh_used(i->type, fn);
       hton_used(i->type, fn);
+
+      /* Problem: adding the declarations for the temporaries changes the
+	 AST as we're walking through it. If we add a temporary while
+	 walking through the first declaration, we'll revisit this
+	 declaration. Oops.  Ugly hack fix: don't create the temporaries if
+	 they've already been created. Note that this could lead to
+	 duplicate error messages from validate_network_lvalue, but that's
+	 for use of a deprecated gcc feature which is going away soon. */
+      if (!i->temp1)
+	{
+	  /* pre-ops need 1 temp, post-ops need 2 */
+	  i->temp1 = add_network_temporary(fn, make_pointer_type(i->type));
+	  if (i->kind == kind_postincrement || i->kind == kind_postdecrement)
+	    i->temp2 = add_network_temporary(fn, type_network_platform_type(i->type));
+	}
     }
 
   validate_network_lvalue(i->arg1);
-
-  /* Problem: adding the declarations for the temporaries changes the AST
-     as we're walking through it. If we add a temporary while walking 
-     through the first declaration, we'll revisit this declaration. Oops.
-     Ugly hack fix: don't create the temporaries if they've already been
-     created. Note that this could lead to duplicate error messages from
-     validate_network_lvalue, but that's for use of a deprecated gcc
-     feature which is going away soon. */
-  if (type_network_base_type(i->type) && !i->temp1)
-    {
-      /* pre-ops need 1 temp, post-ops need 2 */
-      i->temp1 = add_network_temporary(fn, make_pointer_type(i->type));
-      if (i->kind == kind_postincrement || i->kind == kind_postdecrement)
-	i->temp2 = add_network_temporary(fn, type_network_platform_type(i->type));
-    }
 
   return aw_walk;
 }
@@ -174,7 +190,7 @@ static bool prt_network_assignment(expression e)
   char *selfassign = NULL;
   assignment a;
 
-  if (!(is_assignment(e) && type_network_base_type(e->type)))
+  if (!(is_assignment(e) && really_network_base((CAST(assignment, e))->arg1)))
     return FALSE;
 
   a = CAST(assignment, e);
@@ -232,7 +248,7 @@ static bool prt_network_increment(expression e)
   const char *temp;
   char incop;
 
-  if (!(is_increment(e) && type_network_base_type(e->type)))
+  if (!(is_increment(e) && really_network_base((CAST(increment, e))->arg1)))
     return FALSE;
 
   i = CAST(increment, e);
@@ -265,7 +281,7 @@ static bool prt_network_increment(expression e)
 
 static bool prt_network_read(expression e)
 {
-  if (!(e->type && type_network_base_type(e->type) &&
+  if (!(really_network_base(e) &&
 	(e->context & c_read) && !(e->context & c_write)))
     return FALSE;
 
@@ -302,6 +318,62 @@ bool prt_network_typedef(data_decl d, variable_decl vd)
       return TRUE;
     }
   return FALSE;
+}
+
+static bool prt_network_parameter_copy(declaration parm, bool copies,
+				       bool init)
+{
+  if (is_data_decl(parm))
+    {
+      data_decl dd = CAST(data_decl, parm);
+      variable_decl vd = CAST(variable_decl, dd->decls);
+      data_declaration ddecl = vd->ddecl;
+
+      if (ddecl && type_network_base_type(ddecl->type) &&
+	  (ddecl->use_summary & c_addressed))
+	{
+	  /* We need a real network type copy. */
+	  if (!init)
+	    {
+	      if (!copies)
+		{
+		  outputln("{");
+		  indent();
+		}
+	      prt_data_decl(dd);
+	    }
+	  else
+	    {
+	      output_hton(ddecl->type);
+	      outputln("(&%s, %s%s);", ddecl->name, NXBASE_PREFIX, ddecl->name);
+	    }
+
+	  return TRUE;
+	}
+    }
+  return copies;
+}
+
+/* Network base type parameters are passed as their underlying type. Thus
+   we need to copy them to a real network base type variable if their
+   address is taken */
+bool prt_network_parameter_copies(function_decl fn)
+{
+  function_declarator fd = get_fdeclarator(fn->declarator);
+  declaration d;
+  bool copies = FALSE;
+
+  scan_declaration (d, fd->gparms)
+    copies = prt_network_parameter_copy(d, copies, FALSE);
+  scan_declaration (d, fd->parms)
+    copies = prt_network_parameter_copy(d, copies, FALSE);
+
+  scan_declaration (d, fd->gparms)
+    prt_network_parameter_copy(d, copies, TRUE);
+  scan_declaration (d, fd->parms)
+    prt_network_parameter_copy(d, copies, TRUE);
+
+  return copies;
 }
 
 void init_network(void)

@@ -1647,9 +1647,6 @@ void check_function(data_declaration dd, declaration fd, int class,
     type_function_return_type(function_type) : function_type;
   return_type = type_function_return_type(actual_function_type);
 
-  if (type_network_base_type(return_type))
-    error("network base type results are not yet supported");
-
   /* XXX: Does this volatile/const stuff actually work with my imp ? */
   if (pedantic && type_void(return_type) &&
       (type_const(return_type) || type_volatile(return_type)) &&
@@ -2328,9 +2325,6 @@ dd_list check_parameter(data_declaration dd,
     }
 
   check_variable_scflags(scf, vd->location, "parameter", printname);
-
-  if (type_network_base_type(parm_type))
-    error("network base type parameters are not yet supported");
 
   /* A parameter declared as an array of T is really a pointer to T.
      One declared as a function is really a pointer to a function.  */

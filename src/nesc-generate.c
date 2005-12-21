@@ -500,7 +500,7 @@ void prt_nesc_module(cgraph cg, nesc_declaration mod)
 	     several times. If the type elements define a new type we most
 	     likely have a problem anyway (see discussion above) */
 	  prt_type_elements(localsdd->modifiers, 0);
-	  prt_variable_decl(localsvd);
+	  prt_variable_decl(localsvd, 0);
 	  outputln(";");
 	}
     }

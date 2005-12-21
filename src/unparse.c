@@ -372,10 +372,10 @@ void prt_extension_decl(extension_decl d);
 void prt_data_decl(data_decl d);
 void prt_ellipsis_decl(ellipsis_decl d);
 void prt_function_decl(function_decl d);
-void prt_variable_decl(variable_decl d);
+void prt_variable_decl(variable_decl d, psd_options options);
 void prt_type_elements(type_element elements, pte_options options);
 void prt_type_element(type_element em, pte_options options);
-void prt_typename(typename tname);
+void prt_typename(typename tname, pte_options options);
 void prt_typeof_expr(typeof_expr texpr);
 void prt_typeof_type(typeof_type ttype);
 void prt_gcc_attribute(gcc_attribute a);
@@ -658,6 +658,7 @@ void prt_data_decl(data_decl d)
       variable_decl vdd = CAST(variable_decl, vd);
       data_declaration vdecl = vdd->ddecl;
       pte_options extraopts = 0;
+      psd_options vopts = 0;
 
       if (vdecl) /* because build_declaration does not make a
 		    data_declaration */
@@ -672,7 +673,7 @@ void prt_data_decl(data_decl d)
 	    continue;
 
 	  if (prt_network_typedef(d, vdd))
-	    continue;
+	    vopts |= psd_prefix_nxbase;
 
 	  if (type_task(vdecl->type) && vdecl->interface)
 	    continue;
@@ -685,7 +686,7 @@ void prt_data_decl(data_decl d)
 
       prt_type_elements(d->modifiers, opts | extraopts);
       opts |= pte_duplicate;
-      prt_variable_decl(vdd);
+      prt_variable_decl(vdd, vopts);
       outputln(";");
     }
 
@@ -738,6 +739,7 @@ void prt_function_body(function_decl d)
 	 messages */
       current.function_decl = d;
       current.container = d->ddecl->container;
+      bool extrablock;
 
       prt_diff_info(d->ddecl);
       set_location(d->location);
@@ -746,17 +748,23 @@ void prt_function_body(function_decl d)
 		     psd_print_default);
       startline();
       prt_parameter_declarations(d->old_parms);
+      extrablock = prt_network_parameter_copies(d);
       assert(is_compound_stmt(d->stmt));
       prt_statement(d->stmt);
       newline();
+      if (extrablock)
+	{
+	  unindent();
+	  outputln("}");
+	}
 
       current.function_decl = d->parent_function;
     }
 }
 
-void prt_variable_decl(variable_decl d)
+void prt_variable_decl(variable_decl d, psd_options options)
 {
-  prt_declarator(d->declarator, NULL, d->attributes, d->ddecl, 0);
+  prt_declarator(d->declarator, NULL, d->attributes, d->ddecl, options);
 
   if (d->asm_stmt)
     prt_asm_stmt_plain(d->asm_stmt);
@@ -771,11 +779,16 @@ void prt_variable_decl(variable_decl d)
 void prt_declarator(declarator d, type_element elements, attribute attributes,
 		    data_declaration ddecl, psd_options options)
 {
-  prt_type_elements(elements, 0);
+  pte_options te_opts = 0;
+
+  if ((options & psd_rewrite_nxbase) || (d && is_function_declarator(d)))
+    te_opts |= pte_rewrite_nxbase;
+  prt_type_elements(elements, te_opts);
   prt_type_elements(CAST(type_element, attributes), 0);
-  prt_simple_declarator(d, ddecl,
-			(options | psd_need_paren_for_qual)
-			& ~psd_need_paren_for_star);
+
+  options |= psd_need_paren_for_qual;
+  options &= ~psd_need_paren_for_star;
+  prt_simple_declarator(d, ddecl, options);
 }
 
 void prt_container(nesc_declaration container)
@@ -800,7 +813,6 @@ void prt_plain_ddecl(data_declaration ddecl, psd_options options)
 	output("default");
 	output_string(function_separator);
       }
-
     }
 
   /* static local module variables are printed as mod$fn$var in nido */
@@ -811,6 +823,9 @@ void prt_plain_ddecl(data_declaration ddecl, psd_options options)
       output_stripped_string_dollar(fn->container->name);
       output_stripped_string_dollar(fn->name);
     }
+
+  if (options & psd_prefix_nxbase)
+    output(NXBASE_PREFIX);
 
   output_stripped_string(ddecl->name);
 }
@@ -845,8 +860,7 @@ bool prt_simple_declarator(declarator d, data_declaration ddecl,
 			      psd_need_paren_for_qual);
 	prt_parameters(fd->gparms ? fd->gparms :
 		       ddecl ? ddecl_get_gparms(ddecl) : NULL,
-		       fd->parms,
-		       options & psd_rename_parameters);
+		       fd->parms, options & psd_rename_parameters);
 	break;
       }
     case kind_array_declarator:
@@ -961,7 +975,9 @@ void prt_type_element(type_element em, pte_options options)
   switch (em->kind)
     {
     case kind_component_typeref: /* fall through to prt_typename */
-      PRTCASE(typename, em);
+    case kind_typename:
+      prt_typename(CAST(typename, em), options);
+      break;
       PRTCASE(typeof_expr, em);
       PRTCASE(typeof_type, em);
       PRTCASE(gcc_attribute, em);
@@ -979,12 +995,15 @@ void prt_type_element(type_element em, pte_options options)
     }
 }
 
-void prt_typename(typename tname)
+void prt_typename(typename tname, pte_options options)
 {
   data_declaration tdecl = tname->ddecl;
+  psd_options newopts = 0;
 
   set_location(tname->location);
-  prt_plain_ddecl(tdecl, 0);
+  if (type_network_base_type(tdecl->type) && (options & pte_rewrite_nxbase))
+    newopts |= psd_prefix_nxbase;
+  prt_plain_ddecl(tdecl, newopts);
 }
 
 void prt_typeof_expr(typeof_expr texpr)
@@ -1242,6 +1261,15 @@ bool prt_parameter(declaration parm, bool first, bool lastforward,
 	  output("; ");
 	else if (!first)
 	  output(", ");
+	if (vd->ddecl && type_network_base_type(vd->ddecl->type))
+	  {
+	    options |= psd_rewrite_nxbase;
+	    /* If addressed, we need a real network type copy. This is
+	       added by prt_network_parameter_copies, so we rename
+	       the actual parameter */
+	    if (vd->ddecl->use_summary & c_addressed)
+	      options |= psd_prefix_nxbase;
+	  }
 	prt_declarator(vd->declarator, dd->modifiers, vd->attributes,
 		       vd->ddecl, options);
 

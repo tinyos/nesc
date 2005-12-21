@@ -78,7 +78,6 @@ const char *binary_op_name(AST_kind kind);
 #define P_CALL 14
 
 void prt_data_decl(data_decl d);
-void prt_variable_decl(variable_decl d);
 void prt_toplevel_declarations(declaration d);
 void prt_toplevel_declaration(declaration d);
 void prt_nelements(expression array);
@@ -89,7 +88,8 @@ void prt_expression_helper(expression e, int context_priority);
 typedef enum {
   pte_duplicate = 1,
   pte_noextern = 2,
-  pte_skip_command_event = 4
+  pte_skip_command_event = 4,
+  pte_rewrite_nxbase = 8,
 } pte_options;
 
 void prt_type_elements(type_element elements, pte_options options);
@@ -101,9 +101,12 @@ typedef enum {
   psd_rename_identifier = 8,
   psd_print_default = 16,
   psd_skip_container = 32,
-  psd_print_ddecl = 64 /* print ddecl as the name inside a declarator */
+  psd_print_ddecl = 64, /* print ddecl as the name inside a declarator */
+  psd_prefix_nxbase = 128, /* add the __nesc_nxbase_ prefix to declared names */
+  psd_rewrite_nxbase = 256 /* add the __nesc_nxbase_ prefix to base type */
 } psd_options;
 
+void prt_variable_decl(variable_decl d, psd_options options);
 void prt_declarator(declarator d, type_element elements, attribute attributes,
 		    data_declaration ddecl, psd_options options);
 bool prt_simple_declarator(declarator d, data_declaration ddecl,
