@@ -18,6 +18,8 @@
         <attribute name="qname"/>
         <attribute name="loc"/>
       </required>
+      <m:doc>Present if the component is not, or not fully, instantiated</m:doc>
+      <attribute name="abstract"><stringtype ref="nesc:empty"/></attribute>
 
       <m:doc>Order of these elements is unimportant</m:doc>
       <contents>

@@ -41,7 +41,10 @@
         <sequence>
           <repeat>
 	    <or>
+	      <m:doc>variables are regular function arguments, constants and
+		typedefs are used for generic component arguments.</m:doc>
 	      <element name="nesc:variable"/>
+	      <element name="nesc:constant"/>
 	      <element name="nesc:typedef"/>
 	    </or>
           </repeat>

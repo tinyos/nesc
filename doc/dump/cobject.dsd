@@ -103,4 +103,20 @@
     </declare>
   </if>
 
+  <m:doc>commands and events in specifications have a provided attribute</m:doc>
+  <if>
+    <and>
+      <element name="nesc:function"/>
+      <or>
+        <attribute name="command"/>
+        <attribute name="event"/>
+      </or>
+    </and>
+    <declare>
+      <required>
+	<attribute name="provided"><stringtype ref="nesc:bool"/></attribute>
+      </required>
+    </declare>
+  </if>
+
 </dsd>
