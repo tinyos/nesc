@@ -6,6 +6,14 @@ patched versions can be found at www.tinyos.net (look for the avr-binutils
 and msp430-binutils distributions) - they are no longer distributed with
 nesC.
 
+Changes in nesC 1.2.1
+=====================
+- external types (nx_...) can now be passed as parameters and returned as
+  results
+- updates to XML dump information to support nesdoc
+  in particular, remember typedef names
+- bug fixes
+
 Changes in nesC 1.2
 ===================
 - generic components and interfaces. See doc/user/generics-1.2.txt. 
