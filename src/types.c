@@ -2349,7 +2349,7 @@ static void nxml_typedef(data_declaration tdef)
 {
   xindent();
   xstartline();
-  xml_tag("typedef");
+  xml_tag("typename");
   nxml_ddecl_ref(tdef);
   xml_pop();
   xnewline();
