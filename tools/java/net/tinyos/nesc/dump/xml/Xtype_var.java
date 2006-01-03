@@ -26,6 +26,7 @@ public class Xtype_var extends Type
     public void child(NDElement subElement) {
 	if (subElement instanceof Xtypedef)
 	    var = (Xtypedef)subElement;
+	super.child(subElement);
     }
 
     public boolean equals(Object obj) {

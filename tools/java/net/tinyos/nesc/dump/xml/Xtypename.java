@@ -14,24 +14,17 @@ package net.tinyos.nesc.dump.xml;
 import org.xml.sax.*;
 
 /**
- * A pointer type.
+ * The typedef used to define a type.
  */
-public class Xtype_pointer extends Type
+public class Xtypename extends NDElement
 {
     /**
-     * The type pointed to.
+     * The typedef stored in this typename element
      */
-    public Type subType;
+    public Xtypedef tdef;
 
     public void child(NDElement subElement) {
-	if (subElement instanceof Type)
-	    subType = (Type)subElement;
-	super.child(subElement);
-    }
-
-    public boolean equals(Object obj) {
-	if (!(obj instanceof Xtype_pointer))
-	    return false;
-	return subType.equals(((Xtype_array)obj).subType);
+	if (subElement instanceof Xtypedef)
+	    tdef = (Xtypedef)subElement;
     }
 }

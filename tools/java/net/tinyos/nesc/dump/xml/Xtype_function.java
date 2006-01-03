@@ -51,6 +51,7 @@ public class Xtype_function extends Type
 	    returns = (Type)subElement;
 	if (subElement instanceof Xfunction_parameters)
 	    parameters = ((Xfunction_parameters)subElement).l;
+	super.child(subElement);
     }
 
     public boolean equals(Object obj) {

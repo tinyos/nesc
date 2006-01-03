@@ -26,6 +26,7 @@ public class Xtype_tag extends Type
     public void child(NDElement subElement) {
 	if (subElement instanceof TagDefinition)
 	    tag = (TagDefinition)subElement;
+	super.child(subElement);
     }
 
     public boolean equals(Object obj) {

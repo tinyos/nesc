@@ -12,10 +12,23 @@
 package net.tinyos.nesc.dump.xml;
 
 import org.xml.sax.*;
+import net.tinyos.nesc.dump.*;
 
 /**
  * A C typedef.
  */
 public class Xtypedef extends DataDefinition
 {
+    public NDElement start(NDReader reader, Attributes attrs) {
+	if (attrs.getValue("ref") == null) {
+	    /* work around nesC 1.2.1 bug. This should really be a typename */
+	    try {
+		NDElement me = reader.makeElement("typename");
+		return me.start(reader, attrs);
+	    }
+	    catch (Exception e) { /* stuff is broken */ }
+	}
+	return super.start(reader, attrs);
+    }
+
 }

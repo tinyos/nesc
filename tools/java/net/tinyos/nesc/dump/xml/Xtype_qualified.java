@@ -49,6 +49,7 @@ public class Xtype_qualified extends Type
     public void child(NDElement subElement) {
 	if (subElement instanceof Type)
 	    subType = (Type)subElement;
+	super.child(subElement);
     }
 
     public boolean equals(Object obj) {

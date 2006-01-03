@@ -28,6 +28,7 @@ public class Xtype_interface extends Type
     public void child(NDElement subElement) {
 	if (subElement instanceof Xinterface)
 	    intf = (Xinterface)subElement;
+	super.child(subElement);
     }
 
     public boolean equals(Object obj) {
