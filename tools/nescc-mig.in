@@ -40,6 +40,12 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	elsif (/^-csharp-extends=(.*)$/) {
 	    $csharp_extends = $1;
 	}
+	elsif (/^-python-classname=(.*)$/) {
+	    $python_classname = $1;
+	}
+	elsif (/^-python-extends=(.*)$/) {
+	    $python_extends = $1;
+	}
 	elsif (/^-o/) {
 	    ($i, $ofile) = &extractarg($i);
 	}
@@ -130,6 +136,10 @@ sub usage()
     print STDERR "    csharp:\n";
     print STDERR "      -csharp-classname=FULL-CLASS-NAME Select class name (required)\n";
     print STDERR "      -csharp-extends=CLASS-NAME        Select class to extend\n";
+    print STDERR "                                      (default tinyos.message.Message)\n";
+    print STDERR "    python:\n";
+    print STDERR "      -python-classname=FULL-CLASS-NAME Select class name (required)\n";
+    print STDERR "      -python-extends=CLASS-NAME        Select class to extend\n";
     print STDERR "                                      (default tinyos.message.Message)\n";
     exit 2;
 }
