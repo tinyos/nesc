@@ -7,7 +7,7 @@ dumpdocdir=$(nccdocdir)/dump
 dbgdocdir=$(nccdocdir)/debugging_files
 
 
-dist_man_MANS = nescc.1 nescc-mig.1 nescc-ncg.1
+dist_man_MANS = nescc.1 nescc-mig.1 nescc-ncg.1 nescc-wiring.1
 
 nccdoc_DATA = 					\
 	COPYING-DOC				\

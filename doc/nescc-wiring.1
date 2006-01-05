@@ -1,0 +1,49 @@
+.TH nescc-wiring 1 "January 4, 2006"
+.LO 1
+.SH NAME
+
+nescc-wiring - check wiring of nesC program
+.SH SYNOPSIS
+
+\fBnescc-wiring \fInesc-xml-file\fR
+
+.SH DESCRIPTION
+
+\fBnescc-wiring\fR is a tool to verify that wiring constraints specified on
+individual components are respected in a nesC program. These wiring
+constraints can specify that an interface provided or used by a component
+must be wired at least once, at most once, or exactly once. If no
+wiring constraints are violated, nescc-wiring terminates with an exit status
+of 0. Otherwise, appropriate error messages are printed and nescc-wiring
+terminates with a non-zero exit status.
+
+Wiring constraints are specified by placing \fB@atmostonce()\fR, 
+\fB@atleastonce()\fR and \fB@exactlyonce()\fR attributes on the
+relevant interfaces. For instance, writing
+
+  module Fun {
+    provides interface Init @atleastonce();
+  ...
+
+ensures that programs using module \fBFun\fR must wire its \fBInit\fR
+interface at least once.
+
+To use this wiring check tool, you must declare the \fB@atmostonce()\fR, 
+\fB@atleastonce()\fR and \fB@exactlyonce()\fR attributes in some global
+header file as follows:
+
+  struct @atleastonce() { };
+  struct @atmostonce() { };
+  struct @exactlyonce() { };
+
+and you must pass the following options to \fBnescc\fR to create the
+XML file that you pass to \fBnescc-wiring\fR:
+
+  -fnesc-dump=wiring
+  -fnesc-dump='interfaces(!abstract())'
+  -fnesc-dump='referenced(interfacedefs, components)' 
+  -fnesc-dumpfile=\fInesc-xml-file\fR
+
+.SH SEE ALSO
+
+.IR nescc (1),
