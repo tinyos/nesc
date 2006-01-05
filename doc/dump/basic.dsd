@@ -20,7 +20,7 @@
 
   <m:doc>A reference to a component or to an interface definition</m:doc>
   <if>
-    <boolexp id="nesc:ndecl-ref"/>
+    <boolexp ref="nesc:ndecl-ref"/>
     <declare>
       <required><attribute name="qname"/></required>
     </declare>

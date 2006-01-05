@@ -85,7 +85,7 @@
   <if>
     <element name="nesc:constant"/>
     <declare>
-      <required><attribute ref="nesc:cst"/></required>
+      <required><attribute name="nesc:cst"/></required>
     </declare>
   </if>
 
