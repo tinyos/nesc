@@ -36,6 +36,23 @@
 	  <element name="nesc:module"/>
 	</or>
       </contents>
+      <contents>
+	<optional><element name="nesc:documentation"/></optional>
+      </contents>
     </declare>
   </if>
+
+  <m:doc>Configurations may contain a wiring graph</m:doc>
+  <if>
+    <and>
+      <element name="nesc:component"/>
+      <child><element name="nesc:configuration"/></child>
+    </and>
+    <declare>
+      <contents>
+        <optional><element name="nesc:wiring"/></optional>
+      </contents>
+    </declare>
+  </if>
+    
 </dsd>

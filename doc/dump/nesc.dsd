@@ -20,11 +20,17 @@
 
   <if><element name="nesc:nesc"/>
     <declare>
-      <contents><element name="nesc:wiring"/></contents>
+      <contents>
+	<optional><element name="nesc:wiring"/></optional>
+      </contents>
       <contents><element name="nesc:components"/></contents>
       <contents><element name="nesc:interfaces"/></contents>
       <contents><element name="nesc:interfacedefs"/></contents>
       <contents><element name="nesc:tags"/></contents>
+      <contents><element name="nesc:constants"/></contents>
+      <contents><element name="nesc:functions"/></contents>
+      <contents><element name="nesc:variables"/></contents>
+      <contents><element name="nesc:typedefs"/></contents>
     </declare>
   </if>
 

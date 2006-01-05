@@ -61,6 +61,9 @@
       <attribute name="packed"><stringtype ref="nesc:empty"/></attribute>
       <attribute name="scoped"><stringtype ref="nesc:empty"/></attribute>
 
+      <m:doc>Present when there is an actual definition.</m:doc>
+      <attribute name="loc"/>
+
       <m:doc>May be in a container, may have attributes</m:doc>
       <contents><contenttype ref="nesc:container"/></contents>
       <contents><contenttype ref="nesc:attributes"/></contents>
@@ -84,7 +87,7 @@
   </if>
 
   <if>
-    <element name="field"/>
+    <element name="nesc:field"/>
     <declare>
       <required>
         <attribute name="name"/>

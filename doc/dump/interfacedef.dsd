@@ -26,6 +26,9 @@
       <contents>
 	<repeat><element name="nesc:function"/></repeat>
       </contents>
+      <contents>
+	<optional><element name="nesc:documentation"/></optional>
+      </contents>
     </declare>
   </if>
 

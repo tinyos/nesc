@@ -163,21 +163,27 @@
   <m:doc>Regular expression for a file location (and an optional instantiation
     path for locations in generic components)</m:doc>
   <stringtype id="nesc:location">
-    <sequence>
-      <m:doc>Line number, never actually negative</m:doc>
-      <stringtype ref="nesc:number"/>
-      <m:doc>An optional generic component instantiation path</m:doc>
-      <optional>
-        <sequence>
-	  <char set="("/>
-	  <stringtype ref="nesc:path"/>
-	  <char set=")"/>
-	</sequence>
-      </optional>
-      <char set=":"/>
-      <m:doc>Filename</m:doc>
-      <repeat><char/></repeat>
-    </sequence>
+    <union>
+      <m:doc>Occasionally, some locations are unknown (e.g., for predefined
+	nesC attributes)</m:doc>
+      <string val="NONE"/>
+
+      <sequence>
+	<m:doc>Line number, never actually negative</m:doc>
+	<stringtype ref="nesc:number"/>
+	<m:doc>An optional generic component instantiation path</m:doc>
+	<optional>
+	  <sequence>
+	    <char set="("/>
+	    <stringtype ref="nesc:path"/>
+	    <char set=")"/>
+	  </sequence>
+	</optional>
+	<char set=":"/>
+	<m:doc>Filename</m:doc>
+	<repeat><char/></repeat>
+      </sequence>
+    </union>
   </stringtype>
 
 	  

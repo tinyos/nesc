@@ -9,6 +9,7 @@
     - types
     - values (regular constants and structured values from C {} initialisers)
     - attributes
+    - documentation strings
   </m:doc>
 
   <boolexp id="nesc:ndecl-ref">
@@ -171,7 +172,7 @@
         <attribute name="alignment"/>
       </required>
       <contents>
-	<optional><element name="typename"/></optional>
+	<optional><element name="nesc:typename"/></optional>
       </contents>
     </declare>
   </if>
@@ -259,7 +260,7 @@
       <contents>
         <sequence>
 	  <boolexp ref="nesc:type"/>
-	  <optional><element name="function-parameters"/></optional>
+	  <optional><element name="nesc:function-parameters"/></optional>
 	</sequence>
       </contents>
     </declare>
@@ -269,7 +270,7 @@
     <element name="nesc:function-parameters"/>
     <declare>
       <contents>
-        <sequence><boolexp ref="nesc:type"/></sequence>
+        <repeat><boolexp ref="nesc:type"/></repeat>
       </contents>
     </declare>
   </if>
@@ -325,6 +326,30 @@
     <declare>
       <contents><element name="nesc:value-structured"/></contents>
       <contents><element name="nesc:attribute-ref"/></contents>
+    </declare>
+  </if>
+
+  <m:doc>A documentation string</m:doc>
+  <if>
+    <element name="nesc:documentation"/>
+    <declare>
+      <required><attribute name="loc"/></required>
+      <m:doc>A short string is always present, a long one is optional.</m:doc>
+      <contents><element name="nesc:short"/></contents>
+      <contents>
+	<optional><element name="nesc:long"/></optional>
+      </contents>
+    </declare>
+  </if>
+
+  <m:doc>nesdoc strings have arbitrary contents</m:doc>
+  <if>
+    <or>
+      <element name="nesc:short"/>
+      <element name="nesc:long"/>
+    </or>
+    <declare>
+      <contents><string/></contents>
     </declare>
   </if>
 

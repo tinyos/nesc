@@ -8,6 +8,7 @@
     <optional>
       <or>
         <element name="nesc:component-ref"/>
+        <element name="nesc:interfacedef-ref"/>
         <element name="nesc:function-ref"/>
       </or>
     </optional>
@@ -50,6 +51,16 @@
           </repeat>
 	  <optional><element name="nesc:varargs"/></optional>
 	</sequence>
+      </contents>
+    </declare>
+  </if>
+
+  <m:doc>Parameters of parameterised functions (void foo[...](...))</m:doc>
+  <if>
+    <element name="nesc:instance-parameters"/>
+    <declare>
+      <contents>
+        <repeat><element name="nesc:variable"/></repeat>
       </contents>
     </declare>
   </if>
