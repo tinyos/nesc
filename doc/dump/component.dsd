@@ -15,7 +15,9 @@
     <element name="nesc:component"/>
     <declare>
       <required>
+        <m:doc>Uniquely identifies the component.</m:doc>
         <attribute name="qname"/>
+
         <attribute name="loc"/>
       </required>
       <m:doc>Present if the component is not, or not fully, instantiated</m:doc>
@@ -23,6 +25,7 @@
 
       <m:doc>Order of these elements is unimportant</m:doc>
       <contents>
+        <m:doc>What generic component this is an instance of.</m:doc>
         <optional><element name="nesc:instance"/></optional>
       </contents>
       <contents>

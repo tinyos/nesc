@@ -166,7 +166,7 @@
     <union>
       <m:doc>Occasionally, some locations are unknown (e.g., for predefined
 	nesC attributes)</m:doc>
-      <string val="NONE"/>
+      <string value="NONE"/>
 
       <sequence>
 	<m:doc>Line number, never actually negative</m:doc>

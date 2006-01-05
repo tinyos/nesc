@@ -65,14 +65,4 @@
     </declare>
   </if>
 
-  <m:doc>Interface list</m:doc>
-  <if>
-    <element name="nesc:interfaces"/>
-    <declare>
-      <contents>
-        <repeat><element name="nesc:interface"/></repeat>
-      </contents>
-    </declare>
-  </if>
-
 </dsd>

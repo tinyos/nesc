@@ -20,6 +20,7 @@
       </required>
       <m:doc>Order of these elements is unimportant</m:doc>
       <contents>
+	<m:doc>Parameters of generic interfaces.</m:doc>
         <optional><element name="nesc:parameters"/></optional>
       </contents>
       <contents><contenttype ref="nesc:attributes"/></contents>

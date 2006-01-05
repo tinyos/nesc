@@ -2,7 +2,8 @@
      xmlns:m="http://www.brics.dk/DSD/2.0/meta"
      xmlns:nesc="http://www.tinyos.net/nesC">
 
-  <m:doc>A reference to a tag (enum, struct, union)</m:doc>
+  <m:doc>A reference to a tag (enum, struct, union, external struct and union)
+  </m:doc>
   <boolexp id="nesc:tag-ref">
     <or>
       <element name="nesc:enum-ref"/>
@@ -41,8 +42,8 @@
     <or>
       <element name="nesc:struct"/>
       <element name="nesc:union"/>
-      <element name="nesc:nw_struct"/>
-      <element name="nesc:nw_union"/>
+      <element name="nesc:nx_struct"/>
+      <element name="nesc:nx_union"/>
       <element name="nesc:attribute"/>
       <element name="nesc:enum"/>
     </or>
@@ -75,8 +76,8 @@
     <or>
       <element name="nesc:struct"/>
       <element name="nesc:union"/>
-      <element name="nesc:nw_struct"/>
-      <element name="nesc:nw_union"/>
+      <element name="nesc:nx_struct"/>
+      <element name="nesc:nx_union"/>
       <element name="nesc:attribute"/>
     </or>
     <declare>
@@ -91,6 +92,7 @@
     <declare>
       <required>
         <attribute name="name"/>
+	<m:doc>The ref uniquely identifies the field amongst all fields.</m:doc>
 	<attribute name="ref"/>
 	<attribute name="bit-offset"><stringtype ref="nesc:constant"/></attribute>
       </required>

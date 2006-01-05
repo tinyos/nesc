@@ -12,6 +12,7 @@
     - documentation strings
   </m:doc>
 
+  <m:doc>A reference to a component or to an interface definition</m:doc>
   <boolexp id="nesc:ndecl-ref">
     <or>
       <element name="nesc:interfacedef-ref"/>
@@ -19,7 +20,8 @@
     </or>
   </boolexp>
 
-  <m:doc>A reference to a component or to an interface definition</m:doc>
+  <m:doc>The qname uniquely identifies the interface definition or component.
+  </m:doc>
   <if>
     <boolexp ref="nesc:ndecl-ref"/>
     <declare>
@@ -27,8 +29,8 @@
     </declare>
   </if>
 
-  <m:doc>An instance of a component or interface. If number attribute
-    is present, then this is an instance of a generic component.</m:doc>
+  <m:doc>An instance of a component or interface. The number attribute
+    is present for real instances of generic components.</m:doc>
   <if>
     <element name="nesc:instance"/>
     <declare>

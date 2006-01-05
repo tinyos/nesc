@@ -6,6 +6,10 @@ See http://www.brics.dk/DSD/ for documentation on this schema language
 The top-level element is nesc, documenation on the XML elements is found 
 in the dsd files themselves.
 
+For information on how to generate XML output from the nesC compiler, see
+the nescc man page and doc/user/attributes.txt (the doc directory is 
+usually found in /usr/share/ncc).
+
 Files:
 nesc.dsd: main schema file. Defines nesc element and imports all other files.
 regexps.dsd: regular expressions for attributes (includes constants, which

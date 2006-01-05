@@ -23,7 +23,9 @@
     </declare>
   </if>
 
-  <m:doc>Definition of a C object</m:doc>
+  <m:doc>Definition of a C object, i.e., a variable, constant, function,
+    typedef, interface, or component-within-a-configuration. The "ref"
+    attribute uniquely identifiers the particular object.</m:doc>
   <if>
     <or>
       <element name="nesc:variable"/>
@@ -84,6 +86,14 @@
       </contents>
     </declare>
   </if>
+  <if>
+    <element name="nesc:interfaces"/>
+    <declare>
+      <contents>
+        <repeat><element name="nesc:interface"/></repeat>
+      </contents>
+    </declare>
+  </if>
 
 
   <if>
@@ -94,10 +104,15 @@
       </required>
 
       <m:doc>Order of these elements is unimportant</m:doc>
+
+      <m:doc>Which interface definition this is an instance of.</m:doc>
       <contents><element name="nesc:instance"/></contents>
+
+      <m:doc>The actual functions for this instance of the interface.</m:doc>
       <contents><element name="nesc:interface-functions"/></contents>
+
       <contents>
-        <m:doc>Present for parameterised interfaces</m:doc>
+        <m:doc>Parameters for parameterised interfaces</m:doc>
         <optional><element name="nesc:interface-parameters"/></optional>
       </contents>
     </declare>
@@ -133,19 +148,20 @@
   <if>
     <element name="nesc:function"/>
     <declare>
-      <m:doc>Can't have both. Could add rule.</m:doc>
+      <m:doc>Commands and events have one of the following attributes.</m:doc>
       <attribute name="command"><stringtype ref="nesc:empty"/></attribute>
       <attribute name="event"><stringtype ref="nesc:empty"/></attribute>
+
       <contents>
 	<m:doc>Function parameters. Absent for old-style functions and
 	  built-in functions.</m:doc>
 	<optional><element name="nesc:parameters"/></optional>
 
-	<m:doc>Parameters of parameterised functions in components</m:doc>
+	<m:doc>Parameters of parameterised functions (as in void foo[...](...))</m:doc>
 	<optional><element name="nesc:instance-parameters"/></optional>
 
         <m:doc>Present for commands and events from actual interfaces
-	  (but not for those from interface definitions)</m:doc>
+	  (but not for those in interface definitions)</m:doc>
         <optional><element name="nesc:interface-ref"/></optional>
       </contents>
     </declare>
