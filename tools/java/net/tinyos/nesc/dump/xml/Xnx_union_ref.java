@@ -23,6 +23,6 @@ import org.xml.sax.*;
 public class Xnx_union_ref extends NDElement
 {
     public NDElement start(NDReader reader, Attributes attrs) {
-	return TagDefinition.lookup(reader, attrs, "nw_union");
+	return TagDefinition.lookup(reader, attrs, "nx_union");
     }
 }
