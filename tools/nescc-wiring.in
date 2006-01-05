@@ -1,0 +1,19 @@
+#!/bin/sh
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+ncc_lib="@libdir@/ncc"
+
+if [ $# -ne 1 ]; then
+  echo "Usage: $0 <xml wiring file>"
+  exit 2
+fi
+
+# set class path to the nesC java code
+CLASSPATH=$ncc_lib/nesc.jar
+if cygpath -w / 2> /dev/null >/dev/null; then
+  # cygwin
+  CLASSPATH=`cygpath -w $CLASSPATH`
+fi
+export CLASSPATH
+
+java net.tinyos.nesc.wiring.WiringCheck <$1

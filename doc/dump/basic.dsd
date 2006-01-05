@@ -160,7 +160,9 @@
     </or>
   </boolexp>
 
-  <m:doc>Every type has a size and alignment attribute</m:doc>
+  <m:doc>Every type has a size and alignment attribute, and, optionally, 
+    the name of the typedef this type corresponds to (we can't just have
+    a typedef-ref, as that would cause confusion with type-var).</m:doc>
   <if>
     <boolexp ref="nesc:type"/>
     <declare>
@@ -168,6 +170,19 @@
         <attribute name="size"/>
         <attribute name="alignment"/>
       </required>
+      <contents>
+	<optional><element name="typename"/></optional>
+      </contents>
+    </declare>
+  </if>
+
+  <m:doc>The typename element is just a reference to a typedef</m:doc>
+  <if>    
+    <element name="nesc:typename"/>
+    <declare>
+      <contents>
+        <element name="nesc:typedef-ref"/>
+      </contents>
     </declare>
   </if>
 

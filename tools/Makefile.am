@@ -17,20 +17,29 @@
 
 AUTOMAKE_OPTIONS = foreign
 
+SUBDIRS = java
+
 ncclibdir=$(libdir)/ncc
 nccdatadir=$(datadir)/ncc
 editordir=$(nccdatadir)/editor-modes
 emacsdir=$(editordir)/emacs
 vimdir=$(editordir)/vim
 kdedir=$(editordir)/kde
-javadir=$(nccdatadir)/java
-dumpdir=$(javadir)/net/tinyos/nesc/dump
-dumpxmldir=$(javadir)/net/tinyos/nesc/dump/xml
-wiringdir=$(javadir)/net/tinyos/nesc/wiring
 
-bin_SCRIPTS = nescc-mig nescc-ncg nescc nescc-diff
+bin_SCRIPTS = nescc-mig nescc-ncg nescc nescc-diff nescc-wiring
 
-ncclib_DATA = genjava.pm gencstjava.pm gencsharp.pm gencstc.pm genpython.pm gencstpython.pm migdecode.pm first-avr5.x second-avr5.x nesc_nx.h
+ncclib_DATA = genjava.pm 			\
+	      gencstjava.pm 			\
+	      gencsharp.pm			\
+	      gencstc.pm			\
+	      genpython.pm			\
+	      gencstpython.pm			\
+	      migdecode.pm			\
+	      first-avr5.x			\
+	      second-avr5.x			\
+	      nesc_nx.h				\
+	      nesc.jar
+
 ncclib_SCRIPTS = smalldiff
 
 emacs_DATA =					\
@@ -46,23 +55,17 @@ kde_DATA = 					\
 	editor-modes/kde/nesc.xml		\
 	editor-modes/kde/readme.txt
 
-wiring_DATA = 					\
-	java/net/tinyos/nesc/wiring/README	\
-	$(wildcard java/net/tinyos/nesc/wiring/*.java)
-
-dump_DATA = 					\
-	java/net/tinyos/nesc/dump/README	\
-	$(wildcard java/net/tinyos/nesc/dump/*.java)
-
-dumpxml_DATA = 					\
-	$(wildcard java/net/tinyos/nesc/dump/xml/*.java)
-
 EXTRA_DIST =					\
 	$(ncclib_DATA)				\
 	$(ncclib_SCRIPTS)			\
 	$(emacs_DATA)				\
 	$(vim_DATA)				\
-	$(kde_DATA)				\
-	$(wiring_DATA)				\
-	$(dump_DATA)				\
-	$(dumpxml_DATA)
+	$(kde_DATA)
+
+nesc.jar: FORCE
+	(cd java && $(MAKE))
+	(cd java && jar cf ../$@ `find -name '*.class'`)
+
+FORCE:
+
+.phony: FORCE

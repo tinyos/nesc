@@ -58,4 +58,12 @@ AC_OUTPUT(
 	tools/nescc-ncg
 	tools/nescc
 	tools/nescc-diff
+	tools/nescc-wiring
+	tools/java/Makefile
+	tools/java/net/Makefile
+	tools/java/net/tinyos/Makefile
+	tools/java/net/tinyos/nesc/Makefile
+	tools/java/net/tinyos/nesc/wiring/Makefile
+	tools/java/net/tinyos/nesc/dump/Makefile
+	tools/java/net/tinyos/nesc/dump/xml/Makefile
 )

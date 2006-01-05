@@ -4,4 +4,5 @@ nescc
 Makefile
 Makefile.in
 nescc-diff
-jnesc
+nescc-wiring
+nesc.jar
