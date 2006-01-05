@@ -1,0 +1,265 @@
+<nesc xmlns="http://www.tinyos.net/nesC">
+  <components>
+  </components>
+  <interfaces>
+    <interface provided="0" name="StdControl" ref="0xb7da9f18" loc="45:basic/Main.nc">
+      <component-ref qname="Main"/>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="0xb7da9f18"/></type-interface>
+      <instance>
+        <interfacedef-ref qname="StdControl"/>
+      </instance>
+      <interface-functions>
+        <function-ref name="init" scoped="" ref="0xb7dab0f0"/>
+        <function-ref name="start" scoped="" ref="0xb7dab1c0"/>
+        <function-ref name="stop" scoped="" ref="0xb7dab290"/>
+      </interface-functions>
+    </interface>
+    <interface provided="0" name="StdControl" ref="0xb7da6010" loc="47:basic/RealMain.nc">
+      <component-ref qname="RealMain"/>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="0xb7da6010"/></type-interface>
+      <instance>
+        <interfacedef-ref qname="StdControl"/>
+      </instance>
+      <interface-functions>
+        <function-ref name="init" scoped="" ref="0xb7da61d8"/>
+        <function-ref name="start" scoped="" ref="0xb7da62a8"/>
+        <function-ref name="stop" scoped="" ref="0xb7da6378"/>
+      </interface-functions>
+    </interface>
+    <interface provided="0" name="Leds" ref="0xb7d9c9a8" loc="43:basic/BlinkM.nc">
+      <component-ref qname="BlinkM"/>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="Leds" scoped="" ref="0xb7d9c9a8"/></type-interface>
+      <instance>
+        <interfacedef-ref qname="Leds"/>
+      </instance>
+      <interface-functions>
+        <function-ref name="yellowOff" scoped="" ref="0xb7d9cb70"/>
+        <function-ref name="yellowOn" scoped="" ref="0xb7d9cc40"/>
+        <function-ref name="init" scoped="" ref="0xb7d9cd10"/>
+        <function-ref name="greenOff" scoped="" ref="0xb7d9cde0"/>
+        <function-ref name="redOff" scoped="" ref="0xb7d9ceb0"/>
+        <function-ref name="greenToggle" scoped="" ref="0xb7da4010"/>
+        <function-ref name="get" scoped="" ref="0xb7da40e0"/>
+        <function-ref name="yellowToggle" scoped="" ref="0xb7da41b0"/>
+        <function-ref name="redToggle" scoped="" ref="0xb7da4280"/>
+        <function-ref name="set" scoped="" ref="0xb7da4350"/>
+        <function-ref name="redOn" scoped="" ref="0xb7da4420"/>
+        <function-ref name="greenOn" scoped="" ref="0xb7da44f0"/>
+      </interface-functions>
+    </interface>
+    <interface provided="1" name="StdControl" ref="0xb7da77f0" loc="39:basic/BlinkM.nc">
+      <component-ref qname="BlinkM"/>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="0xb7da77f0"/></type-interface>
+      <instance>
+        <interfacedef-ref qname="StdControl"/>
+      </instance>
+      <interface-functions>
+        <function-ref name="init" scoped="" ref="0xb7da79b8"/>
+        <function-ref name="start" scoped="" ref="0xb7da7a88"/>
+        <function-ref name="stop" scoped="" ref="0xb7da7b58"/>
+      </interface-functions>
+    </interface>
+    <interface provided="0" name="Timer" ref="0xb7da1d48" loc="42:basic/BlinkM.nc">
+      <component-ref qname="BlinkM"/>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="Timer" scoped="" ref="0xb7da1d48"/></type-interface>
+      <instance>
+        <interfacedef-ref qname="Timer"/>
+      </instance>
+      <interface-functions>
+        <function-ref name="fired" scoped="" ref="0xb7da1f10"/>
+        <function-ref name="start" scoped="" ref="0xb7db2010"/>
+        <function-ref name="stop" scoped="" ref="0xb7db20e0"/>
+      </interface-functions>
+    </interface>
+    <interface provided="1" name="StdControl" ref="0xb7d99c18" loc="48:basic/SingleTimer.nc">
+      <component-ref qname="SingleTimer"/>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="0xb7d99c18"/></type-interface>
+      <instance>
+        <interfacedef-ref qname="StdControl"/>
+      </instance>
+      <interface-functions>
+        <function-ref name="init" scoped="" ref="0xb7d99de0"/>
+        <function-ref name="start" scoped="" ref="0xb7d99eb0"/>
+        <function-ref name="stop" scoped="" ref="0xb7d98010"/>
+      </interface-functions>
+    </interface>
+    <interface provided="1" name="Timer" ref="0xb7d99750" loc="47:basic/SingleTimer.nc">
+      <component-ref qname="SingleTimer"/>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="Timer" scoped="" ref="0xb7d99750"/></type-interface>
+      <instance>
+        <interfacedef-ref qname="Timer"/>
+      </instance>
+      <interface-functions>
+        <function-ref name="fired" scoped="" ref="0xb7d99918"/>
+        <function-ref name="start" scoped="" ref="0xb7d999e8"/>
+        <function-ref name="stop" scoped="" ref="0xb7d99ab8"/>
+      </interface-functions>
+    </interface>
+    <interface provided="1" name="StdControl" ref="0xb7d934d8" loc="53:basic/TimerC.nc">
+      <component-ref qname="TimerC"/>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="0xb7d934d8"/></type-interface>
+      <instance>
+        <interfacedef-ref qname="StdControl"/>
+      </instance>
+      <interface-functions>
+        <function-ref name="init" scoped="" ref="0xb7d936a0"/>
+        <function-ref name="start" scoped="" ref="0xb7d93770"/>
+        <function-ref name="stop" scoped="" ref="0xb7d93840"/>
+      </interface-functions>
+    </interface>
+    <interface provided="1" name="Timer" ref="0xb7d93010" loc="52:basic/TimerC.nc">
+      <component-ref qname="TimerC"/>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="Timer" scoped="" ref="0xb7d93010"/></type-interface>
+      <instance>
+        <interfacedef-ref qname="Timer"/>
+      </instance>
+      <interface-parameters>
+        <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
+          <typename><typedef-ref name="uint8_t" ref="0xb7f40ec8"/></typename>
+        </type-int>
+      </interface-parameters>
+      <interface-functions>
+        <function-ref name="fired" scoped="" ref="0xb7d931d8"/>
+        <function-ref name="start" scoped="" ref="0xb7d932a8"/>
+        <function-ref name="stop" scoped="" ref="0xb7d93378"/>
+      </interface-functions>
+    </interface>
+    <interface provided="0" name="Clock" ref="0xb7d82900" loc="53:basic/TimerM.nc">
+      <component-ref qname="TimerM"/>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="Clock" scoped="" ref="0xb7d82900"/></type-interface>
+      <instance>
+        <interfacedef-ref qname="Clock"/>
+      </instance>
+      <interface-functions>
+        <function-ref name="setCounter" scoped="" ref="0xb7d82ac8"/>
+        <function-ref name="intEnable" scoped="" ref="0xb7d82b98"/>
+        <function-ref name="setNextScale" scoped="" ref="0xb7d82c68"/>
+        <function-ref name="setInterval" scoped="" ref="0xb7d82d38"/>
+        <function-ref name="setIntervalAndScale" scoped="" ref="0xb7d82e08"/>
+        <function-ref name="getScale" scoped="" ref="0xb7d82ed8"/>
+        <function-ref name="readCounter" scoped="" ref="0xb7d8c010"/>
+        <function-ref name="setRate" scoped="" ref="0xb7d8c0e0"/>
+        <function-ref name="setNextInterval" scoped="" ref="0xb7d8c1b0"/>
+        <function-ref name="getInterval" scoped="" ref="0xb7d8c280"/>
+        <function-ref name="intDisable" scoped="" ref="0xb7d8c350"/>
+        <function-ref name="fire" scoped="" ref="0xb7d8c420"/>
+      </interface-functions>
+    </interface>
+    <interface provided="0" name="Leds" ref="0xb7d8e248" loc="52:basic/TimerM.nc">
+      <component-ref qname="TimerM"/>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="Leds" scoped="" ref="0xb7d8e248"/></type-interface>
+      <instance>
+        <interfacedef-ref qname="Leds"/>
+      </instance>
+      <interface-functions>
+        <function-ref name="yellowOff" scoped="" ref="0xb7d8e410"/>
+        <function-ref name="yellowOn" scoped="" ref="0xb7d8e4e0"/>
+        <function-ref name="init" scoped="" ref="0xb7d8e5b0"/>
+        <function-ref name="greenOff" scoped="" ref="0xb7d8e680"/>
+        <function-ref name="redOff" scoped="" ref="0xb7d8e750"/>
+        <function-ref name="greenToggle" scoped="" ref="0xb7d8e820"/>
+        <function-ref name="get" scoped="" ref="0xb7d8e8f0"/>
+        <function-ref name="yellowToggle" scoped="" ref="0xb7d8e9c0"/>
+        <function-ref name="redToggle" scoped="" ref="0xb7d8ea90"/>
+        <function-ref name="set" scoped="" ref="0xb7d8eb60"/>
+        <function-ref name="redOn" scoped="" ref="0xb7d8ec30"/>
+        <function-ref name="greenOn" scoped="" ref="0xb7d8ed00"/>
+      </interface-functions>
+    </interface>
+    <interface provided="1" name="StdControl" ref="0xb7d8fcc8" loc="50:basic/TimerM.nc">
+      <component-ref qname="TimerM"/>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="0xb7d8fcc8"/></type-interface>
+      <instance>
+        <interfacedef-ref qname="StdControl"/>
+      </instance>
+      <interface-functions>
+        <function-ref name="init" scoped="" ref="0xb7d8fe90"/>
+        <function-ref name="start" scoped="" ref="0xb7d8e010"/>
+        <function-ref name="stop" scoped="" ref="0xb7d8e0e0"/>
+      </interface-functions>
+    </interface>
+    <interface provided="1" name="Timer" ref="0xb7d8f800" loc="49:basic/TimerM.nc">
+      <component-ref qname="TimerM"/>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="Timer" scoped="" ref="0xb7d8f800"/></type-interface>
+      <instance>
+        <interfacedef-ref qname="Timer"/>
+      </instance>
+      <interface-parameters>
+        <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
+          <typename><typedef-ref name="uint8_t" ref="0xb7f40ec8"/></typename>
+        </type-int>
+      </interface-parameters>
+      <interface-functions>
+        <function-ref name="fired" scoped="" ref="0xb7d8f9c8"/>
+        <function-ref name="start" scoped="" ref="0xb7d8fa98"/>
+        <function-ref name="stop" scoped="" ref="0xb7d8fb68"/>
+      </interface-functions>
+    </interface>
+    <interface provided="1" name="Clock" ref="0xb7d919e8" loc="55:basic/ClockC.nc">
+      <component-ref qname="ClockC"/>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="Clock" scoped="" ref="0xb7d919e8"/></type-interface>
+      <instance>
+        <interfacedef-ref qname="Clock"/>
+      </instance>
+      <interface-functions>
+        <function-ref name="setCounter" scoped="" ref="0xb7d91bb0"/>
+        <function-ref name="intEnable" scoped="" ref="0xb7d91c80"/>
+        <function-ref name="setNextScale" scoped="" ref="0xb7d91d50"/>
+        <function-ref name="setInterval" scoped="" ref="0xb7d91e20"/>
+        <function-ref name="setIntervalAndScale" scoped="" ref="0xb7d91ef0"/>
+        <function-ref name="getScale" scoped="" ref="0xb7d68010"/>
+        <function-ref name="readCounter" scoped="" ref="0xb7d680e0"/>
+        <function-ref name="setRate" scoped="" ref="0xb7d681b0"/>
+        <function-ref name="setNextInterval" scoped="" ref="0xb7d68280"/>
+        <function-ref name="getInterval" scoped="" ref="0xb7d68350"/>
+        <function-ref name="intDisable" scoped="" ref="0xb7d68420"/>
+        <function-ref name="fire" scoped="" ref="0xb7d684f0"/>
+      </interface-functions>
+    </interface>
+    <interface provided="1" name="StdControl" ref="0xb7d68650" loc="56:basic/ClockC.nc">
+      <component-ref qname="ClockC"/>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="0xb7d68650"/></type-interface>
+      <instance>
+        <interfacedef-ref qname="StdControl"/>
+      </instance>
+      <interface-functions>
+        <function-ref name="init" scoped="" ref="0xb7d68818"/>
+        <function-ref name="start" scoped="" ref="0xb7d688e8"/>
+        <function-ref name="stop" scoped="" ref="0xb7d689b8"/>
+      </interface-functions>
+    </interface>
+    <interface provided="1" name="Leds" ref="0xb7d58470" loc="47:basic/NoLeds.nc">
+      <component-ref qname="NoLeds"/>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="Leds" scoped="" ref="0xb7d58470"/></type-interface>
+      <instance>
+        <interfacedef-ref qname="Leds"/>
+      </instance>
+      <interface-functions>
+        <function-ref name="yellowOff" scoped="" ref="0xb7d58638"/>
+        <function-ref name="yellowOn" scoped="" ref="0xb7d58708"/>
+        <function-ref name="init" scoped="" ref="0xb7d587d8"/>
+        <function-ref name="greenOff" scoped="" ref="0xb7d588a8"/>
+        <function-ref name="redOff" scoped="" ref="0xb7d58978"/>
+        <function-ref name="greenToggle" scoped="" ref="0xb7d58a48"/>
+        <function-ref name="get" scoped="" ref="0xb7d58b18"/>
+        <function-ref name="yellowToggle" scoped="" ref="0xb7d58be8"/>
+        <function-ref name="redToggle" scoped="" ref="0xb7d58cb8"/>
+        <function-ref name="set" scoped="" ref="0xb7d58d88"/>
+        <function-ref name="redOn" scoped="" ref="0xb7d58e58"/>
+        <function-ref name="greenOn" scoped="" ref="0xb7d58f28"/>
+      </interface-functions>
+    </interface>
+  </interfaces>
+  <interfacedefs>
+  </interfacedefs>
+  <tags>
+  </tags>
+  <variables>
+  </variables>
+  <constants>
+  </constants>
+  <functions>
+  </functions>
+  <typedefs>
+  </typedefs>
+</nesc>

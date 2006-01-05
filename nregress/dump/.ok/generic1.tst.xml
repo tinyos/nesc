@@ -48,17 +48,17 @@
       </instance>
       <module/>
       <attribute-value>
-        <attribute-ref name="useful" ref="HEX"/>
+        <attribute-ref name="useful" ref="0xb7e13448"/>
         <value-structured>
-          <type-tag size="I:8" alignment="I:4"><attribute-ref name="useful" ref="HEX"/></type-tag>
-          <structured-element field="y" ref="HEX">
+          <type-tag size="I:8" alignment="I:4"><attribute-ref name="useful" ref="0xb7e13448"/></type-tag>
+          <structured-element field="y" ref="0xb7e136d0">
             <value cst="V:">
               <type-pointer size="I:4" alignment="I:4">
                 <type-int cname="char" size="I:1" alignment="I:1"></type-int>
               </type-pointer>
             </value>
           </structured-element>
-          <structured-element field="x" ref="HEX">
+          <structured-element field="x" ref="0xb7e13670">
             <value cst="I:230">
               <type-int cname="int" size="I:4" alignment="I:4"></type-int>
             </value>
@@ -83,24 +83,24 @@
         <short>&#10; @author Su Ping &#60;sping@intel-research.net>&#10;</short>
       </documentation>
       <parameters>
-        <constant name="maxTimerInterval" ref="HEX" loc="48:generic/TimerM.nc">
+        <constant name="maxTimerInterval" ref="0xb7df5648" loc="48:generic/TimerM.nc">
           <component-ref qname="TimerM"/>
           <type-int cname="int" size="I:4" alignment="I:4"></type-int>
         </constant>
       </parameters>
       <module/>
       <attribute-value>
-        <attribute-ref name="useful" ref="HEX"/>
+        <attribute-ref name="useful" ref="0xb7e13448"/>
         <value-structured>
-          <type-tag size="I:8" alignment="I:4"><attribute-ref name="useful" ref="HEX"/></type-tag>
-          <structured-element field="y" ref="HEX">
+          <type-tag size="I:8" alignment="I:4"><attribute-ref name="useful" ref="0xb7e13448"/></type-tag>
+          <structured-element field="y" ref="0xb7e136d0">
             <value cst="S:timer">
               <type-pointer size="I:4" alignment="I:4">
                 <type-int cname="char" size="I:1" alignment="I:1"></type-int>
               </type-pointer>
             </value>
           </structured-element>
-          <structured-element field="x" ref="HEX">
+          <structured-element field="x" ref="0xb7e13670">
             <value cst="V:">
               <type-int cname="int" size="I:4" alignment="I:4"></type-int>
             </value>

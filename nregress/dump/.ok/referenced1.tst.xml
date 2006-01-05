@@ -1,24 +1,24 @@
 <nesc xmlns="http://www.tinyos.net/nesC">
   <wiring>
     <wire loc="46:basic/Blink.nc">
-      <from><interface-ref name="StdControl" scoped="" ref="HEX"/></from>
-      <to><interface-ref name="StdControl" scoped="" ref="HEX"/></to>
+      <from><interface-ref name="StdControl" scoped="" ref="0xb7e3df18"/></from>
+      <to><interface-ref name="StdControl" scoped="" ref="0xb7e2dc18"/></to>
     </wire>
     <wire loc="47:basic/Blink.nc">
-      <from><interface-ref name="StdControl" scoped="" ref="HEX"/></from>
-      <to><interface-ref name="StdControl" scoped="" ref="HEX"/></to>
+      <from><interface-ref name="StdControl" scoped="" ref="0xb7e3df18"/></from>
+      <to><interface-ref name="StdControl" scoped="" ref="0xb7e3b7f0"/></to>
     </wire>
     <wire loc="55:basic/SingleTimer.nc">
-      <from><interface-ref name="StdControl" scoped="" ref="HEX"/></from>
-      <to><interface-ref name="StdControl" scoped="" ref="HEX"/></to>
+      <from><interface-ref name="StdControl" scoped="" ref="0xb7e2dc18"/></from>
+      <to><interface-ref name="StdControl" scoped="" ref="0xb7e274d8"/></to>
     </wire>
     <wire loc="48:basic/Blink.nc">
-      <from><interface-ref name="Timer" scoped="" ref="HEX"/></from>
-      <to><interface-ref name="Timer" scoped="" ref="HEX"/></to>
+      <from><interface-ref name="Timer" scoped="" ref="0xb7e35d48"/></from>
+      <to><interface-ref name="Timer" scoped="" ref="0xb7e2d750"/></to>
     </wire>
     <wire loc="54:basic/SingleTimer.nc">
-      <from><interface-ref name="Timer" scoped="" ref="HEX"/></from>
-      <to><interface-ref name="Timer" scoped="" ref="HEX"/>
+      <from><interface-ref name="Timer" scoped="" ref="0xb7e2d750"/></from>
+      <to><interface-ref name="Timer" scoped="" ref="0xb7e27010"/>
       <arguments>
         <value cst="I:0">
           <type-int cname="unsigned int" unsigned="" size="I:4" alignment="I:4"></type-int>
@@ -27,266 +27,266 @@
       </to>
     </wire>
     <wire loc="49:basic/Blink.nc">
-      <from><interface-ref name="Leds" scoped="" ref="HEX"/></from>
-      <to><interface-ref name="Leds" scoped="" ref="HEX"/></to>
+      <from><interface-ref name="Leds" scoped="" ref="0xb7e309a8"/></from>
+      <to><interface-ref name="Leds" scoped="" ref="0xb7dec470"/></to>
     </wire>
     <wire loc="51:basic/Main.nc">
-      <from><interface-ref name="StdControl" scoped="" ref="HEX"/></from>
-      <to><interface-ref name="StdControl" scoped="" ref="HEX"/></to>
+      <from><interface-ref name="StdControl" scoped="" ref="0xb7e3a010"/></from>
+      <to><interface-ref name="StdControl" scoped="" ref="0xb7e3df18"/></to>
     </wire>
     <wire loc="62:basic/TimerC.nc">
-      <from><interface-ref name="StdControl" scoped="" ref="HEX"/></from>
-      <to><interface-ref name="StdControl" scoped="" ref="HEX"/></to>
+      <from><interface-ref name="StdControl" scoped="" ref="0xb7e274d8"/></from>
+      <to><interface-ref name="StdControl" scoped="" ref="0xb7e23cc8"/></to>
     </wire>
     <wire loc="63:basic/TimerC.nc">
-      <from><interface-ref name="Timer" scoped="" ref="HEX"/></from>
-      <to><interface-ref name="Timer" scoped="" ref="HEX"/></to>
+      <from><interface-ref name="Timer" scoped="" ref="0xb7e27010"/></from>
+      <to><interface-ref name="Timer" scoped="" ref="0xb7e23800"/></to>
     </wire>
     <wire loc="59:basic/TimerC.nc">
-      <from><interface-ref name="Leds" scoped="" ref="HEX"/></from>
-      <to><interface-ref name="Leds" scoped="" ref="HEX"/></to>
+      <from><interface-ref name="Leds" scoped="" ref="0xb7e22248"/></from>
+      <to><interface-ref name="Leds" scoped="" ref="0xb7dec470"/></to>
     </wire>
     <wire loc="60:basic/TimerC.nc">
-      <from><interface-ref name="Clock" scoped="" ref="HEX"/></from>
-      <to><interface-ref name="Clock" scoped="" ref="HEX"/></to>
+      <from><interface-ref name="Clock" scoped="" ref="0xb7e16900"/></from>
+      <to><interface-ref name="Clock" scoped="" ref="0xb7e259e8"/></to>
     </wire>
   </wiring>
   <components>
   </components>
   <interfaces>
-    <interface provided="0" name="StdControl" ref="HEX" loc="45:basic/Main.nc">
+    <interface provided="0" name="StdControl" ref="0xb7e3df18" loc="45:basic/Main.nc">
       <component-ref qname="Main"/>
-      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="HEX"/></type-interface>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="0xb7e3df18"/></type-interface>
       <instance>
         <interfacedef-ref qname="StdControl"/>
       </instance>
       <interface-functions>
-        <function-ref name="init" scoped="" ref="HEX"/>
-        <function-ref name="start" scoped="" ref="HEX"/>
-        <function-ref name="stop" scoped="" ref="HEX"/>
+        <function-ref name="init" scoped="" ref="0xb7e3f0f0"/>
+        <function-ref name="start" scoped="" ref="0xb7e3f1c0"/>
+        <function-ref name="stop" scoped="" ref="0xb7e3f290"/>
       </interface-functions>
     </interface>
-    <interface provided="1" name="StdControl" ref="HEX" loc="48:basic/SingleTimer.nc">
+    <interface provided="1" name="StdControl" ref="0xb7e2dc18" loc="48:basic/SingleTimer.nc">
       <component-ref qname="SingleTimer"/>
-      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="HEX"/></type-interface>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="0xb7e2dc18"/></type-interface>
       <instance>
         <interfacedef-ref qname="StdControl"/>
       </instance>
       <interface-functions>
-        <function-ref name="init" scoped="" ref="HEX"/>
-        <function-ref name="start" scoped="" ref="HEX"/>
-        <function-ref name="stop" scoped="" ref="HEX"/>
+        <function-ref name="init" scoped="" ref="0xb7e2dde0"/>
+        <function-ref name="start" scoped="" ref="0xb7e2deb0"/>
+        <function-ref name="stop" scoped="" ref="0xb7e2c010"/>
       </interface-functions>
     </interface>
-    <interface provided="1" name="StdControl" ref="HEX" loc="39:basic/BlinkM.nc">
+    <interface provided="1" name="StdControl" ref="0xb7e3b7f0" loc="39:basic/BlinkM.nc">
       <component-ref qname="BlinkM"/>
-      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="HEX"/></type-interface>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="0xb7e3b7f0"/></type-interface>
       <instance>
         <interfacedef-ref qname="StdControl"/>
       </instance>
       <interface-functions>
-        <function-ref name="init" scoped="" ref="HEX"/>
-        <function-ref name="start" scoped="" ref="HEX"/>
-        <function-ref name="stop" scoped="" ref="HEX"/>
+        <function-ref name="init" scoped="" ref="0xb7e3b9b8"/>
+        <function-ref name="start" scoped="" ref="0xb7e3ba88"/>
+        <function-ref name="stop" scoped="" ref="0xb7e3bb58"/>
       </interface-functions>
     </interface>
-    <interface provided="1" name="StdControl" ref="HEX" loc="53:basic/TimerC.nc">
+    <interface provided="1" name="StdControl" ref="0xb7e274d8" loc="53:basic/TimerC.nc">
       <component-ref qname="TimerC"/>
-      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="HEX"/></type-interface>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="0xb7e274d8"/></type-interface>
       <instance>
         <interfacedef-ref qname="StdControl"/>
       </instance>
       <interface-functions>
-        <function-ref name="init" scoped="" ref="HEX"/>
-        <function-ref name="start" scoped="" ref="HEX"/>
-        <function-ref name="stop" scoped="" ref="HEX"/>
+        <function-ref name="init" scoped="" ref="0xb7e276a0"/>
+        <function-ref name="start" scoped="" ref="0xb7e27770"/>
+        <function-ref name="stop" scoped="" ref="0xb7e27840"/>
       </interface-functions>
     </interface>
-    <interface provided="0" name="Timer" ref="HEX" loc="42:basic/BlinkM.nc">
+    <interface provided="0" name="Timer" ref="0xb7e35d48" loc="42:basic/BlinkM.nc">
       <component-ref qname="BlinkM"/>
-      <type-interface size="I:4" alignment="I:4"><interface-ref name="Timer" scoped="" ref="HEX"/></type-interface>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="Timer" scoped="" ref="0xb7e35d48"/></type-interface>
       <instance>
         <interfacedef-ref qname="Timer"/>
       </instance>
       <interface-functions>
-        <function-ref name="fired" scoped="" ref="HEX"/>
-        <function-ref name="start" scoped="" ref="HEX"/>
-        <function-ref name="stop" scoped="" ref="HEX"/>
+        <function-ref name="fired" scoped="" ref="0xb7e35f10"/>
+        <function-ref name="start" scoped="" ref="0xb7e46010"/>
+        <function-ref name="stop" scoped="" ref="0xb7e460e0"/>
       </interface-functions>
     </interface>
-    <interface provided="1" name="Timer" ref="HEX" loc="47:basic/SingleTimer.nc">
+    <interface provided="1" name="Timer" ref="0xb7e2d750" loc="47:basic/SingleTimer.nc">
       <component-ref qname="SingleTimer"/>
-      <type-interface size="I:4" alignment="I:4"><interface-ref name="Timer" scoped="" ref="HEX"/></type-interface>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="Timer" scoped="" ref="0xb7e2d750"/></type-interface>
       <instance>
         <interfacedef-ref qname="Timer"/>
       </instance>
       <interface-functions>
-        <function-ref name="fired" scoped="" ref="HEX"/>
-        <function-ref name="start" scoped="" ref="HEX"/>
-        <function-ref name="stop" scoped="" ref="HEX"/>
+        <function-ref name="fired" scoped="" ref="0xb7e2d918"/>
+        <function-ref name="start" scoped="" ref="0xb7e2d9e8"/>
+        <function-ref name="stop" scoped="" ref="0xb7e2dab8"/>
       </interface-functions>
     </interface>
-    <interface provided="1" name="Timer" ref="HEX" loc="52:basic/TimerC.nc">
+    <interface provided="1" name="Timer" ref="0xb7e27010" loc="52:basic/TimerC.nc">
       <component-ref qname="TimerC"/>
-      <type-interface size="I:4" alignment="I:4"><interface-ref name="Timer" scoped="" ref="HEX"/></type-interface>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="Timer" scoped="" ref="0xb7e27010"/></type-interface>
       <instance>
         <interfacedef-ref qname="Timer"/>
       </instance>
       <interface-parameters>
         <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-          <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+          <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
         </type-int>
       </interface-parameters>
       <interface-functions>
-        <function-ref name="fired" scoped="" ref="HEX"/>
-        <function-ref name="start" scoped="" ref="HEX"/>
-        <function-ref name="stop" scoped="" ref="HEX"/>
+        <function-ref name="fired" scoped="" ref="0xb7e271d8"/>
+        <function-ref name="start" scoped="" ref="0xb7e272a8"/>
+        <function-ref name="stop" scoped="" ref="0xb7e27378"/>
       </interface-functions>
     </interface>
-    <interface provided="0" name="Leds" ref="HEX" loc="43:basic/BlinkM.nc">
+    <interface provided="0" name="Leds" ref="0xb7e309a8" loc="43:basic/BlinkM.nc">
       <component-ref qname="BlinkM"/>
-      <type-interface size="I:4" alignment="I:4"><interface-ref name="Leds" scoped="" ref="HEX"/></type-interface>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="Leds" scoped="" ref="0xb7e309a8"/></type-interface>
       <instance>
         <interfacedef-ref qname="Leds"/>
       </instance>
       <interface-functions>
-        <function-ref name="yellowOff" scoped="" ref="HEX"/>
-        <function-ref name="yellowOn" scoped="" ref="HEX"/>
-        <function-ref name="init" scoped="" ref="HEX"/>
-        <function-ref name="greenOff" scoped="" ref="HEX"/>
-        <function-ref name="redOff" scoped="" ref="HEX"/>
-        <function-ref name="greenToggle" scoped="" ref="HEX"/>
-        <function-ref name="get" scoped="" ref="HEX"/>
-        <function-ref name="yellowToggle" scoped="" ref="HEX"/>
-        <function-ref name="redToggle" scoped="" ref="HEX"/>
-        <function-ref name="set" scoped="" ref="HEX"/>
-        <function-ref name="redOn" scoped="" ref="HEX"/>
-        <function-ref name="greenOn" scoped="" ref="HEX"/>
+        <function-ref name="yellowOff" scoped="" ref="0xb7e30b70"/>
+        <function-ref name="yellowOn" scoped="" ref="0xb7e30c40"/>
+        <function-ref name="init" scoped="" ref="0xb7e30d10"/>
+        <function-ref name="greenOff" scoped="" ref="0xb7e30de0"/>
+        <function-ref name="redOff" scoped="" ref="0xb7e30eb0"/>
+        <function-ref name="greenToggle" scoped="" ref="0xb7e38010"/>
+        <function-ref name="get" scoped="" ref="0xb7e380e0"/>
+        <function-ref name="yellowToggle" scoped="" ref="0xb7e381b0"/>
+        <function-ref name="redToggle" scoped="" ref="0xb7e38280"/>
+        <function-ref name="set" scoped="" ref="0xb7e38350"/>
+        <function-ref name="redOn" scoped="" ref="0xb7e38420"/>
+        <function-ref name="greenOn" scoped="" ref="0xb7e384f0"/>
       </interface-functions>
     </interface>
-    <interface provided="1" name="Leds" ref="HEX" loc="47:basic/NoLeds.nc">
+    <interface provided="1" name="Leds" ref="0xb7dec470" loc="47:basic/NoLeds.nc">
       <component-ref qname="NoLeds"/>
-      <type-interface size="I:4" alignment="I:4"><interface-ref name="Leds" scoped="" ref="HEX"/></type-interface>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="Leds" scoped="" ref="0xb7dec470"/></type-interface>
       <instance>
         <interfacedef-ref qname="Leds"/>
       </instance>
       <interface-functions>
-        <function-ref name="yellowOff" scoped="" ref="HEX"/>
-        <function-ref name="yellowOn" scoped="" ref="HEX"/>
-        <function-ref name="init" scoped="" ref="HEX"/>
-        <function-ref name="greenOff" scoped="" ref="HEX"/>
-        <function-ref name="redOff" scoped="" ref="HEX"/>
-        <function-ref name="greenToggle" scoped="" ref="HEX"/>
-        <function-ref name="get" scoped="" ref="HEX"/>
-        <function-ref name="yellowToggle" scoped="" ref="HEX"/>
-        <function-ref name="redToggle" scoped="" ref="HEX"/>
-        <function-ref name="set" scoped="" ref="HEX"/>
-        <function-ref name="redOn" scoped="" ref="HEX"/>
-        <function-ref name="greenOn" scoped="" ref="HEX"/>
+        <function-ref name="yellowOff" scoped="" ref="0xb7dec638"/>
+        <function-ref name="yellowOn" scoped="" ref="0xb7dec708"/>
+        <function-ref name="init" scoped="" ref="0xb7dec7d8"/>
+        <function-ref name="greenOff" scoped="" ref="0xb7dec8a8"/>
+        <function-ref name="redOff" scoped="" ref="0xb7dec978"/>
+        <function-ref name="greenToggle" scoped="" ref="0xb7deca48"/>
+        <function-ref name="get" scoped="" ref="0xb7decb18"/>
+        <function-ref name="yellowToggle" scoped="" ref="0xb7decbe8"/>
+        <function-ref name="redToggle" scoped="" ref="0xb7deccb8"/>
+        <function-ref name="set" scoped="" ref="0xb7decd88"/>
+        <function-ref name="redOn" scoped="" ref="0xb7dece58"/>
+        <function-ref name="greenOn" scoped="" ref="0xb7decf28"/>
       </interface-functions>
     </interface>
-    <interface provided="0" name="StdControl" ref="HEX" loc="47:basic/RealMain.nc">
+    <interface provided="0" name="StdControl" ref="0xb7e3a010" loc="47:basic/RealMain.nc">
       <component-ref qname="RealMain"/>
-      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="HEX"/></type-interface>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="0xb7e3a010"/></type-interface>
       <instance>
         <interfacedef-ref qname="StdControl"/>
       </instance>
       <interface-functions>
-        <function-ref name="init" scoped="" ref="HEX"/>
-        <function-ref name="start" scoped="" ref="HEX"/>
-        <function-ref name="stop" scoped="" ref="HEX"/>
+        <function-ref name="init" scoped="" ref="0xb7e3a1d8"/>
+        <function-ref name="start" scoped="" ref="0xb7e3a2a8"/>
+        <function-ref name="stop" scoped="" ref="0xb7e3a378"/>
       </interface-functions>
     </interface>
-    <interface provided="1" name="StdControl" ref="HEX" loc="50:basic/TimerM.nc">
+    <interface provided="1" name="StdControl" ref="0xb7e23cc8" loc="50:basic/TimerM.nc">
       <component-ref qname="TimerM"/>
-      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="HEX"/></type-interface>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="StdControl" scoped="" ref="0xb7e23cc8"/></type-interface>
       <instance>
         <interfacedef-ref qname="StdControl"/>
       </instance>
       <interface-functions>
-        <function-ref name="init" scoped="" ref="HEX"/>
-        <function-ref name="start" scoped="" ref="HEX"/>
-        <function-ref name="stop" scoped="" ref="HEX"/>
+        <function-ref name="init" scoped="" ref="0xb7e23e90"/>
+        <function-ref name="start" scoped="" ref="0xb7e22010"/>
+        <function-ref name="stop" scoped="" ref="0xb7e220e0"/>
       </interface-functions>
     </interface>
-    <interface provided="1" name="Timer" ref="HEX" loc="49:basic/TimerM.nc">
+    <interface provided="1" name="Timer" ref="0xb7e23800" loc="49:basic/TimerM.nc">
       <component-ref qname="TimerM"/>
-      <type-interface size="I:4" alignment="I:4"><interface-ref name="Timer" scoped="" ref="HEX"/></type-interface>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="Timer" scoped="" ref="0xb7e23800"/></type-interface>
       <instance>
         <interfacedef-ref qname="Timer"/>
       </instance>
       <interface-parameters>
         <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-          <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+          <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
         </type-int>
       </interface-parameters>
       <interface-functions>
-        <function-ref name="fired" scoped="" ref="HEX"/>
-        <function-ref name="start" scoped="" ref="HEX"/>
-        <function-ref name="stop" scoped="" ref="HEX"/>
+        <function-ref name="fired" scoped="" ref="0xb7e239c8"/>
+        <function-ref name="start" scoped="" ref="0xb7e23a98"/>
+        <function-ref name="stop" scoped="" ref="0xb7e23b68"/>
       </interface-functions>
     </interface>
-    <interface provided="0" name="Leds" ref="HEX" loc="52:basic/TimerM.nc">
+    <interface provided="0" name="Leds" ref="0xb7e22248" loc="52:basic/TimerM.nc">
       <component-ref qname="TimerM"/>
-      <type-interface size="I:4" alignment="I:4"><interface-ref name="Leds" scoped="" ref="HEX"/></type-interface>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="Leds" scoped="" ref="0xb7e22248"/></type-interface>
       <instance>
         <interfacedef-ref qname="Leds"/>
       </instance>
       <interface-functions>
-        <function-ref name="yellowOff" scoped="" ref="HEX"/>
-        <function-ref name="yellowOn" scoped="" ref="HEX"/>
-        <function-ref name="init" scoped="" ref="HEX"/>
-        <function-ref name="greenOff" scoped="" ref="HEX"/>
-        <function-ref name="redOff" scoped="" ref="HEX"/>
-        <function-ref name="greenToggle" scoped="" ref="HEX"/>
-        <function-ref name="get" scoped="" ref="HEX"/>
-        <function-ref name="yellowToggle" scoped="" ref="HEX"/>
-        <function-ref name="redToggle" scoped="" ref="HEX"/>
-        <function-ref name="set" scoped="" ref="HEX"/>
-        <function-ref name="redOn" scoped="" ref="HEX"/>
-        <function-ref name="greenOn" scoped="" ref="HEX"/>
+        <function-ref name="yellowOff" scoped="" ref="0xb7e22410"/>
+        <function-ref name="yellowOn" scoped="" ref="0xb7e224e0"/>
+        <function-ref name="init" scoped="" ref="0xb7e225b0"/>
+        <function-ref name="greenOff" scoped="" ref="0xb7e22680"/>
+        <function-ref name="redOff" scoped="" ref="0xb7e22750"/>
+        <function-ref name="greenToggle" scoped="" ref="0xb7e22820"/>
+        <function-ref name="get" scoped="" ref="0xb7e228f0"/>
+        <function-ref name="yellowToggle" scoped="" ref="0xb7e229c0"/>
+        <function-ref name="redToggle" scoped="" ref="0xb7e22a90"/>
+        <function-ref name="set" scoped="" ref="0xb7e22b60"/>
+        <function-ref name="redOn" scoped="" ref="0xb7e22c30"/>
+        <function-ref name="greenOn" scoped="" ref="0xb7e22d00"/>
       </interface-functions>
     </interface>
-    <interface provided="0" name="Clock" ref="HEX" loc="53:basic/TimerM.nc">
+    <interface provided="0" name="Clock" ref="0xb7e16900" loc="53:basic/TimerM.nc">
       <component-ref qname="TimerM"/>
-      <type-interface size="I:4" alignment="I:4"><interface-ref name="Clock" scoped="" ref="HEX"/></type-interface>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="Clock" scoped="" ref="0xb7e16900"/></type-interface>
       <instance>
         <interfacedef-ref qname="Clock"/>
       </instance>
       <interface-functions>
-        <function-ref name="setCounter" scoped="" ref="HEX"/>
-        <function-ref name="intEnable" scoped="" ref="HEX"/>
-        <function-ref name="setNextScale" scoped="" ref="HEX"/>
-        <function-ref name="setInterval" scoped="" ref="HEX"/>
-        <function-ref name="setIntervalAndScale" scoped="" ref="HEX"/>
-        <function-ref name="getScale" scoped="" ref="HEX"/>
-        <function-ref name="readCounter" scoped="" ref="HEX"/>
-        <function-ref name="setRate" scoped="" ref="HEX"/>
-        <function-ref name="setNextInterval" scoped="" ref="HEX"/>
-        <function-ref name="getInterval" scoped="" ref="HEX"/>
-        <function-ref name="intDisable" scoped="" ref="HEX"/>
-        <function-ref name="fire" scoped="" ref="HEX"/>
+        <function-ref name="setCounter" scoped="" ref="0xb7e16ac8"/>
+        <function-ref name="intEnable" scoped="" ref="0xb7e16b98"/>
+        <function-ref name="setNextScale" scoped="" ref="0xb7e16c68"/>
+        <function-ref name="setInterval" scoped="" ref="0xb7e16d38"/>
+        <function-ref name="setIntervalAndScale" scoped="" ref="0xb7e16e08"/>
+        <function-ref name="getScale" scoped="" ref="0xb7e16ed8"/>
+        <function-ref name="readCounter" scoped="" ref="0xb7e20010"/>
+        <function-ref name="setRate" scoped="" ref="0xb7e200e0"/>
+        <function-ref name="setNextInterval" scoped="" ref="0xb7e201b0"/>
+        <function-ref name="getInterval" scoped="" ref="0xb7e20280"/>
+        <function-ref name="intDisable" scoped="" ref="0xb7e20350"/>
+        <function-ref name="fire" scoped="" ref="0xb7e20420"/>
       </interface-functions>
     </interface>
-    <interface provided="1" name="Clock" ref="HEX" loc="55:basic/ClockC.nc">
+    <interface provided="1" name="Clock" ref="0xb7e259e8" loc="55:basic/ClockC.nc">
       <component-ref qname="ClockC"/>
-      <type-interface size="I:4" alignment="I:4"><interface-ref name="Clock" scoped="" ref="HEX"/></type-interface>
+      <type-interface size="I:4" alignment="I:4"><interface-ref name="Clock" scoped="" ref="0xb7e259e8"/></type-interface>
       <instance>
         <interfacedef-ref qname="Clock"/>
       </instance>
       <interface-functions>
-        <function-ref name="setCounter" scoped="" ref="HEX"/>
-        <function-ref name="intEnable" scoped="" ref="HEX"/>
-        <function-ref name="setNextScale" scoped="" ref="HEX"/>
-        <function-ref name="setInterval" scoped="" ref="HEX"/>
-        <function-ref name="setIntervalAndScale" scoped="" ref="HEX"/>
-        <function-ref name="getScale" scoped="" ref="HEX"/>
-        <function-ref name="readCounter" scoped="" ref="HEX"/>
-        <function-ref name="setRate" scoped="" ref="HEX"/>
-        <function-ref name="setNextInterval" scoped="" ref="HEX"/>
-        <function-ref name="getInterval" scoped="" ref="HEX"/>
-        <function-ref name="intDisable" scoped="" ref="HEX"/>
-        <function-ref name="fire" scoped="" ref="HEX"/>
+        <function-ref name="setCounter" scoped="" ref="0xb7e25bb0"/>
+        <function-ref name="intEnable" scoped="" ref="0xb7e25c80"/>
+        <function-ref name="setNextScale" scoped="" ref="0xb7e25d50"/>
+        <function-ref name="setInterval" scoped="" ref="0xb7e25e20"/>
+        <function-ref name="setIntervalAndScale" scoped="" ref="0xb7e25ef0"/>
+        <function-ref name="getScale" scoped="" ref="0xb7dfc010"/>
+        <function-ref name="readCounter" scoped="" ref="0xb7dfc0e0"/>
+        <function-ref name="setRate" scoped="" ref="0xb7dfc1b0"/>
+        <function-ref name="setNextInterval" scoped="" ref="0xb7dfc280"/>
+        <function-ref name="getInterval" scoped="" ref="0xb7dfc350"/>
+        <function-ref name="intDisable" scoped="" ref="0xb7dfc420"/>
+        <function-ref name="fire" scoped="" ref="0xb7dfc4f0"/>
       </interface-functions>
     </interface>
   </interfaces>
@@ -297,24 +297,24 @@
         <long>&#10; The TinyOS standard control interface. All components that require&#10; initialization or can be powered down should provide this&#10; interface. start() and stop() are synonymous with powering on and&#10; off, when appropriate.&#10;&#10; On boot, the init() of all wired components must be called. init()&#10; may be called multiple times, and in subcomponents before some of&#10; their supercomponents (e.g. if they are the subcomponent of&#10; multiple components). After init() has been called, start() and&#10; stop() may be called multiple times, in any order. The call&#10; sequence is therefore:&#10;&#10; &#60;p>init* (start|stop)*&#60;/p>&#10;&#10; @author Jason Hill&#10; @author David Gay&#10; @author Philip Levis&#10; @modified  6/25/02&#10;&#10;&#10;</long>
       </documentation>
       <attribute-value>
-        <attribute-ref name="useful" ref="HEX"/>
+        <attribute-ref name="useful" ref="0xb7e41448"/>
         <value-structured>
-          <type-tag size="I:8" alignment="I:4"><attribute-ref name="useful" ref="HEX"/></type-tag>
-          <structured-element field="y" ref="HEX">
+          <type-tag size="I:8" alignment="I:4"><attribute-ref name="useful" ref="0xb7e41448"/></type-tag>
+          <structured-element field="y" ref="0xb7e416d0">
             <value cst="S:yeah">
               <type-pointer size="I:4" alignment="I:4">
                 <type-int cname="char" size="I:1" alignment="I:1"></type-int>
               </type-pointer>
             </value>
           </structured-element>
-          <structured-element field="x" ref="HEX">
+          <structured-element field="x" ref="0xb7e41670">
             <value cst="I:3">
               <type-int cname="int" size="I:4" alignment="I:4"></type-int>
             </value>
           </structured-element>
         </value-structured>
       </attribute-value>
-      <function command="" provided="0" name="init" ref="HEX" loc="63:basic/StdControl.nc">
+      <function command="" provided="0" name="init" ref="0xb7e3d010" loc="63:basic/StdControl.nc">
         <documentation loc="58:basic/StdControl.nc">
           <short>&#10; Initialize the component and its subcomponents.&#10;&#10;</short>
           <long>&#10; Initialize the component and its subcomponents.&#10;&#10; @return Whether initialization was successful.&#10;</long>
@@ -322,19 +322,19 @@
         <interfacedef-ref qname="StdControl"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
         </type-function>
         <attribute-value>
-          <attribute-ref name="empty" ref="HEX"/>
+          <attribute-ref name="empty" ref="0xb7e412d8"/>
           <value-structured>
-            <type-tag size="I:0" alignment="I:1"><attribute-ref name="empty" ref="HEX"/></type-tag>
+            <type-tag size="I:0" alignment="I:1"><attribute-ref name="empty" ref="0xb7e412d8"/></type-tag>
           </value-structured>
         </attribute-value>
       </function>
-      <function command="" provided="0" name="start" ref="HEX" loc="70:basic/StdControl.nc">
+      <function command="" provided="0" name="start" ref="0xb7e3d7e0" loc="70:basic/StdControl.nc">
         <documentation loc="65:basic/StdControl.nc">
           <short>&#10; Start the component and its subcomponents.&#10;&#10;</short>
           <long>&#10; Start the component and its subcomponents.&#10;&#10; @return Whether starting was successful.&#10;</long>
@@ -342,23 +342,23 @@
         <interfacedef-ref qname="StdControl"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
         </type-function>
         <attribute-value>
-          <attribute-ref name="useful" ref="HEX"/>
+          <attribute-ref name="useful" ref="0xb7e41448"/>
           <value-structured>
-            <type-tag size="I:8" alignment="I:4"><attribute-ref name="useful" ref="HEX"/></type-tag>
-            <structured-element field="y" ref="HEX">
+            <type-tag size="I:8" alignment="I:4"><attribute-ref name="useful" ref="0xb7e41448"/></type-tag>
+            <structured-element field="y" ref="0xb7e416d0">
               <value cst="S:start">
                 <type-pointer size="I:4" alignment="I:4">
                   <type-int cname="char" size="I:1" alignment="I:1"></type-int>
                 </type-pointer>
               </value>
             </structured-element>
-            <structured-element field="x" ref="HEX">
+            <structured-element field="x" ref="0xb7e41670">
               <value cst="I:1">
                 <type-int cname="int" size="I:4" alignment="I:4"></type-int>
               </value>
@@ -366,7 +366,7 @@
           </value-structured>
         </attribute-value>
       </function>
-      <function command="" provided="0" name="stop" ref="HEX" loc="78:basic/StdControl.nc">
+      <function command="" provided="0" name="stop" ref="0xb7e3ddc0" loc="78:basic/StdControl.nc">
         <documentation loc="72:basic/StdControl.nc">
           <short>&#10; Stop the component and pertinent subcomponents (not all&#10; subcomponents may be turned off due to wakeup timers, etc.).&#10;&#10;</short>
           <long>&#10; Stop the component and pertinent subcomponents (not all&#10; subcomponents may be turned off due to wakeup timers, etc.).&#10;&#10; @return Whether stopping was successful.&#10;</long>
@@ -374,16 +374,16 @@
         <interfacedef-ref qname="StdControl"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
         </type-function>
         <attribute-value>
-          <attribute-ref name="useful" ref="HEX"/>
+          <attribute-ref name="useful" ref="0xb7e41448"/>
           <value-structured>
-            <type-tag size="I:8" alignment="I:4"><attribute-ref name="useful" ref="HEX"/></type-tag>
-            <structured-element field="x" ref="HEX">
+            <type-tag size="I:8" alignment="I:4"><attribute-ref name="useful" ref="0xb7e41448"/></type-tag>
+            <structured-element field="x" ref="0xb7e41670">
               <value cst="I:2">
                 <type-int cname="int" size="I:4" alignment="I:4"></type-int>
               </value>
@@ -397,20 +397,20 @@
         <short>&#10; This interface provides a generic timer that can be used to generate&#10; events at regular intervals.&#10;&#10;</short>
         <long>&#10; This interface provides a generic timer that can be used to generate&#10; events at regular intervals.&#10;&#10; @author Su Ping&#10; @author Sam Madden&#10; @author David Gay&#10; @modified 7/16/02&#10;</long>
       </documentation>
-      <function event="" provided="0" name="fired" ref="HEX" loc="73:basic/Timer.nc">
+      <function event="" provided="0" name="fired" ref="0xb7e35c10" loc="73:basic/Timer.nc">
         <documentation loc="70:basic/Timer.nc">
           <short>&#10; The signal generated by the timer when it fires.&#10;</short>
         </documentation>
         <interfacedef-ref qname="Timer"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
         </type-function>
       </function>
-      <function command="" provided="0" name="start" ref="HEX" loc="59:basic/Timer.nc">
+      <function command="" provided="0" name="start" ref="0xb7e354b8" loc="59:basic/Timer.nc">
         <documentation loc="44:basic/Timer.nc">
           <short>&#10; Start the timer. &#10;</short>
           <long>&#10; Start the timer. &#10; @param type The type of timer to start. Valid values include&#10;  'TIMER_REPEAT' for a timer that fires repeatedly, or &#10;  'TIMER_ONE_SHOT' for a timer that fires once.&#10;  @param interval The timer interval in &#60;b>binary milliseconds&#60;/b> (1/1024&#10;  second). Note that the &#10;    timer cannot support an arbitrary range of intervals.&#10;    (Unfortunately this interface does not specify the valid range&#10;    of timer intervals, which are specific to a platform.)&#10;  @return Returns SUCCESS if the timer could be started with the &#10;    given type and interval. Returns FAIL if the type is not&#10;    one of TIMER_REPEAT or TIMER_ONE_SHOT, if the timer rate is&#10;    too high, or if there are too many timers currently active.&#10;</long>
@@ -418,27 +418,27 @@
         <interfacedef-ref qname="Timer"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
             <type-int cname="char" size="I:1" alignment="I:1"></type-int>
             <type-int cname="unsigned int" unsigned="" size="I:4" alignment="I:4">
-              <typename><typedef-ref name="uint32_t" ref="HEX"/></typename>
+              <typename><typedef-ref name="uint32_t" ref="0xb7fd3390"/></typename>
             </type-int>
           </function-parameters>
         </type-function>
         <parameters>
-          <variable name="type" ref="HEX" loc="59:basic/Timer.nc">
+          <variable name="type" ref="0xb7e32eb0" loc="59:basic/Timer.nc">
             <type-int cname="char" size="I:1" alignment="I:1"></type-int>
           </variable>
-          <variable name="interval" ref="HEX" loc="59:basic/Timer.nc">
+          <variable name="interval" ref="0xb7e35068" loc="59:basic/Timer.nc">
             <type-int cname="unsigned int" unsigned="" size="I:4" alignment="I:4">
-              <typename><typedef-ref name="uint32_t" ref="HEX"/></typename>
+              <typename><typedef-ref name="uint32_t" ref="0xb7fd3390"/></typename>
             </type-int>
           </variable>
         </parameters>
       </function>
-      <function command="" provided="0" name="stop" ref="HEX" loc="68:basic/Timer.nc">
+      <function command="" provided="0" name="stop" ref="0xb7e358e8" loc="68:basic/Timer.nc">
         <documentation loc="61:basic/Timer.nc">
           <short>&#10; Stop the timer, preventing it from firing again.&#10;</short>
           <long>&#10; Stop the timer, preventing it from firing again.&#10; If this is a TIMER_ONE_SHOT timer and it has not fired yet,&#10; prevents it from firing.&#10; @return SUCCESS if the timer could be stopped, or FAIL if the timer &#10; is not running or the timer ID is out of range.&#10;</long>
@@ -446,7 +446,7 @@
         <interfacedef-ref qname="Timer"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
@@ -458,7 +458,7 @@
         <short>&#10; Abstraction of the LEDs.&#10;&#10;</short>
         <long>&#10; Abstraction of the LEDs.&#10;&#10; @author Jason Hill&#10; @author David Gay&#10; @author Philip Levis&#10;</long>
       </documentation>
-      <function command="" provided="0" name="yellowOff" ref="HEX" loc="122:basic/Leds.nc">
+      <function command="" provided="0" name="yellowOff" ref="0xb7e31c18" loc="122:basic/Leds.nc">
         <documentation loc="116:basic/Leds.nc">
           <short>&#10; Turn the yellow LED off.&#10;&#10;</short>
           <long>&#10; Turn the yellow LED off.&#10;&#10; @return SUCCESS always.&#10;&#10;</long>
@@ -466,13 +466,13 @@
         <interfacedef-ref qname="Leds"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
         </type-function>
       </function>
-      <function command="" provided="0" name="yellowOn" ref="HEX" loc="114:basic/Leds.nc">
+      <function command="" provided="0" name="yellowOn" ref="0xb7e318a8" loc="114:basic/Leds.nc">
         <documentation loc="108:basic/Leds.nc">
           <short>&#10; Turn the yellow LED on.&#10;&#10;</short>
           <long>&#10; Turn the yellow LED on.&#10;&#10; @return SUCCESS always.&#10;&#10;</long>
@@ -480,13 +480,13 @@
         <interfacedef-ref qname="Leds"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
         </type-function>
       </function>
-      <function command="" provided="0" name="init" ref="HEX" loc="56:basic/Leds.nc">
+      <function command="" provided="0" name="init" ref="0xb7e33010" loc="56:basic/Leds.nc">
         <documentation loc="48:basic/Leds.nc">
           <short>&#10; Initialize the LEDs; among other things, initialization turns&#10; them all off.&#10;&#10;</short>
           <long>&#10; Initialize the LEDs; among other things, initialization turns&#10; them all off.&#10;&#10; @return SUCCESS always.&#10;&#10;</long>
@@ -494,13 +494,13 @@
         <interfacedef-ref qname="Leds"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
         </type-function>
       </function>
-      <function command="" provided="0" name="greenOff" ref="HEX" loc="97:basic/Leds.nc">
+      <function command="" provided="0" name="greenOff" ref="0xb7e31198" loc="97:basic/Leds.nc">
         <documentation loc="91:basic/Leds.nc">
           <short>&#10; Turn the green LED off.&#10;&#10;</short>
           <long>&#10; Turn the green LED off.&#10;&#10; @return SUCCESS always.&#10;&#10;</long>
@@ -508,13 +508,13 @@
         <interfacedef-ref qname="Leds"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
         </type-function>
       </function>
-      <function command="" provided="0" name="redOff" ref="HEX" loc="72:basic/Leds.nc">
+      <function command="" provided="0" name="redOff" ref="0xb7e336e0" loc="72:basic/Leds.nc">
         <documentation loc="66:basic/Leds.nc">
           <short>&#10; Turn the red LED off.&#10;&#10;</short>
           <long>&#10; Turn the red LED off.&#10;&#10; @return SUCCESS always.&#10;&#10;</long>
@@ -522,13 +522,13 @@
         <interfacedef-ref qname="Leds"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
         </type-function>
       </function>
-      <function command="" provided="0" name="greenToggle" ref="HEX" loc="106:basic/Leds.nc">
+      <function command="" provided="0" name="greenToggle" ref="0xb7e31538" loc="106:basic/Leds.nc">
         <documentation loc="99:basic/Leds.nc">
           <short>&#10; Toggle the green LED.</short>
           <long>&#10; Toggle the green LED. If it was on, turn it off. If it was off,&#10; turn it on.&#10;&#10; @return SUCCESS always.&#10;&#10;</long>
@@ -536,26 +536,26 @@
         <interfacedef-ref qname="Leds"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
         </type-function>
       </function>
-      <function command="" provided="0" name="get" ref="HEX" loc="139:basic/Leds.nc">
+      <function command="" provided="0" name="get" ref="0xb7e30378" loc="139:basic/Leds.nc">
         <documentation loc="133:basic/Leds.nc">
           <short>&#10; Get current Leds information&#10;&#10; @return A uint8_t typed value representing Leds status&#10;&#10;</short>
         </documentation>
         <interfacedef-ref qname="Leds"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
         </type-function>
       </function>
-      <function command="" provided="0" name="yellowToggle" ref="HEX" loc="131:basic/Leds.nc">
+      <function command="" provided="0" name="yellowToggle" ref="0xb7e30010" loc="131:basic/Leds.nc">
         <documentation loc="124:basic/Leds.nc">
           <short>&#10; Toggle the yellow LED.</short>
           <long>&#10; Toggle the yellow LED. If it was on, turn it off. If it was off,&#10; turn it on.&#10;&#10; @return SUCCESS always.&#10;&#10;</long>
@@ -563,13 +563,13 @@
         <interfacedef-ref qname="Leds"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
         </type-function>
       </function>
-      <function command="" provided="0" name="redToggle" ref="HEX" loc="81:basic/Leds.nc">
+      <function command="" provided="0" name="redToggle" ref="0xb7e33a80" loc="81:basic/Leds.nc">
         <documentation loc="74:basic/Leds.nc">
           <short>&#10; Toggle the red LED.</short>
           <long>&#10; Toggle the red LED. If it was on, turn it off. If it was off,&#10; turn it on.&#10;&#10; @return SUCCESS always.&#10;&#10;</long>
@@ -577,36 +577,36 @@
         <interfacedef-ref qname="Leds"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
         </type-function>
       </function>
-      <function command="" provided="0" name="set" ref="HEX" loc="149:basic/Leds.nc">
+      <function command="" provided="0" name="set" ref="0xb7e30870" loc="149:basic/Leds.nc">
         <documentation loc="141:basic/Leds.nc">
           <short>&#10; Set Leds to a specified value&#10;&#10; @param value ranging from 0 to 7 inclusive&#10;&#10; @return SUCCESS Always&#10;&#10;</short>
         </documentation>
         <interfacedef-ref qname="Leds"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
             <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-              <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+              <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
             </type-int>
           </function-parameters>
         </type-function>
         <parameters>
-          <variable name="value" ref="HEX" loc="149:basic/Leds.nc">
+          <variable name="value" ref="0xb7e306b0" loc="149:basic/Leds.nc">
             <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-              <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+              <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
             </type-int>
           </variable>
         </parameters>
       </function>
-      <function command="" provided="0" name="redOn" ref="HEX" loc="64:basic/Leds.nc">
+      <function command="" provided="0" name="redOn" ref="0xb7e33378" loc="64:basic/Leds.nc">
         <documentation loc="58:basic/Leds.nc">
           <short>&#10; Turn the red LED on.&#10;&#10;</short>
           <long>&#10; Turn the red LED on.&#10;&#10; @return SUCCESS always.&#10;&#10;</long>
@@ -614,13 +614,13 @@
         <interfacedef-ref qname="Leds"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
         </type-function>
       </function>
-      <function command="" provided="0" name="greenOn" ref="HEX" loc="89:basic/Leds.nc">
+      <function command="" provided="0" name="greenOn" ref="0xb7e33de8" loc="89:basic/Leds.nc">
         <documentation loc="83:basic/Leds.nc">
           <short>&#10; Turn the green LED on.&#10;&#10;</short>
           <long>&#10; Turn the green LED on.&#10;&#10; @return SUCCESS always.&#10;&#10;</long>
@@ -628,7 +628,7 @@
         <interfacedef-ref qname="Leds"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
@@ -640,7 +640,7 @@
         <short>&#10; The hardware clock interface. &#10;</short>
         <long>&#10; The hardware clock interface. &#10; @author Jason Hill&#10; @author David Gay&#10; @author Philip Levis&#10; @author Nelson Lee&#10;</long>
       </documentation>
-      <function command="" provided="0" name="setCounter" ref="HEX" loc="162:basic/Clock.nc">
+      <function command="" provided="0" name="setCounter" ref="0xb7e1de18" loc="162:basic/Clock.nc">
         <documentation loc="155:basic/Clock.nc">
           <short>&#10;  Set HW clock counter to a specified value&#10;&#10;  @param n Value to write to TCNT0&#10;&#10;  @return None&#10;</short>
         </documentation>
@@ -649,19 +649,19 @@
           <type-void size="I:1" alignment="I:1"></type-void>
           <function-parameters>
             <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-              <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+              <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
             </type-int>
           </function-parameters>
         </type-function>
         <parameters>
-          <variable name="n" ref="HEX" loc="162:basic/Clock.nc">
+          <variable name="n" ref="0xb7e1dc58" loc="162:basic/Clock.nc">
             <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-              <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+              <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
             </type-int>
           </variable>
         </parameters>
       </function>
-      <function command="" provided="0" name="intEnable" ref="HEX" loc="174:basic/Clock.nc">
+      <function command="" provided="0" name="intEnable" ref="0xb7e16488" loc="174:basic/Clock.nc">
         <documentation loc="171:basic/Clock.nc">
           <short>&#10;  Enable Clock interrupt&#10;</short>
         </documentation>
@@ -672,7 +672,7 @@
           </function-parameters>
         </type-function>
       </function>
-      <function command="" provided="0" name="setNextScale" ref="HEX" loc="137:basic/Clock.nc">
+      <function command="" provided="0" name="setNextScale" ref="0xb7e1bf20" loc="137:basic/Clock.nc">
         <documentation loc="130:basic/Clock.nc">
           <short>&#10;  Set clock scale at next clock interrupt time &#10; &#10;  @param scale New clock scale&#10;&#10;  @return none&#10;</short>
         </documentation>
@@ -681,19 +681,19 @@
           <type-void size="I:1" alignment="I:1"></type-void>
           <function-parameters>
             <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-              <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+              <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
             </type-int>
           </function-parameters>
         </type-function>
         <parameters>
-          <variable name="scale" ref="HEX" loc="137:basic/Clock.nc">
+          <variable name="scale" ref="0xb7e1bd60" loc="137:basic/Clock.nc">
             <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-              <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+              <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
             </type-int>
           </variable>
         </parameters>
       </function>
-      <function command="" provided="0" name="setInterval" ref="HEX" loc="105:basic/Clock.nc">
+      <function command="" provided="0" name="setInterval" ref="0xb7e1ce78" loc="105:basic/Clock.nc">
         <documentation loc="98:basic/Clock.nc">
           <short>&#10;  Set clock interval &#10; &#10;  @param value New clock interval&#10;&#10;  @return none&#10;</short>
         </documentation>
@@ -702,76 +702,76 @@
           <type-void size="I:1" alignment="I:1"></type-void>
           <function-parameters>
             <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-              <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+              <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
             </type-int>
           </function-parameters>
         </type-function>
         <parameters>
-          <variable name="value" ref="HEX" loc="105:basic/Clock.nc">
+          <variable name="value" ref="0xb7e1ccd0" loc="105:basic/Clock.nc">
             <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-              <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+              <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
             </type-int>
           </variable>
         </parameters>
       </function>
-      <function command="" provided="0" name="setIntervalAndScale" ref="HEX" loc="148:basic/Clock.nc">
+      <function command="" provided="0" name="setIntervalAndScale" ref="0xb7e1d5f8" loc="148:basic/Clock.nc">
         <documentation loc="139:basic/Clock.nc">
           <short>&#10;  Set both clock interval and scale&#10; &#10;  @param interval New clock interval&#10;&#10;  @param scale New clock scale&#10;&#10;  @return SUCCESS or FAILED &#10;</short>
         </documentation>
         <interfacedef-ref qname="Clock"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
             <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-              <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+              <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
             </type-int>
             <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-              <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+              <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
             </type-int>
           </function-parameters>
         </type-function>
         <parameters>
-          <variable name="interval" ref="HEX" loc="148:basic/Clock.nc">
+          <variable name="interval" ref="0xb7e1d290" loc="148:basic/Clock.nc">
             <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-              <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+              <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
             </type-int>
           </variable>
-          <variable name="scale" ref="HEX" loc="148:basic/Clock.nc">
+          <variable name="scale" ref="0xb7e1d408" loc="148:basic/Clock.nc">
             <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-              <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+              <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
             </type-int>
           </variable>
         </parameters>
       </function>
-      <function command="" provided="0" name="getScale" ref="HEX" loc="128:basic/Clock.nc">
+      <function command="" provided="0" name="getScale" ref="0xb7e1ba30" loc="128:basic/Clock.nc">
         <documentation loc="123:basic/Clock.nc">
           <short>&#10;  Get clock scale &#10; &#10;  @return current clock scale level&#10;</short>
         </documentation>
         <interfacedef-ref qname="Clock"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
         </type-function>
       </function>
-      <function command="" provided="0" name="readCounter" ref="HEX" loc="153:basic/Clock.nc">
+      <function command="" provided="0" name="readCounter" ref="0xb7e1d928" loc="153:basic/Clock.nc">
         <documentation loc="150:basic/Clock.nc">
           <short>&#10;  Read HW clock counter&#10;</short>
         </documentation>
         <interfacedef-ref qname="Clock"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
         </type-function>
       </function>
-      <function command="" provided="0" name="setRate" ref="HEX" loc="96:basic/Clock.nc">
+      <function command="" provided="0" name="setRate" ref="0xb7e1c9a0" loc="96:basic/Clock.nc">
         <documentation loc="51:basic/Clock.nc">
           <short>&#10;  Set the clock rate. </short>
           <long>&#10;  Set the clock rate.  For the specific meanings of interval&#10; and scale, refer to the processor data sheet. For the mica and rene:&#10; &#60;p>&#10; &#60;pre>&#10;     Clock scale&#10;         0 - off&#10;         1 - 32768 ticks/second&#10;         2 - 4096 ticks/second&#10;         3 - 1024 ticks/second&#10;         4 - 512 ticks/second&#10;         5 - 256 ticks/second&#10;         6 - 128 ticks/second&#10;         7 - 32 ticks/second&#10; &#60;/pre>&#10; &#60;p>&#10;&#10; Interval is how many ticks per clock firing.&#10; For example, setRate(160,7) will result in an event every 160/32&#10; seconds.&#10;&#10; See also: &#60;code>Clock.h&#60;/code> for predefined macros:&#10;&#10; &#60;p>&#10; &#60;pre>&#10;  interval      scale         result&#10;  TOS_I1000PS   TOS_S1000PS   1000 ticks/sec&#10;  TOS_I100PS    TOS_S100PS     100 ticks/sec&#10;  TOS_I10PS     TOS_S10PS       10 ticks/sec&#10;  TOS_I4096PS   TOS_S4096PS   4096 ticks/sec&#10;  TOS_I2048PS   TOS_S2048PS   2048 ticks/sec&#10;  TOS_I1024PS   TOS_S1024PS   1024 ticks/sec&#10;  TOS_I512PS    TOS_S512PS     512 ticks/sec&#10;  TOS_I256PS    TOS_S256PS     256 ticks/sec&#10;  TOS_I128PS    TOS_S128PS     128 ticks/sec&#10;  TOS_I64PS     TOS_S64PS       64 ticks/sec&#10;  TOS_I32PS     TOS_S32PS       32 ticks/sec&#10;  TOS_I16PS     TOS_S16PS       16 ticks/sec&#10;  TOS_I8PS      TOS_S8PS         8 ticks/sec&#10;  TOS_I4PS      TOS_S4PS         4 ticks/sec&#10;  TOS_I2PS      TOS_S2PS         2 ticks/sec&#10;  TOS_I1PS      TOS_S1PS         1 tick/sec&#10;  TOS_I0PS      TOS_S0PS         0 ticks/sec (clock off)&#10; &#60;/pre>&#10;</long>
@@ -779,7 +779,7 @@
         <interfacedef-ref qname="Clock"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
             <type-int cname="char" size="I:1" alignment="I:1"></type-int>
@@ -787,15 +787,15 @@
           </function-parameters>
         </type-function>
         <parameters>
-          <variable name="interval" ref="HEX" loc="96:basic/Clock.nc">
+          <variable name="interval" ref="0xb7e1c128" loc="96:basic/Clock.nc">
             <type-int cname="char" size="I:1" alignment="I:1"></type-int>
           </variable>
-          <variable name="scale" ref="HEX" loc="96:basic/Clock.nc">
+          <variable name="scale" ref="0xb7e1c298" loc="96:basic/Clock.nc">
             <type-int cname="char" size="I:1" alignment="I:1"></type-int>
           </variable>
         </parameters>
       </function>
-      <function command="" provided="0" name="setNextInterval" ref="HEX" loc="114:basic/Clock.nc">
+      <function command="" provided="0" name="setNextInterval" ref="0xb7e1b390" loc="114:basic/Clock.nc">
         <documentation loc="107:basic/Clock.nc">
           <short>&#10;  Set clock interval at next clock interrupt time&#10; &#10;  @param value New clock interval&#10;&#10;  @return none&#10;</short>
         </documentation>
@@ -804,32 +804,32 @@
           <type-void size="I:1" alignment="I:1"></type-void>
           <function-parameters>
             <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-              <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+              <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
             </type-int>
           </function-parameters>
         </type-function>
         <parameters>
-          <variable name="value" ref="HEX" loc="114:basic/Clock.nc">
+          <variable name="value" ref="0xb7e1b1d0" loc="114:basic/Clock.nc">
             <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-              <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+              <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
             </type-int>
           </variable>
         </parameters>
       </function>
-      <function command="" provided="0" name="getInterval" ref="HEX" loc="121:basic/Clock.nc">
+      <function command="" provided="0" name="getInterval" ref="0xb7e1b6e0" loc="121:basic/Clock.nc">
         <documentation loc="116:basic/Clock.nc">
           <short>&#10;  Get clock interval &#10; &#10;  @return current clock interval&#10;</short>
         </documentation>
         <interfacedef-ref qname="Clock"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="uint8_t" ref="0xb7fd4ec8"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>
         </type-function>
       </function>
-      <function command="" provided="0" name="intDisable" ref="HEX" loc="168:basic/Clock.nc">
+      <function command="" provided="0" name="intDisable" ref="0xb7e16160" loc="168:basic/Clock.nc">
         <documentation loc="165:basic/Clock.nc">
           <short>&#10;  Disable Clock interrupt&#10;</short>
         </documentation>
@@ -840,14 +840,14 @@
           </function-parameters>
         </type-function>
       </function>
-      <function event="" provided="0" name="fire" ref="HEX" loc="180:basic/Clock.nc">
+      <function event="" provided="0" name="fire" ref="0xb7e167c8" loc="180:basic/Clock.nc">
         <documentation loc="177:basic/Clock.nc">
           <short>&#10;  An event sent when the clock goes off.&#10;</short>
         </documentation>
         <interfacedef-ref qname="Clock"/>
         <type-function size="I:1" alignment="I:1">
           <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
-            <typename><typedef-ref name="result_t" ref="HEX"/></typename>
+            <typename><typedef-ref name="result_t" ref="0xb7e48de0"/></typename>
           </type-int>
           <function-parameters>
           </function-parameters>

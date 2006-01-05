@@ -1,0 +1,308 @@
+<nesc xmlns="http://www.tinyos.net/nesC">
+  <wiring>
+    <wire>
+      <from><function-ref name="init" scoped="" ref="0xb7d4a0f0"/></from>
+      <to><function-ref name="init" scoped="" ref="0xb7d38de0"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="init" scoped="" ref="0xb7d4a0f0"/></from>
+      <to><function-ref name="init" scoped="" ref="0xb7d469b8"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="init" scoped="" ref="0xb7d38de0"/></from>
+      <to><function-ref name="init" scoped="" ref="0xb7d326a0"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="start" scoped="" ref="0xb7d4a1c0"/></from>
+      <to><function-ref name="start" scoped="" ref="0xb7d38eb0"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="start" scoped="" ref="0xb7d4a1c0"/></from>
+      <to><function-ref name="start" scoped="" ref="0xb7d46a88"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="start" scoped="" ref="0xb7d38eb0"/></from>
+      <to><function-ref name="start" scoped="" ref="0xb7d32770"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="stop" scoped="" ref="0xb7d4a290"/></from>
+      <to><function-ref name="stop" scoped="" ref="0xb7d37010"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="stop" scoped="" ref="0xb7d4a290"/></from>
+      <to><function-ref name="stop" scoped="" ref="0xb7d46b58"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="stop" scoped="" ref="0xb7d37010"/></from>
+      <to><function-ref name="stop" scoped="" ref="0xb7d32840"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="fired" scoped="" ref="0xb7d38918"/></from>
+      <to><function-ref name="fired" scoped="" ref="0xb7d40f10"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="start" scoped="" ref="0xb7d51010"/></from>
+      <to><function-ref name="start" scoped="" ref="0xb7d389e8"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="start" scoped="" ref="0xb7d389e8"/></from>
+      <to><function-ref name="start" scoped="" ref="0xb7d322a8"/>
+      <arguments>
+        <value cst="I:0">
+          <type-int cname="unsigned int" unsigned="" size="I:4" alignment="I:4"></type-int>
+        </value>
+      </arguments>
+      </to>
+    </wire>
+    <wire>
+      <from><function-ref name="stop" scoped="" ref="0xb7d510e0"/></from>
+      <to><function-ref name="stop" scoped="" ref="0xb7d38ab8"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="stop" scoped="" ref="0xb7d38ab8"/></from>
+      <to><function-ref name="stop" scoped="" ref="0xb7d32378"/>
+      <arguments>
+        <value cst="I:0">
+          <type-int cname="unsigned int" unsigned="" size="I:4" alignment="I:4"></type-int>
+        </value>
+      </arguments>
+      </to>
+    </wire>
+    <wire>
+      <from><function-ref name="yellowOff" scoped="" ref="0xb7d3bb70"/></from>
+      <to><function-ref name="yellowOff" scoped="" ref="0xb7cf7638"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="yellowOn" scoped="" ref="0xb7d3bc40"/></from>
+      <to><function-ref name="yellowOn" scoped="" ref="0xb7cf7708"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="init" scoped="" ref="0xb7d3bd10"/></from>
+      <to><function-ref name="init" scoped="" ref="0xb7cf77d8"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="greenOff" scoped="" ref="0xb7d3bde0"/></from>
+      <to><function-ref name="greenOff" scoped="" ref="0xb7cf78a8"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="redOff" scoped="" ref="0xb7d3beb0"/></from>
+      <to><function-ref name="redOff" scoped="" ref="0xb7cf7978"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="greenToggle" scoped="" ref="0xb7d43010"/></from>
+      <to><function-ref name="greenToggle" scoped="" ref="0xb7cf7a48"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="get" scoped="" ref="0xb7d430e0"/></from>
+      <to><function-ref name="get" scoped="" ref="0xb7cf7b18"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="yellowToggle" scoped="" ref="0xb7d431b0"/></from>
+      <to><function-ref name="yellowToggle" scoped="" ref="0xb7cf7be8"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="redToggle" scoped="" ref="0xb7d43280"/></from>
+      <to><function-ref name="redToggle" scoped="" ref="0xb7cf7cb8"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="set" scoped="" ref="0xb7d43350"/></from>
+      <to><function-ref name="set" scoped="" ref="0xb7cf7d88"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="redOn" scoped="" ref="0xb7d43420"/></from>
+      <to><function-ref name="redOn" scoped="" ref="0xb7cf7e58"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="greenOn" scoped="" ref="0xb7d434f0"/></from>
+      <to><function-ref name="greenOn" scoped="" ref="0xb7cf7f28"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="init" scoped="" ref="0xb7d451d8"/></from>
+      <to><function-ref name="init" scoped="" ref="0xb7d4a0f0"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="start" scoped="" ref="0xb7d452a8"/></from>
+      <to><function-ref name="start" scoped="" ref="0xb7d4a1c0"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="stop" scoped="" ref="0xb7d45378"/></from>
+      <to><function-ref name="stop" scoped="" ref="0xb7d4a290"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="init" scoped="" ref="0xb7d326a0"/></from>
+      <to><function-ref name="init" scoped="" ref="0xb7d2ee90"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="start" scoped="" ref="0xb7d32770"/></from>
+      <to><function-ref name="start" scoped="" ref="0xb7d2d010"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="stop" scoped="" ref="0xb7d32840"/></from>
+      <to><function-ref name="stop" scoped="" ref="0xb7d2d0e0"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="start" scoped="" ref="0xb7d322a8"/>
+      <arguments>
+        <value cst="I:0">
+          <type-int cname="unsigned int" unsigned="" size="I:4" alignment="I:4"></type-int>
+        </value>
+      </arguments>
+      </from>
+      <to><function-ref name="start" scoped="" ref="0xb7d322a8"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="stop" scoped="" ref="0xb7d32378"/>
+      <arguments>
+        <value cst="I:0">
+          <type-int cname="unsigned int" unsigned="" size="I:4" alignment="I:4"></type-int>
+        </value>
+      </arguments>
+      </from>
+      <to><function-ref name="stop" scoped="" ref="0xb7d32378"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="fired" scoped="" ref="0xb7d321d8"/>
+      <arguments>
+        <value cst="I:0">
+          <type-int cname="unsigned int" unsigned="" size="I:4" alignment="I:4"></type-int>
+        </value>
+      </arguments>
+      </from>
+      <to><function-ref name="fired" scoped="" ref="0xb7d38918"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="fired" scoped="" ref="0xb7d321d8"/></from>
+      <to><function-ref name="fired" scoped="" ref="0xb7d321d8"/>
+      <arguments>
+        <value cst="I:0">
+          <type-int cname="unsigned int" unsigned="" size="I:4" alignment="I:4"></type-int>
+        </value>
+      </arguments>
+      </to>
+    </wire>
+    <wire>
+      <from><function-ref name="start" scoped="" ref="0xb7d322a8"/></from>
+      <to><function-ref name="start" scoped="" ref="0xb7d2ea98"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="stop" scoped="" ref="0xb7d32378"/></from>
+      <to><function-ref name="stop" scoped="" ref="0xb7d2eb68"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="yellowOff" scoped="" ref="0xb7d2d410"/></from>
+      <to><function-ref name="yellowOff" scoped="" ref="0xb7cf7638"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="yellowOn" scoped="" ref="0xb7d2d4e0"/></from>
+      <to><function-ref name="yellowOn" scoped="" ref="0xb7cf7708"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="init" scoped="" ref="0xb7d2d5b0"/></from>
+      <to><function-ref name="init" scoped="" ref="0xb7cf77d8"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="greenOff" scoped="" ref="0xb7d2d680"/></from>
+      <to><function-ref name="greenOff" scoped="" ref="0xb7cf78a8"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="redOff" scoped="" ref="0xb7d2d750"/></from>
+      <to><function-ref name="redOff" scoped="" ref="0xb7cf7978"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="greenToggle" scoped="" ref="0xb7d2d820"/></from>
+      <to><function-ref name="greenToggle" scoped="" ref="0xb7cf7a48"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="get" scoped="" ref="0xb7d2d8f0"/></from>
+      <to><function-ref name="get" scoped="" ref="0xb7cf7b18"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="yellowToggle" scoped="" ref="0xb7d2d9c0"/></from>
+      <to><function-ref name="yellowToggle" scoped="" ref="0xb7cf7be8"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="redToggle" scoped="" ref="0xb7d2da90"/></from>
+      <to><function-ref name="redToggle" scoped="" ref="0xb7cf7cb8"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="set" scoped="" ref="0xb7d2db60"/></from>
+      <to><function-ref name="set" scoped="" ref="0xb7cf7d88"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="redOn" scoped="" ref="0xb7d2dc30"/></from>
+      <to><function-ref name="redOn" scoped="" ref="0xb7cf7e58"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="greenOn" scoped="" ref="0xb7d2dd00"/></from>
+      <to><function-ref name="greenOn" scoped="" ref="0xb7cf7f28"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="setCounter" scoped="" ref="0xb7d21ac8"/></from>
+      <to><function-ref name="setCounter" scoped="" ref="0xb7d30bb0"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="intEnable" scoped="" ref="0xb7d21b98"/></from>
+      <to><function-ref name="intEnable" scoped="" ref="0xb7d30c80"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="setNextScale" scoped="" ref="0xb7d21c68"/></from>
+      <to><function-ref name="setNextScale" scoped="" ref="0xb7d30d50"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="setInterval" scoped="" ref="0xb7d21d38"/></from>
+      <to><function-ref name="setInterval" scoped="" ref="0xb7d30e20"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="setIntervalAndScale" scoped="" ref="0xb7d21e08"/></from>
+      <to><function-ref name="setIntervalAndScale" scoped="" ref="0xb7d30ef0"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="getScale" scoped="" ref="0xb7d21ed8"/></from>
+      <to><function-ref name="getScale" scoped="" ref="0xb7d07010"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="readCounter" scoped="" ref="0xb7d2b010"/></from>
+      <to><function-ref name="readCounter" scoped="" ref="0xb7d070e0"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="setRate" scoped="" ref="0xb7d2b0e0"/></from>
+      <to><function-ref name="setRate" scoped="" ref="0xb7d071b0"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="setNextInterval" scoped="" ref="0xb7d2b1b0"/></from>
+      <to><function-ref name="setNextInterval" scoped="" ref="0xb7d07280"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="getInterval" scoped="" ref="0xb7d2b280"/></from>
+      <to><function-ref name="getInterval" scoped="" ref="0xb7d07350"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="intDisable" scoped="" ref="0xb7d2b350"/></from>
+      <to><function-ref name="intDisable" scoped="" ref="0xb7d07420"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="fire" scoped="" ref="0xb7d074f0"/></from>
+      <to><function-ref name="fire" scoped="" ref="0xb7d2b420"/></to>
+    </wire>
+    <wire>
+      <from><function-ref name="fired" scoped="" ref="0xb7d2e9c8"/></from>
+      <to><function-ref name="fired" scoped="" ref="0xb7d321d8"/></to>
+    </wire>
+  </wiring>
+  <components>
+  </components>
+  <interfaces>
+  </interfaces>
+  <interfacedefs>
+  </interfacedefs>
+  <tags>
+  </tags>
+  <variables>
+  </variables>
+  <constants>
+  </constants>
+  <functions>
+  </functions>
+  <typedefs>
+  </typedefs>
+</nesc>

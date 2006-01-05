@@ -8,6 +8,7 @@ for i in *.tst; do
     ./$i >$OUT 2>$ERR
     sed -e 's/0x[0-9a-f]*/HEX/g' $OUT >.output/$i.1 
     sed -e 's/0x[0-9a-f]*/HEX/g' $ERR >.output/$i.2 
+    mv $OUT .output/$i.xml
   fi
 done
 echo

@@ -114,7 +114,9 @@
         <interfacedef-ref qname="Timer"/>
       </instance>
       <interface-parameters>
-        <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+        <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
+          <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+        </type-int>
       </interface-parameters>
       <interface-functions>
         <function-ref name="fired" scoped="" ref="HEX"/>
@@ -183,7 +185,9 @@
         <interfacedef-ref qname="Timer"/>
       </instance>
       <interface-parameters>
-        <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1"/>
+        <type-int cname="unsigned char" unsigned="" size="I:1" alignment="I:1">
+          <typename><typedef-ref name="uint8_t" ref="HEX"/></typename>
+        </type-int>
       </interface-parameters>
       <interface-functions>
         <function-ref name="fired" scoped="" ref="HEX"/>
@@ -250,4 +254,12 @@
   </interfacedefs>
   <tags>
   </tags>
+  <variables>
+  </variables>
+  <constants>
+  </constants>
+  <functions>
+  </functions>
+  <typedefs>
+  </typedefs>
 </nesc>

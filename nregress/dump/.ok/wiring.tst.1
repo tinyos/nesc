@@ -1,9 +1,5 @@
 <nesc xmlns="http://www.tinyos.net/nesC">
   <wiring>
-    <wire loc="51:basic/Main.nc">
-      <from><interface-ref name="StdControl" scoped="" ref="HEX"/></from>
-      <to><interface-ref name="StdControl" scoped="" ref="HEX"/></to>
-    </wire>
     <wire loc="46:basic/Blink.nc">
       <from><interface-ref name="StdControl" scoped="" ref="HEX"/></from>
       <to><interface-ref name="StdControl" scoped="" ref="HEX"/></to>
@@ -25,7 +21,7 @@
       <to><interface-ref name="Timer" scoped="" ref="HEX"/>
       <arguments>
         <value cst="I:0">
-          <type-int cname="unsigned int" unsigned="" size="I:4" alignment="I:4"/>
+          <type-int cname="unsigned int" unsigned="" size="I:4" alignment="I:4"></type-int>
         </value>
       </arguments>
       </to>
@@ -33,6 +29,10 @@
     <wire loc="49:basic/Blink.nc">
       <from><interface-ref name="Leds" scoped="" ref="HEX"/></from>
       <to><interface-ref name="Leds" scoped="" ref="HEX"/></to>
+    </wire>
+    <wire loc="51:basic/Main.nc">
+      <from><interface-ref name="StdControl" scoped="" ref="HEX"/></from>
+      <to><interface-ref name="StdControl" scoped="" ref="HEX"/></to>
     </wire>
     <wire loc="62:basic/TimerC.nc">
       <from><interface-ref name="StdControl" scoped="" ref="HEX"/></from>
@@ -59,4 +59,12 @@
   </interfacedefs>
   <tags>
   </tags>
+  <variables>
+  </variables>
+  <constants>
+  </constants>
+  <functions>
+  </functions>
+  <typedefs>
+  </typedefs>
 </nesc>
