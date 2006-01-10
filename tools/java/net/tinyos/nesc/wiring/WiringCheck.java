@@ -51,7 +51,7 @@ public class WiringCheck
     }
 
     boolean explain(String error, WiringScan from) {
-	System.err.println("Interface " + from.node.ep + " " + error);
+	System.err.println(from.node.ep.location + ": interface " + from.node.ep + " " + error);
 	printPath(2, from);
 	return true;
     }
