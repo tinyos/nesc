@@ -845,7 +845,10 @@ bool prt_simple_declarator(declarator d, data_declaration ddecl,
   if (!d)
     {
       if (options & psd_print_ddecl)
-	prt_ddecl_full_name(ddecl, options);	
+	prt_ddecl_full_name(ddecl, options);
+      else if (options & psd_rename_identifier)
+	output("arg_%p", ddecl);
+
       return FALSE;
     }
 
