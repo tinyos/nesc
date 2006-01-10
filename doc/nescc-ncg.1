@@ -65,6 +65,20 @@ included in the output.
 \fB-java-extends=\fIclass-name\fR
 Specify the class the generated class will extend. The default is
 \fBObject\fR.
+.SH PYTHON TOOL
+
+This tool generates a Python class with the values of the requested constants.
+These constants will be class (rather than instance) variables.
+
+The Python tool accepts the following options:
+.TP
+\fB-python-classname=\fIfull-class-name\fR  
+This option is required and specifies the name of the generated
+class.
+.TP
+\fB-python-extends=\fIclass-name\fR
+Specify the class the generated class will extend. The default is
+is to not inherit.
 .SH ERRORS
 
 \fBnescc-ncg\fR reports an error if ncc cannot compile \fInesC-file\fR.

@@ -150,6 +150,19 @@ Specify the class the generated class will extend. The default is
 \fBtinyos.message.Message\fR.
 
 The methods in the generated class are the same as for the Java tool.
+.SH PYTHON TOOL
+This tool generates a Python class to encode or decode a nesC message.
+It accepts the following options:
+.TP
+\fB-python-classname=\fIfull-class-name\fR  
+This option is required and specifies the name of the generated
+class. 
+.TP
+\fB-python-extends=\fIclass-name\fR
+Specify the class the generated class will extend. The default is
+\fBtinyos.message.Message.Message\fR.
+
+The methods in the generated class are the same as for the Java tool.
 
 .SH ERRORS
 
