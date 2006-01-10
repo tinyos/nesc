@@ -6,6 +6,15 @@ patched versions can be found at www.tinyos.net (look for the avr-binutils
 and msp430-binutils distributions) - they are no longer distributed with
 nesC.
 
+Changes in nesC 1.2.2
+=====================
+- nescc-wiring tool to check wiring constraints - see man page for details
+- python mig, ncg support
+- XML schema update (should now match nesC dump output)
+- Java code now made available in compiled form as nesc.jar (rather than
+  in source form)
+- bug fixes
+
 Changes in nesC 1.2.1
 =====================
 - external types (nx_...) can now be passed as parameters and returned as
