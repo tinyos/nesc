@@ -37,8 +37,9 @@ ncclib_DATA = genjava.pm 			\
 	      migdecode.pm			\
 	      first-avr5.x			\
 	      second-avr5.x			\
-	      nesc_nx.h				\
-	      nesc.jar
+	      nesc_nx.h
+
+nodist_ncclib_DATA = nesc.jar
 
 ncclib_SCRIPTS = smalldiff
 

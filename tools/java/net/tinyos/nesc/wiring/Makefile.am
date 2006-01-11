@@ -11,11 +11,12 @@ AUTOMAKE_OPTIONS = foreign
 java_files = $(wildcard *.java)
 class_files = $(java_files:.java=.class)
 EXTRA_DIST = README $(java_files)
+ROOT=../../../..
 
 noinst_DATA = $(class_files)
 
 $(class_files): $(java_files)
-	javac $(java_files)
+	CLASSPATH=`cygpath -w $(ROOT) 2>/dev/null || echo $(ROOT)` javac $(java_files)
 
 clean mostlyclean:
 	rm -f *.class
