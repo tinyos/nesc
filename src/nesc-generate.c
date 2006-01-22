@@ -582,12 +582,12 @@ static void combine_warning(struct connections *c)
     {
       /* Warnings to be enabled when result_t gets defined correctly */
       if (c->called->interface)
-	nesc_warning("calls to %s.%s in %s are uncombined",
+	nesc_warning("calls to %s.%s in %s fan out, but there is no combine function specified for the return type",
 		     c->called->interface->name,
 		     c->called->name,
 		     c->called->container->name);
       else
-	nesc_warning("calls to %s in %s are uncombined",
+	nesc_warning("calls to %s in %s fan out, but there is no combine function specified for the return type" ,
 		     c->called->name, c->called->container->name);
     }
 }
