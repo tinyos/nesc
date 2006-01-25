@@ -39,7 +39,7 @@ struct type
 	 tk_cref } kind;
   type_quals qualifiers;
   enum { nx_no, nx_base, nx_derived } network;
-  data_declaration combiner, basedecl;
+  data_declaration combiner, basedecl, typedefdecl;
 
   /* size is not used for aggregate types
      (as the values may be discovered after the type is created)
@@ -216,7 +216,7 @@ static type new_type(int kind)
   /*nt->qualifiers = 0;
     nt->network = nx_no;
     nt->size = nt->alignment = 0;
-    nt->combiner = nt->basedecl = NULL;*/
+    nt->combiner = nt->basedecl = nt->typedefdecl = NULL;*/
   nt->size = nt->alignment = cval_top;
   return nt;
 }
@@ -279,7 +279,7 @@ type make_array_type(type t, expression size)
   nt->u.array.arrayof = t;
   nt->u.array.size = size;
   assert(!size || !size->cst || legal_array_size(size->cst->cval));
-  nt->network = t->network;
+  nt->network = t->network != nx_no ? nx_derived : nx_no;
 
   return nt;
 }
@@ -2050,8 +2050,10 @@ void set_typedef_type(data_declaration def, bool network)
     {
       nt->network = nx_base;
       nt->alignment = make_type_cval(1);
+      nt->basedecl = def;
     }
-  nt->basedecl = def;
+  nt->typedefdecl = def;
+
   def->type = nt;
 }
 
@@ -2059,12 +2061,21 @@ data_declaration type_typedef(type t)
 /* Returns: the typedef t comes from, or NULL if none
 */
 {
+  return t->typedefdecl;
+}
+
+data_declaration type_networkdef(type t)
+/* Requires: type_network_base_type(t)
+   Returns: the network base type definition for t
+*/
+{
+  assert(type_network_base_type(t));
   return t->basedecl;
 }
 
 bool type_network_base_type(type t)
 {
-  return t->basedecl && t->network == nx_base;
+  return t->network == nx_base;
 }
 
 type type_network_platform_type(type t)
@@ -2072,8 +2083,7 @@ type type_network_platform_type(type t)
    Returns: t's non-network base type
 */
 {
-  assert(type_network_base_type(t));
-  return type_typedef(t)->basetype;
+  return type_networkdef(t)->basetype;
 }
 
 /* Type variables */
@@ -2433,6 +2443,8 @@ void nxml_type(type t)
 
   xml_attr_cval("size", type_size_cc(t) ? type_size(t) : cval_top);
   xml_attr_cval("alignment", type_has_size(t) ? type_alignment(t) : cval_top);
+  if (t->network == nx_base)
+    xml_attr("network", t->basedecl->name);
 
   switch (t->kind)
     {

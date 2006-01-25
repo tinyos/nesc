@@ -2693,22 +2693,7 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
     handle_task_declaration(vd);
 
   if (ddecl->kind == decl_typedef)
-    {
-      /* typedefs of network base types need to copy the base type
-	 information (encoder, decoder, basetype) as we're overwriting
-	 the "basedecl" field in the type (we could avoid this by
-	 separating "decl for typedef" and "decl for network base type"
-	 in the type structure) */
-      if (type_network_base_type(ddecl->type) && ddecl->basetype == NULL)
-	{
-	  data_declaration nxbasedecl = type_typedef(ddecl->type);
-
-	  ddecl->basetype = nxbasedecl->basetype;
-	  ddecl->encoder = nxbasedecl->encoder;
-	  ddecl->decoder = nxbasedecl->decoder;
-	}
-      set_typedef_type(ddecl, ddecl->basetype != NULL);
-    }
+    set_typedef_type(ddecl, ddecl->basetype != NULL);
 
   set_doc_string(vd->ddecl, short_docstring, long_docstring, doc_location);
 

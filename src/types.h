@@ -69,6 +69,11 @@ data_declaration type_typedef(type t);
 /* Returns: the typedef t comes from, or NULL if none
 */
 
+data_declaration type_networkdef(type t);
+/* Requires: type_network_base_type(t)
+   Returns: the network base type definition for t
+*/
+
 /* Build types */
 
 /* Return the 'complex t' version of basic type t (one of the integral or
