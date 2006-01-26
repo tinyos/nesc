@@ -13,3 +13,9 @@ frontends for nesC. These are found in tinyos-1.x/tools/src/ncc (for TinyOS
 1.x) and in tinyos-2.x/tools (for TinyOS 2.x). Please follow the
 installation directions you find there.
 
+To use nesC with the Atmel AVR processors or the TI MSP processors you
+need the avr-gcc and msp430-gcc packages, as well as patched versions
+of the GNU binutils (avr-binutils and msp430-bintutils respectively).
+These packages can be obtained from http://www.tinyos.net/dist-2.0.0 
+(also check http://www.tinyos.net/download.html to see if newer versions
+are available).
