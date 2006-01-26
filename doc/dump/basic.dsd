@@ -173,6 +173,11 @@
         <attribute name="size"/>
         <attribute name="alignment"/>
       </required>
+      <m:doc>The network attribute is present for network base types. Its
+	value is the network base type name.</m:doc>
+      <attribute name="network">
+	<stringtype ref="nesc:identifier"/>
+      </attribute>
       <contents>
 	<optional><element name="nesc:typename"/></optional>
       </contents>
