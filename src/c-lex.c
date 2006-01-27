@@ -343,7 +343,7 @@ void separate_short_docstring(char *str, char **short_s, char **long_s)
     if(at < str) at++;
   } while(*at != ' '   &&  *at != '\t'   &&  *at != '\r'   &&  *at != '\n');
 
-  if(at && at < dot) 
+  if (at && (!dot || at < dot))
     dot = at;
 
 
