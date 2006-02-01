@@ -34,7 +34,7 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	elsif (/^-java-extends=(.*)$/) {
 	    $java_extends = $1;
 	}
-	if (/^-python-classname=(.*)$/) {
+	elsif (/^-python-classname=(.*)$/) {
 	    $python_classname = $1;
 	}
 	elsif (/^-python-extends=(.*)$/) {
