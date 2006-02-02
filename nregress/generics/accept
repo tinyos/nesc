@@ -1,2 +1,0 @@
-rm -f .ok/*.*
-mv .output/* .ok

@@ -1,0 +1,64 @@
+rm -rf .output
+OUT=/tmp/test.$$.1
+ERR=/tmp/test.$$.2
+mkdir .output
+HERE=$PWD
+DESTDIR=$HERE/.output
+
+NESC=`pwd | sed -e 's|nregress$||'`
+export NESC
+NESC1=$NESC/src/nesc1
+export NESC1
+
+# .tst files get executed in their own directory
+for i in `find . -name *.tst`; do
+  i=`echo $i | sed -e 's/^\.\///'`
+  cd `dirname $i`
+  dest=$DESTDIR/`echo $i | sed -e 's/\//./g'`
+
+  echo $i
+  if [ -f cleanup-out ]; then
+    ./`basename $i` >$OUT 2>$ERR
+    echo $? >$dest.exit
+    ./cleanup-out <$OUT >$dest.1
+    ./cleanup-err <$ERR >$dest.2
+  else
+    ./`basename $i` >$dest.1 2>$dest.2
+    echo $? >$dest.exit
+  fi
+  cd $HERE
+done
+
+# run1 files get run on all the files and directories in their directory
+# except those found in an "exclude" file, or matching obvious-to-be-skipped
+# patterns
+for i in `find . -name run1`; do
+  i=`echo $i | sed -e 's/^\.\///'`
+  base=`dirname $i`
+  cd $base
+  for name in *; do
+    if echo $name | egrep -q '(\.o|\.out|\.exe|~)$|^(CVS|run1|exclude)$'; then
+      continue
+    fi
+    if [ -f exclude ]; then
+      if grep '^$name$' exclude; then
+        continue
+      fi
+    fi
+    dest=$DESTDIR/`echo $base/$name | sed -e 's/\//./g'`
+
+    echo $base/$name
+
+    ./run1 $name >$dest.1 2>$dest.2
+    echo $? >$dest.exit
+  done
+  cd $HERE
+done
+
+
+echo
+diff --recur -u ok .output
+if [ $? = 0 ]; then
+  echo All tests passed
+fi
+rm -f $OUT $ERR
