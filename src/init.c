@@ -1184,9 +1184,9 @@ void process_init_element(expression value)
     {
       constructor_kind = c_scalar;
       constructor_index = 0;
-      /* We also set constructor_array_size so that the size is known for
-	 make_init_list */
-      constructor_array_size = string_constant_length(value);
+      if (!type_array_size(constructor_type))
+	constructor_type = constructor_value->type =
+	  set_string_length(constructor_type, value);
       /* XXX: maybe this should stay as a iv_array, and the string should
 	 be broken down into characters? */
       constructor_value->kind = iv_base;
