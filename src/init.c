@@ -32,6 +32,25 @@ Boston, MA 02111-1307, USA. */
 #include "constants.h"
 #include "AST_utils.h"
 
+static type set_array_length(type t, largest_int length)
+{
+  return make_array_type(type_array_of(t),
+			 build_uint_constant(parse_region, dummy_location,
+					     size_t_type, length));
+}
+
+static largest_int string_constant_length(expression e)
+{
+  return CAST(string, e)->ddecl->chars_length + 1;
+}
+
+/* Make a version of tdecl (an array type) with its length set to the 
+   length of the e (a string constant) */
+static type set_string_length(type tdecl, expression e)
+{
+  return set_array_length(tdecl, string_constant_length(e));
+}
+
 field_declaration type_fields(type t)
 /* Requires: type_aggregate(t)
    Returns: first field_declaration of t
@@ -1067,7 +1086,7 @@ void check_init_element(expression init)
   if (!check_constant_once(init, cst_any))
     return;
 
-  /* XXX: process_init_element set the ivalue top iv_base for strings used
+  /* XXX: process_init_element set the ivalue to iv_base for strings used
      to initialise arrays. So we need to special case here too. We don't
      need to do anything, as this only happened for string constants, which
      are clearly constant ;-)
@@ -1167,7 +1186,7 @@ void process_init_element(expression value)
       constructor_index = 0;
       /* We also set constructor_array_size so that the size is known for
 	 make_init_list */
-      constructor_array_size = CAST(string, value)->ddecl->chars_length + 1;
+      constructor_array_size = string_constant_length(value);
       /* XXX: maybe this should stay as a iv_array, and the string should
 	 be broken down into characters? */
       constructor_value->kind = iv_base;
@@ -1368,9 +1387,7 @@ expression make_init_list(location loc, expression elist)
 
   /* Complete array types based on the initialiser */
   if (type_array(itype) && !type_array_size(itype))
-    itype = make_array_type(type_array_of(itype),
-			    build_uint_constant(parse_region, dummy_location,
-						size_t_type, array_size));
+    itype = set_array_length(itype, array_size);
   ilist->type = itype;
 
   return ilist;
@@ -1393,6 +1410,10 @@ expression make_cast_list(location loc, asttype t, expression init)
    The variable being initialised is constructor_decl */
 void simple_init(expression expr)
 {
-  expr->ivalue = new_ivalue(parse_region, iv_base, constructor_decl->type);
-  output_init_element(expr, constructor_decl->type);
+  type tdecl = constructor_decl->type;
+
+  if (is_string(expr) && type_array(tdecl) && !type_array_size(tdecl))
+    tdecl = set_string_length(tdecl, expr);
+  expr->ivalue = new_ivalue(parse_region, iv_base, tdecl);
+  output_init_element(expr, tdecl);
 }
