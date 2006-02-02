@@ -80,15 +80,15 @@ nesc_declaration require(source_language sl, location l, const char *name)
       /* Make a dummy declaration to make everyone happy */
       nesc_decl nd = dummy_nesc_decl(sl, d->ast->location, name, FALSE);
 
-      d = nd->cdecl;
       build(nd);
 
       error_with_location(l, "expected %s `%s', but got %s %s",
 			  language_name(sl), name,
 			  d->kind == l_interface ? "an" : "a",
 			  language_name(d->kind));
-    }
 
+      d = nd->cdecl;
+    }
   return d;
 }
 				    
