@@ -65,7 +65,7 @@ EXTRA_DIST =					\
 
 nesc.jar: FORCE
 	(cd java && $(MAKE))
-	(cd java && jar cf ../$@ `find -name '*.class'`)
+	(cd java && jar cf ../$@ `find . -name '*.class'`)
 
 FORCE:
 
