@@ -48,7 +48,7 @@ for i in `find . -name run1`; do
   base=`dirname $i`
   cd $base
   for name in *; do
-    if echo $name | egrep -q '(\.o|\.out|\.exe|~)$|^(CVS|run1|exclude)$'; then
+    if echo $name | egrep -q '(\.o|\.out|\.exe|\.tst|~)$|^(CVS|run1|exclude)$'; then
       continue
     fi
     if [ -f exclude ]; then
