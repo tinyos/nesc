@@ -1,0 +1,1 @@
+$NESC1 -Dabstract=generic $1 >/dev/null
