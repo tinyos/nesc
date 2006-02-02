@@ -1,13 +1,13 @@
 #define nx_struct struct
 #define nx_union union
-# 60 "/usr/local/avr/sys-include/inttypes.h"
+# 65 "/usr/lib/gcc/avr/3.4.3/../../../../avr/include/stdint.h"
 typedef signed char int8_t;
 
 
 
 
 typedef unsigned char uint8_t;
-# 83 "/usr/local/avr/sys-include/inttypes.h" 3
+# 104 "/usr/lib/gcc/avr/3.4.3/../../../../avr/include/stdint.h" 3
 typedef int int16_t;
 
 
@@ -30,50 +30,60 @@ typedef long int32_t;
 
 
 typedef unsigned long uint32_t;
-#line 117
+
+
+
+
+
+
+
+
+
+
 typedef long long int64_t;
 
 
 
 
 typedef unsigned long long uint64_t;
-#line 134
+#line 155
 typedef int16_t intptr_t;
 
 
 
 
 typedef uint16_t uintptr_t;
-# 10 "/usr/local/lib/ncc/nesc_nx.h"
+# 10 "/home/dgay/motes/nesc/1.2//tools/nesc_nx.h"
 static __inline uint8_t __nesc_ntoh_uint8(void *source);
 #line 48
 static __inline uint8_t __nesc_hton_uint8(void *target, uint8_t value);
 #line 187
-typedef struct { char data[1]; } __attribute__((packed)) nx_int8_t;
-typedef struct { char data[2]; } __attribute__((packed)) nx_int16_t;
-typedef struct { char data[4]; } __attribute__((packed)) nx_int32_t;
-typedef struct { char data[8]; } __attribute__((packed)) nx_int64_t;
-typedef struct { char data[1]; } __attribute__((packed)) nx_uint8_t;
-typedef struct { char data[2]; } __attribute__((packed)) nx_uint16_t;
-typedef struct { char data[4]; } __attribute__((packed)) nx_uint32_t;
-typedef struct { char data[8]; } __attribute__((packed)) nx_uint64_t;
+typedef struct { char data[1]; } __attribute__((packed)) nx_int8_t;typedef int8_t  __nesc_nxbase_nx_int8_t;
+typedef struct { char data[2]; } __attribute__((packed)) nx_int16_t;typedef int16_t  __nesc_nxbase_nx_int16_t;
+typedef struct { char data[4]; } __attribute__((packed)) nx_int32_t;typedef int32_t  __nesc_nxbase_nx_int32_t;
+typedef struct { char data[8]; } __attribute__((packed)) nx_int64_t;typedef int64_t  __nesc_nxbase_nx_int64_t;
+typedef struct { char data[1]; } __attribute__((packed)) nx_uint8_t;typedef uint8_t  __nesc_nxbase_nx_uint8_t;
+typedef struct { char data[2]; } __attribute__((packed)) nx_uint16_t;typedef uint16_t  __nesc_nxbase_nx_uint16_t;
+typedef struct { char data[4]; } __attribute__((packed)) nx_uint32_t;typedef uint32_t  __nesc_nxbase_nx_uint32_t;
+typedef struct { char data[8]; } __attribute__((packed)) nx_uint64_t;typedef uint64_t  __nesc_nxbase_nx_uint64_t;
 
 
-typedef struct { char data[1]; } __attribute__((packed)) nxle_int8_t;
-typedef struct { char data[2]; } __attribute__((packed)) nxle_int16_t;
-typedef struct { char data[4]; } __attribute__((packed)) nxle_int32_t;
-typedef struct { char data[8]; } __attribute__((packed)) nxle_int64_t;
-typedef struct { char data[1]; } __attribute__((packed)) nxle_uint8_t;
-typedef struct { char data[2]; } __attribute__((packed)) nxle_uint16_t;
-typedef struct { char data[4]; } __attribute__((packed)) nxle_uint32_t;
-typedef struct { char data[8]; } __attribute__((packed)) nxle_uint64_t;
-# 3 "t11.nc"
+typedef struct { char data[1]; } __attribute__((packed)) nxle_int8_t;typedef int8_t  __nesc_nxbase_nxle_int8_t;
+typedef struct { char data[2]; } __attribute__((packed)) nxle_int16_t;typedef int16_t  __nesc_nxbase_nxle_int16_t;
+typedef struct { char data[4]; } __attribute__((packed)) nxle_int32_t;typedef int32_t  __nesc_nxbase_nxle_int32_t;
+typedef struct { char data[8]; } __attribute__((packed)) nxle_int64_t;typedef int64_t  __nesc_nxbase_nxle_int64_t;
+typedef struct { char data[1]; } __attribute__((packed)) nxle_uint8_t;typedef uint8_t  __nesc_nxbase_nxle_uint8_t;
+typedef struct { char data[2]; } __attribute__((packed)) nxle_uint16_t;typedef uint16_t  __nesc_nxbase_nxle_uint16_t;
+typedef struct { char data[4]; } __attribute__((packed)) nxle_uint32_t;typedef uint32_t  __nesc_nxbase_nxle_uint32_t;
+typedef struct { char data[8]; } __attribute__((packed)) nxle_uint64_t;typedef uint64_t  __nesc_nxbase_nxle_uint64_t;
+# 5 "t11.nc"
+#line 3
 struct t11$__nesc_unnamed4242 {
   nx_uint8_t a, b[10];
 } t11$z;
 
 int   main(void);
-# 48 "/usr/local/lib/ncc/nesc_nx.h"
+# 48 "/home/dgay/motes/nesc/1.2//tools/nesc_nx.h"
 static __inline uint8_t __nesc_hton_uint8(void *target, uint8_t value)
 #line 48
 {

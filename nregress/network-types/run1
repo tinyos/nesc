@@ -1,1 +1,2 @@
-/usr/local/lib/ncc/nesc1 -fnesc-gcc=avr-gcc -I/usr/local/lib/ncc -fnesc-target=avr -fnesc-include=nesc_nx -fnesc-include=nx $1 && nescc -fnesc-include=nx -Wall -c -o /dev/null $1
+NESC=`pwd | sed -e 's|nregress/.*||'`
+$NESC/src/nesc1 -fnesc-gcc=avr-gcc -I$NESC/tools -fnesc-target=avr -fnesc-include=nx -fnesc-include=nesc_nx $1 && nescc -fnesc-include=nx -Wall -c -o /dev/null $1
