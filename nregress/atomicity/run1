@@ -1,0 +1,2 @@
+cd $1
+$NESC1 test.nc >/dev/null
