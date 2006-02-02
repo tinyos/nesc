@@ -6,4 +6,5 @@ EXTRA_DIST =					\
 	COPYING					\
 	COPYRIGHT				\
 	INSTALL					\
+	INTEL-LICENSE				\
 	README
