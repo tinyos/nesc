@@ -2,46 +2,39 @@
 #define nx_union union
 static  void /*test.mod1.themod*/mod$0$sc$init(void);
 static  void /*test.mod2.themod*/mod$1$sc$init(void);
-static  
 # 2 "sc.nc"
-void main$sc$init(void);
+static  void main$sc$init(void);
 # 5 "main.nc"
 void  main$entry(void);
-static inline 
 # 5 "mod.nc"
-void /*test.mod1.themod*/mod$0$fun(char *s);
-static inline  
-void /*test.mod1.themod*/mod$0$sc$init(void);
-static inline 
+static inline void /*test.mod1.themod*/mod$0$fun(char *s);
+
+static inline  void /*test.mod1.themod*/mod$0$sc$init(void);
 #line 5
-void /*test.mod2.themod*/mod$1$fun(char *s);
-static inline  
-void /*test.mod2.themod*/mod$1$sc$init(void);
-static inline 
+static inline void /*test.mod2.themod*/mod$1$fun(char *s);
+
+static inline  void /*test.mod2.themod*/mod$1$sc$init(void);
 #line 5
-void /*test.mod2.themod*/mod$1$fun(char *s)
+static inline void /*test.mod2.themod*/mod$1$fun(char *s)
 #line 5
 {
 }
 
-static inline  
 #line 7
-void /*test.mod2.themod*/mod$1$sc$init(void)
+static inline  void /*test.mod2.themod*/mod$1$sc$init(void)
 #line 7
 {
   /*test.mod2.themod*/mod$1$fun("oops");
 }
 
-static inline 
 #line 5
-void /*test.mod1.themod*/mod$0$fun(char *s)
+static inline void /*test.mod1.themod*/mod$0$fun(char *s)
 #line 5
 {
 }
 
-static inline  
 #line 7
-void /*test.mod1.themod*/mod$0$sc$init(void)
+static inline  void /*test.mod1.themod*/mod$0$sc$init(void)
 #line 7
 {
   /*test.mod1.themod*/mod$0$fun("a");

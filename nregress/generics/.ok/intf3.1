@@ -8,28 +8,23 @@ typedef int /*test.conf2.themod*/mod$1$sc$t1;
 typedef char */*test.conf2.themod*/mod$1$sc$t2;
 static  /*test.conf1.themod*/mod$0$sc$t1 /*test.conf1.themod*/mod$0$sc$init(/*test.conf1.themod*/mod$0$sc$t2 arg_hex, int arg_hex);
 static  /*test.conf2.themod*/mod$1$sc$t1 /*test.conf2.themod*/mod$1$sc$init(/*test.conf2.themod*/mod$1$sc$t2 arg_hex, int arg_hex);
-static  
 # 2 "sc.nc"
-main$sc$t1 main$sc$init(main$sc$t2 arg_hex, int arg_hex);
+static  main$sc$t1 main$sc$init(main$sc$t2 arg_hex, int arg_hex);
 # 5 "main.nc"
 void  main$entry(void);
-static inline  
 # 5 "mod.nc"
-int /*test.conf1.themod*/mod$0$sc$init(char *foo, int b);
-static inline  
+static inline  int /*test.conf1.themod*/mod$0$sc$init(char *foo, int b);
 #line 5
-int /*test.conf2.themod*/mod$1$sc$init(char *foo, int b);
-static inline  
+static inline  int /*test.conf2.themod*/mod$1$sc$init(char *foo, int b);
 #line 5
-int /*test.conf2.themod*/mod$1$sc$init(char *foo, int b)
+static inline  int /*test.conf2.themod*/mod$1$sc$init(char *foo, int b)
 #line 5
 {
   return foo[0] + b + 20;
 }
 
-static inline  
 #line 5
-int /*test.conf1.themod*/mod$0$sc$init(char *foo, int b)
+static inline  int /*test.conf1.themod*/mod$0$sc$init(char *foo, int b)
 #line 5
 {
   return foo[0] + b + 2;

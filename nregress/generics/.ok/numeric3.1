@@ -4,34 +4,33 @@ typedef int /*test.mod1*/mod$0$t;
 typedef char /*test.mod2*/mod$1$t;
 static  void /*test.mod1*/mod$0$sc$init(void);
 static  void /*test.mod2*/mod$1$sc$init(void);
-static  
 # 2 "sc.nc"
-void main$sc$init(void);
+static  void main$sc$init(void);
 # 5 "main.nc"
 void  main$entry(void);
-# 5 "mod.nc"
+# 7 "mod.nc"
+#line 5
 struct /*test.mod1*/mod$0$oops {
   /*test.mod1*/mod$0$t x;
 } /*test.mod1*/mod$0$a;
-static inline  
-void /*test.mod1*/mod$0$sc$init(void);
+
+static inline  void /*test.mod1*/mod$0$sc$init(void);
+#line 7
 #line 5
 struct /*test.mod2*/mod$1$oops {
   /*test.mod2*/mod$1$t x;
 } /*test.mod2*/mod$1$a;
-static inline  
-void /*test.mod2*/mod$1$sc$init(void);
-static inline  
+
+static inline  void /*test.mod2*/mod$1$sc$init(void);
 #line 9
-void /*test.mod2*/mod$1$sc$init(void)
+static inline  void /*test.mod2*/mod$1$sc$init(void)
 #line 9
 {
   /*test.mod2*/mod$1$a.x = 2 | /*test.mod2*/mod$1$a.x;
 }
 
-static inline  
 #line 9
-void /*test.mod1*/mod$0$sc$init(void)
+static inline  void /*test.mod1*/mod$0$sc$init(void)
 #line 9
 {
   /*test.mod1*/mod$0$a.x = 2 | /*test.mod1*/mod$0$a.x;
