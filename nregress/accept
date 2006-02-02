@@ -1,2 +1,4 @@
 rm -f ok/*.*
 mv .output/*.* ok
+cvs -q add ok/*.*
+

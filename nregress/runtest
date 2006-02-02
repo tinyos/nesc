@@ -2,6 +2,9 @@ rm -rf .output
 OUT=/tmp/test.$$.1
 ERR=/tmp/test.$$.2
 mkdir .output
+if [ "$1" ]; then
+  cp ok/*.* .output
+fi
 HERE=$PWD
 DESTDIR=$HERE/.output
 
@@ -13,6 +16,10 @@ export NESC1
 # .tst files get executed in their own directory
 for i in `find . -name *.tst`; do
   i=`echo $i | sed -e 's/^\.\///'`
+  if [ "$1" ]; then
+    echo $i | egrep -q "^$1" || continue
+  fi
+
   cd `dirname $i`
   dest=$DESTDIR/`echo $i | sed -e 's/\//./g'`
 
@@ -34,6 +41,10 @@ done
 # patterns
 for i in `find . -name run1`; do
   i=`echo $i | sed -e 's/^\.\///'`
+  if [ "$1" ]; then
+    echo $i | egrep -q "^$1" || continue
+  fi
+
   base=`dirname $i`
   cd $base
   for name in *; do
@@ -41,7 +52,7 @@ for i in `find . -name run1`; do
       continue
     fi
     if [ -f exclude ]; then
-      if grep '^$name$' exclude; then
+      if grep -q "^$name$" exclude; then
         continue
       fi
     fi
@@ -57,7 +68,7 @@ done
 
 
 echo
-diff --recur -u ok .output
+diff --recur --exclude=CVS -u ok .output
 if [ $? = 0 ]; then
   echo All tests passed
 fi

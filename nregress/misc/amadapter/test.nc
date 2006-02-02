@@ -1,6 +1,4 @@
-includes AM;
-
-configuration TestC {
+configuration test {
   provides interface Attribute<int> as Address;
 }
 implementation {
