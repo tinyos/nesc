@@ -4,6 +4,10 @@ Installation instructions are in INSTALL. Note that nesC needs patched
 versions of the GNU assemblers for the avr and msp430 architectures. For
 more information, check the INSTALL file.
 
+Changes in nesC 1.2.4
+=====================
+- bug fixes
+
 Changes in nesC 1.2.3
 =====================
 - provide network type information in nesC dump output
