@@ -106,7 +106,7 @@ foreach (@allcsts) {
     $name = $1;
     $path = $2;
     $val = $4;
-    $path =~ /([^\/]+)$/;
+    $path =~ /([^\/\\]+)$/;
     $file = $1;
     $csts{$name} = $val if ($cst_names{$name} || $cst_files{$file});
 }
