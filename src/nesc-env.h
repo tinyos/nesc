@@ -28,6 +28,7 @@ void init_nesc_env(region r);
 env get_nesc_env(void);
 void nesc_declare(nesc_declaration d);
 nesc_declaration nesc_lookup(const char *name);
+void preload(source_language sl, location l, const char *name);
 nesc_declaration require(source_language sl, location l, const char *name);
 void require_c(location l, const char *name);
 

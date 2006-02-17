@@ -68,6 +68,12 @@ nesc_declaration nesc_lookup(const char *name)
   return env_lookup(nesc_env, name, FALSE);
 }
 
+void preload(source_language sl, location l, const char *name)
+{
+  if (!nesc_lookup(name))
+    load(sl, l, name, FALSE);
+}
+				    
 nesc_declaration require(source_language sl, location l, const char *name)
 {
   nesc_declaration d = nesc_lookup(name);
@@ -92,7 +98,6 @@ nesc_declaration require(source_language sl, location l, const char *name)
   return d;
 }
 				    
-
 void require_c(location l, const char *name)
 {
   static int dummy;
