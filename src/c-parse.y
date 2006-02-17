@@ -370,6 +370,24 @@ static void set_nesc_parse_tree(void *tree)
   parse_tree = CAST(node, nd);
 }
 
+static void set_nesc_ast(void *tree)
+{
+  nesc_declaration cdecl = current.container;
+  nesc_decl nd = CAST(nesc_decl, tree);
+
+  handle_nescdecl_attributes(nd->attributes, cdecl);
+  nd->cdecl = cdecl;
+  cdecl->ast = nd;
+}
+
+static void set_nesc_impl(implementation impl)
+{
+  nesc_declaration cdecl = current.container;
+
+  CAST(component, cdecl->ast)->implementation = impl;
+  parse_tree = CAST(node, cdecl->ast);
+}
+
 void refuse_asm(asm_stmt s)
 {
   if (s)
@@ -579,9 +597,12 @@ configuration:
 		  current.container->configuration = TRUE;
 		} 
 	  component_parms nesc_attributes '{' requires_or_provides_list '}'
+		{
+		  set_nesc_ast(new_component(pr, $2.location, $3, $6, $1, $5, declaration_reverse($8), NULL));
+		}
 	  iconfiguration
-		{ 
-		  set_nesc_parse_tree(new_component(pr, $2.location, $3, $6, $1, $5, declaration_reverse($8), $10));
+		{
+		  set_nesc_impl($11);
 	        }
         ;
 
@@ -2518,9 +2539,13 @@ nonnull_asm_operands:
 
 asm_operand:
 	  STRING '(' expr ')'
-		{ $$ = new_asm_operand(pr, $1->location,
+		{ $$ = new_asm_operand(pr, $1->location, NULL, 
 				       make_string($1->location, CAST(expression, $1)),
 				       $3);  }
+	| '[' idword ']' STRING '(' expr ')'
+		{ $$ = new_asm_operand(pr, $1.location, $2, 
+				       make_string($4->location, CAST(expression, $4)),
+				       $6);  }
 	;
 
 asm_clobbers:

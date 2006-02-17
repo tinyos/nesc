@@ -619,24 +619,20 @@ component_ref require_component(component_ref comp, word as)
     {
       generic_used = TRUE;
 
-      if (!comp->cdecl->ast)
-	error_with_location(comp->location, "Attempt to instantiate a generic component within itself");
-      else
+      comp->cdecl = specification_copy(parse_region, comp,
+				       current.container->abstract);
+      /* give copy a nice instance name if it is inside a generic
+	 configuration */
+      if (current.container->abstract)
 	{
-	  comp->cdecl = specification_copy(parse_region, comp,
-					   current.container->abstract);
-	  /* give copy a nice instance name if it is inside a generic
-	     configuration */
-	  if (current.container->abstract)
-	    {
-	      size_t inamelen = strlen(current.container->name) +
-		strlen(comp->cdecl->instance_name) + 2;
-	      char *iname = rstralloc(parse_region, inamelen);
+	  size_t inamelen = strlen(current.container->name) +
+	    strlen(comp->cdecl->instance_name) + 2;
+	  char *iname = rstralloc(parse_region, inamelen);
 
-	      sprintf(iname, "%s.%s", current.container->name, comp->cdecl->instance_name);
-	      comp->cdecl->instance_name = iname;
-	    }
+	  sprintf(iname, "%s.%s", current.container->name, comp->cdecl->instance_name);
+	  comp->cdecl->instance_name = iname;
 	}
+
       if (!comp->abstract)
 	error_with_location(comp->location, "generic component `%s' requires instantiation arguments", cname);
       else

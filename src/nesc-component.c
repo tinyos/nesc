@@ -191,8 +191,12 @@ void declare_interface_ref(interface_ref iref, declaration gparms,
       ddecl->functions = ddecl->itype->env;
     }
   else
-    copy_interface_functions(parse_region, current.container, ddecl,
-			     ddecl->itype->env);
+    {
+      copy_interface_functions(parse_region, current.container, ddecl,
+			       ddecl->itype->env);
+      if (iref->args)
+	error("unexpected type arguments");
+    }
 
   /* We don't make the interface type generic. Instead, we push the generic
      type into each function in copy_interface_functions.  This is because

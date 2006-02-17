@@ -561,8 +561,8 @@ DDECL is the magic_string declaration for this string.")
 (deftype word node (cstring)
   "The identifier CSTRING used uninterpreted")
 
-(deftype asm_operand node (string arg1)
-  "STRING(EXPR) (GCC)")
+(deftype asm_operand node (word1 string arg1)
+  "STRING(EXPR) or [WORD1] STRING(EXPR) (GCC)")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; nesc extensions

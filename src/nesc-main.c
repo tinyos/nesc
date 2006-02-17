@@ -356,6 +356,8 @@ void nesc_compile(const char *filename, const char *target_name)
   if (program && program->kind == l_component && !program->abstract)
     {
       connect_graphs(parse_region, program, scheduler, &cg, &userg, &modules, &components);
+      if (errorcount)
+	return;
       current.container = NULL;
       fold_program(program, scheduler);
       gencode = TRUE;

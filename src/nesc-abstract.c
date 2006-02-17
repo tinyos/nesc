@@ -956,7 +956,7 @@ void instantiate(nesc_declaration component, expression arglist)
   /* A new dummy env for all instantiations in the implementation */
   current.env = new_environment(r, NULL, TRUE, FALSE);
   component->impl = CAST(implementation,
-			 instantiate_ast_list(r, CAST(node, component->impl)));
+    instantiate_ast_list(r, CAST(node, original_component(component)->impl)));
 }
 
 /* Component stack handling, for error message and loop detection */
@@ -1287,7 +1287,6 @@ nesc_declaration specification_copy(region r, component_ref cref,
 
   copy->ast = comp->ast;
   clone(r, &copy->ast);
-  copy->impl = comp->impl;
 
   /* Copy the specification into the copy's env */
   spec = CAST(component, copy->ast);

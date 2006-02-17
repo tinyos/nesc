@@ -1934,6 +1934,14 @@ void prt_asm_operands(asm_operand olist)
 
 void prt_asm_operand(asm_operand o)
 {
+  set_location(o->location);
+  if (o->word1)
+    {
+      output("[");
+      prt_word(o->word1);
+      output("] ");
+    }
+
   prt_string(o->string, P_TOP);
   output("(");
   prt_expression(o->arg1, P_TOP);
