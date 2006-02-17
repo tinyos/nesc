@@ -3659,7 +3659,7 @@ void init_semantics(void)
     new_function_declarator(parse_region, dummy_location, NULL, NULL, NULL, NULL,   NULL);
 
   implicit_function_type = make_function_type(int_type, NULL, FALSE, TRUE);
-  dummy_function_type = make_function_type(int_type, NULL, FALSE, FALSE);
+  dummy_function_type = make_function_type(int_type, new_typelist(parse_region), FALSE, FALSE);
 
   /* Create the global bindings for __FUNCTION__ and __PRETTY_FUNCTION__.  */
   declare_function_name ();

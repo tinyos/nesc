@@ -736,9 +736,16 @@ interface_ref:
 
 interface_type:
 	  INTERFACE idword
-		{ $$ = new_interface_ref(pr, $1.location, $2, NULL, NULL, NULL, NULL, NULL); }
-	| INTERFACE idword '<' typelist '>'
-		{ $$ = new_interface_ref(pr, $1.location, $2, $4, NULL, NULL, NULL, NULL); }
+		{ 
+		  require(l_interface, $1.location, $2->cstring.data);
+		  $$ = new_interface_ref(pr, $1.location, $2, NULL, NULL, NULL, NULL, NULL); 
+		}
+	| INTERFACE idword 
+		{ 
+		  require(l_interface, $1.location, $2->cstring.data);
+		}
+	  '<' typelist '>'
+		{ $$ = new_interface_ref(pr, $1.location, $2, $5, NULL, NULL, NULL, NULL); }
 	;
 
 typelist:
