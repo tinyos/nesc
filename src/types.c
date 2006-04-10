@@ -1319,12 +1319,19 @@ type common_type(type t1, type t2)
     switch (t1->kind)
       {
       case tk_primitive:
-	{
-	  int pk = common_primitive_type(t1, t2);
-	  assert(t2->kind == tk_primitive);
-	  rtype = primitive_types[pk];
-	  break;
-	}
+	/* We need to preserve equivalent network base types because
+	   common_type is used for redeclarations */
+	if (type_network_base_type(t1) && type_network_base_type(t2) &&
+	    t1->basedecl == t2->basedecl)
+	  rtype = make_qualified_type(t1, 0);
+	else
+	  {
+	    int pk = common_primitive_type(t1, t2);
+	    assert(t2->kind == tk_primitive);
+	    rtype = primitive_types[pk];
+	  
+	    break;
+	  }
 
       case tk_void: case tk_tagged: case tk_variable:
 	rtype = t1;
