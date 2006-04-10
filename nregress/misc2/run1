@@ -1,0 +1,2 @@
+cd $1
+$NESC1 -I../../../tools -fnesc-include=nesc_nx test.nc >/tmp/test.c && gcc -c /tmp/test.c
