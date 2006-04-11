@@ -70,6 +70,7 @@ inline, SCSPEC, RID_INLINE
 int, TYPESPEC, RID_INT
 long, TYPESPEC, RID_LONG
 offsetof, OFFSETOF, NORID
+__builtin_offsetof, OFFSETOF, NORID
 register, SCSPEC, RID_REGISTER
 return, RETURN, NORID
 short, TYPESPEC, RID_SHORT
