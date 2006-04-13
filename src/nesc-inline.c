@@ -53,22 +53,22 @@ static void ig_add_edge(data_declaration from, data_declaration to)
     }
 }
 
-static size_t statement_size(statement stmt);
-static size_t expression_size(expression expr);
+static size_t statement_size(statement stmt, bool inatomic);
+static size_t expression_size(expression expr, bool inatomic);
 
-static size_t elist_size(expression elist)
+static size_t elist_size(expression elist, bool inatomic)
 {
   expression e;
   size_t sum = 0;
 
   scan_expression (e, elist)
-    sum += expression_size(e);
+    sum += expression_size(e, inatomic);
 
   return sum;
 }
 
 
-static size_t expression_size(expression expr)
+static size_t expression_size(expression expr, bool inatomic)
 {
   size_t sum = 0;
 
@@ -85,21 +85,21 @@ static size_t expression_size(expression expr)
       break;
 
     case kind_comma:
-      sum += elist_size(CAST(comma, expr)->arg1);
+      sum += elist_size(CAST(comma, expr)->arg1, inatomic);
       break;
 
     case kind_cast_list: {
-      sum += expression_size(CAST(cast_list, expr)->init_expr);
+      sum += expression_size(CAST(cast_list, expr)->init_expr, inatomic);
       break;
     }
     case kind_init_specific: {
       init_specific init = CAST(init_specific, expr);
 
-      sum += expression_size(init->init_expr);
+      sum += expression_size(init->init_expr, inatomic);
       break;
     }
     case kind_init_list: {
-      sum += elist_size(CAST(init_list, expr)->args);
+      sum += elist_size(CAST(init_list, expr)->args, inatomic);
       break;
     }
     case kind_conditional: {
@@ -108,49 +108,49 @@ static size_t expression_size(expression expr)
       if (ce->condition->cst)
 	{
 	  if (definite_zero(ce->condition))
-	    sum += expression_size(ce->arg2);
+	    sum += expression_size(ce->arg2, inatomic);
 	  else
-	    sum += expression_size(ce->arg1);
+	    sum += expression_size(ce->arg1, inatomic);
 	}
       else
 	{
-	  sum += 2 + expression_size(ce->condition);
-	  sum += expression_size(ce->arg1);
-	  sum += expression_size(ce->arg2);
+	  sum += 2 + expression_size(ce->condition, inatomic);
+	  sum += expression_size(ce->arg1, inatomic);
+	  sum += expression_size(ce->arg2, inatomic);
 	}
       break;
     }
     case kind_compound_expr:
-      sum += statement_size(CAST(compound_expr, expr)->stmt);
+      sum += statement_size(CAST(compound_expr, expr)->stmt, inatomic);
       break;
 
     case kind_function_call: {
       function_call fce = CAST(function_call, expr);
 
-      sum += 1 + expression_size(fce->arg1);
-      sum += elist_size(fce->args);
+      sum += 1 + expression_size(fce->arg1, inatomic);
+      sum += elist_size(fce->args, inatomic);
       break;
     }
     case kind_generic_call: {
       generic_call fce = CAST(generic_call, expr);
 
-      sum += 1 + expression_size(fce->arg1);
-      sum += elist_size(fce->args);
+      sum += 1 + expression_size(fce->arg1, inatomic);
+      sum += elist_size(fce->args, inatomic);
       break;
     }
     case kind_extension_expr:
-      sum += expression_size(CAST(unary, expr)->arg1);
+      sum += expression_size(CAST(unary, expr)->arg1, inatomic);
       break;
 
     default:
       if (is_unary(expr))
-	sum += 1 + expression_size(CAST(unary, expr)->arg1);
+	sum += 1 + expression_size(CAST(unary, expr)->arg1, inatomic);
       else if (is_binary(expr))
 	{
 	  binary be = CAST(binary, expr);
 
-	  sum += 1 + expression_size(be->arg1);
-	  sum += expression_size(be->arg2);
+	  sum += 1 + expression_size(be->arg1, inatomic);
+	  sum += expression_size(be->arg2, inatomic);
 	}
       else 
 	assert(0);
@@ -160,7 +160,7 @@ static size_t expression_size(expression expr)
   return sum;
 }
 
-static size_t statement_size(statement stmt)
+static size_t statement_size(statement stmt, bool inatomic)
 {
   size_t sum = 0;
 
@@ -170,7 +170,7 @@ static size_t statement_size(statement stmt)
   switch (stmt->kind)
     {
     case kind_asm_stmt: {
-      sum += 1;
+      sum += 1; /* A guess. Hard to count asm instructions. */
       break;
     }
     case kind_compound_stmt: {
@@ -188,11 +188,11 @@ static size_t statement_size(statement stmt)
 					 CAST(data_decl, d)->decls))
 	      if (vd->ddecl->kind == decl_variable &&
 		  vd->ddecl->vtype != variable_static)
-		sum += 1 + expression_size(vd->arg1);
+		sum += 1 + expression_size(vd->arg1, inatomic);
 	  }
 
       scan_statement (s, cs->stmts)
-	sum += statement_size(s);
+	sum += statement_size(s, inatomic);
       break;
     }
     case kind_if_stmt: {
@@ -201,34 +201,36 @@ static size_t statement_size(statement stmt)
       if (is->condition->cst)
 	{
 	  if (definite_zero(is->condition))
-	    sum += statement_size(is->stmt2);
+	    sum += statement_size(is->stmt2, inatomic);
 	  else
-	    sum += statement_size(is->stmt1);
+	    sum += statement_size(is->stmt1, inatomic);
 	}
       else
 	{
-	  sum += 2 + expression_size(is->condition);
-	  sum += statement_size(is->stmt1);
-	  sum += statement_size(is->stmt2);
+	  sum += 2 + expression_size(is->condition, inatomic);
+	  sum += statement_size(is->stmt1, inatomic);
+	  sum += statement_size(is->stmt2, inatomic);
 	}
       break;
     }
     case kind_labeled_stmt: {
       labeled_stmt ls = CAST(labeled_stmt, stmt);
 
-      sum += statement_size(ls->stmt);
+      sum += statement_size(ls->stmt, inatomic);
       break;
     }
     case kind_atomic_stmt: {
       atomic_stmt ls = CAST(atomic_stmt, stmt);
 
-      sum += statement_size(ls->stmt);
+      sum += statement_size(ls->stmt, inatomic);
+      if (!inatomic)
+	sum += 6;
       break;
     }
     case kind_expression_stmt: {
       expression_stmt es = CAST(expression_stmt, stmt);
 
-      sum += expression_size(es->arg1);
+      sum += expression_size(es->arg1, inatomic);
       break;
     }
     case kind_while_stmt: case kind_dowhile_stmt: case kind_switch_stmt: {
@@ -240,20 +242,20 @@ static size_t statement_size(statement stmt)
 	  /* do s while (0): just include size of s
 	     while (0) s: size is 0 */
 	  if (stmt->kind == kind_dowhile_stmt)
-	    sum += statement_size(cs->stmt);
+	    sum += statement_size(cs->stmt, inatomic);
 	  break;
 	}
-      sum += 2 + expression_size(cs->condition);
-      sum += statement_size(cs->stmt);
+      sum += 2 + expression_size(cs->condition, inatomic);
+      sum += statement_size(cs->stmt, inatomic);
       break;
     }
     case kind_for_stmt: {
       for_stmt fs = CAST(for_stmt, stmt);
 
-      sum += 2 + statement_size(fs->stmt);
-      sum += expression_size(fs->arg1);
-      sum += expression_size(fs->arg2);
-      sum += expression_size(fs->arg3);
+      sum += 2 + statement_size(fs->stmt, inatomic);
+      sum += expression_size(fs->arg1, inatomic);
+      sum += expression_size(fs->arg2, inatomic);
+      sum += expression_size(fs->arg3, inatomic);
       break;
     }
     case kind_break_stmt: case kind_continue_stmt: case kind_goto_stmt:
@@ -266,13 +268,13 @@ static size_t statement_size(statement stmt)
     case kind_computed_goto_stmt: {
       computed_goto_stmt cgs = CAST(computed_goto_stmt, stmt);
 
-      sum += 1 + expression_size(cgs->arg1);
+      sum += 1 + expression_size(cgs->arg1, inatomic);
       break;
     }
     case kind_return_stmt: {
       return_stmt rs = CAST(return_stmt, stmt);
 
-      sum += 1 + expression_size(rs->arg1);
+      sum += 1 + expression_size(rs->arg1, inatomic);
       break;
     }
     default: assert(0);
@@ -283,7 +285,7 @@ static size_t statement_size(statement stmt)
 
 static size_t function_size(function_decl fd)
 {
-  return statement_size(fd->stmt);
+  return statement_size(fd->stmt, fd->ddecl->call_contexts == c_call_atomic);
 }
 
 static ggraph make_ig(region r, cgraph callgraph)
