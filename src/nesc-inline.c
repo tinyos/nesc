@@ -21,7 +21,8 @@ Boston, MA 02111-1307, USA.  */
 #include "flags.h"
 
 enum {
-  max_inlineable_size = 15
+  base_inlineable_size = 4,
+  inline_per_arg = 4
 };
 
 struct inline_node
@@ -288,6 +289,31 @@ static size_t function_size(function_decl fd)
   return statement_size(fd->stmt, fd->ddecl->call_contexts == c_call_atomic);
 }
 
+static size_t typelist_length(typelist tl)
+{
+  typelist_scanner tls;
+  size_t count = 0;
+
+  if (!tl)
+    return 0;
+  
+  typelist_scan(tl, &tls);
+  while (typelist_next(&tls))
+    count++;
+
+  return count;
+}
+
+static size_t function_argcount(data_declaration ddecl)
+{
+  size_t count = typelist_length(type_function_arguments(ddecl->type));
+
+  if (type_generic(ddecl->type))
+    count += typelist_length(type_function_arguments(type_function_return_type(ddecl->type)));
+
+  return count;
+}
+
 static ggraph make_ig(region r, cgraph callgraph)
 {
   ggraph cg = cgraph_graph(callgraph);
@@ -297,10 +323,27 @@ static ggraph make_ig(region r, cgraph callgraph)
   graph_scan_nodes (n, cg)
     {
       data_declaration fn = NODE_GET(endp, n)->function;
+      size_t fnsize = 1;
 
-      ig_add_fn(r, ig, fn,
-		fn->definition ?
-		  function_size(CAST(function_decl, fn->definition)) : 1);
+      if (fn->definition)
+	fnsize = function_size(CAST(function_decl, fn->definition));
+
+      if (fn->interface && !fn->defined)
+	{
+	  /* stub function. size is based on number of outgoing edges and
+	     number of parameters (first outgoing edge counted as "free") */
+	  gedge e;
+	  int edgecount = 0;
+
+	  graph_scan_out (e, n)
+	    edgecount++;
+	  /* use size of default definition (already computed above) if no
+	     outgoing edges */
+	  if (edgecount > 0)
+	    fnsize = (edgecount - 1) * (2 + function_argcount(fn));
+	}
+
+      ig_add_fn(r, ig, fn, fnsize);
     }
   graph_scan_nodes (n, cg)
     {
@@ -356,25 +399,22 @@ void inline_functions(cgraph callgraph)
   region igr = newregion();
   ggraph ig = make_ig(igr, callgraph);
   gnode n;
+  int bis = base_inlineable_size, ipa = inline_per_arg;
+
+  if (getenv("NESC_BIS"))
+    bis = atoi(getenv("NESC_BIS"));
+  if (getenv("NESC_IPA"))
+    ipa = atoi(getenv("NESC_IPA"));
 
   if (flag_no_inline)
     return;
-
-  /* Inline all stub functions */
-  graph_scan_nodes (n, ig)
-    {
-      struct inline_node *in = NODE_GET(struct inline_node *, n);
-      
-      if (!in->fn->definition)
-	inline_function(n, in);
-    }
 
   /* Inline small fns and single-call fns */
   graph_scan_nodes (n, ig)
     {
       struct inline_node *in = NODE_GET(struct inline_node *, n);
       
-      if (in->fn->definition && !in->fn->isinline)
+      if (in->fn->definition && !in->fn->isinline && !in->fn->makeinline)
 	{
 	  gedge e;
 	  size_t edgecount = 0;
@@ -382,7 +422,8 @@ void inline_functions(cgraph callgraph)
 	  graph_scan_in (e, n)
 	    edgecount++;
       
-	  if (in->size <= max_inlineable_size || edgecount == 1)
+	  if (edgecount == 1 ||
+	      in->size <= bis + function_argcount(in->fn) * ipa)
 	    inline_function(n, in);
 	}
     }
