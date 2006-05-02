@@ -43,6 +43,8 @@ sub gen() {
     print "#ifndef \U${p}_H\n";
     print "#define \U${p}_H\n";
 
+    print "#include <message.h>\n";
+
     print "\nenum {\n";
     print "  /** The default size of this message type in bytes. */\n";
     print "  \U${p}_SIZE = $size,\n\n";
@@ -102,10 +104,10 @@ sub gen() {
 	($ctype, $c_access) = &cbasetype($type, $bitlength);
 
 	if (!@$amax) { # not array
-	    print_proto($uf, $ctype, "get", "void",
+	    print_proto($uf, $ctype, "get", "tmsg_t *msg",
 			"Return the value of the field '$field'");
-	    print_proto($uf, "void", "set", "$ctype value",
-			"Return the value of the field '$field'");
+	    print_proto($uf, "void", "set", "tmsg_t *msg, $ctype value",
+			"Set the value of the field '$field'");
 	} else { # array
 	    $index = 0;
 	    @args = map { $index++; "size_t index$index" } @{$amax};
@@ -113,11 +115,11 @@ sub gen() {
 
 	    print_proto($uf, "size_t", "offset", $argspec,
 			"Return the byte offset of an element of array '$field'");
-	    print_proto($uf, $ctype, "get", $argspec,
+	    print_proto($uf, $ctype, "get", "tmsg_t *msg, $argspec",
 			"Return an element of the array '$field'");
-	    print_proto($uf, "void", "set", "$argspec, $ctype value",
+	    print_proto($uf, "void", "set", "tmsg_t *msg, $argspec, $ctype value",
 			"Set an element of the array '$field'");
-	    print_proto($uf, "size_t", "offset_bits", $argspec,
+	    print_proto($uf, "size_t", "offsetbits", $argspec,
 			"Return the bit offset of an element of array '$field'");
 	}
     }
@@ -158,12 +160,12 @@ sub gen() {
 	    $passargs = join(", ", @passargs);
 
 	    print_next_header(); # offset
-	    print "{\n  return ${uf}_offset_bits($passargs) / 8;\n}\n\n";
+	    print "{\n  return ${uf}_offsetbits($passargs) / 8;\n}\n\n";
 	    print_next_header(); # get
 	    print "{\n  return tmsg_read_$c_access(msg, ${uf}_offset_bits($passargs), $bitlength);\n}\n\n";
 	    print_next_header(); # set
 	    print "{\n  tmsg_write_$c_access(msg, ${uf}_offset_bits($passargs), $bitlength, value);\n}\n\n";
-	    print_next_header(); # offset_bits
+	    print_next_header(); # offsetbits
 	    print_offsetbits($offset, $amax, $abitsize, $aoffset);
 	}
     }
