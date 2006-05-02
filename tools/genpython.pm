@@ -192,7 +192,7 @@ sub gen() {
 
 	if ($isarray) {
 	    print "    def offset_$pythonfield(self, $argspec):\n";
-	    printoffset($base + $offset, $amax, $abitsize, $aoffset, 0);
+	    printoffset($offset, $amax, $abitsize, $aoffset, 0);
 	} else {
 	    print "    def offset_$pythonfield(self):\n";
 	    print "        return ($offset / 8)\n";
@@ -204,7 +204,7 @@ sub gen() {
 	print "    #\n";
 	if ($isarray) {
 	  print "    def offsetBits_$pythonfield(self, $argspec):\n";
-	  printoffset($base + $offset, $amax, $abitsize, $aoffset, 1);
+	  printoffset($offset, $amax, $abitsize, $aoffset, 1);
 	} else {
 	  print "    def offsetBits_$pythonfield(self):\n";
 	  print "        return $offset\n";

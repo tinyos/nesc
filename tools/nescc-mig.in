@@ -46,6 +46,9 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	elsif (/^-python-extends=(.*)$/) {
 	    $python_extends = $1;
 	}
+	elsif (/^-c-prefix=(.*)$/) {
+	    $c_prefix = $1;
+	}
 	elsif (/^-o/) {
 	    ($i, $ofile) = &extractarg($i);
 	}
@@ -126,9 +129,9 @@ sub usage()
 
     print STDERR "Usage: $0 [options] tool msg-format-file message-type\n";
     print STDERR "  general options are\n";
-    print STDERR "    -I dir                            Add include directory\n\n";
-    print STDERR "    -target=NCC-TARGET                Select mote architecture\n";
-    print STDERR "                                      (default is ncc's, use pc with tossim)\n";
+    print STDERR "    -o <file>                         Specify output file\n";
+    print STDERR "                                      (default is stdout)\n";
+    print STDERR "    and any nescc option.\n\n";
     print STDERR "  target specific options are\n";
     print STDERR "    java:\n";
     print STDERR "      -java-classname=FULL-CLASS-NAME Select class name (required)\n";
@@ -141,6 +144,11 @@ sub usage()
     print STDERR "      -python-classname=FULL-CLASS-NAME Select class name (required)\n";
     print STDERR "      -python-extends=CLASS-NAME        Select class to extend\n";
     print STDERR "                                      (default tinyos.message.Message)\n";
+    print STDERR "    C:\n";
+    print STDERR "      -c-prefix=PREFIX                  Select a different prefix than the\n";
+    print STDERR "                                        message-type.\n";
+    print STDERR "      You must use -o <somefile>.h when using the C tool. The C tool generates\n";
+    print STDERR "      both <somefile>.h and <somefile>.c\n";
     exit 2;
 }
 

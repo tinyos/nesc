@@ -231,7 +231,7 @@ sub gen() {
 
 	print "    public static int offset_$csfield($argspec) {\n";
 	if ($isarray) {
-	    printoffset($base + $offset, $amax, $abitsize, $aoffset, 0);
+	    printoffset($offset, $amax, $abitsize, $aoffset, 0);
 	} else {
 	    print "        return ($offset / 8);\n";
 	}
@@ -242,7 +242,7 @@ sub gen() {
 	print "     */\n";
 	print "    public static int offsetBits_$csfield($argspec) {\n";
 	if ($isarray) {
-	  printoffset($base + $offset, $amax, $abitsize, $aoffset, 1);
+	  printoffset($offset, $amax, $abitsize, $aoffset, 1);
 	} else {
 	  print "        return $offset;\n";
 	}

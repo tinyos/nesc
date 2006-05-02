@@ -31,6 +31,7 @@ bin_SCRIPTS = nescc-mig nescc-ncg nescc nescc-diff nescc-wiring
 ncclib_DATA = genjava.pm 			\
 	      gencstjava.pm 			\
 	      gencsharp.pm			\
+	      genc.pm				\
 	      gencstc.pm			\
 	      genpython.pm			\
 	      gencstpython.pm			\
