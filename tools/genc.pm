@@ -162,9 +162,9 @@ sub gen() {
 	    print_next_header(); # offset
 	    print "{\n  return ${uf}_offsetbits($passargs) / 8;\n}\n\n";
 	    print_next_header(); # get
-	    print "{\n  return tmsg_read_$c_access(msg, ${uf}_offset_bits($passargs), $bitlength);\n}\n\n";
+	    print "{\n  return tmsg_read_$c_access(msg, ${uf}_offsetbits($passargs), $bitlength);\n}\n\n";
 	    print_next_header(); # set
-	    print "{\n  tmsg_write_$c_access(msg, ${uf}_offset_bits($passargs), $bitlength, value);\n}\n\n";
+	    print "{\n  tmsg_write_$c_access(msg, ${uf}_offsetbits($passargs), $bitlength, value);\n}\n\n";
 	    print_next_header(); # offsetbits
 	    print_offsetbits($offset, $amax, $abitsize, $aoffset);
 	}

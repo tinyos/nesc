@@ -31,6 +31,7 @@ sub gen() {
 	# java "loss of precision" errors
 	print ",\n" if $notfirst;
 	$notfirst = 1;
+	$name = "${c_prefix}_$name" if $c_prefix;
 	print "    $name = $val";
     }
 

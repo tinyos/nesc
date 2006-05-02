@@ -40,6 +40,9 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	elsif (/^-python-extends=(.*)$/) {
 	    $python_extends = $1;
 	}
+	elsif (/^-c-prefix=(.*)$/) {
+	    $c_prefix = $1;
+	}
 	elsif (/^-o/) {
 	    ($i, $ofile) = &extractarg($i);
 	}
@@ -153,6 +156,8 @@ sub usage()
     print STDERR "      -python-classname=FULL-CLASS-NAME Select class name (required)\n";
     print STDERR "      -python-extends=CLASS-NAME        Select class to extend\n";
     print STDERR "                                      (default tinyos.message.Message)\n";
+    print STDERR "    C:\n";
+    print STDERR "      -c-prefix=PREFIX                  Add a prefix to constant names\n";
 
     exit 2;
 }
