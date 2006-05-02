@@ -80,6 +80,15 @@ class.
 \fB-python-extends=\fIclass-name\fR
 Specify the class the generated class will extend. The default is
 is to not inherit.
+.SH C TOOL
+This tool generates a C header file with the values of the
+requested constants (defined as \fBenum\fR constants).
+
+The C tool accepts the following option:
+.TP
+\fB-c-prefix=\fIprefix\fR  
+This option specifies a \fIprefix\fR to attach to the generated
+constants.
 .SH ERRORS
 
 \fBnescc-ncg\fR reports an error if ncc cannot compile \fInesC-file\fR.
