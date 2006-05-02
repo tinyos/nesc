@@ -21,8 +21,8 @@ Boston, MA 02111-1307, USA.  */
 #include "flags.h"
 
 enum {
-  base_inlineable_size = 4,
-  inline_per_arg = 4
+  base_inlineable_size = 9,
+  inline_per_arg = 2
 };
 
 struct inline_node
@@ -322,6 +322,7 @@ static ggraph make_ig(region r, cgraph callgraph)
 
   graph_scan_nodes (n, cg)
     {
+      /* Size should be at least 1 (because of the -1 in inline_function) */
       data_declaration fn = NODE_GET(endp, n)->function;
       size_t fnsize = 1;
 
@@ -340,7 +341,7 @@ static ggraph make_ig(region r, cgraph callgraph)
 	  /* use size of default definition (already computed above) if no
 	     outgoing edges */
 	  if (edgecount > 0)
-	    fnsize = (edgecount - 1) * (2 + function_argcount(fn));
+	    fnsize = (edgecount - 1) * (2 + function_argcount(fn)) + 1;
 	}
 
       ig_add_fn(r, ig, fn, fnsize);
@@ -414,7 +415,7 @@ void inline_functions(cgraph callgraph)
     {
       struct inline_node *in = NODE_GET(struct inline_node *, n);
       
-      if (in->fn->definition && !in->fn->isinline && !in->fn->makeinline)
+      if (!in->fn->isinline && !in->fn->makeinline)
 	{
 	  gedge e;
 	  size_t edgecount = 0;
@@ -423,10 +424,9 @@ void inline_functions(cgraph callgraph)
 	    edgecount++;
       
 	  if (edgecount == 1 ||
-	      in->size <= bis + function_argcount(in->fn) * ipa)
+	      (bis >=0 && in->size <= bis + function_argcount(in->fn) * ipa))
 	    inline_function(n, in);
 	}
     }
   deleteregion(igr);
 }
-
