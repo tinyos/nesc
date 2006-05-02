@@ -31,8 +31,8 @@ active message type for \fImessage-type\fR. If you need access to other
 constants from your nesC application, please consult the \fBnescc-ncg\fR man
 page.
 
-The current tools are \fBjava\fR, \fBcsharp\fR and \fBpython\fR, which
-generate java, C# and python classes that encode and decode messages.
+The current tools are \fBjava\fR, \fBcsharp\fR, \fBpython\fR and \fBC\fR, which
+generate java, C#, python and C code to encode and decode messages.
 .SH OPTIONS
 You can pass any \fBnescc\fR option, as well as
 .TP
@@ -163,6 +163,56 @@ Specify the class the generated class will extend. The default is
 \fBtinyos.message.Message.Message\fR.
 
 The methods in the generated class are the same as for the Java tool.
+.SH C TOOL
+This tool generates a C header file (\fB.h\fR) with constants describing
+the type's layout, and a C module (\fB.c\fR) with functions to get and
+set each field. You must pass the \fB.h\fR file's name to \fBnescc-mig\fR
+using \fB-o\fR.
+
+The C tool accepts the following option:
+.TP
+\fB-c-prefix=\fIprefix\fR  
+This option specifies the \fIprefix\fR to attach to the generated
+constants and functions. If omitted, \fImessage-type\fR is used.
+.PP
+For each non-array field
+\fIfname\fR of structure \fImessage-type\fR, the following
+functions and constants are generated:
+.IP *
+\fIprefix\fB_\fIfname\fB_get\fR(): get field's value
+.IP *
+\fIprefix\fB_\fIfname\fB_set\fR(): get field's value
+.IP *
+\fIprefix\fB_\fIfname\fB_OFFSETBITS\fR: bit offset of field
+.IP *
+\fIprefix\fB_\fIfname\fB_OFFSET\fR: byte offset of field
+.IP *
+\fIprefix\fB_\fIfname\fB_SIZEBITS\fR: size in bits of field
+.IP *
+\fIprefix\fB_\fIfname\fB_SIZE\fR: size in bytes of field
+.PP
+For each array field \fIfname\fR of structure \fImessage-type\fR, the following
+functions and constants are generated:
+.IP *
+\fIprefix\fB_\fIfname\fB_get()\fR: get field's value
+.IP *
+\fIprefix\fB_\fIfname\fB_set()\fR: get field's value
+.IP *
+\fIprefix\fB_\fIfname\fB_offsetbits()\fR: bit offset of array element
+.IP *
+\fIprefix\fB_\fIfname\fB_offset()\fR: byte offset of array element
+.IP *
+\fIprefix\fB_\fIfname\fB_ELEMENTSIZEBITS\fR: size in bits of array element
+.IP *
+\fIprefix\fB_\fIfname\fB_ELEMENTSIZE\fR: size in bytes of array element
+.IP *
+\fIprefix\fB_\fIfname\fB_NUMELEMENTS\fR: number of elements in array (absent for variable-sized arrays)
+.IP *
+\fIprefix\fB_\fIfname\fB_NUMELEMENTS_\fIi\fR: size of \fIi\fRth array dimension
+.PP
+Embedded structures in \fImessage-type\fR are expanded, using _ to
+separate the structure name and its fields. A field of an array of
+embedded structures is considered to be an array.
 
 .SH ERRORS
 
@@ -170,6 +220,10 @@ The methods in the generated class are the same as for the Java tool.
 \fImsg-format-file\fR, if \fImessage-type\fR isn't found or if it contains
 pointers.
 .SH SEE ALSO
+
+The generated code for the various tools refer to libraries that are distributed
+with the TinyOS operating system. Please refer to that project's documentation
+for more information.
 
 .IR mig (1),
 .IR nescc (1),
