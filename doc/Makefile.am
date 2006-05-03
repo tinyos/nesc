@@ -12,7 +12,8 @@ dist_man_MANS = nescc.1 nescc-mig.1 nescc-ncg.1 nescc-wiring.1
 nccdoc_DATA = 					\
 	COPYING-DOC				\
 	COPYRIGHT				\
-	README					\
+	INDEX					\
+	../README				\
 	mica-debugging.html			\
 	envtarget.html				\
 	nesc-debugging.html			\

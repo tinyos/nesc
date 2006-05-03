@@ -1,0 +1,12 @@
+- README summarises the changes in nesC since version 1.0
+- ref.pdf is the nesC reference manual
+- the user directory contains introductions to the new nesC 1.2 features
+- the dump directory contains the schema definition for nesC's XML
+  information dump facility (see user/attributes.txt)
+- nesc-debugging.html describes how to debug nesC code using gdb
+- mica-debugging.html describes how to use the Atmel JTAG interface to
+  debug mica-family motes
+- envtarget.html describes the "env" target which can be used to quickly
+  port nesC to a new target platform which already supports gcc
+- nescc.1 and nescc-mig.1 are man pages for the nesC compiler and the
+  message interface generator tool
