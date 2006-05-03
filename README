@@ -4,6 +4,18 @@ Installation instructions are in INSTALL. Note that nesC needs patched
 versions of the GNU assemblers for the avr and msp430 architectures. For
 more information, check the INSTALL file.
 
+Changes in nesC 1.2.X
+=====================
+- nescc-mig now generates C (ncg has supported C since 1.1.2)
+- add __builtin_offsetof keyword to make recent gcc's happy,
+  and update the gcc-specific asm syntax to reflect recent
+  gcc changes
+- allow types defined in interface files to be used immediately in generic 
+  interface arguments (e.g., interface Timer<TMilli>, where TMilli is 
+  defined in Timer.nc)
+- updates to automatic inlining - code should be slightly smaller
+- bug fixes
+
 Changes in nesC 1.2.4
 =====================
 - bug fixes
