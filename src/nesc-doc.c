@@ -189,7 +189,7 @@ void doc_set_dirsep(const char c)
 static void find_currdir_prefix(const char *ocwd)
 {
   int i;
-  char *cwd = rstrdup(doc_region, cwd);
+  char *cwd = rstrdup(doc_region, ocwd);
 
   unixify_path(cwd);
 
@@ -1538,8 +1538,6 @@ static void print_cg_html(const char *component_name, const char *component_file
   char *text_only_name;
   FILE *text_file;
 
-  static bool graphviz_supports_cmap = FALSE;
-  static bool checked_graphviz_version = FALSE;
   bool do_func_graph = FALSE;  // FIXME: disable the function graph for now
 
 
@@ -1549,21 +1547,6 @@ static void print_cg_html(const char *component_name, const char *component_file
   fprintf(stderr, "%d.\n", fixme_graph_num);
   */
 
-  // check the version of graphviz, to see if we can use the cmap stuff
-  if( use_graphviz  &&  !checked_graphviz_version ) {
-    int ret;
-    checked_graphviz_version = TRUE;
-
-    ret = system("echo digraph '{' '}' | dot -Tnosuchlanguage 2>&1 | grep cmap > /dev/null");
-    if(ret == 0)
-      graphviz_supports_cmap = TRUE;
-    else 
-      warning("\
-DOC WARNING: your version of `dot' does not support client-side \n\
-             image maps.  Upgrade to graphviz >= 1.8.8 to enable \n\
-             clickable wiring diagrams.\n");
-  }
-  
   // create filenames
   if( app_graph ) {
     iface_dot = doc_filename_with_ext(component_file_name,".app.if.dot");
@@ -1624,26 +1607,16 @@ DOC WARNING: your version of `dot' does not support client-side \n\
     iface_file = fopen(iface_dot, "w");  
     if( !iface_file ) fatal("can't write to dot file '%s'", iface_dot);
     fprintf(iface_file, "digraph \"%s_if\" {%s", component_name, graphviz_opts);
-    if( graphviz_supports_cmap ) {
-      fprintf(iface_file, "    node [fontcolor=blue];\n");
-      fprintf(iface_file, "    edge [fontcolor=blue];\n");
-    } else {
-      fprintf(iface_file, "    node [fontcolor=black];\n");
-      fprintf(iface_file, "    edge [fontcolor=black];\n");
-    }
+    fprintf(iface_file, "    node [fontcolor=blue];\n");
+    fprintf(iface_file, "    edge [fontcolor=blue];\n");
     fprintf(iface_file, "\n");
 
     if( do_func_graph ) {
       func_file  = fopen(func_dot,  "w");  assert(func_file);
       if( !func_file ) fatal("can't write to dot file '%s'", func_dot);
       fprintf(func_file, "digraph \"%s_func\" {%s\n\n", component_name, graphviz_opts);
-      if( graphviz_supports_cmap ) {
-        fprintf(func_file, "    node [fontcolor=blue];\n");
-        fprintf(func_file, "    edge [fontcolor=blue];\n");
-      } else {
-        fprintf(func_file, "    node [fontcolor=black];\n");
-        fprintf(func_file, "    edge [fontcolor=black];\n");
-      }
+      fprintf(func_file, "    node [fontcolor=blue];\n");
+      fprintf(func_file, "    edge [fontcolor=blue];\n");
       fprintf(func_file, "\n");
     }
 
@@ -1816,22 +1789,18 @@ DOC WARNING: your version of `dot' does not support client-side \n\
     ret = system(cmd); 
     if(ret == -1)
       fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
-    if( graphviz_supports_cmap ) {
-      ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tcmap -o%s %s", iface_cmap, iface_dot); assert(ret > 0);
-      ret = system(cmd); 
-      if(ret == -1) fatal("error running graphviz command:\n   %s\n",cmd);
-    }
+    ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tcmap -o%s %s", iface_cmap, iface_dot); assert(ret > 0);
+    ret = system(cmd); 
+    if(ret == -1) fatal("error running graphviz command:\n   %s\n",cmd);
 
     if( do_func_graph ) {
       ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tgif -o%s %s", func_gif, func_dot); assert(ret > 0);
       ret = system(cmd); assert(ret != -1);
       if(ret == -1)
         fatal("ERROR: error running graphviz - please check your graphviz and font installations..\n");
-      if( graphviz_supports_cmap ) {
-        ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tcmap -o%s %s", func_cmap, func_dot); assert(ret > 0);
-        ret = system(cmd); 
-        if(ret == -1) fatal("error running graphviz command:\n   %s\n",cmd);
-      }
+      ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tcmap -o%s %s", func_cmap, func_dot); assert(ret > 0);
+      ret = system(cmd); 
+      if(ret == -1) fatal("error running graphviz command:\n   %s\n",cmd);
     }
   }
 
@@ -1846,14 +1815,10 @@ DOC WARNING: your version of `dot' does not support client-side \n\
     // FIXME: add a link to the function graph page here.
     output("<br>\n");
 
-    if( graphviz_supports_cmap ) {
-      output("<map name=\"comp\">\n");
-      copy_file_to_output(iface_cmap);
-      output("</map>\n");
-      output("<center><image src=\"%s\" usemap=\"#comp\" border=0></center>\n", iface_gif);
-    } else {
-      output("<center><image src=\"%s\" border=0></center>\n", iface_gif);
-    }
+    output("<map name=\"comp\">\n");
+    copy_file_to_output(iface_cmap);
+    output("</map>\n");
+    output("<center><image src=\"%s\" usemap=\"#comp\" border=0></center>\n", iface_gif);
   }
   else {
     // just copy in the text output, if we aren't generating graphs
@@ -1868,14 +1833,10 @@ DOC WARNING: your version of `dot' does not support client-side \n\
     // FIXME: this stuff should all go to a seperate function graph HTML page
     print_html_banner("<h3>Component Function Graph</h3>");
 
-    if( graphviz_supports_cmap ) {
-      output("<map name=\"func\">\n");
-      copy_file_to_output(func_cmap);
-      output("</map>\n");
-      output("<center><image src=\"%s\" usemap=\"#func\" border=0></center>\n", func_gif);
-    } else {
-      output("<center><image src=\"%s\" border=0></center>\n", func_gif);
-    }
+    output("<map name=\"func\">\n");
+    copy_file_to_output(func_cmap);
+    output("</map>\n");
+    output("<center><image src=\"%s\" usemap=\"#func\" border=0></center>\n", func_gif);
   }
 
   // remove temp files

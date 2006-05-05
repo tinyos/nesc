@@ -73,4 +73,10 @@ void unixify_path(char *path);
 /* TRUE if path is absolute, false otherwise */
 bool absolute_path(char *path);
 
+#ifdef WIN32
+#define DEVNULL "nul:"
+#else
+#define DEVNULL "/dev/null"
+#endif
+
 #endif

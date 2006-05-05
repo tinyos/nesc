@@ -29,13 +29,6 @@ Boston, MA 02111-1307, USA.  */
 #include "c-parse.h"
 #include "input.h"
 
-#ifdef WIN32
-#define DEVNULL "nul:"
-#else
-#include <sys/wait.h>
-#define DEVNULL "/dev/null"
-#endif
-
 static region opt_region;
 
 struct cpp_option {
@@ -227,6 +220,8 @@ static FILE *exec_gcc(char *gcc_output_template, char **gcc_output_file, bool re
     return NULL;
 }
 #else
+#include <sys/wait.h>
+
 static FILE *exec_gcc(char *gcc_output_template, char **gcc_output_file,
 		      bool redirect_errors, int nargs,
 		      void (*setargs)(void *data, const char **argv), void *data)
