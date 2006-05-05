@@ -84,7 +84,12 @@ if ($source eq "") {
 if ($ctarget eq "") {
     # not a good choice, but we're normally invoked via gcc which gives 
     # us a -fnesc-cfile= option
-    $ctarget = "/tmp/nesc.$$.c";
+    if ($ENV{TMP}) {
+	$ctarget = "$ENV{TMP}/nesc.$$.c";
+    }
+    else {
+	$ctarget = "/tmp/nesc.$$.c";
+    }
     $delcfile = 1;
 }
 
