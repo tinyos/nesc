@@ -26,18 +26,6 @@ AC_PREREQ(2.50)
 
 AC_INIT(nesc, 1.2.4cvs060502)
 AC_CONFIG_AUX_DIR(config-aux)
-AC_CANONICAL_HOST
-
-AC_MSG_CHECKING(for cygwin)
-case $host in
-  *-*-cygwin*)
-    CYGWINHACKS=1
-    AC_MSG_RESULT(yes)
-    ;;
-  *)
-    AC_MSG_RESULT(no)
-esac
-AC_SUBST(CYGWINHACKS)
 
 AM_INIT_AUTOMAKE
 

@@ -36,30 +36,6 @@ Boston, MA 02111-1307, USA.  */
 
 #include <errno.h>
 
-#ifdef HAVE_BASENAME
-#include <libgen.h>
-#else
-/* A trivial version, which should work for unix and cygwin, and for 
-   our purposes.
-   Does NOT handle trailing / properly (we're using it for files only)
-   (returns "" in that case)
-*/
-char *basename(const char *path)
-{
-  char *end;
-
-  if (!path || !*path)
-    return ".";
-
-  end = (char *)path + strlen(path);
-  while (end > path)
-    if (*--end == '/' || *end == '\\')
-      return end + 1;
-
-  return (char *)path;
-}
-#endif
-
 bool nesc_attributep(gcc_attribute a)
 /* Returns: TRUE if a is a nesc-specific attribute
  */

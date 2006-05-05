@@ -263,3 +263,8 @@ char *diff_input, *diff_output;
 /* If true, rewrite post/task to use interfaces+wiring rather than calls to
    a TOS_post function. */
 int flag_use_scheduler;
+
+/* If true, we're using a mingw based gcc from a cygwin environment. We
+   should fix filenames before invoking gcc. */
+int flag_mingw_gcc;
+

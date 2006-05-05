@@ -260,4 +260,8 @@ extern char *diff_input, *diff_output;
    a TOS_post function. */
 extern int flag_use_scheduler;
 
+/* If true, we're using a mingw based gcc from a cygwin environment. We
+   should fix filenames before invoking gcc. */
+extern int flag_mingw_gcc;
+
 #endif

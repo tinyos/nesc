@@ -18,7 +18,7 @@
 # the Free Software Foundation, 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-INCLUDES = -DNMEMDEBUG -DNDEBUG -O9
+INCLUDES := -DNMEMDEBUG -DNDEBUG -O9
 
 noinst_LIBRARIES = libregions.a
 
@@ -27,10 +27,23 @@ noinst_HEADERS =				\
 	pages.c					\
 	stats.c
 
-libregions_a_SOURCES =				\
+if NEED_FNMATCH
+INCLUDES += fnmatch
+FNMATCH = \
     fnmatch.c					\
-    fnmatch.h					\
+    fnmatch/fnmatch.h
+endif
+
+if NEED_REGEX
+INCLUDES += regex
+REGEX = 
     regex.c					\
-    regex.h					\
+    regex/regex.h
+endif
+
+libregions_a_SOURCES =				\
     regions.c					\
-    regions.h
+    regions.h					\
+    $(FNMATCH)					\
+    $(REGEX)
+

@@ -181,10 +181,6 @@ void unlink_page(struct page **list, struct page *p)
     p->next->previous = p->previous;
 }
 
-#ifndef WIN32
-#define USE_MMAP
-#endif
-
 #ifdef USE_MMAP
 #include <sys/mman.h>
 #include <fcntl.h>

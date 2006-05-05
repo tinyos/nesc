@@ -31,9 +31,19 @@ SUBDIRS = libcompat
 regiondir = libcompat
 endif
 
+extra_inc :=
+
+if NEED_REGEX
+extra_inc += -Ilibcompat/regex
+endif
+
+if NEED_FNMATCH
+extra_inc += -Ilibcompat/fnmatch
+endif
+
 ncclibdir=$(libdir)/ncc
 
-INCLUDES = $(regionflags) -I$(srcdir)/$(regiondir)
+INCLUDES = $(regionflags) -I$(srcdir)/$(regiondir) $(extra_inc)
 
 noinst_LIBRARIES = libparser.a
 ncclib_PROGRAMS = nesc1

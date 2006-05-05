@@ -62,9 +62,13 @@ AC_CHECK_SIZEOF(void *)
 AC_FUNC_ALLOCA
 
 AC_REPLACE_FUNCS(strtold)
-AC_CHECK_FUNCS(basename)
-AC_CHECK_FUNCS(poll)
-AC_CHECK_FUNCS(realpath)
+AC_CHECK_FUNCS(basename poll realpath mmap)
+AC_CHECK_FUNCS(regcomp, [ REGCOMP=yes ])
+AC_CHECK_FUNCS(fnmatch, [ FNMATCH=yes ])
+
+AM_CONDITIONAL(NEED_FNMATCH, test "$FNMATCH" != yes)
+AM_CONDITIONAL(NEED_REGEX, test "$REGCOMP" != yes)
+
 RC_CHECK_DECL(strtold, stdlib.h)
 
 AC_OUTPUT(

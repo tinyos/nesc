@@ -22,9 +22,6 @@ Boston, MA 02111-1307, USA.  */
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
-#ifndef WIN32
-#include <sys/wait.h>
-#endif
 #include "nesc-paths.h"
 #include "machine.h"
 #include "flags.h"
@@ -35,6 +32,7 @@ Boston, MA 02111-1307, USA.  */
 #ifdef WIN32
 #define DEVNULL "nul:"
 #else
+#include <sys/wait.h>
 #define DEVNULL "/dev/null"
 #endif
 

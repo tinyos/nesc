@@ -77,6 +77,8 @@ static char *canonicalise(region r, const char *path, int len)
   cp[newlen - 2] = '/'; /* make sure last char is / */
   cp[newlen - 1] = '\0'; /* null terminate */
 
+  unixify_path(cp);
+
   return cp;
 }
 

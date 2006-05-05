@@ -186,9 +186,12 @@ void doc_set_dirsep(const char c)
 /**
  * Initialize directory info.
  **/
-static void find_currdir_prefix(const char *cwd)
+static void find_currdir_prefix(const char *ocwd)
 {
   int i;
+  char *cwd = rstrdup(doc_region, cwd);
+
+  unixify_path(cwd);
 
   // filename generation won't work if we don't know the top directories.
   if( num_topdirs <= 0 ) {
@@ -251,6 +254,7 @@ static char *doc_filename_with_ext(const char *orig_src_filename, const char *ex
     perror("realpath");
     fatal("error expanding path for '%s'\n", orig_src_filename);
   }
+  unixify_path(buf);
   src_filename = buf;
   assert(chdir(docdir) == 0);
 
@@ -277,7 +281,7 @@ static char *doc_filename_with_ext(const char *orig_src_filename, const char *ex
   }
 
   // file is an absolute path, but not under a top dir
-  if( *src_filename == dirsep ) {
+  if( need_prefix && absolute_path(src_filename) ) {
     while(*src_filename == dirsep) 
       src_filename++;
     need_prefix = FALSE;
@@ -298,6 +302,10 @@ static char *doc_filename_with_ext(const char *orig_src_filename, const char *ex
   while( *pos != '\0' ) {
     if( *pos == dirsep )
       *pos = '.';
+#ifdef WIN32
+    if (*pos == ':')
+      *pos = 'X';
+#endif
     pos++;
   }
   
@@ -2733,8 +2741,12 @@ bool docs_requested(void)
   return docdir != NULL;
 }
 
-void generate_docs(const char *filename, cgraph cg)
+void generate_docs(const char *ofilename, cgraph cg)
 {
+  char *filename = rstrdup(doc_region, ofilename);
+
+  unixify_path(filename);
+
   // if no docdir is specified, then the user didn't request doc generation
   // Initialization
   {

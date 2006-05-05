@@ -49,6 +49,10 @@
 #define LARGE_ADDRESSES
 #endif
 
+#if HAVE_MMAP
+#define USE_MMAP
+#endif
+
 #ifdef LARGE_ADDRESSES
 /* This supports up to 49 bit virtual addresses. If you have larger
    virtual addresses, you will need to decrease MEMSLICE1 and

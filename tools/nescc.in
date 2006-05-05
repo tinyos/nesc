@@ -64,7 +64,8 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	}
 	elsif (/^-mingw-gcc$/) {
 	    $mingw_gcc = 1;
-	    $strip =1;
+	    $strip = 1;
+	    push @new_args, "-fnesc-mingw-gcc";
 	}
 	elsif (/^-v$/) {
 	    $verbose = 1;

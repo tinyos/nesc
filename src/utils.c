@@ -121,8 +121,13 @@ char *fix_filename(region r, const char *unix_filename)
 {
   char winpath[MAX_PATH];
 
-  cygwin_conv_to_win32_path(unix_filename, winpath);
-  return rstrdup(r, winpath[0] ? winpath : ".");
+  if (flag_mingw_gcc)
+    {
+      cygwin_conv_to_win32_path(unix_filename, winpath);
+      return rstrdup(r, winpath[0] ? winpath : ".");
+    }
+  else
+    return rstrdup(r, unix_filename);
 }
 #else
 char *fix_filename(region r, const char *unix_filename)
@@ -188,6 +193,16 @@ unsigned long hash_str(const char *s)
   return code;
 }
 
+/* On machines with DIR_SEPARATOR defined, replace all DIR_SEPARATOR's
+   by / */
+void unixify_path(char *path)
+{
+#ifdef DIR_SEPARATOR
+  while ((path = strchr(path, DIR_SEPARATOR)))
+    *path++ = '/';
+#endif
+}
+
 #if !HAVE_REALPATH
 char *realpath(const char *path, char *resolved_path)
 {
@@ -195,3 +210,40 @@ char *realpath(const char *path, char *resolved_path)
   return resolved_path;
 }
 #endif
+
+#if !HAVE_BASENAME
+/* A trivial version, which should work for unix and cygwin, and for 
+   our purposes.
+   Does NOT handle trailing / properly (we're using it for files only)
+   (returns "" in that case)
+*/
+char *basename(const char *path)
+{
+  char *end;
+
+  if (!path || !*path)
+    return ".";
+
+  end = (char *)path + strlen(path);
+  while (end > path)
+    if (*--end == '/' || *end == '\\')
+      return end + 1;
+
+  return (char *)path;
+}
+#endif
+
+/* TRUE if path is absolute, false otherwise */
+bool absolute_path(char *path)
+{
+  if (path[0] == '/')
+    return TRUE;
+
+#if defined(WIN32) || defined(__CYGWIN32__)
+  if (isalpha(path[0]) && path[1] == ':')
+    return TRUE;
+#endif
+
+  return FALSE;
+}
+

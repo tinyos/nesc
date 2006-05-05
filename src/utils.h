@@ -60,4 +60,17 @@ unsigned long hash_str(const char *);
 char *realpath(const char *path, char *resolved_path);
 #endif
 
+#if HAVE_BASENAME
+#include <libgen.h>
+#else
+char *basename(const char *path);
+#endif
+
+/* On machines with DIR_SEPARATOR defined, replace all DIR_SEPARATOR's
+   by / */
+void unixify_path(char *path);
+
+/* TRUE if path is absolute, false otherwise */
+bool absolute_path(char *path);
+
 #endif

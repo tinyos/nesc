@@ -17,6 +17,7 @@ Boston, MA 02111-1307, USA.  */
 
 #include <fcntl.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include "parser.h"
 #include "semantics.h"
@@ -206,6 +207,10 @@ bool nesc_option(char *p)
   else if (!strncmp (p, "fnesc-gcc=", strlen("fnesc-gcc=")))
     {
       target_compiler = p + strlen("fnesc-gcc=");
+    }
+  else if (!strcmp (p, "fnesc-mingw-gcc"))
+    {
+      flag_mingw_gcc = 1;
     }
   else if (!strcmp (p, "fnesc-no-debug"))
     {
