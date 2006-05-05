@@ -73,4 +73,8 @@ void *alloca(size_t n);
    (typically log2 of the alignment of allocations) */
 #define ALIGNMENT_BITS 3
 
+#ifdef WIN32
+#define DIR_SEPARATOR '\\'
+#endif
+
 #endif

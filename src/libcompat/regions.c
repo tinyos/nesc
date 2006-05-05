@@ -38,7 +38,7 @@
 #undef PRECLEAR
 
 #include "../autoconf.h"
-#include "stats.c"
+/*#include "stats.c"*/
 
 #include "regions.h"
 #include <assert.h>
@@ -348,9 +348,9 @@ void region_init(void)
   rstart = -64; /* Save 64 bytes of memory! (sometimes ;-)) */
   init_pages();
   permanent = newregion();
+#ifdef DEBUG_RALLOC
   if (getenv("REGIONSTATS"))
     benchmark_init();
-#ifdef DEBUG_RALLOC
   atexit(memusage);
 #endif
 }

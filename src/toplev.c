@@ -25,8 +25,7 @@ Boston, MA 02111-1307, USA. */
 #include <stdlib.h>
 
 
-/* Darwin (OSX) doesn't support poll. */
-#ifndef __APPLE__
+#if HAVE_POLL
 #include <sys/poll.h>
 #endif
 
@@ -166,12 +165,14 @@ static struct { char *string; int *variable; int on_value;} W_options[] =
   {"uninitialized", &warn_uninitialized, 1},
   {"inline", &warn_inline, 1}
 };
-/* Handler for SIGPIPE.  */
 
+#ifdef SIGPIPE
+/* Handler for SIGPIPE.  */
 static void pipe_closed (int signo)
 {
   fatal("output pipe has been closed");
 }
+#endif
 
 /* Print a fatal error message.  NAME is the text.
    Also include a system error message based on `errno'.  */
@@ -374,8 +375,7 @@ int region_main(int argc, char **argv) deletes
   int version_flag = 0;
   char *p;
 
-  /* Darwin/OS X does not support poll. */
-#ifndef __APPLE__
+#if HAVE_POLL
   char* waitforgdb;
   /*
    * Check for an environment variable NCCGDB, and if set, block
@@ -392,7 +392,9 @@ int region_main(int argc, char **argv) deletes
   
   signal(SIGABRT, rcc_aborting);
   signal(SIGSEGV, rcc_aborting);
+#ifdef SIGBUS
   signal(SIGBUS, rcc_aborting);
+#endif
   set_nomem_handler(outofmemory);
 
   init_nesc_paths_start(newregion());

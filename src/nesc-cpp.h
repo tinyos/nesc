@@ -19,11 +19,6 @@ Boston, MA 02111-1307, USA.  */
 #define NESC_CPP_H
 
 #include "parser.h"
-#include "nesc-cpp.h"
-
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
 
 void preprocess_init(void);
 FILE *preprocess(const char *filename, source_language l);

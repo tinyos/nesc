@@ -65,7 +65,11 @@ static char *canonicalise(region r, const char *path, int len)
   if (len == 0)
     return "";
 
-  if (path[len - 1] != '/')
+  if (path[len - 1] != '/'
+#ifdef DIR_SEPARATOR
+      && path[len - 1] != DIR_SEPARATOR
+#endif
+      )
     newlen++;
 
   cp = rarrayalloc(r, newlen, char);

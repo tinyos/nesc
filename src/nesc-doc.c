@@ -73,7 +73,9 @@ Boston, MA 02111-1307, USA.  */
 
 static region doc_region = NULL;
 
-
+#ifdef WIN32
+#define mkdir(a, b) mkdir((a))
+#endif
 
 //////////////////////////////////////////////////////////////////////
 //
@@ -261,7 +263,7 @@ static char *doc_filename_with_ext(const char *orig_src_filename, const char *ex
   ret = rstralloc( doc_region, length );
   assert(ret != NULL);
 
-  bzero(ret,length);
+  memset(ret, 0, length);
 
   // file begins with the source prefix, so remove it.
   for(i=0; i<num_topdirs; i++) {
@@ -382,6 +384,13 @@ static bool copy_file(const char *srcfile, const char *destfile)
 
 static void add_source_symlink(const char *orig_src_filename, const char *linkname) 
 {
+#ifdef WIN32
+  assert(chdir(docdir) == 0);
+  unlink(linkname);
+  if( !copy_file(orig_src_filename, linkname) ) {
+    warning("can't copy source file '%s'", orig_src_filename);
+  }
+#else
   bool cygwin = FALSE;
   char buf[PATH_MAX+1];
   char *srcfile;
@@ -395,7 +404,6 @@ static void add_source_symlink(const char *orig_src_filename, const char *linkna
   }
   srcfile = buf;
   assert(chdir(docdir) == 0);
-
 
   // determine whether or not we are running under cygwin
   {
@@ -415,6 +423,7 @@ static void add_source_symlink(const char *orig_src_filename, const char *linkna
       warning("can't copy source file '%s'", srcfile);
     }
   }
+#endif
 }
 
 
@@ -591,7 +600,7 @@ static void ic_read()
     entry = ic_get_entry(key);
     if(entry == NULL) {
       entry = ralloc(doc_region, ic_entry);
-      bzero(entry, sizeof(ic_entry));
+      memset(entry, 0, sizeof(ic_entry));
       env_add(ic_env, rstrdup(doc_region,key), entry);
     }
 
@@ -715,7 +724,7 @@ static void ic_scan_rplist(nesc_declaration cdecl, char *name)
 	entry = ic_get_entry( ifname );
 	if(entry == NULL) {
 	  entry = ralloc(doc_region, ic_entry);
-	  bzero(entry, sizeof(ic_entry));
+	  memset(entry, 0, sizeof(ic_entry));
 	  env_add(ic_env, ifname, entry);
 	}
         
@@ -750,7 +759,7 @@ static void ic_add_entry(nesc_declaration cdecl)
   entry = ic_get_entry(key);
   if(entry == NULL) {
     entry = ralloc(doc_region, ic_entry);
-    bzero(entry, sizeof(ic_entry));
+    memset(entry, 0, sizeof(ic_entry));
     env_add(ic_env, key, entry);
   }
 
@@ -1792,7 +1801,7 @@ DOC WARNING: your version of `dot' does not support client-side \n\
   {
     char cmd[1024];
     int ret;
-    bzero(cmd,sizeof(cmd));
+    memset(cmd, 0, sizeof(cmd));
 
     // FIXME: error handling could be better here
     ret = snprintf(cmd,sizeof(cmd)-1,"dot -Tgif -o%s %s", iface_gif, iface_dot); assert(ret > 0);

@@ -19,16 +19,24 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-cpp.h"
 
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
+#ifndef WIN32
+#include <sys/wait.h>
+#endif
 #include "nesc-paths.h"
 #include "machine.h"
 #include "flags.h"
 #include "semantics.h"
 #include "c-parse.h"
 #include "input.h"
+
+#ifdef WIN32
+#define DEVNULL "nul:"
+#else
+#define DEVNULL "/dev/null"
+#endif
 
 static region opt_region;
 
@@ -69,10 +77,10 @@ void save_option(const char *option)
   saved_options_count++;
 }
 
-static char kwd_macros[] = "/tmp/nesccppkXXXXXX";
-static char cpp_macros1[] = "/tmp/nesccppm1XXXXXX";
-static char cpp_macros2[] = "/tmp/nesccppm2XXXXXX";
-static char *cpp_macros = cpp_macros1;
+static char *kwd_macros, tkwd_macros[] = "/tmp/nesccppkXXXXXX";
+static char *cpp_macros1, tcpp_macros1[] = "/tmp/nesccppm1XXXXXX";
+static char *cpp_macros2, tcpp_macros2[] = "/tmp/nesccppm2XXXXXX";
+static char *cpp_macros;
 
 static char *nesc_keywords[] = {
 #define K(name, token, rid) #name,
@@ -83,9 +91,37 @@ NULL
 static FILE *macros_file;
 static const char *macros_mode;
 
-static void mktempfile(char *name)
+static char *mktempfile(region r, const char *name)
 {
-  int fd = mkstemp(name);
+  char *newname;
+
+#ifdef WIN32
+  if (!strncmp(name, "/tmp/", 5))
+    {
+      char *tmpenv = getenv("TMP");
+
+      if (!tmpenv)
+	{
+	  fprintf(stderr, "You must define the TMP environment variable to point to a directory\n");
+	  fprintf(stderr, "for temporary files.\n");
+	  exit(2);
+	}
+      newname = rstralloc(r, strlen(tmpenv) + strlen(name));
+      sprintf(newname, "%s/%s", tmpenv, name + 5);
+    }
+  else
+    newname = rstrdup(r, name);
+  if (!mktemp(newname))
+    {
+      perror("couldn't create temporary file");
+      exit(2);
+    }
+
+#else
+  int fd;
+
+  newname = rstrdup(r, name);
+  fd = mkstemp(newname);
 
   if (fd < 0)
     {
@@ -94,9 +130,12 @@ static void mktempfile(char *name)
     }
 
   close(fd);
+#endif
+
+  return newname;
 }
 
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) || defined(WIN32)
 #include <process.h>
 
 static bool safe_dup(int from, int to, int save)
@@ -116,13 +155,14 @@ static void dup_restore(int to, int save)
     }
 }
 
-static FILE *exec_gcc(char *gcc_output_template, bool redirect_errors, 
+static FILE *exec_gcc(char *gcc_output_template, char **gcc_output_file, bool redirect_errors, 
 		      int nargs,
 		      void (*setargs)(void *data, const char **argv), void *data)
 {
   int gcc_stat, res, destfd;
   const char **argv;
   static int tmpfd1 = -1, tmpfd2 = -1;
+  char *outputf;
 
   argv = alloca((nargs + 2) * sizeof *argv);
   argv[0] = target_compiler;
@@ -140,18 +180,19 @@ static FILE *exec_gcc(char *gcc_output_template, bool redirect_errors,
 
   if (tmpfd1 < 0 || tmpfd2 < 0)
     {
-      tmpfd1 = open("/dev/null", O_RDONLY);
-      tmpfd2 = open("/dev/null", O_RDONLY);
+      tmpfd1 = open(DEVNULL, O_RDONLY);
+      tmpfd2 = open(DEVNULL, O_RDONLY);
 
       if (tmpfd1 < 0 || tmpfd2 < 0)
 	{
-	  fprintf(stderr, "Internal error (can't open /dev/null !?)\n");
+	  fprintf(stderr, "Internal error (can't open " DEVNULL "!?)\n");
 	  exit(2);
 	}
     }
 
-  mktempfile(gcc_output_template);
-  destfd = creat(gcc_output_template, 0666);
+  outputf = mktempfile(permanent, gcc_output_template);
+  *gcc_output_file = outputf;
+  destfd = creat(outputf, 0666);
 
   if (destfd < 0)
     return NULL;
@@ -169,33 +210,39 @@ static FILE *exec_gcc(char *gcc_output_template, bool redirect_errors,
   close(destfd);
 
   gcc_stat = spawnvp(_P_WAIT, target_compiler, argv);
+#ifdef WIN32
+  res = gcc_stat == 0 ? 0 : 2;
+#else
   if (WIFEXITED(gcc_stat))
     res = WEXITSTATUS(gcc_stat);
   else
     res = 2;
+#endif
 
   dup_restore(1, tmpfd1);
   if (redirect_errors)
     dup_restore(2, tmpfd2);
 
   if (res == 0) /* gcc succeeded */
-    return fopen(gcc_output_template, "r");
+    return fopen(outputf, "r");
   else
     return NULL;
 }
 #else
-static FILE *exec_gcc(char *gcc_output_template, bool redirect_errors, 
-		      int nargs,
+static FILE *exec_gcc(char *gcc_output_template, char **gcc_output_file,
+		      bool redirect_errors, int nargs,
 		      void (*setargs)(void *data, const char **argv), void *data)
 {
   int gcc_pid, gcc_stat, res;
+  char *outputf;
 
-  mktempfile(gcc_output_template);
+  outputf = mktempfile(permanent, gcc_output_template);
+  *gcc_output_file = outputf;
 
   if ((gcc_pid = fork()) == 0)
     {
       const char **argv;
-      int destfd = creat(gcc_output_template, 0666);
+      int destfd = creat(outputf, 0666);
 
       if (destfd < 0 || dup2(destfd, 1) < 0)
 	exit(2);
@@ -250,7 +297,7 @@ static FILE *exec_gcc(char *gcc_output_template, bool redirect_errors,
     }
 
   if (res == 0) /* gcc succeeded */
-    return fopen(gcc_output_template, "r");
+    return fopen(outputf, "r");
   else
     return NULL;
 }
@@ -298,7 +345,8 @@ static void version_setargs(void *data, const char **argv)
 void select_macros_mode(void)
 {
   static char gcc_version_name[] = "/tmp/nesccppvXXXXXX";
-  FILE *gcc_version = exec_gcc(gcc_version_name, TRUE, 1, version_setargs, NULL);
+  char *gcc_version_file;
+  FILE *gcc_version = exec_gcc(gcc_version_name, &gcc_version_file, TRUE, 1, version_setargs, NULL);
 
   macros_mode = "w";
 
@@ -321,16 +369,16 @@ void select_macros_mode(void)
 	}
       fclose(gcc_version);
     }
-  cpp_unlink(gcc_version_name);
+  cpp_unlink(gcc_version_file);
 }
 
 void preprocess_init(void)
 {
   atexit(preprocess_cleanup);
 
-  mktempfile(cpp_macros1);
-  mktempfile(cpp_macros2);
-  mktempfile(kwd_macros);
+  cpp_macros1 = mktempfile(permanent, tcpp_macros1);
+  cpp_macros2 = mktempfile(permanent, tcpp_macros2);
+  kwd_macros = mktempfile(permanent, tkwd_macros);
 
   create_nesc_keyword_macros(kwd_macros);
 
@@ -377,8 +425,11 @@ static void preprocess_setargs(void *data, const char **argv)
       argv[arg++] = "c";
     }
 
-  argv[arg++] = "-imacros";
-  argv[arg++] = fix_filename(filename_region, cpp_macros);
+  if (cpp_macros)
+    {
+      argv[arg++] = "-imacros";
+      argv[arg++] = fix_filename(filename_region, cpp_macros);
+    }
   argv[arg++] = fix_filename(filename_region, closure->filename);
   argv[arg++] = NULL;
   assert(arg <= closure->nargs);
@@ -394,8 +445,8 @@ FILE *preprocess(const char *filename, source_language l)
   closure.l = l;
   closure.filename = filename;
   closure.nargs = nargs;
-  output = exec_gcc(cpp_dest, FALSE, nargs, preprocess_setargs, &closure);
-  current.preprocessed_file = cpp_dest;
+  output = exec_gcc(cpp_dest, &current.preprocessed_file,
+		    FALSE, nargs, preprocess_setargs, &closure);
 
 
   if (output)

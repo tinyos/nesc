@@ -56,4 +56,8 @@ int compare_ptr(void *entry1, void *entry2);
 
 unsigned long hash_str(const char *);
 
+#if !HAVE_REALPATH
+char *realpath(const char *path, char *resolved_path);
+#endif
+
 #endif

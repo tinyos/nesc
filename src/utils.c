@@ -187,3 +187,11 @@ unsigned long hash_str(const char *s)
 
   return code;
 }
+
+#if !HAVE_REALPATH
+char *realpath(const char *path, char *resolved_path)
+{
+  strcpy(resolved_path, path);
+  return resolved_path;
+}
+#endif

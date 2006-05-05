@@ -51,12 +51,12 @@ char *basename(const char *path)
   if (!path || !*path)
     return ".";
 
-  end = path + strlen(path);
+  end = (char *)path + strlen(path);
   while (end > path)
     if (*--end == '/' || *end == '\\')
       return end + 1;
 
-  return path;
+  return (char *)path;
 }
 #endif
 

@@ -63,6 +63,8 @@ AC_FUNC_ALLOCA
 
 AC_REPLACE_FUNCS(strtold)
 AC_CHECK_FUNCS(basename)
+AC_CHECK_FUNCS(poll)
+AC_CHECK_FUNCS(realpath)
 RC_CHECK_DECL(strtold, stdlib.h)
 
 AC_OUTPUT(

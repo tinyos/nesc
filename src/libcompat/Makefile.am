@@ -28,5 +28,9 @@ noinst_HEADERS =				\
 	stats.c
 
 libregions_a_SOURCES =				\
+    fnmatch.c					\
+    fnmatch.h					\
+    regex.c					\
+    regex.h					\
     regions.c					\
     regions.h

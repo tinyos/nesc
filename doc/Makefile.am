@@ -35,7 +35,7 @@ EXTRA_DIST = 					\
 	$(dumpdoc_DATA)				\
 	$(dbgdoc_DATA)
 
-ref.pdf: ref.tex
+update-ref: 
 	pdflatex ref.tex
 	bibtex ref
 	pdflatex ref.tex
