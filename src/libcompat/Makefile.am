@@ -28,17 +28,13 @@ noinst_HEADERS =				\
 	stats.c
 
 if NEED_FNMATCH
-INCLUDES += fnmatch
-FNMATCH = \
-    fnmatch.c					\
-    fnmatch/fnmatch.h
+INCLUDES += -Ifnmatch
+FNMATCH = fnmatch.c fnmatch/fnmatch.h
 endif
 
 if NEED_REGEX
-INCLUDES += regex
-REGEX = 
-    regex.c					\
-    regex/regex.h
+INCLUDES += -Iregex
+REGEX = regex.c regex/regex.h
 endif
 
 libregions_a_SOURCES =				\
