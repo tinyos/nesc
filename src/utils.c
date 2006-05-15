@@ -21,6 +21,7 @@ Boston, MA 02111-1307, USA. */
 
 #include "parser.h"
 #include "utils.h"
+#include <ctype.h>
 
 void renew_region(region *r)
 /* Effects: Delete region *r (if not null), allocate a new region in *r */
@@ -244,9 +245,23 @@ bool absolute_path(char *path)
 
 #if !HAVE_REALPATH
 #ifdef WIN32
+#include <direct.h>
+
+static bool pathcat(char *base, const char *add)
+{
+  int l = strlen(base);
+
+  if (l + strlen(add) + 2 >= PATH_MAX)
+    return FALSE; /* doesn't fit */
+
+  base[l] = '/';
+  strcpy(base + l + 1, add);
+  return TRUE;
+}
+
 char *realpath(const char *path, char *resolved_path)
 {
-  char *p, *slash;
+  char *slash, *last;
 
   /* This version doesn't support a NULL resolved_path. We don't
      use it that way anyway */
@@ -261,21 +276,18 @@ char *realpath(const char *path, char *resolved_path)
     else
       {
 	/* drive relative path */
-	if (!_getdcwd(tolower(path[0] - 'a' + 1, resolved_path, PATH_MAX)))
+	if (!_getdcwd(tolower(path[0] - 'a' + 1), resolved_path, PATH_MAX))
 	  return NULL;
-	if (strlen(resolved_path) + strlen(path) - 2 >= PATH_MAX - 1)
-	  return NULL; /* doesn't fit */
-	strcat(resolved_path, path + 2);
+	if (!pathcat(resolved_path, path + 2))
+	  return NULL;
       }
   else
     {
       /* fully relative path */
       if (!getcwd(resolved_path, PATH_MAX))
 	return NULL;
-
-      if (strlen(path) + strlen(resolved_path) >= PATH_MAX - 1)
-	return NULL; /* doesn't fit */
-      strcat(resolved_path, path);
+      if (!pathcat(resolved_path, path))
+	return NULL;
     }
 
   if (!absolute_path(resolved_path))
@@ -286,8 +298,13 @@ char *realpath(const char *path, char *resolved_path)
   /* Then, we remove all duplicate /'s, and . and .. directory
      references. No attempt to avoid n^2 like behaviour. */
   last = resolved_path + 2;
-  while ((slash = strchr(last + 1, '/')))
+  do
     {
+      /* Find next slash or end of path */
+      slash = last + 1;
+      while (*slash != '/' && *slash)
+	slash++;
+
       if (slash == last + 1 || /* empty dir spec */
 	  (slash == last + 2 && last[1] == '.')) /* or . */
 	memmove(last, slash, strlen(slash) + 1);
@@ -302,6 +319,14 @@ char *realpath(const char *path, char *resolved_path)
       else
 	last = slash;
     }
+  while (*last);
+
+  /* If we have x:, make it into x:/ */
+  if (!resolved_path[2])
+    {
+      resolved_path[2] = '/';
+      resolved_path[3] = '\0';
+    }
 
   return resolved_path;
 }
@@ -310,3 +335,30 @@ char *realpath(const char *path, char *resolved_path)
 #endif
 #endif
 
+#ifdef TEST_REALPATH
+void tr(char *path)
+{
+  char rp[PATH_MAX];
+
+  if (realpath(path, rp))
+    printf("%s -> %s\n", path, rp);
+  else
+    printf("%s fails\n", path);
+}
+
+int region_main()
+{
+  tr("aa");
+  tr("n:xx");
+  tr("n:\\xx");
+  tr("n:\\\\aa\\\\b\\.\\c");
+  tr("c:/");
+  tr("c:/foo/");
+  tr("c:/foo/..");
+  tr("c:/../foo");
+  tr("c:///////////");
+  tr("n:../fun");
+  tr("../.././a");
+  return 0;
+}
+#endif

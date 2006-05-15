@@ -393,10 +393,20 @@ static bool copy_file(const char *srcfile, const char *destfile)
 static void add_source_symlink(const char *orig_src_filename, const char *linkname) 
 {
 #ifdef WIN32
+  char buf[PATH_MAX+1];
+  char *srcfile;
+
+  assert(chdir(original_wd) == 0);
+  if(realpath(orig_src_filename, buf) == NULL) {
+    perror("realpath");
+    fatal("error expanding path for '%s'\n", orig_src_filename);
+  }
+  srcfile = buf;
   assert(chdir(docdir) == 0);
+
   unlink(linkname);
-  if( !copy_file(orig_src_filename, linkname) ) {
-    warning("can't copy source file '%s'", orig_src_filename);
+  if( !copy_file(srcfile, linkname) ) {
+    warning("can't copy source file '%s'", srcfile);
   }
 #else
   bool cygwin = FALSE;
