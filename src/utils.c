@@ -203,14 +203,6 @@ void unixify_path(char *path)
 #endif
 }
 
-#if !HAVE_REALPATH
-char *realpath(const char *path, char *resolved_path)
-{
-  strcpy(resolved_path, path);
-  return resolved_path;
-}
-#endif
-
 #if !HAVE_BASENAME
 /* A trivial version, which should work for unix and cygwin, and for 
    our purposes.
@@ -236,14 +228,85 @@ char *basename(const char *path)
 /* TRUE if path is absolute, false otherwise */
 bool absolute_path(char *path)
 {
+#ifndef WIN32
   if (path[0] == '/')
     return TRUE;
+#endif
 
 #if defined(WIN32) || defined(__CYGWIN32__)
-  if (isalpha(path[0]) && path[1] == ':')
+  if (isalpha(path[0]) && path[1] == ':' &&
+      (path[2] == '/' || path[2] == '\\'))
     return TRUE;
 #endif
 
   return FALSE;
 }
+
+#if !HAVE_REALPATH
+#ifdef WIN32
+char *realpath(const char *path, char *resolved_path)
+{
+  char *p, *slash;
+
+  /* This version doesn't support a NULL resolved_path. We don't
+     use it that way anyway */
+
+  if (isalpha(path[0]) && path[1] == ':')
+    if (path[2] == '/' || path[2] == '\\')
+      {
+	if (strlen(path) >= PATH_MAX - 1)
+	  return NULL;
+	strcpy(resolved_path, path); /* absolute path */
+      }
+    else
+      {
+	/* drive relative path */
+	if (!_getdcwd(tolower(path[0] - 'a' + 1, resolved_path, PATH_MAX)))
+	  return NULL;
+	if (strlen(resolved_path) + strlen(path) - 2 >= PATH_MAX - 1)
+	  return NULL; /* doesn't fit */
+	strcat(resolved_path, path + 2);
+      }
+  else
+    {
+      /* fully relative path */
+      if (!getcwd(resolved_path, PATH_MAX))
+	return NULL;
+
+      if (strlen(path) + strlen(resolved_path) >= PATH_MAX - 1)
+	return NULL; /* doesn't fit */
+      strcat(resolved_path, path);
+    }
+
+  if (!absolute_path(resolved_path))
+    return NULL; /* this could be an assert */
+
+  unixify_path(resolved_path);
+
+  /* Then, we remove all duplicate /'s, and . and .. directory
+     references. No attempt to avoid n^2 like behaviour. */
+  last = resolved_path + 2;
+  while ((slash = strchr(last + 1, '/')))
+    {
+      if (slash == last + 1 || /* empty dir spec */
+	  (slash == last + 2 && last[1] == '.')) /* or . */
+	memmove(last, slash, strlen(slash) + 1);
+      else if (slash == last + 3 &&
+	       last[1] == '.' && last[2] == '.') /* .. */
+	{
+	  /* look backwards for directory to squash */
+	  while (last >= resolved_path + 2 && *--last != '/')
+	    ;
+	  memmove(last, slash, strlen(slash) + 1);
+	}
+      else
+	last = slash;
+    }
+
+  return resolved_path;
+}
+#else
+#error "realpath missing"
+#endif
+#endif
 
