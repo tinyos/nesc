@@ -192,6 +192,7 @@ type float_type, double_type, long_double_type,
   long_long_type, unsigned_long_long_type, short_type, unsigned_short_type,
   char_type, char_array_type, wchar_type, wchar_array_type,
   unsigned_char_type, signed_char_type, void_type, ptr_void_type,
+  const_ptr_void_type,
   size_t_type, ptrdiff_t_type, intptr_type,
   int2_type, uint2_type, int4_type, uint4_type, int8_type, uint8_type,
   unknown_int_type, unknown_number_type, error_type;
@@ -473,6 +474,8 @@ void init_types(void)
   void_type = new_type(tk_void);
   void_type->size = void_type->alignment = make_type_cval(1);
   ptr_void_type = make_pointer_type(void_type);
+  const_ptr_void_type =
+    make_pointer_type(make_qualified_type(void_type, const_qualifier));
 
   wchar_type = type_for_size_int(target->wchar_t_size, !target->wchar_t_signed);
   wchar_array_type = make_array_type(wchar_type, NULL);

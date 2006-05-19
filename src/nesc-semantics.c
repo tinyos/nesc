@@ -441,7 +441,7 @@ void handle_nxbase_attribute(location loc, const char *basename,
 
   ddecl->decoder = /* takes buffer and returns decoded value */
     declare_function(loc, decoder_name,
-		     build_function_type(r, t, ptr_void_type, NULL));
+		     build_function_type(r, t, const_ptr_void_type, NULL));
 
   /* We do this even if we got an error, to ensure ddecl gets treated as
      a network type. */

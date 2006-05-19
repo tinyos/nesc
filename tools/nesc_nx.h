@@ -7,22 +7,22 @@
 /* Network to host and host to network conversions.
    Network representation is 2's complement big-endian.
 */
-static inline uint8_t __nesc_ntoh_uint8(void *source) {
-  uint8_t *base = source;
+static inline uint8_t __nesc_ntoh_uint8(const void *source) {
+  const uint8_t *base = source;
   return base[0];
 }
-static inline uint16_t __nesc_ntoh_uint16(void *source) {
-  uint8_t *base = source;
+static inline uint16_t __nesc_ntoh_uint16(const void *source) {
+  const uint8_t *base = source;
   return (uint16_t)base[0] << 8 | base[1];
 }
-static inline uint32_t __nesc_ntoh_uint32(void *source) {
-  uint8_t *base = source;
+static inline uint32_t __nesc_ntoh_uint32(const void *source) {
+  const uint8_t *base = source;
   return (uint32_t)base[0] << 24 |
          (uint32_t)base[1] << 16 |
          (uint32_t)base[2] << 8 | base[3];
 }
-static inline uint64_t __nesc_ntoh_uint64(void *source) {
-  uint8_t *base = source;
+static inline uint64_t __nesc_ntoh_uint64(const void *source) {
+  const uint8_t *base = source;
   return (uint64_t)base[0] << 56 |
          (uint64_t)base[1] << 48 |
          (uint64_t)base[2] << 40 |
@@ -31,16 +31,16 @@ static inline uint64_t __nesc_ntoh_uint64(void *source) {
          (uint64_t)base[5] << 16 |
          (uint64_t)base[6] << 8  | base[7];
 }
-static inline int8_t __nesc_ntoh_int8(void *source) {
+static inline int8_t __nesc_ntoh_int8(const void *source) {
   return __nesc_ntoh_uint8(source);
 }
-static inline int16_t __nesc_ntoh_int16(void *source) {
+static inline int16_t __nesc_ntoh_int16(const void *source) {
   return __nesc_ntoh_uint16(source);
 }
-static inline int32_t __nesc_ntoh_int32(void *source) {
+static inline int32_t __nesc_ntoh_int32(const void *source) {
   return __nesc_ntoh_uint32(source);
 }
-static inline int64_t __nesc_ntoh_int64(void *source) {
+static inline int64_t __nesc_ntoh_int64(const void *source) {
   return __nesc_ntoh_uint64(source);
 }
 
@@ -96,22 +96,22 @@ static inline int64_t __nesc_hton_int64(void *target, int64_t value) {
 
 /* Network to host and host to network conversions for little-endian types.
 */
-static inline uint8_t __nesc_ntoh_leuint8(void *source) {
-  uint8_t *base = source;
+static inline uint8_t __nesc_ntoh_leuint8(const void *source) {
+  const uint8_t *base = source;
   return base[0];
 }
-static inline uint16_t __nesc_ntoh_leuint16(void *source) {
-  uint8_t *base = source;
+static inline uint16_t __nesc_ntoh_leuint16(const void *source) {
+  const uint8_t *base = source;
   return (uint16_t)base[1] << 8 | base[0];
 }
-static inline uint32_t __nesc_ntoh_leuint32(void *source) {
-  uint8_t *base = source;
+static inline uint32_t __nesc_ntoh_leuint32(const void *source) {
+  const uint8_t *base = source;
   return (uint32_t)base[3] << 24 |
          (uint32_t)base[2] << 16 |
          (uint32_t)base[1] << 8 | base[0];
 }
-static inline uint64_t __nesc_ntoh_leuint64(void *source) {
-  uint8_t *base = source;
+static inline uint64_t __nesc_ntoh_leuint64(const void *source) {
+  const uint8_t *base = source;
   return (uint64_t)base[7] << 56 |
          (uint64_t)base[6] << 48 |
          (uint64_t)base[5] << 40 |
@@ -120,16 +120,16 @@ static inline uint64_t __nesc_ntoh_leuint64(void *source) {
          (uint64_t)base[2] << 16 |
          (uint64_t)base[1] << 8  | base[0];
 }
-static inline int8_t __nesc_ntoh_leint8(void *source) {
+static inline int8_t __nesc_ntoh_leint8(const void *source) {
   return __nesc_ntoh_leuint8(source);
 }
-static inline int16_t __nesc_ntoh_leint16(void *source) {
+static inline int16_t __nesc_ntoh_leint16(const void *source) {
   return __nesc_ntoh_leuint16(source);
 }
-static inline int32_t __nesc_ntoh_leint32(void *source) {
+static inline int32_t __nesc_ntoh_leint32(const void *source) {
   return __nesc_ntoh_leuint32(source);
 }
-static inline int64_t __nesc_ntoh_leint64(void *source) {
+static inline int64_t __nesc_ntoh_leint64(const void *source) {
   return __nesc_ntoh_leuint64(source);
 }
 
