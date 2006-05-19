@@ -129,17 +129,29 @@ static void clone_ddecl(data_declaration ddecl)
 	ddecl->kind == decl_interface_ref))
     return;
 
-  /* Ignore non-module variables */
-  if (!ddecl->container)
+  /* Instantiate module-level decls and local static variables */
+  if (!(ddecl->container || is_module_local_static(ddecl)))
     return;
 
   copy = declare(current.env, ddecl, TRUE);
+  /* We don't have a proper environment, so the container and 
+     container_function fields are bogus. Set them correctly. */
+  if (ddecl->container) /* module level */
+    {
+      copy->container = current.container;
+      copy->container_function = NULL;
+    }
+  else /* local static */
+    {
+      copy->container = NULL;
+      copy->container_function = ddecl->container_function->instantiation;
+    }
+
   ddecl->instantiation = copy;
   copy->instantiation = NULL;
   copy->fn_uses = NULL;
   copy->nuses = NULL;
   copy->instanceof = ddecl;
-  copy->container = current.container;
   copy->interface = hack_interface;
   /* This hack_required thing is ugly. It's used when instantiating
      generic interfaces, to match the used/provides at the particular
@@ -775,15 +787,31 @@ static AST_walker_result clone_implementation(AST_walker spec, void *data,
 					      implementation *n)
 {
   implementation new = clone(data, n);
-  nesc_declaration comp = current.container;
+  nesc_declaration comp = current.container, orig = original_component(comp);
 
-  /* Copy the components and connections */
+  /* Copy the components and connections (configurations) or the
+     declarations (modules) */
   AST_walk_children(spec, data, CAST(node, new));
+
+  /* Copy the local_statics list for nido by following the instantiation
+     links in the original list */
+  if (orig->local_statics)
+    {
+      dd_list_pos scan;
+      region r = regionof(comp->local_statics);
+
+      dd_scan (scan, orig->local_statics)
+	{
+	  data_declaration localsd = DD_GET(data_declaration, scan);
+
+	  dd_add_last(r, comp->local_statics, localsd->instantiation);
+	}
+    }
 
   /* Copy the connection graph
      (note that comp->connections was initialised to an "empty" graph */
-  instantiate_cg(comp->connections, original_component(comp)->connections);
-  instantiate_cg(comp->user_connections, original_component(comp)->user_connections);
+  instantiate_cg(comp->connections, orig->connections);
+  instantiate_cg(comp->user_connections, orig->user_connections);
 
   return aw_done;
 }
@@ -935,7 +963,7 @@ dd_list instantiate_dd_list(region r, dd_list l)
 
 void instantiate(nesc_declaration component, expression arglist)
 /* Effects: Actually instantiate an abstract component
-     For modules: temp noop
+     For modules: copy module's AST, declarations, etc
      For configurations: make new shallow copies of included abstract
        components, and copy connection graph (using the new shallow
        copies) 
