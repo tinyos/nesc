@@ -198,7 +198,7 @@ static bool prt_network_assignment(expression e)
   switch (e->kind)
     {
     case kind_plus_assign:   selfassign = "+"; break;
-    case kind_minus_assign:  selfassign = "+"; break;
+    case kind_minus_assign:  selfassign = "-"; break;
     case kind_times_assign:  selfassign = "*"; break;
     case kind_divide_assign: selfassign = "/"; break;
     case kind_lshift_assign: selfassign = "<<"; break;
