@@ -933,13 +933,30 @@ static void suppress_function(const char *name)
     d->suppress_definition = TRUE;
 }
 
-static void prt_ddecl_for_init(data_declaration ddecl)
+static void prt_ddecl_for_init(region r, data_declaration ddecl)
 {
+  type_quals dquals = type_qualifiers(ddecl->type);
+  if (dquals & const_qualifier)
+    {
+      /* We need to cast the const away */
+      type nonconst;
+      declarator nc_decl;
+      type_element nc_mods;
+      asttype nc_type;
+
+      output("*(");
+      nonconst = make_qualified_type(ddecl->type, dquals & ~const_qualifier);
+      type2ast(r, dummy_location, make_pointer_type(nonconst), NULL,
+	       &nc_decl, &nc_mods);
+      nc_type = new_asttype(r, dummy_location, nc_decl, nc_mods);
+      prt_asttype(nc_type);
+      output(")&");
+    }
   prt_plain_ddecl(ddecl, 0);
   output("[__nesc_mote]");
 }
 
-static void prt_nido_initializer(variable_decl vd)
+static void prt_nido_initializer(region r, variable_decl vd)
 {
   data_declaration ddecl = vd->ddecl;
   expression init;
@@ -952,9 +969,9 @@ static void prt_nido_initializer(variable_decl vd)
   if (!init)
     {
       output("memset(&");
-      prt_ddecl_for_init(ddecl);
+      prt_ddecl_for_init(r, ddecl);
       output(", 0, sizeof ");
-      prt_ddecl_for_init(ddecl);
+      prt_ddecl_for_init(r, ddecl);
       output(")");
     }
   else if (is_init_list(init))
@@ -963,7 +980,7 @@ static void prt_nido_initializer(variable_decl vd)
       type_element vmods;
 
       output("memcpy(&");
-      prt_ddecl_for_init(ddecl);
+      prt_ddecl_for_init(r, ddecl);
 
       output(", &");
       type2ast(parse_region, dummy_location, ddecl->type, NULL,
@@ -974,12 +991,12 @@ static void prt_nido_initializer(variable_decl vd)
       prt_expression(init, P_ASSIGN);
 
       output(", sizeof ");
-      prt_ddecl_for_init(ddecl);
+      prt_ddecl_for_init(r, ddecl);
       output(")");
     }
   else 
     {
-      prt_ddecl_for_init(ddecl);
+      prt_ddecl_for_init(r, ddecl);
       output(" = ");
       prt_expression(init, P_ASSIGN);
     }
@@ -991,11 +1008,13 @@ static void prt_nido_initializations(nesc_declaration mod)
   declaration dlist;
   declaration d;
   dd_list_pos lscan;
+  region r;
 
   /* binary component? */
   if (!is_module(mod->impl))
     return;
 
+  r = newregion();
   dlist = CAST(module, mod->impl)->decls;
   outputln("/* Module %s */", mod->name);
 
@@ -1009,7 +1028,7 @@ static void prt_nido_initializations(nesc_declaration mod)
 	continue;
 
       scan_variable_decl (vd, CAST(variable_decl, CAST(data_decl, d)->decls))
-	prt_nido_initializer(vd);
+	prt_nido_initializer(r, vd);
     }
 
   /* Local static variables */
@@ -1017,8 +1036,9 @@ static void prt_nido_initializations(nesc_declaration mod)
     {
       data_declaration localsd = DD_GET(data_declaration, lscan);
 
-      prt_nido_initializer(CAST(variable_decl, localsd->ast));
+      prt_nido_initializer(r, CAST(variable_decl, localsd->ast));
     }
+  deleteregion(r);
   newline();
 }
 
@@ -1105,7 +1125,7 @@ void prt_nesc_typedefs(nesc_declaration comp)
     prt_configuration_declarations(CAST(configuration, comp->impl)->decls);
 }
 
-static void prt_nido_resolver(variable_decl vd)
+static void prt_nido_resolver(region r, variable_decl vd)
 {
   data_declaration ddecl = vd->ddecl;
   expression init;
@@ -1121,10 +1141,10 @@ static void prt_nido_resolver(variable_decl vd)
   outputln("{");
   indent();
   output("*addr = (uintptr_t)&");
-  prt_ddecl_for_init(ddecl);
+  prt_ddecl_for_init(r, ddecl);
   outputln(";");
   output("*size = sizeof(");
-  prt_ddecl_for_init(ddecl);
+  prt_ddecl_for_init(r, ddecl);
   outputln(");");
   outputln("return 0;");
   unindent();
@@ -1135,11 +1155,13 @@ static void prt_nido_resolvers(nesc_declaration mod)
 {
   declaration dlist;
   declaration d;
+  region r;
 
   /* binary component? */
   if (!is_module(mod->impl))
     return;
 
+  r = newregion();
   dlist = CAST(module, mod->impl)->decls;
   outputln("/* Module %s */", mod->name);
 
@@ -1153,8 +1175,9 @@ static void prt_nido_resolvers(nesc_declaration mod)
 	continue;
       
       scan_variable_decl (vd, CAST(variable_decl, CAST(data_decl, d)->decls))
-	prt_nido_resolver(vd);
+	prt_nido_resolver(r, vd);
     }
+  deleteregion(r);
 
   newline();
 }

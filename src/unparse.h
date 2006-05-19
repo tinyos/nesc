@@ -77,6 +77,7 @@ const char *binary_op_name(AST_kind kind);
 #define P_CAST 13
 #define P_CALL 14
 
+void prt_asttype(asttype t);
 void prt_data_decl(data_decl d);
 void prt_toplevel_declarations(declaration d);
 void prt_toplevel_declaration(declaration d);
