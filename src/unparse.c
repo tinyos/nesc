@@ -815,13 +815,11 @@ void prt_plain_ddecl(data_declaration ddecl, psd_options options)
       }
     }
 
-  /* static local module variables are printed as mod$fn$var in nido */
+  /* static local module variables are printed as fn$var in nido */
   if (use_nido && is_module_local_static(ddecl))
     {
-      data_declaration fn = ddecl->container_function;
-
-      output_stripped_string_dollar(fn->container->name);
-      output_stripped_string_dollar(fn->name);
+      prt_plain_ddecl(ddecl->container_function, 0);
+      output_string(function_separator);
     }
 
   if (options & psd_prefix_nxbase)
