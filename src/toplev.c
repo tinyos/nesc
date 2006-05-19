@@ -24,11 +24,6 @@ Boston, MA 02111-1307, USA. */
 #include <unistd.h>
 #include <stdlib.h>
 
-
-#if HAVE_POLL
-#include <sys/poll.h>
-#endif
-
 #include "parser.h"
 #include "input.h"
 #include "c-parse.h"
@@ -40,6 +35,10 @@ Boston, MA 02111-1307, USA. */
 #include "nesc-cpp.h"
 #include "nesc-msg.h"
 #include "nesc-doc.h"
+
+#if HAVE_POLL
+#include <sys/poll.h>
+#endif
 
 /* Table of language-independent -f options.
    STRING is the option name.  VARIABLE is the address of the variable.
