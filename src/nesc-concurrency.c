@@ -224,9 +224,6 @@ void check_races(cgraph callgraph)
   region r = newregion();
   dd_list avars;
 
-  if (!warn_data_race)
-    return;
-
   /* First we mark all variables which are accessed in an async function.
      Then, we issue a warning for all uses of such variables which are not
      in an atomic context. To do that, we first need to know which contexts
@@ -236,7 +233,9 @@ void check_races(cgraph callgraph)
 
   avars = find_async_variables(r, callgraph);
   find_fn_contexts(callgraph);
-  check_async_vars(avars);
+
+  if (warn_data_race)
+    check_async_vars(avars);
 
   deleteregion(r);
 }

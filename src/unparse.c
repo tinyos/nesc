@@ -2137,9 +2137,7 @@ void prt_atomic_stmt(atomic_stmt s)
 {
   struct location hack;
 
-  /* If the function's context is c_call_atomic, we can remove this
-     function (note that the function context only gets set if you
-     check for data races...). */
+  /* If the function's context is c_call_atomic, we can remove this atomic. */
   if (current.function_decl->ddecl->call_contexts == c_call_atomic)
     {
       outputln("/* atomic removed: atomic calls only */");

@@ -105,6 +105,9 @@ static atomic_t avar(data_declaration ddecl, context this_use)
 /* An AST walker that isatomics all reachable expressions and statements */
 static AST_walker isatomic_walker;
 
+static bool dirty;
+static cgraph callgraph;
+
 static atomic_t isatomic_stmt(statement stmt);
 
 static atomic_t isatomic_children(void *n)
@@ -116,8 +119,59 @@ static atomic_t isatomic_children(void *n)
   return a;
 }
 
+static atomic_t acall1(data_declaration ddecl)
+{
+  if (ddecl->definition)
+    return CAST(function_decl, ddecl->definition)->stmt->isatomic;
+  else
+    return NOT_ATOMIC;
+}
+
+/* Return atomicness of possible targets of a command or event.
+   This could be more accurate if we considered which things are
+   dispatched vs multiply wired. But those cases seem unlikely to be
+   atomic, so... */
+static atomic_t acall_connected(data_declaration ddecl)
+{
+  gedge called;
+  atomic_t a = ATOMIC_ANY;
+
+  /* The nodes connected from a command or event node include all the
+     possible targets of that command or event. They also include any
+     things called or used from any default handler for the command or
+     event */
+  graph_scan_out (called, fn_lookup(callgraph, ddecl))
+    if (EDGE_GET(use, called)->c & c_fncall)
+      a = aseq(a, acall1(NODE_GET(endp, graph_edge_to(called))->function));
+
+  return a;
+}
+
+/* Return atomicness of calls to 'ddecl' */
+static atomic_t acall(data_declaration ddecl)
+{
+  atomic_t a;
+
+  if (ddecl->kind != decl_function)
+    return NOT_ATOMIC;
+
+  if ((ddecl->ftype == function_command || ddecl->ftype == function_event) &&
+      !ddecl->defined)
+    {
+      a = acall_connected(ddecl);
+      if (!ddecl->definition || ddecl->suppress_definition) /* no default */
+	return a;
+    }
+  else
+    a = ATOMIC_ANY;
+
+  return aalt(a, acall1(ddecl));
+}
+
 static atomic_t isatomic_expr(expression expr)
 {
+  atomic_t a = NOT_ATOMIC; /* Default to not-atomic */
+
   if (!expr)
     return ATOMIC_ANY;
 
@@ -125,122 +179,144 @@ static atomic_t isatomic_expr(expression expr)
      of the container */
   if ((expr->type && type_array(expr->type) && expr->static_address) ||
       expr->cst)
-    expr->isatomic = ATOMIC_ANY;
-  else
-    switch (expr->kind)
-      {
-      case kind_realpart: case kind_imagpart: case kind_unary_minus:
-      case kind_unary_plus: case kind_conjugate: case kind_bitnot:
-      case kind_not: case kind_plus: case kind_minus: case kind_times:
-      case kind_divide: case kind_modulo: case kind_lshift: case kind_rshift:
-      case kind_leq: case kind_geq: case kind_lt: case kind_gt: case kind_eq:
-      case kind_ne: case kind_bitand: case kind_bitor: case kind_bitxor:
-      case kind_andand: case kind_oror: case kind_assign: case kind_comma:
-      case kind_extension_expr: case kind_compound_expr: case kind_cast:
-	expr->isatomic = isatomic_children(expr);
-	break;
+    a = ATOMIC_ANY;
+  else switch (expr->kind)
+    {
+    case kind_realpart: case kind_imagpart: case kind_unary_minus:
+    case kind_unary_plus: case kind_conjugate: case kind_bitnot:
+    case kind_not: case kind_plus: case kind_minus: case kind_times:
+    case kind_divide: case kind_modulo: case kind_lshift: case kind_rshift:
+    case kind_leq: case kind_geq: case kind_lt: case kind_gt: case kind_eq:
+    case kind_ne: case kind_bitand: case kind_bitor: case kind_bitxor:
+    case kind_andand: case kind_oror: case kind_assign: case kind_comma:
+    case kind_extension_expr: case kind_compound_expr: case kind_cast:
+    case kind_generic_call:
+      a = isatomic_children(expr);
+      break;
 
-      case kind_identifier:
-	expr->isatomic = avar(CAST(identifier, expr)->ddecl, expr->context);
-	break;
+    case kind_identifier:
+      a = avar(CAST(identifier, expr)->ddecl, expr->context);
+      break;
 
-      case kind_field_ref: {
-	field_ref fref = CAST(field_ref, expr);
+    case kind_field_ref: {
+      field_ref fref = CAST(field_ref, expr);
 
-	expr->isatomic = isatomic_expr(fref->arg1);
-	/* Bit field r/w's are not atomic. Could try and be more
-	   optimistic (e.g., non-byte-boundary crossing bitfield reads
-	   are presumably atomic) */
-	if (!cval_istop(fref->fdecl->bitwidth))
-	  expr->isatomic = NOT_ATOMIC;
-	break;
-      }
-      case kind_interface_deref:
-	expr->isatomic = ATOMIC_ANY;
-	break;
+      a = isatomic_expr(fref->arg1);
+      /* Bit field r/w's are not atomic. Could try and be more
+	 optimistic (e.g., non-byte-boundary crossing bitfield reads
+	 are presumably atomic) */
+      if (!cval_istop(fref->fdecl->bitwidth))
+	a = NOT_ATOMIC;
+      break;
+    }
+    case kind_interface_deref:
+      a = ATOMIC_ANY;
+      break;
 
-      case kind_conditional: {
-	conditional ce = CAST(conditional, expr);
-	atomic_t a, ac, a1, a2;
+    case kind_conditional: {
+      conditional ce = CAST(conditional, expr);
+      atomic_t ac, a1, a2;
 
-	ac = isatomic_expr(ce->condition);
-	a1 = isatomic_expr(ce->arg1);
-	a2 = isatomic_expr(ce->arg2);
+      ac = isatomic_expr(ce->condition);
+      a1 = isatomic_expr(ce->arg1);
+      a2 = isatomic_expr(ce->arg2);
 
-	if (ce->condition->cst)
-	  {
-	    if (definite_zero(ce->condition))
-	      a = a2;
-	    else
-	      a = a1;
-	  }
-	else
-	  a = aseq(ac, aalt(a1, a2));
-
-	expr->isatomic = a;
-	break;
-      }
+      if (ce->condition->cst)
+	{
+	  if (definite_zero(ce->condition))
+	    a = a2;
+	  else
+	    a = a1;
+	}
+      else
+	a = aseq(ac, aalt(a1, a2));
+      break;
+    }
 	
-      case kind_array_ref: {
-	array_ref are = CAST(array_ref, expr);
-	atomic_t a1, a2;
+    case kind_array_ref: {
+      array_ref are = CAST(array_ref, expr);
+      atomic_t a1, a2;
 
-	a1 = isatomic_expr(are->arg1);
-	a2 = isatomic_expr(are->arg2);
-	expr->isatomic = aseq(a1, aseq(a2, aaccess(are->type)));
-	break;
-      }
-      case kind_dereference:
-	expr->isatomic = aseq(isatomic_children(expr), aaccess(expr->type));
-	break;
+      a1 = isatomic_expr(are->arg1);
+      a2 = isatomic_expr(are->arg2);
+      a = aseq(a1, aseq(a2, aaccess(are->type)));
+      break;
+    }
+    case kind_dereference:
+      a = aseq(isatomic_children(expr), aaccess(expr->type));
+      break;
 
-      case kind_address_of: {
-	expression arg = CAST(unary, expr)->arg1;
+    case kind_address_of: {
+      expression arg = CAST(unary, expr)->arg1;
 
-	/* Some heuristics for atomicity of & */
-	while (is_field_ref(arg) || is_extension_expr(arg))
-	  arg = CAST(unary, arg)->arg1;
+      /* Some heuristics for atomicity of & */
+      while (is_field_ref(arg) || is_extension_expr(arg))
+	arg = CAST(unary, arg)->arg1;
 
-	if (is_dereference(arg))
-	  expr->isatomic = isatomic_expr(CAST(dereference, arg)->arg1);
-	else if (is_identifier(arg))
-	  expr->isatomic = ATOMIC_ANY;
-	else
-	  expr->isatomic = isatomic_expr(arg);
-	break;
-      }
+      if (is_dereference(arg))
+	a = isatomic_expr(CAST(dereference, arg)->arg1);
+      else if (is_identifier(arg))
+	a = ATOMIC_ANY;
+      else
+	a = isatomic_expr(arg);
+      break;
+    }
 
-      case kind_preincrement: case kind_postincrement:
-      case kind_predecrement: case kind_postdecrement: {
-	atomic_t a = isatomic_expr(CAST(increment, expr)->arg1);
+    case kind_preincrement: case kind_postincrement:
+    case kind_predecrement: case kind_postdecrement: {
+      atomic_t a1 = isatomic_expr(CAST(increment, expr)->arg1);
 
-	expr->isatomic = aseq(a, a);
-	break;
-      }
-      case kind_plus_assign: case kind_minus_assign: 
-      case kind_times_assign: case kind_divide_assign: case kind_modulo_assign:
-      case kind_bitand_assign: case kind_bitor_assign: case kind_bitxor_assign:
-      case kind_lshift_assign: case kind_rshift_assign: {
-	assign aexpr = CAST(assignment, expr);
-	atomic_t a1, a2;
+      a = aseq(a1, a1);
+      break;
+    }
+    case kind_plus_assign: case kind_minus_assign: 
+    case kind_times_assign: case kind_divide_assign: case kind_modulo_assign:
+    case kind_bitand_assign: case kind_bitor_assign: case kind_bitxor_assign:
+    case kind_lshift_assign: case kind_rshift_assign: {
+      assign aexpr = CAST(assignment, expr);
+      atomic_t a1, a2;
 
-	a1 = isatomic_expr(aexpr->arg1);
-	a2 = isatomic_expr(aexpr->arg2);
-	expr->isatomic = aseq(a2, aseq(a1, a1));
-	break;
-      }
-      default:
-	/* Default to not-atomic */
-	isatomic_children(expr);
-	expr->isatomic = NOT_ATOMIC;
-	break;
-      }
+      a1 = isatomic_expr(aexpr->arg1);
+      a2 = isatomic_expr(aexpr->arg2);
+      a = aseq(a2, aseq(a1, a1));
+      break;
+    }
+    case kind_function_call: {
+      function_call fce = CAST(function_call, expr);
+      expression called = fce->arg1;
 
-  return expr->isatomic;
+      if (is_generic_call(called))
+	called = CAST(generic_call, called)->arg1;
+
+      if (is_identifier(called))
+	a = acall(CAST(identifier, called)->ddecl);
+      else if (is_interface_deref(called))
+	a = acall(CAST(interface_deref, called)->ddecl);
+      else
+	a = NOT_ATOMIC;
+
+      a = aseq(a, isatomic_children(expr));
+      break;
+    }
+    default:
+      /* Just check children. Current statement not atomic. */
+      isatomic_children(expr);
+      break;
+    }
+
+  if (expr->isatomic != a)
+    {
+      expr->isatomic = a;
+      dirty = TRUE;
+    }
+
+  return a;
 }
 
 static atomic_t isatomic_stmt(statement stmt)
 {
+  atomic_t a = NOT_ATOMIC; /* Default to not-atomic */
+
   if (!stmt)
     return ATOMIC_ANY;
 
@@ -256,12 +332,12 @@ static atomic_t isatomic_stmt(statement stmt)
     case kind_computed_goto_stmt:
     case kind_empty_stmt:
     case kind_return_stmt:
-      stmt->isatomic = isatomic_children(stmt);
+      a = isatomic_children(stmt);
       break;
 
     case kind_if_stmt: {
       if_stmt is = CAST(if_stmt, stmt);
-      atomic_t a, ac, a1, a2;
+      atomic_t ac, a1, a2;
 
       ac = isatomic_expr(is->condition);
       a1 = isatomic_stmt(is->stmt1);
@@ -276,13 +352,11 @@ static atomic_t isatomic_stmt(statement stmt)
 	}
       else
 	a = aseq(ac, aalt(a1, a2));
-
-      stmt->isatomic = a;
       break;
     }
     case kind_while_stmt: case kind_dowhile_stmt: case kind_switch_stmt: {
       conditional_stmt cs = CAST(conditional_stmt, stmt);
-      atomic_t ac, as, a;
+      atomic_t ac, as;
 
       ac = isatomic_expr(cs->condition);
       as = isatomic_stmt(cs->stmt);
@@ -292,13 +366,11 @@ static atomic_t isatomic_stmt(statement stmt)
 	a = ATOMIC_ANY;
       else
 	a = amany(aseq(ac, as));
-
-      stmt->isatomic = a;
       break;
     }
     case kind_for_stmt: {
       for_stmt fs = CAST(for_stmt, stmt);
-      atomic_t a, a1, a2, a3, as;
+      atomic_t a1, a2, a3, as;
 
       a1 = isatomic_expr(fs->arg1);
       a2 = isatomic_expr(fs->arg2);
@@ -310,17 +382,23 @@ static atomic_t isatomic_stmt(statement stmt)
       else
 	a = amany(aseq(a2, aseq(as, a3)));
 
-      stmt->isatomic = aseq(a1, a);
+      a = aseq(a1, a);
       break;
     }
 
     default:
-      /* Default to not-atomic */
+      /* Just check children. Current statement not atomic. */
       isatomic_children(stmt);
-      stmt->isatomic = NOT_ATOMIC;
       break;
     }
-  return stmt->isatomic;
+
+  if (stmt->isatomic != a)
+    {
+      stmt->isatomic = a;
+      dirty = TRUE;
+    }
+
+  return a;
 }
 
 static AST_walker_result isatomic_ast_expr(AST_walker spec, void *data,
@@ -353,22 +431,34 @@ static AST_walker_result isatomic_ast_vdecl(AST_walker spec, void *data,
   return aw_done;
 }
 
-void isatomic(cgraph callgraph)
+void isatomic(cgraph g)
 {
-  ggraph cg = cgraph_graph(callgraph);
+  ggraph cg = cgraph_graph(g);
   gnode n;
   
-  /* We need the data-race information to optimise atomics */
-  if (!nesc_optimise_atomic || !warn_data_race)
+  if (!nesc_optimise_atomic)
     return;
 
+  callgraph = g;
+
+  /* Fixed point search for function-atomicity */
   graph_scan_nodes (n, cg)
     {
       data_declaration fn = NODE_GET(endp, n)->function;
-
       if (fn->definition)
-	isatomic_stmt(CAST(function_decl, fn->definition)->stmt);
+	CAST(function_decl, fn->definition)->stmt->isatomic = ATOMIC_ANY;
     }
+  do
+    {
+      dirty = FALSE;
+      graph_scan_nodes (n, cg)
+	{
+	  data_declaration fn = NODE_GET(endp, n)->function;
+	  if (fn->definition)
+	    isatomic_stmt(CAST(function_decl, fn->definition)->stmt);
+	}
+    }
+  while (dirty);
 }
 
 void init_isatomic(void)

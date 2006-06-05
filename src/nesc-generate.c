@@ -548,7 +548,6 @@ static bool find_reachable_functions(struct connections *c, gnode n,
     {
       full_connection target = new_full_connection(c->r, ep, gcond, gargs);
 
-
       assert(!graph_first_edge_out(n));
 
       dd_add_last(c->r, 
