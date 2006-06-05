@@ -466,6 +466,19 @@ static AST_walker_result clone_expression(AST_walker spec, void *data,
   return aw_done;
 }
 
+static AST_walker_result clone_stmt(AST_walker spec, void *data, statement *n)
+{
+  statement new = clone(data, n);
+
+  /* Update containing_atomic and parent_loop */
+  if (new->containing_atomic)
+    new->containing_atomic = CAST(atomic_stmt, new->containing_atomic->instantiation);
+  if (new->parent_loop)
+    new->parent_loop = CAST(statement, new->parent_loop->instantiation);
+
+  return aw_walk;
+}
+
 static AST_walker_result clone_asttype(AST_walker spec, void *data, asttype *n)
 {
   asttype new = clone(data, n);
@@ -832,6 +845,8 @@ static void init_clone(void)
   AST_walker_handle(clone_walker, kind_identifier, clone_identifier);
   AST_walker_handle(clone_walker, kind_interface_deref, clone_interface_deref);
   AST_walker_handle(clone_walker, kind_component_deref, clone_component_deref);
+
+  AST_walker_handle(clone_walker, kind_statement, clone_stmt);
 
   AST_walker_handle(clone_walker, kind_asttype, clone_asttype);
   AST_walker_handle(clone_walker, kind_function_decl, clone_function_decl);

@@ -30,6 +30,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-concurrency.h"
 #include "nesc-uses.h"
 #include "nesc-network.h"
+#include "nesc-atomic.h"
 
 static void prt_nesc_function_hdr(data_declaration fn_decl,
 				  psd_options options)
@@ -1285,6 +1286,7 @@ void generate_c_code(const char *target_name, nesc_declaration program,
 
   check_async(callgraph);
   check_races(callgraph);
+  isatomic(callgraph);
 
   inline_functions(callgraph);
 

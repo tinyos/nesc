@@ -8,7 +8,7 @@ nescc - nesC compiler
     [\fB-docdir=\fIdir\fR] [\fB-topdir=\fIdir\fR] [\fB-graphviz=y\fI|\fBn\fR]
     [\fB-fnesc-simulate\fR] 
     [\fB-fnesc-nido-tosnodes=\fIn\fR] [\fB-fnesc-nido-motenumber=\fIexpression\fR]
-    [\fB-fnesc-cfile=\fIfile\fR] [\fB-fnesc-no-inline\fR]
+    [\fB-fnesc-cfile=\fIfile\fR] [\fB-fnesc-no-inline\fR] [\fB-fnesc-optimize-atomic\fR]
     [\fB--version\fR] [\fB-fnesc-verbose\fR] [\fB-Wnesc-\fI...\fR]
     [\fB-fnesc-dump=\fIspecification\fR] [\fB-fnesc-dumpfile=\fIfile\fR]
     [\fB-fnesc-scheduler=\fIspecification\fR]
@@ -67,6 +67,10 @@ with \fIexpression\fR.
 \fB-fnesc-no-inline\fR
 Disabled the automatic inlining of all small functions, and of all functions
 with a single call site.
+.TP
+\fB-fnesc-optimize-atomic\fR
+Optimize atomic statements [EXPERIMENTAL]: reduce or remove the overhead
+of atomic statements in simple cases (e.g., single-byte reads).
 .TP
 \fB-fnesc-cfile=\fIfile\fR 
 Specify a file in which to save the C code generated when compiling a

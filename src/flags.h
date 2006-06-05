@@ -264,4 +264,8 @@ extern int flag_use_scheduler;
    should fix filenames before invoking gcc. */
 extern int flag_mingw_gcc;
 
+/* If true, check for atomic statements whose body is guaranteed to be
+   atomic (e.g., one single-byte read) */
+extern int nesc_optimise_atomic;
+
 #endif

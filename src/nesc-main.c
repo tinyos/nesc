@@ -44,6 +44,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-task.h"
 #include "edit.h"
 #include "machine.h"
+#include "nesc-atomic.h"
 
 /* The set of C files to require before loading the main component */
 struct ilist
@@ -248,6 +249,8 @@ bool nesc_option(char *p)
     {
       doc_use_graphviz(TRUE);
     }
+  else if (!strcmp (p, "fnesc-optimize-atomic"))
+    nesc_optimise_atomic = 1;
   else if (!strcmp (p, "Wnesc-docstring"))
     warn_unexpected_docstring = 1;
   else if (!strcmp (p, "Wno-nesc-docstring"))
@@ -341,6 +344,7 @@ void nesc_compile(const char *filename, const char *target_name)
   init_nesc_constants();
   init_network();
   init_internal_nesc_attributes();
+  init_isatomic();
 
   for (includes = includelist; includes; includes = includes->next)
     require_c(toplevel_location, includes->name);

@@ -143,6 +143,7 @@
 (deffield abstract bool (init))
 (deffield containing_atomic atomic_stmt ())
 (deffield type_checked bool ())
+(deffield isatomic atomic_t ((default "NOT_ATOMIC")))
 
 (deffield cdecl nesc_declaration ())
 (deffield temp1 data_declaration ())
@@ -158,7 +159,7 @@
 (deftype declaration node ()
   "The common type of all definitions")
 
-(deftype statement node (parent_loop containing_atomic)
+(deftype statement node (parent_loop containing_atomic isatomic)
   "The common type of all statements
 PARENT_LOOP: 
   - for break and continue: the containing for/while/do-while/switch
@@ -171,11 +172,17 @@ CONTAINING_ATOMIC
 (or NULL for none). Used to check that break, continue and goto do not
 break in or out of an atomic statement.
 (Note: for nested atomic statements, CONTAINING_ATOMIC will point to a
-dangling node as we drop these nested statements from the AST)")
+dangling node as we drop these nested statements from the AST)
+ISATOMIC is 
+  ATOMIC_ANY if the statement does not involve any shared variable accesses
+  ATOMIC_SINGLE if the statement involves a single access to a shared 
+    variable, and that access is guaranteed to be atomic (e.g., a single byte)
+  NOT_ATOMIC otherwise")
 
 (deftype expression node (lvalue side_effects cst bitfield isregister
 			  type static_address converted_to_pointer
-			  cst_checked spelling parens ivalue context)
+			  cst_checked spelling parens ivalue context
+			  isatomic)
   "Expression nodes are subtypes of this type.
 LVALUE is true if this expression can be used in a context requiring an lvalue.
 BITFIELD is true if this lvalue is a bitfield.
@@ -198,7 +205,12 @@ IVALUE is a pointer to an ivalue (see init.h) holding the value of an
   a simple initialiser (e.g., '3 + 2' in 'int x = 3 + 2'), this is the
   value of the initialiser. Inside these initialisers, ivalue points into
   the ivalue structure of the containing initialiser.
-CONTEXT is the usage context for this expression (see nesc-uses.h)")
+CONTEXT is the usage context for this expression (see nesc-uses.h)
+ISATOMIC is 
+  ATOMIC_ANY if the statement does not involve any shared variable accesses
+  ATOMIC_SINGLE if the statement involves a single access to a shared 
+    variable, and that access is guaranteed to be atomic (e.g., a single byte)
+  NOT_ATOMIC otherwise")
 
 (deftype type_element node ()
   "A common super-type for all type-building elements (qualifiers, etc)")

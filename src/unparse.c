@@ -2078,6 +2078,7 @@ void prt_return_stmt(return_stmt s)
   bool inatomic = FALSE;
 
   if (s->containing_atomic &&
+      s->containing_atomic->isatomic == NOT_ATOMIC &&
       current.function_decl->ddecl->call_contexts != c_call_atomic)
     {
       /* We rewrote return statemnts within atomic to return a local
@@ -2085,7 +2086,8 @@ void prt_return_stmt(return_stmt s)
       outputln("{");
       indent();
       set_location(s->location);
-      if (current.function_decl->ddecl->call_contexts == c_call_nonatomic)
+      if (current.function_decl->ddecl->call_contexts == c_call_nonatomic &&
+	  nesc_optimise_atomic)
 	outputln("__nesc_enable_interrupt(); ");
       else
 	outputln("__nesc_atomic_end(__nesc_atomic); ");
@@ -2140,12 +2142,24 @@ void prt_atomic_stmt(atomic_stmt s)
      check for data races...). */
   if (current.function_decl->ddecl->call_contexts == c_call_atomic)
     {
+      outputln("/* atomic removed: atomic calls only */");
+      prt_statement(s->stmt);
+      return;
+    }
+
+  /* If the body of the atomic is atomic, we don't need to do anything */
+  if (s->isatomic != NOT_ATOMIC)
+    {
+      outputln("/* atomic removed: %s */",
+	       s->isatomic == ATOMIC_ANY ? "no shared variable access" :
+	       "single single-byte shared variable access");
       prt_statement(s->stmt);
       return;
     }
 
   set_location(s->location);
-  if (current.function_decl->ddecl->call_contexts == c_call_nonatomic)
+  if (current.function_decl->ddecl->call_contexts == c_call_nonatomic &&
+      nesc_optimise_atomic)
     outputln("{ __nesc_disable_interrupt();");
   else
     outputln("{ __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();");
@@ -2157,7 +2171,8 @@ void prt_atomic_stmt(atomic_stmt s)
   hack = output_loc;
   hack.lineno--;
   set_location(&hack);
-  if (current.function_decl->ddecl->call_contexts == c_call_nonatomic)
+  if (current.function_decl->ddecl->call_contexts == c_call_nonatomic &&
+      nesc_optimise_atomic)
     outputln("__nesc_enable_interrupt(); }");
   else
     outputln("__nesc_atomic_end(__nesc_atomic); }");

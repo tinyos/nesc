@@ -268,3 +268,6 @@ int flag_use_scheduler;
    should fix filenames before invoking gcc. */
 int flag_mingw_gcc;
 
+/* If true, check for atomic statements whose body is guaranteed to be
+   atomic (e.g., one single-byte read) */
+int nesc_optimise_atomic;

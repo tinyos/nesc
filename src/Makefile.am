@@ -107,6 +107,8 @@ libparser_a_SOURCES =				\
 	machine.h				\
 	nesc-abstract.c				\
 	nesc-abstract.h				\
+	nesc-atomic.c				\
+	nesc-atomic.h				\
 	nesc-attributes.c			\
 	nesc-attributes.h			\
 	nesc-c.c				\
