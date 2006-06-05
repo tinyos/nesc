@@ -13,6 +13,7 @@ nccdoc_DATA = 					\
 	COPYING-DOC				\
 	COPYRIGHT				\
 	INDEX					\
+	OVERVIEW				\
 	../README				\
 	mica-debugging.html			\
 	envtarget.html				\
