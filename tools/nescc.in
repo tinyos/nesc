@@ -76,8 +76,11 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 }
 
 
-if ($print_version) {
+if ($verbose || $print_version) {
     print "nescc: @PACKAGE_VERSION@\n";
+}
+
+if ($print_version) {
     print "$gcc: ";
     system "$gcc --version";
     exit 0;
