@@ -2085,7 +2085,10 @@ void prt_return_stmt(return_stmt s)
       outputln("{");
       indent();
       set_location(s->location);
-      outputln("__nesc_atomic_end(__nesc_atomic); ");
+      if (current.function_decl->ddecl->call_contexts == c_call_nonatomic)
+	outputln("__nesc_enable_interrupt(); ");
+      else
+	outputln("__nesc_atomic_end(__nesc_atomic); ");
       inatomic = TRUE;
     }
 
@@ -2142,7 +2145,10 @@ void prt_atomic_stmt(atomic_stmt s)
     }
 
   set_location(s->location);
-  outputln("{ __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();");
+  if (current.function_decl->ddecl->call_contexts == c_call_nonatomic)
+    outputln("{ __nesc_disable_interrupt();");
+  else
+    outputln("{ __nesc_atomic_t __nesc_atomic = __nesc_atomic_start();");
   indent();
   prt_statement(s->stmt);
 
@@ -2151,7 +2157,10 @@ void prt_atomic_stmt(atomic_stmt s)
   hack = output_loc;
   hack.lineno--;
   set_location(&hack);
-  outputln("__nesc_atomic_end(__nesc_atomic); }");
+  if (current.function_decl->ddecl->call_contexts == c_call_nonatomic)
+    outputln("__nesc_enable_interrupt(); }");
+  else
+    outputln("__nesc_atomic_end(__nesc_atomic); }");
   unindent();
 }
 
