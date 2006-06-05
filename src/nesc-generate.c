@@ -789,12 +789,14 @@ static void mark_reachable_function(cgraph cg,
       }
 }
 
-static declaration dummy_function(void)
+static declaration dummy_function(data_declaration ddecl)
 {
   empty_stmt body = new_empty_stmt(parse_region, dummy_location);
   function_decl fd = 
     new_function_decl(parse_region, dummy_location, NULL, NULL, NULL, NULL,
 		      CAST(statement, body), NULL, NULL);
+
+  fd->ddecl = ddecl;
 
   return CAST(declaration, fd);
 }
@@ -803,7 +805,7 @@ static void mark_binary_reachable(data_declaration fndecl, void *data)
 {
   if (fndecl->defined)
     {
-      fndecl->definition = dummy_function();
+      fndecl->definition = dummy_function(fndecl);
       fndecl->noinlinep = TRUE;
     }
   else
@@ -1218,11 +1220,10 @@ static void include_support_functions(void)
     {
       data_declaration fndecl = lookup_global_id(fns[i]);
 
+      /* Adding the function to spontaneous_calls w/o setting the
+	 spontaneous field makes the function stay static */
       if (fndecl && fndecl->kind == decl_function && !fndecl->spontaneous)
-	{
-	  fndecl->spontaneous = c_call_nonatomic;
-	  dd_add_last(parse_region, spontaneous_calls, fndecl);
-	}
+	dd_add_last(parse_region, spontaneous_calls, fndecl);
     }
 }
 
