@@ -1202,6 +1202,30 @@ static void prt_nido_resolver_function(dd_list modules)
   outputln("}");
 }
 
+static void include_support_functions(void)
+{
+  static char *fns[] = {
+    "__nesc_atomic_start",
+    "__nesc_atomic_end",
+    "__nesc_enable_interrupt",
+    "__nesc_disable_interrupt",
+    "__nesc_nido_initialise",
+    "__nesc_nido_resolve"
+  };
+  int i;
+
+  for (i = 0; i < sizeof fns / sizeof *fns; i++)
+    {
+      data_declaration fndecl = lookup_global_id(fns[i]);
+
+      if (fndecl && fndecl->kind == decl_function && !fndecl->spontaneous)
+	{
+	  fndecl->spontaneous = c_call_nonatomic;
+	  dd_add_last(parse_region, spontaneous_calls, fndecl);
+	}
+    }
+}
+
 void generate_c_code(const char *target_name, nesc_declaration program,
 		     cgraph cg, dd_list modules, dd_list components)
 {
@@ -1239,7 +1263,8 @@ void generate_c_code(const char *target_name, nesc_declaration program,
 	  exit(2);
 	}
     }
-  
+
+  include_support_functions();
 
   unparse_start(output ? output : stdout, diff_file);
   disable_line_directives();

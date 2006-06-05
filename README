@@ -4,7 +4,7 @@ Installation instructions are in INSTALL. Note that nesC needs patched
 versions of the GNU assemblers for the avr and msp430 architectures. For
 more information, check the INSTALL file.
 
-Changes in nesC 1.2.X
+Changes in nesC 1.2.5
 =====================
 - nescc-mig now generates C (ncg has supported C since 1.1.2)
 - add __builtin_offsetof keyword to make recent gcc's happy,
@@ -14,6 +14,14 @@ Changes in nesC 1.2.X
   interface arguments (e.g., interface Timer<TMilli>, where TMilli is 
   defined in Timer.nc)
 - updates to automatic inlining - code should be slightly smaller
+- atomic optimisation (experimental): if you specify -fnesc-optimize-atomic,
+  two optimisations are performed:
+  o outermost atomics call __nesc_disable/enable_interrupt, which can assume
+    that interrupts are initially enabled
+  o "simple" atomic statements have no overhead (interrupts are not disabled)
+    simple atomic statements are those:
+    - with no accesses to shared state
+    - or, at most one access to one byte of shared state
 - bug fixes
 
 Changes in nesC 1.2.4
@@ -164,4 +172,3 @@ Changes in nesC 1.1
   project (at http://sourceforge.net/projects/avarice)
 
 - Some improved error messages, miscellaneous bug fixes
-
