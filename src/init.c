@@ -1143,7 +1143,7 @@ static void output_init_element(expression init, type t)
   init->ivalue->u.base.expr = init;
   init->ivalue->u.base.require_constant_value = require_constant_value;
 
-  if (require_constant_value)
+  if (digest_init(t, init) && require_constant_value)
     {
       check_init_element(init);
       /* If we haven't checked it yet then we'll need the spelling later
@@ -1151,8 +1151,6 @@ static void output_init_element(expression init, type t)
       if (!init->cst_checked)
 	save_expression_spelling(init);
     }
-
-  digest_init(t, init);
 }
 
 

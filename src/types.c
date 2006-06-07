@@ -2639,7 +2639,15 @@ bool type_charstar(type t)
 
 bool type_chararray(type t, bool no_size_allowed)
 {
-  return type_array(t) && type_char(type_array_of(t)) &&
-    !(no_size_allowed && type_array_size(t));
+  return t == char_array_type || /* check for easy, common case first */
+    (type_array(t) && type_char(type_array_of(t)) &&
+     !(no_size_allowed && type_array_size(t)));
+}
+
+bool type_wchararray(type t, bool no_size_allowed)
+{
+  return t == wchar_array_type || /* check for easy, common case first */
+    (type_array(t) && type_equal(wchar_type, type_array_of(t)) &&
+     !(no_size_allowed && type_array_size(t)));
 }
 

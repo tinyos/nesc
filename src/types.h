@@ -298,6 +298,7 @@ bool type_contains(type parent, type child);
 
 bool type_charstar(type t);
 bool type_chararray(type t, bool no_size_allowed);
+bool type_wchararray(type t, bool no_size_allowed);
  
 void nxml_type(type t);
 /* Effects: Outputs XML representation of type t.

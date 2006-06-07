@@ -553,15 +553,26 @@ void constant_overflow_warning(known_cst c)
 char *string_cst_to_c(region r, string_cst s)
 {
   const wchar_t *wstr = s->chars;
-  int length_as_str = wcs_mb_size(wstr);
   char *str;
 
-  if (length_as_str < 0)
-    return NULL;
+  if (type_wchararray(s->type, FALSE))
+    {
+      int length_as_str = wcs_mb_size(wstr);
+      if (length_as_str < 0)
+	return NULL;
 
-  str = rarrayalloc(r, length_as_str, char);
-  length_as_str = wcstombs(str, wstr, length_as_str);
-  assert(length_as_str >= 0);
+      str = rarrayalloc(r, length_as_str, char);
+      length_as_str = wcstombs(str, wstr, length_as_str);
+      assert(length_as_str >= 0);
+    }
+  else
+    {
+      size_t i;
+
+      str = rarrayalloc(r, s->length + 1, char);
+      for (i = 0; i < s->length; i++)
+	str[i] = s->chars[i];
+    }
 
   return str;
 }

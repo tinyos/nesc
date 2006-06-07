@@ -1193,7 +1193,7 @@ readescape (int *ignore_ptr)
 }
 
 static int read_char(char *context, char terminating_char,
-		     char *cp, wchar_t *wcp)
+		     unsigned char *cp, wchar_t *wcp)
 {
   unsigned width = wcp ? type_size_int(wchar_type) * BITSPERBYTE
     : BITSPERBYTE; /* sizeof(char) == 1 */
@@ -1737,7 +1737,7 @@ static int lextoken(struct yystype *lvalp)
     char_constant:
       {
 	wchar_t wc;
-	char *cbuf = alloca(max_char_length);
+	unsigned char *cbuf = alloca(max_char_length);
 	int chars_seen = 0, count, result = 0;
 	unsigned width = wide_flag ? type_size_int(wchar_type) * BITSPERBYTE
 	  : BITSPERBYTE; /* sizeof(char) == 1 */
@@ -1794,7 +1794,7 @@ static int lextoken(struct yystype *lvalp)
     string_constant:
       {
 	wchar_t wc;
-	char *cbuf = alloca(max_char_length);
+	unsigned char *cbuf = alloca(max_char_length);
 	int count;
 
 	wchar_array_reset(string_array);
