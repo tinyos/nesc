@@ -276,7 +276,7 @@ sub gen() {
   	  print "    # Return an element (as a $pythontype) of the array '$field'\n";
   	  print "    #\n";
   	  print "    def getElement_$pythonfield(self, $argspec):\n";
-  	  print "        return self.get$python_access(self.offsetBits_$pythonfield($passargs), $bitlength)\n";
+  	  print "        return self.get$python_access(self.offsetBits_$pythonfield($passargs), $bitlength, $big_endian)\n";
   	  print "    \n";
 
           ### SetElement
@@ -284,7 +284,7 @@ sub gen() {
   	  print "    # Set an element of the array '$field'\n";
   	  print "    #\n";
   	  print "    def setElement_$pythonfield(self, $argspec, value):\n";
-  	  print "        self.set$python_access(self.offsetBits_$pythonfield($passargs), $bitlength, value)\n";
+  	  print "        self.set$python_access(self.offsetBits_$pythonfield($passargs), $bitlength, value, $big_endian)\n";
   	  print "    \n";
 
 	  if ($arraysize_bits != 0) {
@@ -380,7 +380,7 @@ sub gen() {
 	      print "    def getString_$pythonfield(self):\n";
 	      print "        carr = \"\";\n";
 	      print "        for i in range(0, 4000):\n";
-	      print "            if self.getElement_$pythonfield(i) == chr(0):";
+	      print "            if self.getElement_$pythonfield(i) == chr(0):\n";
 	      print "                break\n";
 	      print "            carr += self.getElement_$pythonfield(i)\n";
               print "        return carr\n";
