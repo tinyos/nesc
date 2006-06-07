@@ -190,7 +190,9 @@ void unlink_page(struct page **list, struct page *p)
 #define MAP_ANONYMOUS MAP_ANON
 #endif
 
+#ifndef __APPLE__
 #undef MAP_ANONYMOUS
+#endif
 
 #ifndef MAP_ANONYMOUS
 
