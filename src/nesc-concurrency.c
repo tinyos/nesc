@@ -189,8 +189,11 @@ static void check_async_vars(dd_list avars)
 	       - outside atomic statements (and fns only called from atomic
 	         statements)
 	       - uses specified by bad_contexts
+	       u->fn can be NULL in weird cases which don't correspond to
+	       executable code.
 	    */
-	    if (!(u->c & c_atomic ||
+	    if (u->fn &&
+		!(u->c & c_atomic ||
 		  !(u->fn->call_contexts & c_call_nonatomic))
 		&& u->c & bad_contexts)
 	      {
