@@ -8,7 +8,8 @@ nescc - nesC compiler
     [\fB-docdir=\fIdir\fR] [\fB-topdir=\fIdir\fR] [\fB-graphviz=y\fI|\fBn\fR]
     [\fB-fnesc-simulate\fR] 
     [\fB-fnesc-nido-tosnodes=\fIn\fR] [\fB-fnesc-nido-motenumber=\fIexpression\fR]
-    [\fB-fnesc-cfile=\fIfile\fR] [\fB-fnesc-no-inline\fR] [\fB-fnesc-optimize-atomic\fR]
+    [\fB-conly\fR] [\fB-fnesc-cfile=\fIfile\fR] 
+    [\fB-fnesc-no-inline\fR] [\fB-fnesc-optimize-atomic\fR]
     [\fB--version\fR] [\fB-fnesc-verbose\fR] [\fB-Wnesc-\fI...\fR]
     [\fB-fnesc-dump=\fIspecification\fR] [\fB-fnesc-dumpfile=\fIfile\fR]
     [\fB-fnesc-scheduler=\fIspecification\fR]
@@ -64,6 +65,16 @@ nodes. Specifically, in the generated code, each global variable becomes an
 \fIn\fR element array, and all accesses to global variables are indexed
 with \fIexpression\fR.
 .TP
+\fB-conly\fR
+Just compile to C, leaving the generated source code for top-level-component
+\fIcomp.nc\fR in C file \fIcomp.c\fR (except if the \fB-fnesc-cfile\fR
+option is specified).
+.TP
+\fB-fnesc-cfile=\fIfile\fR 
+Specify a file in which to save the C code generated when compiling a
+component. Note: if you specify two components on the command line, then
+the C code from the second one will overwrite the C code from the first.
+.TP
 \fB-fnesc-no-inline\fR
 Disabled the automatic inlining of all small functions, and of all functions
 with a single call site.
@@ -71,11 +82,6 @@ with a single call site.
 \fB-fnesc-optimize-atomic\fR
 Optimize atomic statements [EXPERIMENTAL]: reduce or remove the overhead
 of atomic statements in simple cases (e.g., single-byte reads).
-.TP
-\fB-fnesc-cfile=\fIfile\fR 
-Specify a file in which to save the C code generated when compiling a
-component. Note: if you specify two components on the command line, then
-the C code from the second one will overwrite the C code from the first.
 .TP
 \fB--version\fR
 Print the version of \fBnescc\fR and of the selected gcc compiler

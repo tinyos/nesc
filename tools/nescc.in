@@ -70,6 +70,11 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	elsif (/^-v$/) {
 	    $verbose = 1;
 	}
+	elsif (/^-conly$/) {
+	    $strip = 1;
+	    push @new_args, "-fnesc-conly";
+	    push @new_args, "-fsyntax-only";
+	}
     } 
 
     push @new_args, $_ if !$strip;

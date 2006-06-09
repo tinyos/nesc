@@ -29,11 +29,15 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	push @gcc_args, "-Wa,$_";
     }
     elsif (/^-/) {
-	if (/^-fsyntax-only/) {
+	if (/^-fsyntax-only$/) {
 	    $nocompile = 1;
 	}
 
-	if (/^-[_WwvpfmD]/ || /^-pedantic/ || /^-ansi/) {
+	if (/^-_?fnesc-conly$/) {
+	    $conly = 1;
+	}
+
+	if (/^-[_WwvpfmD]/ || /^-pedantic$/ || /^-ansi$/) {
 	    push @nesc_args, $_ unless /^-_?fnesc-.*cfile=/;
 	    $verbose = 1 if /^-v/;
 	}
@@ -45,7 +49,7 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	elsif (/^-o/) {
 	    ($i, $objtarget) = &extractarg($i);
 	}
-	elsif (/^-S/) {
+	elsif (/^-S$/) {
 	    $asmonly = 1;
 	}
 	elsif (/^-_?fnesc-/) {
@@ -82,9 +86,11 @@ if ($source eq "") {
 
 
 if ($ctarget eq "") {
-    # not a good choice, but we're normally invoked via gcc which gives 
-    # us a -fnesc-cfile= option
-    if ($ENV{TMP}) {
+    if ($conly) {
+	$ctarget = $source;
+	$ctarget =~ s/\.nc$/.c/;
+    }
+    elsif ($ENV{TMP}) {
 	$ctarget = "$ENV{TMP}/nesc.$$.c";
     }
     else {
@@ -101,7 +107,7 @@ if ($objtarget eq "") {
 
 push @nesc_args, $source;
 push @nesc_args, "-o";
-if ($nocompile) {
+if ($nocompile && !$conly) {
     push @nesc_args, "/dev/null";
 } else {
     push @nesc_args, $ctarget;
@@ -113,7 +119,7 @@ if ($? != 0) {
     unlink $ctarget;
     exit 2;
 }
-exit 0 if $nocompile;
+exit 0 if $nocompile || $conly;
 
 push @gcc_args, "-o";
 push @gcc_args, $objtarget;
