@@ -24,7 +24,7 @@ dnl -*- m4 -*-
 # force autoconf 2.5 on Debian systems
 AC_PREREQ(2.50)
 
-AC_INIT(nesc, 1.2.5)
+AC_INIT(nesc, 1.2.6)
 AC_CONFIG_AUX_DIR(config-aux)
 
 AM_INIT_AUTOMAKE

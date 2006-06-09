@@ -1,8 +1,13 @@
-This is version 1.2.5 of the nesC compiler.
+This is version 1.2.6 of the nesC compiler.
 
 Installation instructions are in INSTALL. Note that nesC needs patched
 versions of the GNU assemblers for the avr and msp430 architectures. For
 more information, check the INSTALL file.
+
+Changes in nesC 1.2.6
+=====================
+- -conly option to just compile to C
+- bug fixes
 
 Changes in nesC 1.2.5
 =====================
