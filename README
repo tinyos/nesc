@@ -6,6 +6,8 @@ more information, check the INSTALL file.
 
 Changes in nesC 1.2.6
 =====================
+- network types now support bitfields (big-endian only - mixing bit-field
+  endianness within a struct would be extremely confusing and/or tricky)
 - -conly option to just compile to C
 - better struct/union layout code, which requires a slightly more detailed
   target machine description (see src/machine.h)
