@@ -28,6 +28,12 @@ relevant interfaces. For instance, writing
 ensures that programs using module \fBFun\fR must wire its \fBInit\fR
 interface at least once.
 
+Specifically, when the annotation is placed on a provided interface, there
+must be the specified number of paths in the wiring graph from any module
+to that interface. If the annotations are placed on a used interface,
+there must be the specified number of paths in the wiring graph from
+the interface to any module.
+
 To use this wiring check tool, you must declare the \fB@atmostonce()\fR, 
 \fB@atleastonce()\fR and \fB@exactlyonce()\fR attributes in some global
 header file as follows:

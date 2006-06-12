@@ -1,5 +1,5 @@
-Part 1: External Types
-=====================
+Part 1: Using External Types
+============================
 
 External types are an extension to nesC for platform-independent type
 representation: you can define your packet layout using syntax very similar
@@ -41,21 +41,24 @@ More formally, nesC includes three kinds of external types.
     example above). An external structure can only contain external types
     as elements. 
 
-All these external types can be used exactly like regular C types, with a
-few restrictions (which will be lifted in future versions): 
-  o External structures cannot contain bitfields.  
-  o External base types cannot be used in casts, as function arguments
-    and results, or to declare initialised variables. Note that you can
-    generally simply use the corresponding non-external type, such as
-    uint16_t, instead.
-
 External types have no alignment restrictions, external structures contain
 no padding, and the external base types use a 2's complement, big-endian
 representation (there are also little-endian versions of the base types
 available, using the nxle_ prefix, but their use is discouraged for
-networking purposes). Thus their representation is platform-independent,
-and any arbitrary section of memory can be accessed via an external
-type.
+networking purposes). Bit-fields in external structures are maximally
+packed. A 0-width bit-field moves allocation on to the next byte. Thus the
+representation of external types is platform-independent, and any arbitrary
+section of memory can be accessed via an external type.
+
+All these external types can be used exactly like regular C types, with a
+few restrictions: 
+  o Bit-fields can only be created from big-endian external base types
+    (i.e., `nx_struct { nxle_uint8_t f1 : 2; }' is not allowed).
+    Having  big- and little-endian bit-fields adjacent in a type would 
+    be problematic...
+  o Bit-fields of external types cannot be used inside non-external
+    structures (i.e., `struct { nx_uint8_t f1 : 2; }' is not allowed).
+  o External type variables cannot have initialisers.
 
 Part 2: Implementation
 ======================
@@ -63,7 +66,7 @@ Part 2: Implementation
 In the generated C code for nesC programs using external types, we simply
 define a C type for each external base type, translate nx_struct and
 nx_union to struct and union and leave array types unchanged. The external
-base types are replaced by structures containing char arrays.
+base types are replaced by structures containing char arrays. 
 
 Reads and writes of external base types are replaced by calls to inline
 functions like NTOH32 in the example below.  For instance, the example
@@ -97,3 +100,9 @@ SurgeCmdMsg). This is true on many, but not all platforms: on ARM
 processors, all structures are aligned to 4-byte boundaries, and on
 Motorola 68K processors they are aligned to 2-byte boundaries. We currently
 work around this problem by using gcc's non-standard packed attribute.
+
+Bit-fields are a little more complex: space used by bit-fields inside
+external structures are replaced by "filler" fields. Accesses to external
+bit-fields is done by taking the address of the enclosing external
+structure, treating it as an array of bytes and accessing the appropriate
+offsets.
