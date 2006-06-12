@@ -30,9 +30,11 @@ Boston, MA 02111-1307, USA.  */
 #include <string.h>
 
 static machine_spec env_machine = {
-  "env",
+  "env", NULL,
   /* [default] */       /* [keyname] */
   FALSE,		/* pcc_bitfield_type_matters */
+  8,			/* empty_field_boundary */
+  8,			/* structure_size_boundary */
   {2, 1},		/* pointer */
   {4, 1},		/* float */
   {4, 1},		/* double */
@@ -44,6 +46,8 @@ static machine_spec env_machine = {
   1, 1, 1, 1,		/* int1248_align */
   2, 2,			/* wchar_size_size */
   TRUE, TRUE,		/* char_wchar_signed */
+
+  NULL,				/* adjust_field_align */
 
   NULL, NULL, NULL, NULL	/* Attributes: need some way to specify this */
 };
@@ -140,6 +144,30 @@ static bool scan_env_machine(machine_spec * machine, const char *envname)
 	  else
 	    {
 	      error("%s.%s, expected 'false' or 'true'", envname, name);
+	      n_errors++;
+	    }
+	}
+      else if (is_literali(name = "empty_field_boundary", begin, equal))
+	{
+	  if (scan_intlist(value, space, intlist, 1) == TRUE)
+	    {
+	      machine->empty_field_boundary = intlist[0];
+	    }
+	  else
+	    {
+	      error("%s.%s, expected one int", envname, name);
+	      n_errors++;
+	    }
+	}
+      else if (is_literali(name = "structure_size_boundary", begin, equal))
+	{
+	  if (scan_intlist(value, space, intlist, 1) == TRUE)
+	    {
+	      machine->structure_size_boundary = intlist[0];
+	    }
+	  else
+	    {
+	      error("%s.%s, expected one int", envname, name);
 	      n_errors++;
 	    }
 	}

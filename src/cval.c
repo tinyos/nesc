@@ -1124,6 +1124,20 @@ cval cval_max(cval c1, cval c2)
   return cval_intcompare(c1, c2) > 0 ? c1 : c2;
 }
 
+cval cval_min(cval c1, cval c2)
+{
+  if (cval_istop(c1) || cval_istop(c2))
+    return cval_top;
+
+  if (cval_isunknown_number(c1) || cval_isunknown_number(c2))
+    return cval_unknown_number;
+
+  // Not used for anything else yet. Fix later if need to.
+  assert(cval_isinteger(c1) && cval_isinteger(c2));
+
+  return cval_intcompare(c1, c2) < 0 ? c1 : c2;
+}
+
 data_declaration cval_ddecl(cval c)
 /* Returns: c's declaration
    Requires: cval_isaddress(c)  && !cval_isunknown_address(c) && 

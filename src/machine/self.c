@@ -8,10 +8,65 @@ typedef int __attribute__ ((mode(__HI__))) myint2;
 typedef int __attribute__ ((mode(__SI__))) myint4;
 typedef int __attribute__ ((mode(__DI__))) myint8;
 
+/* Find out how big the smallest struct is. Assume this tells us to
+   what multiples structs are rounded. */
+struct self_smallest {
+  char x;
+};
+
+/* Find out to what multiple 0-bit bitfields round thingg */
+struct self_efb {
+  char x : 1;
+  char : 0;
+};
+
+/* Detect if bitfield type influences the struct */
+struct self_pcc1 {
+  int x : 1;
+};
+struct self_pcc2 {
+  char x : 1;
+};
+
+#ifdef __i386__
+#define SELF_ADJUST_FIELD_ALIGN self_adjust_field_align
+#define SELF_HANDLE_OPTION self_handle_option
+
+static bool align_double;
+
+static cval self_adjust_field_align(field_declaration fdecl, cval alignment)
+{
+  if (!align_double && type_arithmetic(type_array_of_base(fdecl->type)))
+    alignment = cval_min(make_cval_unsigned(32, size_t_type), alignment);
+  return alignment;
+}
+
+static void self_handle_option(const char *arg)
+{
+  if (!strcmp(arg, "-malign-double"))
+    align_double = TRUE;
+  else if (!strcmp(arg, "-mnoalign-double"))
+    align_double = FALSE;
+}
+
+#else
+#define SELF_ADJUST_FIELD_ALIGN NULL
+#define SELF_HANDLE_OPTION NULL
+
+#endif
+
 static machine_spec self_machine = {
-  "pc",
-  TRUE				/* PCC_BITFIELD_TYPE_MATTERS */,
-				/* (should come from configure) */
+  "pc", SELF_HANDLE_OPTION,
+
+  /* pcc_bitfield_type_matters */
+  sizeof(struct self_pcc1) != sizeof(struct self_pcc2),	
+
+  /* empty field boundary */
+  sizeof(struct self_efb) * BITSPERBYTE, 
+
+  /* structure size boundary */
+  sizeof(struct self_smallest) * BITSPERBYTE, 
+
   { sizeof(void *),      __alignof__(void *) },	     /* pointer type */
   { sizeof(float),       __alignof__(float) },	     /* float */
   { sizeof(double),      __alignof__(double) },	     /* double */
@@ -24,6 +79,8 @@ static machine_spec self_machine = {
   __alignof__(myint4), __alignof__(myint8),	     /* int1/2/4/8 align */
   sizeof(wchar_t), sizeof(size_t),		     /* wchar_t, size_t size */
   (char)-1 < 0, (wchar_t)-1 < 0,		     /* char, wchar_t signed */
+
+  SELF_ADJUST_FIELD_ALIGN,			     /* adjust_field_align */
 
   NULL, NULL, NULL, NULL	/* No special attributes */
 };

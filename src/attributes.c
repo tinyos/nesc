@@ -5,6 +5,7 @@
 #include "nesc-attributes.h"
 #include "machine.h"
 #include "c-parse.h"
+#include "constants.h"
 
 /* Provide warnings about ignored attributes and attribute lists */
 
@@ -39,6 +40,44 @@ void ignored_dd_attributes(dd_list alist)
       ignored_attribute(DD_GET(attribute, attr));
 }
 
+/* True if arg is name or __name__ */
+bool isattr(const char *arg, const char *name)
+{
+  int l;
+
+  if (!strcmp(arg, name))
+    return TRUE;
+
+  if (strncmp(arg, "__", 2))
+    return FALSE;
+
+  l = strlen(name);
+  return !strncmp(arg + 2, name, l) && !strcmp(arg + 2 + l, "__");
+}
+
+cval gcc_attr_get_constant(gcc_attribute attr)
+{
+  if (!attr->args || attr->args->next || !attr->args->cst)
+    return cval_top;
+  else
+    return attr->args->cst->cval;
+}
+
+static cval get_alignment(gcc_attribute attr)
+{
+  cval arg = gcc_attr_get_constant(attr);
+
+  if (cval_isinteger(arg))
+    if (ilog2(cval_uint_value(arg)) != -1)
+      return cval_cast(arg, size_t_type);
+    else
+      error("requested alignment is not a power of 2");
+  else
+    error("requested alignment is not a constant");
+
+  return cval_top;
+}
+
 /* handle_X_attribute(attr, obj):
    Attempt to apply attribute attr to obj of kind X (decl, field, tag, type),
    modifying obj.
@@ -69,12 +108,20 @@ bool handle_gcc_type_attribute(gcc_attribute attr, type *t)
 {
   const char *name = attr->word1->cstring.data;
 
-  if (!strcmp(name, "combine") || !strcmp(name, "__combine__"))
+  if (isattr(name, "combine"))
     {
       if (!attr->word2 || attr->args)
 	error_with_location(attr->location, "wrong number of arguments specified for `combine' attribute");
       else
 	handle_combine_attribute(attr->location, attr->word2->cstring.data, t);
+      return TRUE;
+    }
+  else if (isattr(name, "aligned"))
+    {
+      cval arg = get_alignment(attr);
+
+      if (cval_isinteger(arg))
+	*t = align_type(*t, arg);
       return TRUE;
     }
   else 
@@ -85,8 +132,7 @@ void handle_gcc_decl_attribute(gcc_attribute attr, data_declaration ddecl)
 {
   const char *name = attr->word1->cstring.data;
 
-  if (!strcmp(name, "transparent_union") ||
-      !strcmp(name, "__transparent_union__"))
+  if (isattr(name, "transparent_union"))
     {
       if (attr->word2 || attr->args)
 	error_with_location(attr->location, "wrong number of arguments specified for `transparent_union' attribute");
@@ -99,14 +145,26 @@ void handle_gcc_decl_attribute(gcc_attribute attr, data_declaration ddecl)
       else
 	ignored_gcc_attribute(attr);
     }
-  else if (!strcmp(name, "C"))
+  else if (isattr(name, "aligned"))
+    {
+      cval arg = get_alignment(attr);
+
+      if (cval_isinteger(arg))
+	{
+	  if (ddecl->kind == decl_variable || ddecl->kind == decl_typedef)
+	    ddecl->type = align_type(ddecl->type, arg);
+	  else
+	    ignored_gcc_attribute(attr);
+	}
+    }
+  else if (isattr(name, "C"))
     {
       if (!ddecl->isexternalscope)
 	error_with_location(attr->location, "`C' attribute is for symbols with external scope only");
       else
 	ddecl->Cname = TRUE;
     }
-  else if (!strcmp(name, "spontaneous"))
+  else if (isattr(name, "spontaneous"))
     {
       if (require_function(attr, ddecl))
 	{
@@ -115,7 +173,7 @@ void handle_gcc_decl_attribute(gcc_attribute attr, data_declaration ddecl)
 	    ddecl->spontaneous = c_call_nonatomic;
 	}
     }
-  else if (!strcmp(name, "atomic_hwevent"))
+  else if (isattr(name, "atomic_hwevent"))
     {
       if (require_function(attr, ddecl))
 	{
@@ -123,7 +181,7 @@ void handle_gcc_decl_attribute(gcc_attribute attr, data_declaration ddecl)
 	  ddecl->spontaneous = c_call_atomic;
 	}
     }
-  else if (!strcmp(name, "hwevent"))
+  else if (isattr(name, "hwevent"))
     {
       if (require_function(attr, ddecl))
 	{
@@ -131,11 +189,11 @@ void handle_gcc_decl_attribute(gcc_attribute attr, data_declaration ddecl)
 	  ddecl->spontaneous = c_call_nonatomic;
 	}
     }
-  else if (!strcmp(name, "noinline"))
+  else if (isattr(name, "noinline"))
     {
       ddecl->noinlinep = TRUE;
     }
-  else if (!strcmp(name, "nx_base") || !strcmp(name, "__nx_base_"))
+  else if (isattr(name, "nx_base"))
     {
       if (ddecl->kind != decl_typedef)
 	error_with_location(attr->location, "`nx_base' attribute can only be applied to typedefs");
@@ -155,8 +213,15 @@ void handle_gcc_field_attribute(gcc_attribute attr, field_declaration fdecl)
 {
   const char *name = attr->word1->cstring.data;
 
-  if (!strcmp(name, "packed") || !strcmp(name, "__packed__"))
+  if (isattr(name, "packed"))
     fdecl->packed = TRUE;
+  else if (isattr(name, "aligned"))
+    {
+      cval arg = get_alignment(attr);
+
+      if (cval_isinteger(arg))
+	fdecl->type = align_type(fdecl->type, arg);
+    }
   else if (!(target->field_attribute &&
 	     target->field_attribute(attr, fdecl)))
     /*ignored_gcc_attribute(attr)*/;
@@ -166,8 +231,7 @@ void handle_gcc_tag_attribute(gcc_attribute attr, tag_declaration tdecl)
 {
   const char *name = attr->word1->cstring.data;
 
-  if (!strcmp(name, "transparent_union") ||
-      !strcmp(name, "__transparent_union__"))
+  if (isattr(name, "transparent_union"))
     {
       if (attr->word2 || attr->args)
 	error_with_location(attr->location, "wrong number of arguments specified for `transparent_union' attribute");
@@ -180,8 +244,15 @@ void handle_gcc_tag_attribute(gcc_attribute attr, tag_declaration tdecl)
       else
 	ignored_gcc_attribute(attr);
     }
-  else if (!strcmp(name, "packed") || !strcmp(name, "__packed__"))
+  else if (isattr(name, "packed"))
     tdecl->packed = TRUE;
+  else if (isattr(name, "aligned"))
+    {
+      cval arg = get_alignment(attr);
+
+      if (cval_isinteger(arg))
+	tdecl->user_alignment = arg;
+    }
   else if (!(target->tag_attribute &&
 	     target->tag_attribute(attr, tdecl)))
     /*ignored_gcc_attribute(attr)*/;

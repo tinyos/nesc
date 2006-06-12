@@ -111,6 +111,23 @@ unsigned long lcm(unsigned long x, unsigned long y)
   return (x * y) / gcd(x, y); 
 }
 
+int ilog2(largest_uint x)
+{
+  /* slow version */
+  largest_uint v = 1;
+  int log2 = 0;
+
+  while (v < x)
+    {
+      v <<= 1;
+      log2++;
+      if (!v)
+	return -1;
+    }
+
+  return v == x ? log2 : -1;
+}
+
 DEFINE_ARRAY(wchar_array, wchar_t)
 DEFINE_ARRAY(char_array, char)
 

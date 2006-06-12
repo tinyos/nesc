@@ -78,7 +78,7 @@ typedef struct tag_declaration {
 
   cval size;			/* Can be cval_top if not compile-time constant
 				   (due to variable-size arrays in struct) */
-  cval alignment;
+  cval alignment, user_alignment;
   bool packed;			/* if packed attribute specified */
   bool dumped;			/* TRUE if already added to dump list */
 

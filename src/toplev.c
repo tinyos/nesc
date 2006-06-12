@@ -370,7 +370,7 @@ int region_main(int argc, char **argv) deletes
 {
   register int i;
   char *filename = 0;
-  char *target = 0;
+  char *targetfile = 0;
   int version_flag = 0;
   char *p;
 
@@ -570,7 +570,7 @@ int region_main(int argc, char **argv) deletes
 	  else if (!strcmp (str, "o") && i + 1 < argc)
 	    {
 	      i++;
-	      target = argv[i];
+	      targetfile = argv[i];
 	    }
 	  else if (str[0] == 'G')
 	    {
@@ -589,8 +589,14 @@ int region_main(int argc, char **argv) deletes
 	filename = argv[i];
     }
 
+  /* Pass options on to the target too */
+  if (target->handle_option)
+    for (i = 1; i < argc; i++)
+      if (argv[i][0] == '-' && argv[i][1] != 0)
+	target->handle_option(argv[i]);
+
   if (filename)
-    nesc_compile (filename, target);
+    nesc_compile (filename, targetfile);
   else
     {
       fprintf(stderr, "usage: %s [options] <filename>\n", argv[0]);

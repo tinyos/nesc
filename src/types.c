@@ -49,6 +49,7 @@ struct type
   */
   cval size;
   cval alignment; 
+  bool user_align;
 
   union {
     /* tk_primtive and tk_complex.
@@ -216,7 +217,7 @@ static type new_type(int kind)
   nt->kind = kind;
   /*nt->qualifiers = 0;
     nt->network = nx_no;
-    nt->size = nt->alignment = 0;
+    nt->user_align = FALSE;
     nt->combiner = nt->basedecl = nt->typedefdecl = NULL;*/
   nt->size = nt->alignment = cval_top;
   return nt;
@@ -1216,8 +1217,14 @@ type align_type(type t, cval new_alignment)
   type nt = copy_type(t);
 
   nt->alignment = new_alignment;
+  nt->user_align = TRUE;
 
   return nt;
+}
+
+bool type_realigned(type t)
+{
+  return t->user_align;
 }
 
 static int common_primitive_type(type t1, type t2)

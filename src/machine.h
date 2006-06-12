@@ -8,12 +8,18 @@ typedef struct {
 typedef struct {
   const char *machine_name;
 
+  void (*handle_option)(const char *opt);
+
   bool pcc_bitfield_type_matters;
+  size_t empty_field_boundary, structure_size_boundary;
+
   machine_type_spec tptr, tfloat, tdouble, tlong_double, tshort, tint,
     tlong, tlong_long;
   size_t int1_align, int2_align, int4_align, int8_align;
   size_t wchar_t_size, size_t_size;
   bool char_signed, wchar_t_signed;
+
+  cval (*adjust_field_align)(field_declaration fdecl, cval alignment);
 
   bool (*decl_attribute)(gcc_attribute attr, data_declaration ddecl);
   bool (*tag_attribute)(gcc_attribute attr, tag_declaration tdecl);

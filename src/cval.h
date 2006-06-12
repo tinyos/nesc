@@ -233,5 +233,6 @@ cval cval_lcm(cval x, cval y);
 cval cval_gcd(cval x, cval y);
 cval cval_align_to(cval n, cval alignment);
 cval cval_max(cval c1, cval c2);
+cval cval_min(cval c1, cval c2);
 
 #endif

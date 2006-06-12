@@ -33,6 +33,8 @@ void *xrealloc(void *p, size_t newsize);
 
 unsigned long align_to(unsigned long n, unsigned long alignment);
 
+int ilog2(largest_uint x);
+
 /* least common multiple */
 unsigned long lcm(unsigned long x, unsigned long y);
 

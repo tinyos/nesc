@@ -93,6 +93,9 @@ type qualify_type2(type t, type t1, type t2);
 /* Return 't' modified to have alignment 'new_alignment' */
 type align_type(type t, cval new_alignment);
 
+/* Return TRUE if t's alignment was changed with align_type */
+bool type_realigned(type t);
+
 /* Return type 'pointer to t' (unqualified) */
 type make_pointer_type(type t);
 

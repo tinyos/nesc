@@ -263,6 +263,7 @@ tag_declaration declare_tag_env(environment env, tag_ref t)
 
   tdecl->kind = t->kind;
   tdecl->name = name;
+  tdecl->size = tdecl->alignment = tdecl->user_alignment = cval_top;
 #if 0
   /* ralloc guarantees 0 / NULL */
   tdecl->fields = NULL;
@@ -271,7 +272,6 @@ tag_declaration declare_tag_env(environment env, tag_ref t)
   tdecl->fields_const = tdecl->fields_volatile = FALSE;
   tdecl->transparent_union = FALSE;
   tdecl->collapsed = FALSE;
-  tdecl->size = tdecl->alignment = 0;
   tdecl->size_cc = FALSE;
   tdecl->container = NULL;
   tdecl->dumped = FALSE;
@@ -2883,6 +2883,7 @@ type_element start_struct(location l, AST_kind skind, word tag)
   tref->tdecl = tdecl;
   tdecl->definition = tref;
   tdecl->being_defined = TRUE;
+  tdecl->packed |= flag_pack_struct;
 
   return CAST(type_element, tref);
 }
@@ -2996,6 +2997,13 @@ void layout_struct(tag_declaration tdecl)
   // we use fdecl/flist, where flist is the "current" list of fields
   // (corresponding to, e.g., `int x, y, z;' in a struct) and fdecl is
   // the declaration following the one being used in flist
+
+  /* ASSUME: This code attempts to replicate gcc's struct layout rules for
+     the target, based on it's pcc_bitfield_type_matters,
+     structure_size_boundary and empty_field_boundary fields. See the gcc
+     internal (`info gccint') documentation for the meaning of these
+     fields.
+  */
   fdecl = tdecl->fieldlist;
   dlist = tdecl->definition->fields;
   flist = NULL;
@@ -3059,14 +3067,6 @@ void layout_struct(tag_declaration tdecl)
 
 	  fdecl->bitwidth = bitwidth;
 
-	  /* ASSUME: for bitfields we're assuming that:
-	     - alignment of record is forced to be at least that of the base
-	     (except for width 0 which just forces alignment of the current offset
-	     with the base type's alignment)
-	     - bit fields cannot span more units of alignment of their type
-	     than the type itself
-	     This is gcc's behaviour when PCC_BITFIELD_TYPE_MATTERS is defined */
-
 	  if (type_size_cc(field_type))
 	    fsize = cval_times(type_size(field_type), cval_bitsperbyte);
 	  else
@@ -3074,9 +3074,15 @@ void layout_struct(tag_declaration tdecl)
 
 	  /* don't care about alignment if no size (type_incomplete(field_type)
 	     is true, so we got an error above */
-	  falign = cval_times
-	    (type_has_size(field_type) ? type_alignment(field_type) : cval_top,
-	     cval_bitsperbyte);
+	  if (fdecl->packed || tdecl->packed)
+	    falign = cval_bitsperbyte;
+	  else
+	    falign = cval_times
+	      (type_has_size(field_type) ? type_alignment(field_type) : cval_top,
+	       cval_bitsperbyte);
+
+	  if (target->adjust_field_align && !type_realigned(field_type))
+	    falign = target->adjust_field_align(fdecl, falign);
 
 	  if (cval_istop(bitwidth)) /* regular field */
 	    offset = cval_align_to(offset, falign); 
@@ -3087,15 +3093,30 @@ void layout_struct(tag_declaration tdecl)
 	    }
 	  else if (!cval_boolvalue(bitwidth)) /* ie, 0 */
 	    {
-	      offset = cval_align_to(offset, falign);
-	      falign = make_type_cval(1); /* No structure alignment implications */
+	      if (target->pcc_bitfield_type_matters || isnetwork)
+		{
+		  offset = cval_align_to(offset, falign);
+		  falign = make_type_cval(1); /* No structure alignment implications */
+		}
+	      else
+		{
+		  /* I'm not to blame for gcc's weirdness. */
+		  if (!type_realigned(field_type))
+		    falign = make_type_cval(1);
+		  falign = cval_lcm(falign, make_cval_unsigned(target->empty_field_boundary, size_t_type));
+		  offset = cval_align_to(offset, falign);
+		}
 	      fsize = bitwidth;
 	    }
 	  else
 	    {
 	      assert(cval_intcompare(bitwidth, cval_zero) > 0);
-	      if (target->pcc_bitfield_type_matters)
+	      if (target->pcc_bitfield_type_matters && !isnetwork)
 		{
+		  /* skip to next unit on crossing falign-sized boundary.
+		     align struct to falign (note the inconsistency with
+		     the 0-width bitfield). */
+
 		  /* This tests 
 		     ((offset + bitwidth + falign - 1) / falign -
 		     offset / falign) > fsize / falign
@@ -3113,6 +3134,15 @@ void layout_struct(tag_declaration tdecl)
 		  else if (cval_intcompare(val2, cval_divide(fsize, falign)) > 0)
 		    offset = cval_align_to(offset, falign);
 		}
+	      else
+		{
+		  // more gcc fun
+		  if (type_realigned(field_type)) 
+		    offset = cval_align_to(offset, falign);
+		  else // don't align, don't affect struct alignment
+		    falign = cval_bitsperbyte;
+		}
+
 	      fsize = bitwidth;
 	    }
 
@@ -3130,10 +3160,13 @@ void layout_struct(tag_declaration tdecl)
       else
 	size = cval_max(fsize, size);
 
-      alignment = cval_lcm(alignment, falign); /* Note: GCC uses max. Must be hoping for powers of 2 */
+      alignment = cval_lcm(alignment, falign);
     }
+  if (!isnetwork)
+    alignment = cval_lcm(alignment, make_cval_unsigned(target->structure_size_boundary, size_t_type));
+  if (!cval_istop(tdecl->user_alignment))
+    alignment = cval_lcm(alignment, cval_times(tdecl->user_alignment, cval_bitsperbyte));
 
-  /* ASSUME: see previous assume */
   tdecl->size = cval_divide(cval_align_to(size, alignment), cval_bitsperbyte);
   tdecl->alignment = cval_divide(alignment, cval_bitsperbyte);
 }
