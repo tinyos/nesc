@@ -94,6 +94,7 @@ typedef enum {
 } pte_options;
 
 void prt_type_elements(type_element elements, pte_options options);
+void prt_interesting_elements(type_element elements, pte_options options);
 
 typedef enum {
   psd_need_paren_for_star = 1,
@@ -116,6 +117,7 @@ void prt_parameters(declaration gparms, declaration parms, psd_options options);
 bool prt_parameter(declaration parm, bool first, bool lastforward, psd_options options);
 void prt_ddecl_full_name(data_declaration ddecl, psd_options options);
 void prt_plain_ddecl(data_declaration ddecl, psd_options options);
+void prt_field_decl(field_decl fd);
 
 void prt_function_body(function_decl d);
 

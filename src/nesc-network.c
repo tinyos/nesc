@@ -468,6 +468,85 @@ bool prt_network_parameter_copies(function_decl fn)
   return copies;
 }
 
+static unsigned long filler_count;
+
+struct network_state
+{
+  size_t offset;
+  bool isextension;
+};
+
+static void network_align_to(largest_uint offset, struct network_state *ns)
+{
+  if (ns->offset < offset) /* There's a gap. Fill it. */
+    outputln("unsigned char __nesc_filler%lu[%llu];",
+	     filler_count++, offset - ns->offset);
+}
+
+void prt_network_field_data_decl(data_decl d, struct network_state *ns)
+{
+  declaration fd;
+  pte_options opts = 0;
+
+  scan_declaration (fd, d->decls)
+    {
+      field_decl fdd = CAST(field_decl, fd);
+      field_declaration fdecl = fdd->fdecl;
+
+      /* bitfields just show up as filler */
+      if (cval_istop(fdecl->bitwidth))
+	{
+	  if (!cval_isinteger(fdecl->offset))
+	    error_with_location(fdd->location, "unsupported network type");
+	  else 
+	    {
+	      largest_uint offset = cval_uint_value(fdecl->offset) / BITSPERBYTE;
+
+	      network_align_to(offset, ns);
+	      if (type_size_cc(fdecl->type))
+		ns->offset = offset + type_size_int(fdecl->type);
+	    }
+	    
+	  if (ns->isextension)
+	    output("__extension__ ");
+	  prt_type_elements(d->modifiers, opts);
+	  opts |= pte_duplicate;
+	  prt_field_decl(fdd);
+	  outputln(";");
+	}
+    }
+  if (!(opts & pte_duplicate))
+    prt_interesting_elements(d->modifiers, opts);
+}
+
+void prt_network_field_declaration(declaration d, struct network_state *ns)
+{
+  ns->isextension = FALSE;
+  while (is_extension_decl(d))
+    {
+      ns->isextension = TRUE;
+      d = CAST(extension_decl, d)->decl;
+    }
+  prt_network_field_data_decl(CAST(data_decl, d), ns);
+}
+
+void prt_network_fields(tag_ref tref)
+{
+  declaration d;
+  struct network_state ns = { 0, FALSE };
+
+  output(" {");
+  indent();
+  startline();
+  scan_declaration (d, tref->fields)
+    prt_network_field_declaration(d, &ns);
+  if (cval_isinteger(tref->tdecl->size))
+    network_align_to(cval_uint_value(tref->tdecl->size), &ns);
+  unindent();
+  startline();
+  output("} __attribute__((packed))");
+}
+
 void init_network(void)
 {
   init_network_walker();
