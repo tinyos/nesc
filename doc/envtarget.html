@@ -21,6 +21,8 @@ default if unspecified: <blockquote>
 <table border=1 cellpadding=2 cellspacing=0>
 <tr><th>Keyname                   <th>Value      <th>Default
 <tr><td>pcc_bitfield_type_matters <td>bool       <td>false
+<tr><td>empty_field_boundary	  <td>bit align  <td>8
+<tr><td>structure_size_boundary	  <td>bit align  <td>8
 <tr><td>pointer                   <td>size,align <td>2,1
 <tr><td>float                     <td>size,align <td>4,1
 <tr><td>double                    <td>size,align <td>4,1
@@ -40,8 +42,15 @@ For reference and easy cut+paste, here is the full default specification for
 <tt>NESC_MACHINE</tt>: <blockquote><tt>export
 NESC_MACHINE="pcc_bitfield_type_matters=false pointer=2,1 float=4,1
 double=4,1 long_double=4,1 short=2,1 int=2,1 long=4,1 long_long=8,1
-int1248_align=1,1,1,1 wchar_size_size=2,2 char_wchar_signed=true,true"
+int1248_align=1,1,1,1 wchar_size_size=2,2 char_wchar_signed=true,true
+empty_field_boundary=8 structure_size_boundary=8"
 </tt></blockquote>
+
+The curiously named wchar_size_size is the sizes of <code>wchar_t</code>
+and <code>size_t</code> respectively. See the gcc internal documentation
+(`<code>info gccint</code>') for more information on
+pcc_bitfield_type_matters, empty_field_boundary and
+structure_size_boundary.
 
 </body>
 </html>

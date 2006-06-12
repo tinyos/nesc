@@ -7,6 +7,13 @@ more information, check the INSTALL file.
 Changes in nesC 1.2.6
 =====================
 - -conly option to just compile to C
+- better struct/union layout code, which requires a slightly more detailed
+  target machine description (see src/machine.h)
+- #pragma statements are saved and dumped at the end of the generated C code
+  (if you or your compiler uses #pragma, you'll probably have to move these
+  somewhere else; however, this cannot be done without understanding of
+  the pragma itself; hence the nesC compiler leaves this process to a 
+  user-supplied tool)
 - bug fixes
 
 Changes in nesC 1.2.5
