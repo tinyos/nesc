@@ -31,6 +31,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-uses.h"
 #include "nesc-network.h"
 #include "nesc-atomic.h"
+#include "nesc-cpp.h"
 
 static void prt_nesc_function_hdr(data_declaration fn_decl,
 				  psd_options options)
@@ -1227,6 +1228,19 @@ static void include_support_functions(void)
     }
 }
 
+void prt_pragmas(void)
+{
+  dd_list_pos scanp;
+
+  dd_scan (scanp, pragmas)
+    {
+      struct pragma *p = DD_GET(struct pragma *, scanp);
+
+      set_location(p->l);
+      outputln("#pragma %s", p->args);
+    }
+}
+
 void generate_c_code(const char *target_name, nesc_declaration program,
 		     cgraph cg, dd_list modules, dd_list components)
 {
@@ -1343,6 +1357,8 @@ void generate_c_code(const char *target_name, nesc_declaration program,
       disable_line_directives();
       prt_nido_initialize(modules); 
     }
+
+  prt_pragmas();
 
   unparse_end();
 

@@ -28,4 +28,10 @@ void handle_directive(const char *directive, const char *args);
 void save_option(const char *option);
 void end_macro_saving(void);
 
+struct pragma {
+  location l;
+  const char *args; /* The uninterpreted pragma argument line */
+};
+extern dd_list/* struct pragma * */ pragmas;
+
 #endif

@@ -29,6 +29,9 @@ Boston, MA 02111-1307, USA.  */
 #include "c-parse.h"
 #include "input.h"
 
+static region pragma_region;
+dd_list pragmas;
+
 static region opt_region;
 
 struct cpp_option {
@@ -38,6 +41,20 @@ struct cpp_option {
 
 static struct cpp_option *saved_options;
 static int saved_options_count;
+
+void save_option(const char *option)
+{
+  struct cpp_option *newopt;
+
+  if (!opt_region)
+    opt_region = newregion();
+
+  newopt = ralloc(opt_region, struct cpp_option);
+  newopt->opt = option;
+  newopt->next = saved_options;
+  saved_options = newopt;
+  saved_options_count++;
+}
 
 static void cpp_unlink(const char *name)
 {
@@ -52,20 +69,6 @@ static void cpp_unlink(const char *name)
 
   if (!nounlink)
     unlink(name);
-}
-
-void save_option(const char *option)
-{
-  struct cpp_option *newopt;
-
-  if (!opt_region)
-    opt_region = newregion();
-
-  newopt = ralloc(opt_region, struct cpp_option);
-  newopt->opt = option;
-  newopt->next = saved_options;
-  saved_options = newopt;
-  saved_options_count++;
 }
 
 static char *kwd_macros, tkwd_macros[] = "/tmp/nesccppkXXXXXX";
@@ -376,6 +379,9 @@ void preprocess_init(void)
   create_nesc_keyword_macros(kwd_macros);
 
   select_macros_mode();
+
+  pragma_region = newregion();
+  pragmas = dd_new_list(pragma_region);
 }
 
 struct preprocess_args_closure
@@ -469,9 +475,24 @@ FILE *preprocess(const char *filename, source_language l)
     return NULL;
 }
 
+void save_pragma(struct location l, const char *args)
+{
+  struct pragma *p = ralloc(pragma_region, struct pragma);
+
+  p->l = make_location(l);
+  p->args = rstrdup(pragma_region, args);
+  dd_add_last(pragma_region, pragmas, p);
+}
+
 void handle_directive(const char *directive, const char *args)
 {
   const char *arg2;
+
+  if (!strcmp(directive, "pragma"))
+    {
+      save_pragma(input_file_stack->l, args);
+      return;
+    }
 
   /* If the filename starts with <, these are special macros (built in
      or from the command line) */
