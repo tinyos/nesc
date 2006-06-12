@@ -46,6 +46,7 @@ bool nesc_attributep(gcc_attribute a)
     !strcmp(name, "spontaneous") ||
     !strcmp(name, "combine") ||
     !strcmp(name, "nx_base") ||
+    !strcmp(name, "nx_base_bf") ||
     !strcmp(name, "hwevent") ||
     !strcmp(name, "atomic_hwevent");
 }
@@ -423,7 +424,7 @@ void handle_combine_attribute(location loc, const char *combiner, type *t)
     *t = make_combiner_type(*t, cdecl);
 }
 
-void handle_nxbase_attribute(location loc, const char *basename,
+void handle_nxbase_attribute(location loc, bool allow_bf, const char *basename,
 			     data_declaration ddecl)
 {
   region r = parse_region;
@@ -442,6 +443,23 @@ void handle_nxbase_attribute(location loc, const char *basename,
   ddecl->decoder = /* takes buffer and returns decoded value */
     declare_function(loc, decoder_name,
 		     build_function_type(r, t, const_ptr_void_type, NULL));
+
+  if (allow_bf)
+    {
+      encoder_name = rstralloc(r, strlen(basename) + 15);
+      sprintf(encoder_name, "__nesc_htonbf_%s", basename);
+      decoder_name = rstralloc(r, strlen(basename) + 15);
+      sprintf(decoder_name, "__nesc_ntohbf_%s", basename);
+
+      /* bitfields take additional offset, length fields */
+      ddecl->bf_encoder =
+	declare_function(loc, encoder_name,
+			 build_function_type(r, t, ptr_void_type, unsigned_int_type, unsigned_char_type, t, NULL));
+
+      ddecl->bf_decoder =
+	declare_function(loc, decoder_name,
+			 build_function_type(r, t, const_ptr_void_type, unsigned_int_type, unsigned_char_type, NULL));
+    }
 
   /* We do this even if we got an error, to ensure ddecl gets treated as
      a network type. */

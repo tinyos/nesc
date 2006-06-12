@@ -57,6 +57,7 @@ static AST_walker clone_walker;
 
 /* field_declaration in:
    field_ref
+   field_decl
    tag_declaration
  */
 
@@ -165,7 +166,6 @@ static void copy_fields(region r, tag_declaration copy, tag_declaration orig)
 {
   field_declaration ofield, *nextfield;
   
-
   copy->fields = new_env(r, NULL);
   nextfield = &copy->fieldlist;
 
@@ -176,7 +176,11 @@ static void copy_fields(region r, tag_declaration copy, tag_declaration orig)
       *cfield = *ofield;
       /* type's in fields come from the source code, so cannot be unknown */
       cfield->type = instantiate_type(cfield->type);
-      cfield->ast = CAST(field_decl, ofield->ast->instantiation);
+      if (cfield->ast) /* fields from anonymous struct/union have no ast */
+	{
+	  cfield->ast = CAST(field_decl, ofield->ast->instantiation);
+	  cfield->ast->fdecl = cfield;
+	}
       ofield->instantiation = cfield;
       cfield->instantiation = NULL;
       if (cfield->name)

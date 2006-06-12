@@ -364,6 +364,7 @@ void output_constant(known_cst c)
     }
 }
 
+struct network_state;
 
 void prt_toplevel_declarations(declaration dlist);
 void prt_toplevel_declaration(declaration d);
@@ -374,6 +375,7 @@ void prt_ellipsis_decl(ellipsis_decl d);
 void prt_function_decl(function_decl d);
 void prt_variable_decl(variable_decl d, psd_options options);
 void prt_type_elements(type_element elements, pte_options options);
+void prt_interesting_elements(type_element elements, pte_options options);
 void prt_type_element(type_element em, pte_options options);
 void prt_typename(typename tname, pte_options options);
 void prt_typeof_expr(typeof_expr texpr);
@@ -389,6 +391,9 @@ void prt_field_declaration(declaration d);
 void prt_field_extension_decl(extension_decl d);
 void prt_field_data_decl(data_decl d);
 void prt_field_decl(field_decl fd);
+void prt_network_fields(tag_ref tref);
+void prt_network_field_declaration(declaration d, struct network_state *ns);
+void prt_network_field_data_decl(data_decl d, struct network_state *ns);
 void prt_enumerator(enumerator ed, tag_declaration ddecl);
 void prt_asttype(asttype t);
 void prt_word(word w);
@@ -651,7 +656,6 @@ void prt_data_decl(data_decl d)
 {
   declaration vd;
   pte_options opts = 0;
-  type_element interesting;
 
   scan_declaration (vd, d->decls)
     {
@@ -690,12 +694,8 @@ void prt_data_decl(data_decl d)
       outputln(";");
     }
 
-  if (!(opts & pte_duplicate) &&
-      (interesting = interesting_element(d->modifiers)))
-    {
-      prt_type_element(interesting, opts);
-      outputln(";");
-    }
+  if (!(opts & pte_duplicate))
+    prt_interesting_elements(d->modifiers, opts);
 }
 
 
@@ -971,6 +971,17 @@ void prt_type_elements(type_element elements, pte_options options)
     }
 }
 
+void prt_interesting_elements(type_element elements, pte_options options)
+{
+  type_element interesting = interesting_element(elements);
+
+  if (interesting)
+    {
+      prt_type_element(interesting, options);
+      outputln(";");
+    }
+}
+
 void prt_type_element(type_element em, pte_options options)
 {
   switch (em->kind)
@@ -1106,12 +1117,10 @@ void prt_tag_ref(tag_ref tr, pte_options options)
     {
       if (tr->kind == kind_enum_ref)
         prt_enumerators(tr->fields, tr->tdecl);
+      else if (type_network(make_tagged_type(tr->tdecl)))
+	prt_network_fields(tr);
       else
-	{
-	  prt_fields(tr->fields);
-	  if (type_network(make_tagged_type(tr->tdecl)))
-	    output(" __attribute__((packed))");
-	}
+	prt_fields(tr->fields);
     }
   if (tr->attributes)
     {
@@ -1190,6 +1199,85 @@ void prt_field_decl(field_decl fd)
       output(" : ");
       prt_expression(fd->arg1, P_TOP);
     }
+}
+
+static unsigned long filler_count;
+
+struct network_state
+{
+  size_t offset;
+  bool isextension;
+};
+
+static void network_align_to(largest_uint offset, struct network_state *ns)
+{
+  if (ns->offset < offset) /* There's a gap. Fill it. */
+    outputln("unsigned char __nesc_filler%lu[%llu];",
+	     filler_count++, offset - ns->offset);
+}
+
+void prt_network_fields(tag_ref tref)
+{
+  declaration d;
+  struct network_state ns = { 0, FALSE };
+
+  output(" {");
+  indent();
+  startline();
+  scan_declaration (d, tref->fields)
+    prt_network_field_declaration(d, &ns);
+  if (cval_isinteger(tref->tdecl->size))
+    network_align_to(cval_uint_value(tref->tdecl->size), &ns);
+  unindent();
+  startline();
+  output("} __attribute__((packed))");
+}
+
+void prt_network_field_declaration(declaration d, struct network_state *ns)
+{
+  ns->isextension = FALSE;
+  while (is_extension_decl(d))
+    {
+      ns->isextension = TRUE;
+      d = CAST(extension_decl, d)->decl;
+    }
+  prt_network_field_data_decl(CAST(data_decl, d), ns);
+}
+
+void prt_network_field_data_decl(data_decl d, struct network_state *ns)
+{
+  declaration fd;
+  pte_options opts = 0;
+
+  scan_declaration (fd, d->decls)
+    {
+      field_decl fdd = CAST(field_decl, fd);
+      field_declaration fdecl = fdd->fdecl;
+
+      /* bitfields just show up as filler */
+      if (cval_istop(fdecl->bitwidth))
+	{
+	  if (!cval_isinteger(fdecl->offset))
+	    error_with_location(fdd->location, "unsupported network type");
+	  else 
+	    {
+	      largest_uint offset = cval_uint_value(fdecl->offset) / BITSPERBYTE;
+
+	      network_align_to(offset, ns);
+	      if (type_size_cc(fdecl->type))
+		ns->offset = offset + type_size_int(fdecl->type);
+	    }
+	    
+	  if (ns->isextension)
+	    output("__extension__ ");
+	  prt_type_elements(d->modifiers, opts);
+	  opts |= pte_duplicate;
+	  prt_field_decl(fdd);
+	  outputln(";");
+	}
+    }
+  if (!(opts & pte_duplicate))
+    prt_interesting_elements(d->modifiers, opts);
 }
 
 void prt_enumerator(enumerator ed, tag_declaration tdecl)

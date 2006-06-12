@@ -270,11 +270,12 @@ DECLARED_TYPE is the type in this declaration (which may be different than that
 in DDECL->TYPE)
 FORWARD is true for parameters that are forward declarations")
 
-(deftype field_decl declaration (declarator attributes arg1 type_checked)
+(deftype field_decl declaration (declarator attributes arg1 type_checked fdecl)
   "Declaration of field DECLARATOR ATTRIBUTES : ARG1.
 QUALIFIERS and ATTRIBUTEES are lists. ARG1 is an optional bitfield specifier
 TYPE_CHECKED is set to true once it has been checked that this field is of
-  network type (inside network structures)")
+  network type (inside network structures)
+FDECL is this field's declaration")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Types and type elements

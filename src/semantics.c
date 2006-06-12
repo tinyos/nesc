@@ -150,6 +150,7 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->printed = FALSE;
   dd->dumped = FALSE;
   dd->encoder = dd->decoder = NULL;
+  dd->bf_encoder = dd->bf_decoder = NULL;
   dd->basetype = NULL;
   dd->typevar_kind = typevar_none;
 }
@@ -2951,14 +2952,7 @@ cval check_bitfield_width(field_declaration fdecl)
       if (!type_unsigned(cwidth->type) && constant_sint_value(cwidth) < 0)
 	errormsg = "negative width in bit-field `%s'";
       else if (width > type_size_int(fdecl->type) * BITSPERBYTE)
-	{
-	  /* Note that in this case the field gets handled as non-bitfield
-	     and compilation may be successful */
-	  if (printmsg)
-	    pedwarn_with_location(w->location,
-				  "width of `%s' exceeds its type",
-				  nice_field_name(fdecl->name));
-	}
+	errormsg = "width of `%s' exceeds its type";
       else if (width == 0 && fdecl->name)
 	errormsg = "zero width for bit-field `%s'";
       else
@@ -3223,6 +3217,7 @@ type_element finish_struct(type_element t, declaration fields,
 		  field_declaration fdecl = ralloc(parse_region, struct field_declaration);
 
 		  *fdecl = *anon_field;
+		  fdecl->ast = NULL;
 		  nextfield = declare_field(tdecl, fdecl, floc, nextfield);
 		  if (fdecl->name)
 		    hasmembers = TRUE;
@@ -3286,25 +3281,25 @@ type_element finish_struct(type_element t, declaration fields,
 
 	    if (field->arg1)
 	      {
-		if (isnetwork)
-		  {
-		    error_with_location(floc, "bit-fields not yet supported in network types");
-		    field->arg1 = NULL;
-		  }
-		else if (!type_integer(field_type))
-		  {
-		    error_with_location(floc, "bit-field `%s' has invalid type", printname);
-		    field->arg1 = NULL;
-		  }
+		const char *errmsg = NULL;
+
+		if (!type_integer(field_type))
+		  errmsg = "bit-field `%s' has invalid type";
 		else if (!(type_integer(field->arg1->type)))
+		  errmsg = "bit-field `%s' width not an integer constant";
+		else if (type_network_base_type(field_type) &&
+			 !type_networkdef(field_type)->bf_encoder)
+		  errmsg = "type of `%s' cannot be used as a bit-field";
+
+		if (errmsg)
 		  {
-		    error_with_location(floc, "bit-field `%s' width not an integer constant",
-					printname);
+		    error_with_location(floc, errmsg, printname);
 		    field->arg1 = NULL;
 		  }
 	      }
 
 	    fdecl->ast = field;
+	    field->fdecl = fdecl;
 	    fdecl->name = name;
 	    nextfield = declare_field(tdecl, fdecl, floc, nextfield);
 	    if (name)

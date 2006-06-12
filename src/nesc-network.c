@@ -26,6 +26,20 @@ Boston, MA 02111-1307, USA. */
 #include "unparse.h"
 #include "nesc-uses.h"
 
+static type uchar_ptr_type;
+
+static bool network_bitfield(expression e)
+{
+  if (is_field_ref(e) && type_network_base_type(e->type))
+    {
+      field_ref fref = CAST(field_ref, e);
+      field_declaration fdecl = fref->fdecl;
+
+      return !cval_istop(fdecl->bitwidth);
+    }
+  return FALSE;
+}
+
 static void xtox_used(data_declaration transcoderfn, function_decl fn)
 {
   data_declaration fdecl = fn ? fn->ddecl : NULL;
@@ -33,14 +47,24 @@ static void xtox_used(data_declaration transcoderfn, function_decl fn)
   ddecl_used(transcoderfn, new_use(dummy_location, fdecl, c_executable | c_fncall));
 }
 
-static void hton_used(type t, function_decl fn)
+static void hton_used(expression e, function_decl fn)
 {
-  xtox_used(type_networkdef(t)->encoder, fn);
+  data_declaration ntdef = type_networkdef(e->type);
+
+  if (network_bitfield(e))
+    xtox_used(ntdef->bf_encoder, fn);
+  else
+    xtox_used(ntdef->encoder, fn);
 }
 
-static void ntoh_used(type t, function_decl fn)
+static void ntoh_used(expression e, function_decl fn)
 {
-  xtox_used(type_networkdef(t)->decoder, fn);
+  data_declaration ntdef = type_networkdef(e->type);
+
+  if (network_bitfield(e))
+    xtox_used(ntdef->bf_decoder, fn);
+  else
+    xtox_used(ntdef->decoder, fn);
 }
 
 static void validate_network_lvalue(expression e)
@@ -88,7 +112,7 @@ static AST_walker_result network_expression(AST_walker spec, void *data,
 
   if (really_network_base(e) &&
       (e->context & c_read) && !(e->context & c_write))
-    ntoh_used(e->type, fn);
+    ntoh_used(e, fn);
 
   return aw_walk;
 }
@@ -103,13 +127,13 @@ static AST_walker_result network_assignment(AST_walker spec, void *data,
     {
       if (a->kind != kind_assign) /* op= reads too */
 	{
-	  ntoh_used(a->type, fn);
+	  ntoh_used(a->arg1, fn);
 	  /* See problem/ugly hack comment in network_increment */
 	  /* op= needs a temp */
 	  if (!a->temp1)
-	    a->temp1 = add_network_temporary(fn, make_pointer_type(a->arg1->type));
+	    a->temp1 = add_network_temporary(fn, uchar_ptr_type);
 	}
-      hton_used(a->type, fn);
+      hton_used(a->arg1, fn);
     }
 
   validate_network_lvalue(a->arg1);
@@ -125,8 +149,8 @@ static AST_walker_result network_increment(AST_walker spec, void *data,
 
   if (really_network_base(i->arg1))
     {
-      ntoh_used(i->type, fn);
-      hton_used(i->type, fn);
+      ntoh_used(i->arg1, fn);
+      hton_used(i->arg1, fn);
 
       /* Problem: adding the declarations for the temporaries changes the
 	 AST as we're walking through it. If we add a temporary while
@@ -137,10 +161,9 @@ static AST_walker_result network_increment(AST_walker spec, void *data,
 	 for use of a deprecated gcc feature which is going away soon. */
       if (!i->temp1)
 	{
-	  /* pre-ops need 1 temp, post-ops need 2 */
-	  i->temp1 = add_network_temporary(fn, make_pointer_type(i->type));
-	  if (i->kind == kind_postincrement || i->kind == kind_postdecrement)
-	    i->temp2 = add_network_temporary(fn, type_network_platform_type(i->type));
+	  /* we use 2 temps */
+	  i->temp1 = add_network_temporary(fn, uchar_ptr_type);
+	  i->temp2 = add_network_temporary(fn, type_network_platform_type(i->type));
 	}
     }
 
@@ -185,6 +208,63 @@ static void output_ntoh(type t)
   output_string(type_networkdef(t)->decoder->name);
 }
 
+static void output_hton_bf(type t)
+{
+  output_string(type_networkdef(t)->bf_encoder->name);
+}
+
+static void output_ntoh_bf(type t)
+{
+  output_string(type_networkdef(t)->bf_decoder->name);
+}
+
+static void output_hton_expr(expression e)
+{
+  if (network_bitfield(e))
+    output_hton_bf(e->type);
+  else
+    output_hton(e->type);
+}
+
+static void output_ntoh_expr(expression e)
+{
+  if (network_bitfield(e))
+    output_ntoh_bf(e->type);
+  else
+    output_ntoh(e->type);
+}
+
+/* Print a network lvalue, return TRUE if it's a bitfield (in which
+   case the field name is not printed) */
+static bool prt_network_lvalue(expression e)
+{
+  bool isbf = network_bitfield(e);
+
+  if (isbf)
+    /* Network bitfields have no name in the generated code. Just
+       print the structure. We'll add the offset and size later. */
+    prt_expression(CAST(field_ref, e)->arg1, P_CALL);
+  else
+    prt_expression_helper(e, P_CAST);
+
+  return isbf;
+}
+
+static void prt_network_bitfield_info(expression e)
+{
+  field_ref fref = CAST(field_ref, e);
+  field_declaration fdecl = fref->fdecl;
+
+  output(", %llu, %llu",
+	 cval_uint_value(fdecl->offset), cval_uint_value(fdecl->bitwidth));
+}
+
+static void prt_network_full_lvalue(expression e)
+{
+  if (prt_network_lvalue(e))
+    prt_network_bitfield_info(e);
+}
+
 static bool prt_network_assignment(expression e)
 {
   char *selfassign = NULL;
@@ -219,22 +299,29 @@ static bool prt_network_assignment(expression e)
   if (selfassign)
     {
       const char *temp = a->temp1->name;
+      bool bitfield;
 
-      output("(%s = &", temp);
-      prt_expression(a->arg1, P_CAST);
+      output("(%s = (unsigned char *)&", temp);
+      bitfield = prt_network_lvalue(a->arg1);
       output(", ");
-      output_hton(a->type);
-      output("(%s, ", temp);
-      output_ntoh(e->type);
-      output("(%s) %s ", temp, selfassign);
+      output_hton_expr(a->arg1);
+      output("(%s", temp);
+      if (bitfield)
+	prt_network_bitfield_info(a->arg1);
+      output(", ");
+      output_ntoh_expr(a->arg1);
+      output("(%s", temp);
+      if (bitfield)
+	prt_network_bitfield_info(a->arg1);
+      output(") %s ", selfassign);
       prt_expression(a->arg2, P_TIMES);
       output("))");
     }
   else
     {
-      output_hton(e->type);
-      output("(&");
-      prt_expression(a->arg1, P_CAST);
+      output_hton_expr(a->arg1);
+      output("((unsigned char *)&");
+      prt_network_full_lvalue(a->arg1);
       output(", ");
       prt_expression(a->arg2, P_ASSIGN);
       output(")");
@@ -247,6 +334,7 @@ static bool prt_network_increment(expression e)
   increment i;
   const char *temp;
   char incop;
+  bool bitfield;
 
   if (!(is_increment(e) && really_network_base((CAST(increment, e))->arg1)))
     return FALSE;
@@ -255,27 +343,30 @@ static bool prt_network_increment(expression e)
   temp = i->temp1->name;
   incop = i->kind == kind_preincrement || i->kind == kind_postincrement ? '+' : '-';
 
-  /* pre-op: (t1 = &e, HTON(t1, NTOH(t1) +/- 1))
+  /* pre-op:  (t1 = &e, HTON(t1, (t2 = NTOH(t1) +/- 1)), t2)
      post-op: (t1 = &e, HTON(t1, (t2 = NTOH(t1)) +/- 1), t2) */
   set_location(i->location);
-  output("(%s = &", temp);
-  prt_expression(i->arg1, P_CAST);
+  output("(%s = (unsigned char *)&", temp);
+  bitfield = prt_network_lvalue(i->arg1);
   output(", ");
-  output_hton(i->type);
-  output("(%s, ", temp);
-  if (i->temp2)
-    {
-      const char *val = i->temp2->name;
+  output_hton_expr(i->arg1);
+  output("(%s", temp);
+  if (bitfield)
+    prt_network_bitfield_info(i->arg1);
+  output(", ");
 
-      output("(%s = ", val);
-      output_ntoh(i->type);
-      output("(%s)) %c 1), %s)", temp, incop, val);
-    }
+  output("(%s = ", i->temp2->name);
+  output_ntoh_expr(i->arg1);
+  output("(%s", temp);
+  if (bitfield)
+    prt_network_bitfield_info(i->arg1);
+  if (i->kind == kind_postincrement || i->kind == kind_postdecrement)
+    output(")) %c 1)", incop);
   else
-    {
-      output_ntoh(i->type);
-      output("(%s) %c 1))", temp, incop);
-    }
+    output(") %c 1))", incop);
+
+  output(", %s)", i->temp2->name);
+
   return TRUE;
 }
 
@@ -285,9 +376,9 @@ static bool prt_network_read(expression e)
 	(e->context & c_read) && !(e->context & c_write)))
     return FALSE;
 
-  output_ntoh(e->type);
-  output("(&");
-  prt_expression_helper(e, P_ASSIGN);
+  output_ntoh_expr(e);
+  output("((unsigned char *)&");
+  prt_network_full_lvalue(e);
   output(")");
 
   return TRUE;
@@ -295,7 +386,8 @@ static bool prt_network_read(expression e)
 
 bool prt_network_expression(expression e)
 {
-  return prt_network_read(e) ||
+  return 
+    prt_network_read(e) ||
     prt_network_assignment(e) ||
     prt_network_increment(e);
 }
@@ -345,7 +437,7 @@ static bool prt_network_parameter_copy(declaration parm, bool copies,
 	  else
 	    {
 	      output_hton(ddecl->type);
-	      outputln("(&%s, %s%s);", ddecl->name, NXBASE_PREFIX, ddecl->name);
+	      outputln("((unsigned char *)&%s, %s%s);", ddecl->name, NXBASE_PREFIX, ddecl->name);
 	    }
 
 	  return TRUE;
@@ -379,4 +471,5 @@ bool prt_network_parameter_copies(function_decl fn)
 void init_network(void)
 {
   init_network_walker();
+  uchar_ptr_type = make_pointer_type(unsigned_char_type);
 }

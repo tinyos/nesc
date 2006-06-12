@@ -45,7 +45,8 @@ typedef struct field_declaration {
   /* All '@'-style attributes attached to this declaration */
   dd_list/*nesc_attribute*/ attributes;
 
-  field_decl ast;
+  field_decl ast;		/* May be null if copied from anonymous 
+				   struct/union */
   cval bitwidth;		/* for bitfields, cval_top otherwise */
   cval offset;			/* in bits, not bytes. Can be cval_top if
 				   offset is not a compile-time constant */
@@ -224,6 +225,7 @@ struct data_declaration {
 
   /* For typedefs of network base types */
   data_declaration encoder, decoder; /* encoder and decoder functions */
+  data_declaration bf_encoder, bf_decoder; /* bitfield encoder and decoder functions */
   type basetype;		/* underlying non-network type (e.g., uint8_t) */
 
   /* For type variables (some decl_typedefs). Regular typedefs (not type
