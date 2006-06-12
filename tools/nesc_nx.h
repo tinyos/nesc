@@ -44,7 +44,7 @@ inline int ## bits ## _t __nesc_hton_leint ## bits(void *target, int ## bits ## 
 
 #define __NX_DECLARE_BF_FUNCTIONS(bits) \
  \
-uint ## bits ## _t decode ## bits(const uint8_t *msg, unsigned offset, uint8_t length) \
+uint ## bits ## _t __nesc_bf_decode ## bits(const uint8_t *msg, unsigned offset, uint8_t length) \
 { \
   uint ## bits ## _t x = 0; \
   unsigned byte_offset = offset >> 3; \
@@ -76,7 +76,7 @@ uint ## bits ## _t decode ## bits(const uint8_t *msg, unsigned offset, uint8_t l
   return x; \
 } \
  \
-void encode ## bits(uint8_t *msg, unsigned offset, uint8_t length, uint ## bits ## _t x) \
+void __nesc_bf_encode ## bits(uint8_t *msg, unsigned offset, uint8_t length, uint ## bits ## _t x) \
 { \
   unsigned byte_offset = offset >> 3; \
   unsigned bit_offset = offset & 7; \
@@ -116,20 +116,20 @@ void encode ## bits(uint8_t *msg, unsigned offset, uint8_t length, uint ## bits 
 } \
  \
 inline uint ## bits ## _t __nesc_ntohbf_uint ## bits(const void *source, unsigned offset, uint8_t length) { \
-  return decode ## bits(source, offset, length); \
+  return __nesc_bf_decode ## bits(source, offset, length); \
 } \
  \
 inline int ## bits ## _t __nesc_ntohbf_int ## bits(const void *source, unsigned offset, uint8_t length) { \
-  return decode ## bits(source, offset, length); \
+  return __nesc_bf_decode ## bits(source, offset, length); \
 } \
  \
 inline uint ## bits ## _t __nesc_htonbf_uint ## bits(void *target, unsigned offset, uint8_t length, uint ## bits ## _t value) { \
-  encode ## bits(target, offset, length, value); \
+  __nesc_bf_encode ## bits(target, offset, length, value); \
   return value; \
 } \
  \
 inline int ## bits ## _t __nesc_htonbf_int ## bits(void *target, unsigned offset, uint8_t length, int ## bits ## _t value) { \
-  encode ## bits(target, offset, length, value); \
+  __nesc_bf_encode ## bits(target, offset, length, value); \
   return value; \
 }
 
