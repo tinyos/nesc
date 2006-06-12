@@ -3287,9 +3287,13 @@ type_element finish_struct(type_element t, declaration fields,
 		  errmsg = "bit-field `%s' has invalid type";
 		else if (!(type_integer(field->arg1->type)))
 		  errmsg = "bit-field `%s' width not an integer constant";
-		else if (type_network_base_type(field_type) &&
-			 !type_networkdef(field_type)->bf_encoder)
-		  errmsg = "type of `%s' cannot be used as a bit-field";
+		else if (type_network_base_type(field_type))
+		  {
+		    if (!type_networkdef(field_type)->bf_encoder)
+		      errmsg = "type of `%s' cannot be used as a bit-field";
+		    else if (!isnetwork)
+		      errmsg = "bit-field `%s' of network type used inside non-network type";
+		  }
 
 		if (errmsg)
 		  {
