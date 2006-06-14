@@ -363,7 +363,7 @@ static type binary_type(binary e)
     case kind_array_ref: case kind_assign:
       return instantiate_type(e->type);
 
-    default: assert(0); break;
+    default: assert(0); return NULL;
     }
 }
 

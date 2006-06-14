@@ -2570,7 +2570,7 @@ unsigned long type_hash(type t)
       return (type_hash(t->u.array.arrayof) << 1) ^ 0x40142453 ;
 
     default: 
-      assert(0);
+      assert(0); return 0;
     }
 }
 

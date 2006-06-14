@@ -131,6 +131,9 @@ static char *mktempfile(region r, const char *name)
 
 #if defined(__CYGWIN__) || defined(WIN32)
 #include <process.h>
+#ifndef WIN32
+#include <sys/wait.h>
+#endif
 
 static bool safe_dup(int from, int to, int save)
 {
