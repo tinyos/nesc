@@ -33,7 +33,7 @@ sub gen() {
     print " # $cfile.\n";
     print " #/\n\n";
     
-    if defined($python_extends) {
+    if (defined($python_extends)) {
 	if ($python_extends =~ /(.*)\.([^.]*)$/) {
 	    $package = $1;
 	    print "import $package\n\n";
