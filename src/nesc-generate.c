@@ -148,7 +148,7 @@ void prt_ncf_trailer(type return_type)
   outputln("}");
 }
 
-static bool prt_arguments(declaration parms, bool first)
+static bool prt_arguments(declaration parms, bool first, bool rename)
 /* Effects: prints argument list composed of the variables declared in 'parms'.
      'first' must be TRUE iff no arguments have yet been printed.
    Returns: TRUE iff 'first' and no arguments printed
@@ -166,7 +166,10 @@ static bool prt_arguments(declaration parms, bool first)
 	output(", ");
       first = FALSE;
 
-      output("arg_%p", vd->ddecl);
+      if (rename)
+	output("arg_%p", vd->ddecl);
+      else
+	output((char *)vd->ddecl->name);
     }
   return first;
 }
@@ -210,13 +213,13 @@ void prt_ncf_direct_call(struct connections *c,
       else
 	{
 	  /* Generic calling generic, pass arguments through */
-	  first_arg = prt_arguments(ddecl_get_gparms(c->called), first_arg);
+	  first_arg = prt_arguments(ddecl_get_gparms(c->called), first_arg, TRUE);
 	}
     }
   else
     assert(!ccall->args);
 
-  prt_arguments(called_fd->parms, first_arg);
+  prt_arguments(called_fd->parms, first_arg, FALSE);
 
   if (calling_combiner)
     output(")");
@@ -340,7 +343,7 @@ static void prt_ncf_conditional_calls(struct connections *c, bool first_call, ty
       /* use switch rather than cascaded ifs (gcc generate better code) */
       one_arg = TRUE;
       output("switch (");
-      prt_arguments(ddecl_get_gparms(c->called), TRUE);
+      prt_arguments(ddecl_get_gparms(c->called), TRUE, TRUE);
       outputln(") {");
       indent();
     }
@@ -403,6 +406,7 @@ static void prt_ncf_conditional_calls(struct connections *c, bool first_call, ty
       unindent();
       if (ncalls > 0 && one_arg)
 	{
+	  outputln("  break;");
 	  outputln("}");
 	  unindent();
 	}
@@ -1340,10 +1344,10 @@ void generate_c_code(const char *target_name, nesc_declaration program,
      of the abstract modules that they instantiate */
   prt_nesc_typedefs(program);
 
+  enable_line_directives();
+
   dd_scan (mod, modules)
     prt_nesc_function_declarations(DD_GET(nesc_declaration, mod));
-
-  enable_line_directives();
 
   dd_scan (mod, modules)
     prt_nesc_module(cg, DD_GET(nesc_declaration, mod));
