@@ -3720,3 +3720,63 @@ void start_semantics(source_language l, nesc_declaration container,
   current.in_atomic = NULL;
   current.spec_section = spec_normal;
 }
+
+static bool samekind(type t1, type t2)
+{
+  return (type_integer(t1) && type_integer(t2)) ||
+    (type_floating(t1) && type_floating(t2));
+}
+
+bool handle_mode_attribute(location loc, data_declaration ddecl, const char *mode)
+{
+  type tm, t = ddecl->type;
+
+  /* Simplified mode attribute support. We're missing:
+     - support for multiple pointer sizes (see comment below)
+     - the vector modes
+  */
+
+  if (!(ddecl->kind == decl_variable || ddecl->kind == decl_typedef))
+    return FALSE;
+
+  tm = type_for_mode(mode, type_unsigned(t));
+
+  if (!tm)
+    {
+      error_with_location(loc, "unknown machine mode `%s'", mode);
+      return TRUE;
+    }
+
+  if (type_pointer(t))
+    {
+      /* Simplified pointer handling. We only allow modes that specify
+	 the pointer size (in which case we do nothing). In all other
+	 cases, we'll report an error. Most targets do not support more
+	 than one pointer mode (the exceptions seem to be s390 and mips,
+	 that allow both 32 and 64 bit pointers) */
+      if (type_size_int(t) != type_size_int(tm))
+	error("invalid pointer mode `%s'", mode);
+    }
+  else if (samekind(t, tm) ||
+      (type_complex(t) && type_complex(tm) &&
+       samekind(make_base_type(t), make_base_type(tm))))
+    /* If this is a valid resizing, set type. We lose enum-ness here
+       but that shouldn't matter. (If it does, add changing-size support
+       in types.c) */
+    ddecl->type = tm;
+  else
+    error_with_location(loc, "mode `%s' applied to inappropriate type", mode);
+
+  return TRUE;
+}
+
+/* Make "word" argument of attributes into an expression */
+expression make_attr_args(location loc, cstring id, expression args)
+{
+  identifier result = new_identifier(parse_region, loc, id, bad_decl);
+
+  result->type = error_type;
+  result->next = CAST(node, args);
+
+  return CAST(expression, result);
+}

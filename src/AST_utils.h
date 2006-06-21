@@ -81,4 +81,7 @@ char *ddecl2str(region r, data_declaration str);
    Requires: str->kind == decl_magic_string
 */
 
+bool is_attr_name(const char *arg, const char *name);
+/* Returns: True if arg is name or __name__ */
+
 #endif

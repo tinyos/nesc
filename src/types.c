@@ -389,6 +389,17 @@ static type lookup_primitive(int default_kind, int size, int alignment,
   return make_primitive(default_kind, size, alignment);
 }
 
+static type lookup_float(int size)
+{
+  int i;
+
+  for (i = tp_first_floating; i < tp_unknown_number; i++)
+    if (cval_uint_value(primitive_types[i]->size) == size)
+      return primitive_types[i];
+
+  return error_type;
+}
+
 /* Return the integral type of size 'size', unsigned if 'isunsigned' is true */
 type type_for_size(cval size, bool isunsigned)
 {
@@ -2658,3 +2669,72 @@ bool type_wchararray(type t, bool no_size_allowed)
      !(no_size_allowed && type_array_size(t)));
 }
 
+/* See gcc's machmode.def for the source of this mode data. This is a very
+   simplified form.
+*/
+typedef enum {
+  m_int, m_float, m_cint, m_cfloat
+} mode_t;
+
+type type_for_mode(const char *mode, bool isunsigned)
+/* Returns: type (unsigned if 'unsigned' is TRUE) corresponding to the
+     specified mode
+*/
+{
+  int i;
+  static struct { char *name; size_t s; mode_t m; } modes[] = {
+    { "byte", 1, m_int },
+    { "word", 0, m_int },
+    { "pointer", 0, m_int },
+    { "QI", 1, m_int },
+    { "HI", 2, m_int },
+    { "SI", 4, m_int },
+    { "DI", 8, m_int },
+    { "TI", 16, m_int },
+    { "OI", 32, m_int },
+    { "QF", 1, m_float },
+    { "HF", 2, m_float },
+    { "TQF", 3, m_float },
+    { "SF", 4, m_float },
+    { "DF", 8, m_float },
+    { "XF", 12, m_float },
+    { "TF", 16, m_float },
+    { "QC", 1, m_cfloat },
+    { "HC", 2, m_cfloat },
+    { "SC", 4, m_cfloat },
+    { "DC", 8, m_cfloat },
+    { "XC", 12, m_cfloat },
+    { "TC", 16, m_cfloat },
+    { "CQI", 1, m_cint },
+    { "CHI", 2, m_cint },
+    { "CSI", 4, m_cint, },
+    { "CDI", 8, m_int },
+    { "CTI", 16, m_cint },
+    { "COI", 32, m_cint }
+  };
+
+  modes[1].s = target->word_size;
+  modes[2].s = target->tptr.size;
+
+  for (i = 0; i < sizeof modes / sizeof *modes; i++)
+    if (is_attr_name(mode, modes[i].name))
+      {
+	type t;
+
+	switch (modes[i].m)
+	  {
+	  case m_int: case m_cint:
+	    t = lookup_primitive(tp_error, modes[i].s, 0, isunsigned);
+	    break;
+	  case m_float: case m_cfloat:
+	    t = lookup_float(modes[i].s);
+	    break;
+	  }
+	if (t->u.primitive == tp_error)
+	  return NULL;
+	if (modes[i].m == m_cint || modes[i].m == m_cfloat)
+	  t = make_complex_type(t);
+	return t;
+      }
+  return NULL;
+}

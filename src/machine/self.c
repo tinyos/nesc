@@ -3,6 +3,7 @@
 /* GCC is broken (could be a broken design issue ;-)), so need the
    typedefs (rather than using the types directly in the calls
    to alignof) */
+typedef int __attribute__ ((mode(__word__))) myword;
 typedef int __attribute__ ((mode(__byte__))) myint1;
 typedef int __attribute__ ((mode(__HI__))) myint2;
 typedef int __attribute__ ((mode(__SI__))) myint4;
@@ -67,6 +68,7 @@ static machine_spec self_machine = {
   /* structure size boundary */
   sizeof(struct self_smallest) * BITSPERBYTE, 
 
+  sizeof(myword),				     /* word size */
   { sizeof(void *),      __alignof__(void *) },	     /* pointer type */
   { sizeof(float),       __alignof__(float) },	     /* float */
   { sizeof(double),      __alignof__(double) },	     /* double */

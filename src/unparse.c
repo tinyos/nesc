@@ -739,7 +739,8 @@ void prt_function_body(function_decl d)
       prt_diff_info(d->ddecl);
       set_location(d->location);
       prefix_decl(d->ddecl);
-      prt_declarator(d->declarator, d->modifiers, d->attributes, d->ddecl,
+      prt_type_elements(CAST(type_element, d->attributes), 0);
+      prt_declarator(d->declarator, d->modifiers, NULL, d->ddecl,
 		     psd_print_default);
       startline();
       prt_parameter_declarations(d->old_parms);
@@ -779,11 +780,15 @@ void prt_declarator(declarator d, type_element elements, attribute attributes,
   if ((options & psd_rewrite_nxbase) || (d && is_function_declarator(d)))
     te_opts |= pte_rewrite_nxbase;
   prt_type_elements(elements, te_opts);
-  prt_type_elements(CAST(type_element, attributes), 0);
 
   options |= psd_need_paren_for_qual;
   options &= ~psd_need_paren_for_star;
   prt_simple_declarator(d, ddecl, options);
+  if (attributes)
+    {
+      output(" ");
+      prt_type_elements(CAST(type_element, attributes), 0);
+    }
 }
 
 void prt_container(nesc_declaration container)
@@ -1036,12 +1041,10 @@ void prt_gcc_attribute(gcc_attribute a)
       set_location(a->location);
       output("__attribute((");
       prt_word(a->word1);
-      if (a->word2 || a->args)
+      if (a->args)
 	{
 	  output("(");
-	  if (a->word2)
-	    prt_word(a->word2);
-	  prt_expressions(a->args, a->word2 == NULL);
+	  prt_expressions(a->args, TRUE);
 	  output(")");
 	}
       output("))");
@@ -1230,6 +1233,7 @@ void prt_parameters(declaration gparms, declaration parms, psd_options options)
       prt_parameter(d, first, FALSE, options);
       first = FALSE;
     }
+  options = 0;
   scan_declaration (d, parms)
     {
       forward = prt_parameter(d, first, forward, options);
@@ -1315,6 +1319,14 @@ void prt_expressions(expression elist, bool isfirst)
 
 void prt_expression_helper(expression e, int context_priority)
 {
+#if 0
+  /* Turned on for debugging sometimes. */
+  if (e->cst && constant_integral(e->cst))
+    {
+      output_constant(e->cst);
+      return;
+    }
+#endif
   switch (e->kind) 
     {
       PRTEXPR(comma, e);
@@ -1453,6 +1465,8 @@ void prt_identifier(identifier e, int context_priority)
   set_location(e->location);
   if (decl->kind == decl_constant && decl->substitute)
     output_constant(decl->value);
+  else if (decl->kind == decl_error) /* attributes have bad code... */
+    output_cstring(e->cstring);
   else
     prt_plain_ddecl(decl, 0);
       

@@ -310,4 +310,9 @@ void nxml_typelist(const char *name, typelist types);
 /* Effects: Outputs XML representartion of typelist types wrapped in tag 'name'
 */
 
+type type_for_mode(const char *mode, bool isunsigned);
+/* Returns: type (unsigned if 'unsigned' is TRUE) corresponding to the
+     specified mode
+*/
+
 #endif

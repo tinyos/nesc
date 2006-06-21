@@ -1781,16 +1781,16 @@ attrib:
 	  /* empty */
 		{ $$ = NULL; }
 	| any_word
-		{ $$ = new_gcc_attribute(pr, $1->location, $1, NULL, NULL); }
+		{ $$ = new_gcc_attribute(pr, $1->location, $1, NULL); }
 	| any_word '(' IDENTIFIER ')'
 		{ $$ = new_gcc_attribute
-		    (pr, $1->location, $1, new_word(pr, $3.location, $3.id), NULL); }
+		    (pr, $1->location, $1, make_attr_args($3.location, $3.id, NULL)); }
 	| any_word '(' IDENTIFIER ',' nonnull_exprlist ')'
 		{ $$ = new_gcc_attribute
-		    (pr, $2.location, $1, new_word(pr, $3.location, $3.id), $5);
+		    (pr, $2.location, $1, make_attr_args($3.location, $3.id, $5));
 		}
 	| any_word '(' exprlist ')'
-		{ $$ = new_gcc_attribute(pr, $2.location, $1, NULL, $3);
+		{ $$ = new_gcc_attribute(pr, $2.location, $1, $3);
 		}
 	;
 

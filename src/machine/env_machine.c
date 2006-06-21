@@ -35,6 +35,7 @@ static machine_spec env_machine = {
   FALSE,		/* pcc_bitfield_type_matters */
   8,			/* empty_field_boundary */
   8,			/* structure_size_boundary */
+  1,			/* word size */
   {2, 1},		/* pointer */
   {4, 1},		/* float */
   {4, 1},		/* double */
@@ -164,6 +165,18 @@ static bool scan_env_machine(machine_spec * machine, const char *envname)
 	  if (scan_intlist(value, space, intlist, 1) == TRUE)
 	    {
 	      machine->structure_size_boundary = intlist[0];
+	    }
+	  else
+	    {
+	      error("%s.%s, expected one int", envname, name);
+	      n_errors++;
+	    }
+	}
+      else if (is_literali(name = "word_size", begin, equal))
+	{
+	  if (scan_intlist(value, space, intlist, 1) == TRUE)
+	    {
+	      machine->word_size = intlist[0];
 	    }
 	  else
 	    {

@@ -13,6 +13,7 @@ typedef struct {
   bool pcc_bitfield_type_matters;
   size_t empty_field_boundary, structure_size_boundary;
 
+  size_t word_size;
   machine_type_spec tptr, tfloat, tdouble, tlong_double, tshort, tint,
     tlong, tlong_long;
   size_t int1_align, int2_align, int4_align, int8_align;

@@ -25,6 +25,7 @@ static machine_spec msp430_machine = {
   FALSE,			/* pcc_bitfield_type_matters */
   16,				/* empty field boundary - in bits */
   8,				/* structure size boundary - in bits */
+  2,				/* word size */
   { 2, 2 },			/* pointer type */
   { 4, 2 },			/* float */
   { 4, 2 },			/* double */

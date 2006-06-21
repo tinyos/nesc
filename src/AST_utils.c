@@ -343,3 +343,18 @@ char *ddecl2str(region r, data_declaration ddecl)
 
   return str;
 }
+
+/* True if arg is name or __name__ */
+bool is_attr_name(const char *arg, const char *name)
+{
+  int l;
+
+  if (!strcmp(arg, name))
+    return TRUE;
+
+  if (strncmp(arg, "__", 2))
+    return FALSE;
+
+  l = strlen(name);
+  return !strncmp(arg + 2, name, l) && !strcmp(arg + 2 + l, "__");
+}

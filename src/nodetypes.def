@@ -296,8 +296,9 @@ FDECL is this field's declaration")
 (deftype attribute type_element (word1)
   "base type for gcc and nesc attributes")
 
-(deftype gcc_attribute attribute (word2 args)
-  "The (gcc) attribute WORD1(WORD2, ARGS). word2 and args are optional")
+(deftype gcc_attribute attribute (args)
+  "The (gcc) attribute WORD1(ARGS). args can be empty, and may not be
+semantically valid")
 
 (deftype rid type_element (id)
   "Storage class specifier, type specifier or type qualifier ID (see RID_xxx)")

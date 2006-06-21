@@ -5,6 +5,7 @@ static machine_spec keil_machine = {
   FALSE,			/* pcc_bitfield_type_matters */
   8,				/* empty field boundary - in bits */
   8,				/* structure size boundary - in bits */
+  1,				/* word size */
   { 2, 1 },			/* pointer type */
   { 4, 1 },			/* float */
   { 4, 1 },			/* double */
