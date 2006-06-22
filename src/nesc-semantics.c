@@ -474,8 +474,7 @@ declaration declare_template_parameter(declarator d, type_element elements,
 				       attribute attributes)
 {
   /* There must be at least a declarator or some form of type specification */
-  location l =
-    d ? d->location : elements->location;
+  location l = d ? d->location : elements->location;
   variable_decl vd =
     new_variable_decl(parse_region, l, d, attributes, NULL, NULL, NULL);
   data_decl dd =
@@ -503,9 +502,36 @@ declaration declare_template_parameter(declarator d, type_element elements,
 	return declare_type_parameter(d->location,
 				      CAST(identifier_declarator, d)->cstring,
 				      attributes, extra_attr);
-      error("storage class specified for parameter `%s'", name);
-      class = 0;
+      else if (class == RID_TYPEDEF && d == NULL) 
+	{
+	  /* Recognise "typedef TYPENAME", and declare TYPENAME as a 
+	     type parameter (i.e., we're shadowing a global typedef) */
+	  type_element elem;
+	  typename tname;
+	  bool ok = TRUE;
+
+	  /* Check there's only a typedef and a typename */
+	  scan_type_element (elem, elements)
+	    if (is_typename(elem))
+	      tname = CAST(typename, elem);
+	    else if (!(is_attribute(elem) ||
+		       (is_rid(elem) && CAST(rid, elem)->id == RID_TYPEDEF)))
+	      ok = FALSE;
+
+	  if (ok && tname)
+	    {
+	      cstring cname = make_cstring(parse_region, tname->ddecl->name,
+					   strlen(tname->ddecl->name));
+	      return
+		declare_type_parameter(l, cname, attributes, extra_attr);
+	    }
+	}
     }
+
+  if (!name)
+    error("no name specified for parameter");
+  else if (class)
+    error("storage class specified for parameter `%s'", name);
 
   check_variable_scflags(scf, vd->location, "parameter", name);
 

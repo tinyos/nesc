@@ -673,6 +673,8 @@ template_parm:
 		{ $$ = declare_template_parameter($3, $1, $4); }
 	| declspecs_nots xreferror notype_declarator maybe_attribute
 		{ $$ = declare_template_parameter($3, $1, $4); }
+	| declspecs_ts xreferror
+		{ $$ = declare_template_parameter(NULL, $1, NULL); }
 	;
 
 requires_or_provides_list: 
