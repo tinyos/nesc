@@ -2976,7 +2976,7 @@ static bool is_nx_tag(tag_declaration tdecl)
 void layout_struct(tag_declaration tdecl)
 {
   cval offset, alignment, size;
-  bool isunion = tdecl->kind == kind_union_ref;
+  bool isunion = tdecl->kind == kind_union_ref || tdecl->kind == kind_nx_union_ref;
   field_declaration fdecl;
   declaration dlist;
   field_decl flist;
