@@ -23,6 +23,7 @@ default if unspecified: <blockquote>
 <tr><td>pcc_bitfield_type_matters <td>bool       <td>false
 <tr><td>empty_field_boundary	  <td>bit align  <td>8
 <tr><td>structure_size_boundary	  <td>bit align  <td>8
+<tr><td>word_size		  <td>size       <td>1
 <tr><td>pointer                   <td>size,align <td>2,1
 <tr><td>float                     <td>size,align <td>4,1
 <tr><td>double                    <td>size,align <td>4,1
@@ -40,7 +41,7 @@ default if unspecified: <blockquote>
 
 For reference and easy cut+paste, here is the full default specification for
 <tt>NESC_MACHINE</tt>: <blockquote><tt>export
-NESC_MACHINE="pcc_bitfield_type_matters=false pointer=2,1 float=4,1
+NESC_MACHINE="pcc_bitfield_type_matters=false word_size=1 pointer=2,1 float=4,1
 double=4,1 long_double=4,1 short=2,1 int=2,1 long=4,1 long_long=8,1
 int1248_align=1,1,1,1 wchar_size_size=2,2 char_wchar_signed=true,true
 empty_field_boundary=8 structure_size_boundary=8"
