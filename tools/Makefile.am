@@ -26,7 +26,7 @@ emacsdir=$(editordir)/emacs
 vimdir=$(editordir)/vim
 kdedir=$(editordir)/kde
 
-bin_SCRIPTS = nescc-mig nescc-ncg nescc nescc-diff nescc-wiring
+bin_SCRIPTS = nescc-mig nescc-ncg nescc nescc-wiring
 
 ncclib_DATA = genjava.pm 			\
 	      gencstjava.pm 			\
@@ -36,13 +36,9 @@ ncclib_DATA = genjava.pm 			\
 	      genpython.pm			\
 	      gencstpython.pm			\
 	      migdecode.pm			\
-	      first-avr5.x			\
-	      second-avr5.x			\
 	      nesc_nx.h
 
 nodist_ncclib_DATA = nesc.jar
-
-ncclib_SCRIPTS = smalldiff
 
 emacs_DATA =					\
 	editor-modes/emacs/nesc.el 		\
@@ -59,7 +55,6 @@ kde_DATA = 					\
 
 EXTRA_DIST =					\
 	$(ncclib_DATA)				\
-	$(ncclib_SCRIPTS)			\
 	$(emacs_DATA)				\
 	$(vim_DATA)				\
 	$(kde_DATA)
