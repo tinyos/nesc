@@ -1887,7 +1887,8 @@ static int lextoken(struct yystype *lvalp)
 	      case RSHIFT:
 		lvalp->u.itoken.i = kind_rshift_assign; break;
 	      }
-	    goto done;
+	    if (c != ':')
+	      goto done;
 	  }
 	else if (c == c1)
 	  switch (c)
