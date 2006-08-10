@@ -2674,7 +2674,7 @@ bool type_wchararray(type t, bool no_size_allowed)
 */
 typedef enum {
   m_int, m_float, m_cint, m_cfloat
-} mode_t;
+} machmode_t;
 
 type type_for_mode(const char *mode, bool isunsigned)
 /* Returns: type (unsigned if 'unsigned' is TRUE) corresponding to the
@@ -2682,7 +2682,7 @@ type type_for_mode(const char *mode, bool isunsigned)
 */
 {
   int i;
-  static struct { char *name; size_t s; mode_t m; } modes[] = {
+  static struct { char *name; size_t s; machmode_t m; } modes[] = {
     { "byte", 1, m_int },
     { "word", 0, m_int },
     { "pointer", 0, m_int },
