@@ -349,7 +349,7 @@ static bool digest_init(type t, expression init)
   /* Handle scalar types, including conversions.  */
 
   if (type_scalar(t))
-    return check_assignment(t, itype, init, "initialization", NULL, 0);
+    return check_assignment(t, default_conversion_for_assignment(init), init, "initialization", NULL, 0);
 
   /* Come here only for records and arrays.  */
 
