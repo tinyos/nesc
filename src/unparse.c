@@ -1323,7 +1323,7 @@ void prt_expression_helper(expression e, int context_priority)
 {
 #if 0
   /* Turned on for debugging sometimes. */
-  if (e->cst && constant_integral(e->cst))
+  if (e->cst && constant_integral(e->cst) && type_integral(e->cst->type))
     {
       output_constant(e->cst);
       return;
