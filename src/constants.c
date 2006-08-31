@@ -441,7 +441,7 @@ lexical_cst fold_lexical_real(type realtype, location loc, cstring tok)
   cval realvalue = make_cval_float(strtold(tok.data, NULL));
 
   if (type_complex(realtype))
-    realvalue = make_cval_complex(cval_cast(cval_zero, realtype), realvalue);
+    realvalue = make_cval_complex(cval_cast(cval_zero, make_base_type(realtype)), realvalue);
   c->cst = make_cst(realvalue, realtype);
   c->type = realtype;
   return c;
