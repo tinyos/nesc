@@ -3652,27 +3652,6 @@ statement chain_with_labels(statement l1, statement l2)
   return l1;
 }
 
-void split_type_elements(type_element tlist, type_element *odeclspecs,
-			 attribute *oattributes)
-{
-  type_element declspecs = NULL;
-  attribute attributes = NULL;
-
-  while (tlist)
-    {
-      type_element te = tlist;
-      tlist = CAST(type_element, tlist->next);
-      te->next = NULL;
-
-      if (is_attribute(te))
-	attributes = attribute_chain(attributes, CAST(attribute, te));
-      else
-	declspecs = type_element_chain(declspecs, te);
-    }
-  *odeclspecs = declspecs;
-  *oattributes = attributes;
-}
-
 void init_semantics(void)
 {
   current.fileregion = parse_region;

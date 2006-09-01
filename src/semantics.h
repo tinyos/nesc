@@ -83,9 +83,6 @@ environment poplevel(void);
 /* Categories of variable declarations */
 enum { var_typedef, var_register, var_normal, var_static, var_extern };
 
-void split_type_elements(type_element tlist, type_element *declspecs,
-			 attribute *attributes);
-
 /* Start definition of variable 'elements d' with attributes
    extra_attributes and attributes, asm specification astmt.
    If initialised is true, the variable has an initialiser.
