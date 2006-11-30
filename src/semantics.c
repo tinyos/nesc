@@ -174,6 +174,8 @@ data_declaration declare(environment b, data_declaration from,
 
   if (dd->name)
     {
+      check_name(dd->name);
+
       /* In PCC-compatibility mode, extern decls of vars with no current decl
 	 take effect at top level no matter where they are.  */
       /* We don't do the GCC "type exists at global scope" check because

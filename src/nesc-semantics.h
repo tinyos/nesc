@@ -132,4 +132,6 @@ data_declaration declare_function(location loc, const char *name, type signature
 nesc_declaration ddecl_container(data_declaration ddecl);
 nesc_declaration tdecl_container(tag_declaration tdecl);
 
+void check_name(const char *name);
+
 #endif

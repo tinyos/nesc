@@ -290,6 +290,8 @@ bool nesc_option(char *p)
       else
 	diff_output = dirs;
     }
+  else if (!strncmp(p, "fnesc-separator=", strlen("fnesc-separator=")))
+    set_function_separator(p + 16);
   else
     return FALSE;
 

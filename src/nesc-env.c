@@ -61,6 +61,7 @@ nesc_declaration new_nesc_declaration(region r, source_language kind,
 
 void nesc_declare(nesc_declaration d)
 {
+  check_name(d->name);
   env_add(nesc_env, d->name, d);
 }
 

@@ -34,6 +34,7 @@ void unparse_end(void) deletes;
 void enable_line_directives(void);
 void disable_line_directives(void);
 void set_function_separator(char *sep);
+const char *get_function_separator(void);
 FILE *set_unparse_outfile(FILE *newout);
 void enable_documentation_mode(void);
 void disable_documentation_mode(void);

@@ -50,7 +50,7 @@ static location fixed_location;
 static bool at_line_start;
 
 /* separator used between module name and function name */
-static char *function_separator;
+static char *function_separator = "$";
 
 /* modify behavior of low-level functions when printing docs */
 static bool documentation_mode;
@@ -459,7 +459,6 @@ void unparse_start(FILE *to, FILE *symbols)
   no_line_directives = FALSE;
   documentation_mode = FALSE;
   indent_level = 0;
-  function_separator = "$";
   unparse_region = newregion();
 }
 
@@ -493,6 +492,11 @@ void disable_line_directives(void)
 void set_function_separator(char *sep) 
 {
   function_separator = sep;
+}
+
+const char *get_function_separator(void)
+{
+  return function_separator;
 }
 
 FILE *set_unparse_outfile(FILE *newout) 
