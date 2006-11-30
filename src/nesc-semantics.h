@@ -34,7 +34,7 @@ const char *element_name(region r, const char *path);
      The returned string is allocated in region r.
 */
 
-node compile(location loc, source_language l,
+node compile(location loc, nesc_declaration container,
 	     const char *name, bool name_is_path);
 
 nesc_declaration load(source_language sl, location l,
@@ -63,8 +63,7 @@ bool nesc_attributep(gcc_attribute a);
 
 const char *language_name(source_language l);
 
-nesc_decl dummy_nesc_decl(source_language sl, location loc, const char *name,
-			  bool declareit);
+nesc_decl dummy_nesc_decl(location loc, nesc_declaration ndecl);
 void build(nesc_decl ast);
 nesc_declaration start_nesc_entity(source_language sl, word name);
 

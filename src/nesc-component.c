@@ -300,7 +300,8 @@ void build_component(region r, nesc_declaration cdecl)
 
 environment start_implementation(void)
 {
-  start_semantics(l_implementation, current.container, current.env);
+  start_semantics(l_implementation, current.container, 
+		  new_environment(parse_region, current.env, TRUE, FALSE));
 
   return current.env;
 }

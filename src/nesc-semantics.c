@@ -144,9 +144,10 @@ const char *language_name(source_language l)
     }
 }
 
-node compile(location loc, source_language l,
+node compile(location loc, nesc_declaration container,
 	     const char *name, bool name_is_path)
 {
+  source_language l = container ? container->kind : l_c;
   const char *path =
     name_is_path ? name : find_nesc_file(parse_region, l, name);
   FILE *f = NULL;
@@ -168,7 +169,8 @@ node compile(location loc, source_language l,
 	  set_input(f, path);
 
 	  start_lex(l);
-	  start_semantics(l_c, NULL, NULL);
+	  start_semantics(l_c, NULL, global_env);
+	  current.file = container;
 	  current.fileregion = newregion();
 	  parse_tree = parse();
 	  deleteregion_ptr(&current.fileregion);
@@ -183,24 +185,12 @@ node compile(location loc, source_language l,
   return parse_tree;
 }
 
-nesc_decl dummy_nesc_decl(source_language sl, location loc, const char *name,
-			  bool declareit)
+nesc_decl dummy_nesc_decl(location loc, nesc_declaration d)
 {
-  word wname = build_word(parse_region, name);
+  word wname = build_word(parse_region, d->name);
   nesc_decl nd;
-  nesc_declaration d = NULL;
 
-  if (declareit)
-    {
-      d = nesc_lookup(name);
-      /* If we managed to declare name, then we preserve its kind */
-      if (d)
-	sl = d->kind;
-    }
-  if (!d)
-    d = new_nesc_declaration(parse_region, sl, name);
-
-  switch (sl)
+  switch (d->kind)
     {
     case l_component: {
       environment env = new_environment(parse_region, global_env, TRUE, FALSE);
@@ -219,9 +209,10 @@ nesc_decl dummy_nesc_decl(source_language sl, location loc, const char *name,
       nd = NULL;
       break;
     }
-  d->env = new_environment(parse_region, global_env, TRUE, FALSE);
   d->ast = nd;
   nd->cdecl = d;
+
+  build(nd);
 
   return nd;
 }
@@ -251,46 +242,69 @@ void build(nesc_decl ast)
 nesc_declaration load(source_language sl, location l,
 		      const char *name, bool name_is_path)
 {
+  /* The l_any stuff is a bit of a hack. It's for use from nesc-main.c
+     only, to allow loading something whose "kind" is not yet known.
+     When using l_any, the global environment will record "name" as being
+     a component, but the returned declaration may be a component or 
+     interface. */
   const char *element = name_is_path ? element_name(parse_region, name) : name;
   const char *actual_name;
   node ptree;
-  nesc_decl ast;
+  nesc_decl ast = NULL;
+  nesc_declaration decl =
+    new_nesc_declaration(parse_region, sl == l_any ? l_component : sl, element);
 
-  ptree = compile(l, sl, name, name_is_path);
+  /* We don't get duplicates as we only load on demand */
+  nesc_declare(decl);
+
+  ptree = compile(l, decl, name, name_is_path);
   if (ptree)
-    ast = CAST(nesc_decl, ptree);
-  else
-    ast = dummy_nesc_decl(sl, new_location(name, 0), element, TRUE);
+    {
+      bool badkind;
 
-  actual_name = ast->word1->cstring.data;
-  if (strcmp(element, actual_name))
-    error_with_location(ast->location,
-			"expected %s `%s', but got %s '%s'",
-			language_name(ast->cdecl->kind),
-			element,
-			language_name(ast->cdecl->kind),
-			actual_name);
+      ast = CAST(nesc_decl, ptree);
+      build(ast);
 
-  build(ast);
+      actual_name = ast->word1->cstring.data;
+      badkind = sl != l_any && ast->cdecl->kind != sl;
+      if (badkind || strcmp(element, actual_name))
+	warning_or_error_with_location(!badkind, ast->location,
+	  "expected %s `%s', but got %s '%s'",
+	  language_name(sl), element,
+	  language_name(ast->cdecl->kind), actual_name);
 
-  return ast->cdecl;
+      /* Force creation of dummy AST if we get wrong kind (this avoids
+         a duplicate error message in require) */
+      if (badkind)
+	ast = NULL;
+    }
+
+  if (!ast)
+    ast = dummy_nesc_decl(new_location(name, 0), decl);
+
+  return ast->cdecl; /* can be different from decl when sl == l_any */
 }
 
 nesc_declaration start_nesc_entity(source_language sl, word name)
 {
-  nesc_declaration decl = new_nesc_declaration(parse_region, sl,
-					       name->cstring.data);
+  nesc_declaration decl;
+
+  /* If the kind of entity in the file matches the expected kind
+     (passed to load), reuse the existing declaration. Otherwise
+     make a temporary one to use while loading the file
+  */
+  if (sl == current.file->kind)
+    decl = current.file;
+  else
+    decl = new_nesc_declaration(parse_region, sl, name->cstring.data);
+
   char *docstring = get_docstring();
     
   if (docstring)
     separate_short_docstring(docstring, &decl->short_docstring,
 			     &decl->long_docstring);
 
-  /* We don't get duplicates as we only load on demand */
-  nesc_declare(decl);
-
-  start_semantics(sl, decl, global_env);
-  decl->env = current.env;
+  start_semantics(sl, decl, decl->env);
 
   return decl;
 }

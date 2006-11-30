@@ -3685,13 +3685,9 @@ void init_semantics(void)
 }
 
 void start_semantics(source_language l, nesc_declaration container,
-		     environment parent_env)
+		     environment env)
 {
-  if (parent_env)
-    current.env = new_environment(parse_region, parent_env, TRUE, FALSE);
-  else
-    current.env = global_env;
-
+  current.env = env;
   current.language = l;
   current.function_decl = NULL;
   current.pending_invalid_xref = NULL;

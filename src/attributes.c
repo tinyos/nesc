@@ -62,8 +62,12 @@ const char *gcc_attr_get_word(gcc_attribute attr)
 
 static cval get_alignment(gcc_attribute attr)
 {
-  cval arg = gcc_attr_get_constant(attr);
+  cval arg;
 
+  if (!attr->args)
+    return make_cval_unsigned(8, size_t_type);
+
+  arg = gcc_attr_get_constant(attr);
   if (cval_isinteger(arg))
     if (ilog2(cval_uint_value(arg)) != -1)
       return cval_cast(arg, size_t_type);

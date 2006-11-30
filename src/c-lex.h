@@ -25,7 +25,7 @@ Boston, MA 02111-1307, USA. */
 
 #include "config.h"
 
-typedef enum { l_c, l_interface, l_component, l_implementation } source_language;
+typedef enum { l_c, l_interface, l_component, l_implementation, l_any } source_language;
 
 typedef struct location
 { 

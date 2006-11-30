@@ -188,6 +188,10 @@ struct semantic_state
 				   of each implementation section */
   source_language language;	/* The current language */
   environment env;		/* The current environment */
+  nesc_declaration file;	/* The nesC entity of the file being compiled
+				   (different from container while dealing
+				   with C declarations at the beginning of
+				   the file) */
   nesc_declaration container;	/* The nesC entity being compiled (NULL for C) */
   function_decl function_decl;	/* The function currently being defined */
   tag_ref pending_invalid_xref;	/* Internal use */

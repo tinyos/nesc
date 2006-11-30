@@ -355,7 +355,7 @@ void nesc_compile(const char *filename, const char *target_name)
   if (nesc_filename(filename))
     /* We need to assume some language - it will get fixed once we
        see the actual file */
-    program = load(l_component, toplevel_location, filename, TRUE);
+    program = load(l_any, toplevel_location, filename, TRUE);
   else
     load_c(toplevel_location, filename, TRUE);
 

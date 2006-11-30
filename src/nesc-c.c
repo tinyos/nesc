@@ -32,6 +32,6 @@ void add_cdecls(declaration cdecls)
 
 void load_c(location l, const char *name, bool name_is_path)
 {
-  node cdecls = compile(l, l_c, name, name_is_path);
+  node cdecls = compile(l, NULL, name, name_is_path);
   add_cdecls(CAST(declaration, cdecls));
 }

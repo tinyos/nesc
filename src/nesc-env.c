@@ -54,6 +54,7 @@ nesc_declaration new_nesc_declaration(region r, source_language kind,
   new->name = new->instance_name = name;
   if (kind == l_component && use_nido)
     new->local_statics = dd_new_list(r);
+  new->env = new_environment(r, global_env, TRUE, FALSE);
 
   return new;
 }
@@ -84,16 +85,15 @@ nesc_declaration require(source_language sl, location l, const char *name)
   if (sl != d->kind)
     {
       /* Make a dummy declaration to make everyone happy */
-      nesc_decl nd = dummy_nesc_decl(sl, d->ast->location, name, FALSE);
+      nesc_decl nd;
 
-      build(nd);
+      d = new_nesc_declaration(parse_region, sl, name);
+      nd = dummy_nesc_decl(l, d);
 
       error_with_location(l, "expected %s `%s', but got %s %s",
 			  language_name(sl), name,
 			  d->kind == l_interface ? "an" : "a",
 			  language_name(d->kind));
-
-      d = nd->cdecl;
     }
   return d;
 }
