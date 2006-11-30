@@ -60,12 +60,29 @@ const char *gcc_attr_get_word(gcc_attribute attr)
   return NULL;
 }
 
+static size_t max_useful_alignment(void)
+{
+  size_t max_align = 0;
+
+  /* Of current machine. Returns max of long double, long long, int8 and ptr
+  alignment (ok, this is a slight hack, but it seems unlikely that other
+  smaller types will have worse restrictions) */
+#define IMAX(a) if (max_align < a) max_align = a
+  IMAX(target->int8_align);
+  IMAX(target->tptr.align);
+  IMAX(target->tlong_double.align);
+  IMAX(target->tlong_long.align);
+#undef IMAX
+
+  return max_align;
+}
+
 static cval get_alignment(gcc_attribute attr)
 {
   cval arg;
 
   if (!attr->args)
-    return make_cval_unsigned(8, size_t_type);
+    return make_cval_unsigned(max_useful_alignment(), size_t_type);
 
   arg = gcc_attr_get_constant(attr);
   if (cval_isinteger(arg))
