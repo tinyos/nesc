@@ -1448,7 +1448,7 @@ void prt_cast_list(cast_list e, int context_priority)
 void prt_conditional(conditional e, int context_priority)
 {
   OPEN(P_COND);
-  prt_expression(e->condition, P_COND);
+  prt_expression(e->condition, P_OR);
   output(" ? ");
   if (e->arg1)
     prt_expression(e->arg1, P_COND);
