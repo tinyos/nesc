@@ -9,6 +9,7 @@ nescc - nesC compiler
     [\fB-fnesc-simulate\fR] 
     [\fB-fnesc-nido-tosnodes=\fIn\fR] [\fB-fnesc-nido-motenumber=\fIexpression\fR]
     [\fB-conly\fR] [\fB-fnesc-cfile=\fIfile\fR] 
+    [\fB-fnesc-cppdir=\fIdirectory\fR] [\fB-fnesc-separator=\fIseparator\fR]
     [\fB-fnesc-no-inline\fR] [\fB-fnesc-optimize-atomic\fR]
     [\fB--version\fR] [\fB-fnesc-verbose\fR] [\fB-Wnesc-\fI...\fR]
     [\fB-fnesc-dump=\fIspecification\fR] [\fB-fnesc-dumpfile=\fIfile\fR]
@@ -74,6 +75,28 @@ option is specified).
 Specify a file in which to save the C code generated when compiling a
 component. Note: if you specify two components on the command line, then
 the C code from the second one will overwrite the C code from the first.
+.TP
+\fB-fnesc-cppdir=\fIdirectory\fR
+Save all preprocessing results in \fIdirectory\fR. The directory is created
+if it doesn't exist. This can be helpful to track down preprocessor-related
+compilation problems. You probably want to ensure that \fIdirectory\fR is
+empty when you call \fBnescc\fR, to make it obvious which files where
+preprocessed as part of the current compilation.
+.TP
+\fB-fnesc-separator=\fIseparator\fR
+Set separator used to create symbol names in the generated C code (default $).
+The compiler needs to generate unique names to denote, e.g., a module
+variable. It does this by concatenating various symbol names to ensure that
+it generates unique names. For instance, variable \fBbar\fR in module 
+\fBMaz\fR becomes a global C variable \fBMaz$bar\fR in the compiler output.
+Some C compilers do not like $ in symbol names, so you can specify a 
+different separator, e.g., \fB__\fR (leading to generated symbols like
+\fBMaz__bar\fR). 
+
+You will get a compile-time warning if any symbol in the program being
+compiled contains the separator you specify (the presence of the
+separator in a symbol could lead to the generation of incorrect code).
+The separator can however start or end a symbol.
 .TP
 \fB-fnesc-no-inline\fR
 Disabled the automatic inlining of all small functions, and of all functions
@@ -161,7 +184,7 @@ If you wish to compile a component Bar.nc to a C file, you can do:
 nescc -c -o /dev/null -fnesc-cfile=Bar.c Bar.nc
 .SH PREPROCESSOR SYMBOLS
 
-\fBnescc\fR defines the following preprocessor symbols:
+\fBnescc\fR defines the following preprocessor symbol:
 .TP
 \fBNESC\fR (since v1.1) 
 set to XYZ where x.yz is the nesC version
