@@ -1,8 +1,19 @@
-This is version 1.2.7a of the nesC compiler.
+This is version 1.2.8 of the nesC compiler.
 
 Installation instructions are in INSTALL. Note that nesC needs patched
 versions of the GNU assemblers for the avr and msp430 architectures. For
 more information, check the INSTALL file.
+
+Changes in nesC 1.2.8
+=====================
+- -fnesc-cppdir option to save preprocessed output
+- -fnesc-separator option to change symbol separator from $ in generated code
+- little-endian bitfields now supported in network types (thanks to
+  Matti Juhani Öhman <mohman@cc.hut.fi> for the approach and some of the code)
+- internal errors try to report current source location (can be helpful in
+  tracking down problems, but only works for errors that occur during parsing)
+- updated vim mode from Cory Sharp (cory@moteiv.com)
+- bug fixes
 
 Changes in nesC 1.2.7a
 ======================
