@@ -226,6 +226,7 @@ struct data_declaration {
   /* For typedefs of network base types */
   data_declaration encoder, decoder; /* encoder and decoder functions */
   data_declaration bf_encoder, bf_decoder; /* bitfield encoder and decoder functions */
+  bool isbe;				   /* TRUE for big-endian types */
   type basetype;		/* underlying non-network type (e.g., uint8_t) */
 
   /* For type variables (some decl_typedefs). Regular typedefs (not type

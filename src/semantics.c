@@ -2983,6 +2983,7 @@ void layout_struct(tag_declaration tdecl)
   declaration dlist;
   field_decl flist;
   bool isnetwork = is_nx_tag(tdecl);
+  bool lastbitfield_be = FALSE;
 
   offset = size = make_type_cval(0);
   alignment = cval_bitsperbyte;
@@ -3132,6 +3133,19 @@ void layout_struct(tag_declaration tdecl)
 		}
 	      else
 		{
+		  /* More network type bitfield fun: when switching between
+		     big and little-endian bitfields, we align to the next
+		     byte boundary (otherwise we could start filling bytes
+		     from opposing ends, which would be very confusing) */
+		  if (isnetwork && type_network_base_type(field_type))
+		    {
+		      bool isbe = type_networkdef(field_type)->isbe;
+
+		      if (isbe != lastbitfield_be)
+			offset = cval_align_to(offset, cval_bitsperbyte);
+		      lastbitfield_be = isbe;
+		    }
+
 		  // more gcc fun
 		  if (type_realigned(field_type)) 
 		    offset = cval_align_to(offset, falign);

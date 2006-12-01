@@ -47,7 +47,8 @@ bool nesc_attributep(gcc_attribute a)
     !strcmp(name, "spontaneous") ||
     !strcmp(name, "combine") ||
     !strcmp(name, "nx_base") ||
-    !strcmp(name, "nx_base_bf") ||
+    !strcmp(name, "nx_base_le") ||
+    !strcmp(name, "nx_base_be") ||
     !strcmp(name, "hwevent") ||
     !strcmp(name, "atomic_hwevent");
 }
@@ -439,7 +440,7 @@ void handle_combine_attribute(location loc, const char *combiner, type *t)
     *t = make_combiner_type(*t, cdecl);
 }
 
-void handle_nxbase_attribute(location loc, bool allow_bf, const char *basename,
+void handle_nxbase_attribute(location loc, bool be, bool allow_bf, const char *basename,
 			     data_declaration ddecl)
 {
   region r = parse_region;
@@ -475,6 +476,7 @@ void handle_nxbase_attribute(location loc, bool allow_bf, const char *basename,
 	declare_function(loc, decoder_name,
 			 build_function_type(r, t, const_ptr_void_type, unsigned_int_type, unsigned_char_type, NULL));
     }
+  ddecl->isbe = be;
 
   /* We do this even if we got an error, to ensure ddecl gets treated as
      a network type. */

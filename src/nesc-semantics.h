@@ -97,13 +97,16 @@ void handle_combine_attribute(location loc, const char *combiner, type *t);
      modifying *t as appropriate
  */
 
-void handle_nxbase_attribute(location loc, bool allow_bf,
+void handle_nxbase_attribute(location loc, bool be, bool allow_bf,
 			     const char *fnbasename, data_declaration ddecl);
 /* Effects: handle network type attribute specifying functions 
      ntoh_fnbasename and hton_fnbasename as the decoding and encoding
      functions respectively.
      If allow_bf is true, then ntohbf_fnbasename and htonbf_fnbasename
      are the bitfield decoding and encoding functions repsectively.
+     If be is true, this is a big endian type (transitions between
+     big and little-endian bitfields cause alignemnt to the next byte
+     inside a struct).
      Modifies ddecl to reflect it's status as a base network type.
  */
 

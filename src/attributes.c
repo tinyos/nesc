@@ -219,14 +219,14 @@ void handle_gcc_decl_attribute(gcc_attribute attr, data_declaration ddecl)
     {
       ddecl->noinlinep = TRUE;
     }
-  else if (is_attr_name(name, "nx_base") || is_attr_name(name, "nx_base_bf"))
+  else if (is_attr_name(name, "nx_base_le") || is_attr_name(name, "nx_base_be") || is_attr_name(name, "nx_base"))
     {
       const char *word = gcc_attr_get_word(attr);
 
       if (ddecl->kind != decl_typedef)
 	error_with_location(attr->location, "`%s' attribute can only be applied to typedefs", name);
       else if (word)
-	handle_nxbase_attribute(attr->location, is_attr_name(name, "nx_base_bf"), word, ddecl);
+	handle_nxbase_attribute(attr->location, is_attr_name(name, "nx_base_be"), TRUE, word, ddecl);
     }
   else if (!(target->decl_attribute &&
 	     target->decl_attribute(attr, ddecl)) &&
