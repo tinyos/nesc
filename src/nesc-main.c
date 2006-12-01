@@ -293,6 +293,8 @@ bool nesc_option(char *p)
     }
   else if (!strncmp(p, "fnesc-separator=", strlen("fnesc-separator=")))
     set_function_separator(p + 16);
+  else if (!strncmp(p, "fnesc-cppdir=", strlen("fnesc-cppdir=")))
+    set_cpp_dir(p + 13);
   else
     return FALSE;
 

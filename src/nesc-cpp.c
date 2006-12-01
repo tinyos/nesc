@@ -19,6 +19,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-cpp.h"
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -33,6 +34,7 @@ static region pragma_region;
 dd_list pragmas;
 
 static region opt_region;
+static char *cpp_dir;
 
 struct cpp_option {
   struct cpp_option *next;
@@ -152,7 +154,8 @@ static void dup_restore(int to, int save)
     }
 }
 
-static FILE *exec_gcc(char *gcc_output_template, char **gcc_output_file, bool redirect_errors, 
+static FILE *exec_gcc(char *gcc_output_template, bool mktmp,
+		      char **gcc_output_file, bool redirect_errors, 
 		      int nargs,
 		      void (*setargs)(void *data, const char **argv), void *data)
 {
@@ -187,7 +190,10 @@ static FILE *exec_gcc(char *gcc_output_template, char **gcc_output_file, bool re
 	}
     }
 
-  outputf = mktempfile(permanent, gcc_output_template);
+  if (mktmp)
+    outputf = mktempfile(permanent, gcc_output_template);
+  else
+    outputf = gcc_output_template;
   *gcc_output_file = outputf;
   destfd = creat(outputf, 0666);
 
@@ -228,14 +234,18 @@ static FILE *exec_gcc(char *gcc_output_template, char **gcc_output_file, bool re
 #else
 #include <sys/wait.h>
 
-static FILE *exec_gcc(char *gcc_output_template, char **gcc_output_file,
+static FILE *exec_gcc(char *gcc_output_template, bool mktmp,
+		      char **gcc_output_file,
 		      bool redirect_errors, int nargs,
 		      void (*setargs)(void *data, const char **argv), void *data)
 {
   int gcc_pid, gcc_stat, res;
   char *outputf;
 
-  outputf = mktempfile(permanent, gcc_output_template);
+  if (mktmp)
+    outputf = mktempfile(permanent, gcc_output_template);
+  else
+    outputf = gcc_output_template;
   *gcc_output_file = outputf;
 
   if ((gcc_pid = fork()) == 0)
@@ -345,7 +355,7 @@ void select_macros_mode(void)
 {
   static char gcc_version_name[] = "/tmp/nesccppvXXXXXX";
   char *gcc_version_file;
-  FILE *gcc_version = exec_gcc(gcc_version_name, &gcc_version_file, TRUE, 1, version_setargs, NULL);
+  FILE *gcc_version = exec_gcc(gcc_version_name, TRUE, &gcc_version_file, TRUE, 1, version_setargs, NULL);
 
   macros_mode = "w";
 
@@ -440,14 +450,24 @@ static void preprocess_setargs(void *data, const char **argv)
 FILE *preprocess(const char *filename, source_language l)
 {
   struct preprocess_args_closure closure;
-  char *cpp_dest = rstrdup(parse_region, "/tmp/nesccppsXXXXXX");
+  char *cpp_dest;
   int nargs = 12 + path_argv_count + saved_options_count;
   FILE *output;
 
   closure.l = l;
   closure.filename = filename;
   closure.nargs = nargs;
-  output = exec_gcc(cpp_dest, &current.preprocessed_file,
+  if (cpp_dir)
+    {
+      char *tmp = rstrdup(parse_region, filename);
+      char *base = basename(tmp);
+
+      cpp_dest = rstralloc(parse_region, strlen(cpp_dir) + strlen(base) + 2);
+      sprintf(cpp_dest, "%s/%s", cpp_dir, base);
+    }
+  else
+    cpp_dest = rstrdup(parse_region, "/tmp/nesccppsXXXXXX");
+  output = exec_gcc(cpp_dest, cpp_dir == 0, &current.preprocessed_file,
 		    FALSE, nargs, preprocess_setargs, &closure);
 
 
@@ -524,6 +544,26 @@ void preprocess_file_end(void)
   if (macros_file)
     end_macro_saving();
 
-  cpp_unlink(current.preprocessed_file);
+  if (!cpp_dir)
+    cpp_unlink(current.preprocessed_file);
 }
 
+void set_cpp_dir(const char *dir)
+{
+  struct stat dbuf;
+  int l = strlen(dir);
+
+  cpp_dir = strdup(dir);
+
+  /* Remove trailing slashes */
+  while (l > 1 && cpp_dir[l - 1] == '/')
+    cpp_dir[--l] = '\0';
+
+  mkdir(cpp_dir, 0777);
+  if (stat(cpp_dir, &dbuf) < 0 || !S_ISDIR(dbuf.st_mode))
+    {
+      /* There's no real recovery from this problem */
+      fprintf(stderr, "Couldn't create directory `%s'\n", cpp_dir);
+      exit(2);
+    }
+}

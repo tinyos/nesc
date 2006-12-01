@@ -28,6 +28,8 @@ void handle_directive(const char *directive, const char *args);
 void save_option(const char *option);
 void end_macro_saving(void);
 
+void set_cpp_dir(const char *dir);
+
 struct pragma {
   location l;
   const char *args; /* The uninterpreted pragma argument line */
