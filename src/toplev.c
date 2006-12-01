@@ -348,8 +348,13 @@ static void c_decode_option(char *p)
 
 static void rcc_aborting(int s)
 {
+  location where;
+
   signal(SIGABRT, 0);
   fprintf(stderr, "nesC: Internal error. Please send a bug report to the nesC bug mailing list\nat nescc-bugs@lists.sourceforge.net\n");
+  where = current_location();
+  if (where)
+    fprintf(stderr, "Current location (guess): %s:%lu\n", where->filename, where->lineno);
   if (getenv("RCCDEBUG"))
     abort();
   else

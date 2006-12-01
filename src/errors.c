@@ -49,6 +49,16 @@ void clear_error_location(void)
   error_location = NULL;
 }
 
+location current_location(void)
+{
+  if (input_file_stack)
+    return &input_file_stack->l;
+  else if (error_location)
+    return error_location;
+  else
+    return NULL;
+}
+
 /* Count an error or warning.  Return 1 if the message should be printed.  */
 int count_error(int warningp)
 {

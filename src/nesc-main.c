@@ -45,6 +45,7 @@ Boston, MA 02111-1307, USA.  */
 #include "edit.h"
 #include "machine.h"
 #include "nesc-atomic.h"
+#include "unparse.h"
 
 /* The set of C files to require before loading the main component */
 struct ilist

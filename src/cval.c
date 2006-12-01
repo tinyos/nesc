@@ -463,7 +463,9 @@ cval cval_cast(cval c, type to)
 
 cval cval_not(cval c)
 {
-  if (cval_isunknown(c))
+  if (cval_istop(c))
+    return cval_top;
+  else if (cval_isunknown(c))
     return cval_unknown_number;
   else if (!cval_knownbool(c))
     return cval_invalid_address;

@@ -198,11 +198,6 @@ type float_type, double_type, long_double_type,
   int2_type, uint2_type, int4_type, uint4_type, int8_type, uint8_type,
   unknown_int_type, unknown_number_type, error_type;
 
-static bool legal_array_size(cval c) 
-{
-  return !cval_isinteger(c) || cval_intcompare(c, cval_zero) >= 0;
-}
-
 static type copy_type(type t)
 {
   type nt = ralloc(types_region, struct type);
@@ -280,7 +275,6 @@ type make_array_type(type t, expression size)
 
   nt->u.array.arrayof = t;
   nt->u.array.size = size;
-  assert(!size || !size->cst || legal_array_size(size->cst->cval));
   nt->network = t->network != nx_no ? nx_derived : nx_no;
 
   return nt;

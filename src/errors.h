@@ -34,6 +34,8 @@ extern int warningcount;
 void set_error_location(location l);
 void clear_error_location(void);
 
+location current_location(void);
+
 /* Report error msg at l */
 void verror_with_location(location l, const char *format, va_list args);
 
