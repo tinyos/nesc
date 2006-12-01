@@ -14,8 +14,12 @@ frontends for nesC. These are found in tinyos-1.x/tools/src/ncc (for TinyOS
 installation directions you find there.
 
 To use nesC with the Atmel AVR processors or the TI MSP processors you
-need the avr-gcc and msp430-gcc packages, as well as patched versions
-of the GNU binutils (avr-binutils and msp430-bintutils respectively).
-These packages can be obtained from http://www.tinyos.net/dist-2.0.0 
-(also check http://www.tinyos.net/download.html to see if newer versions
-are available).
+need the avr-gcc and msp430-gcc packages, and the corresponding GNU
+binutils (avr-binutils and msp430-bintutils respectively). 
+
+You can use the patched versions of these binutils that allow $ in
+symbol names, available from http://www.tinyos.net/dist-2.0.0 (check
+http://www.tinyos.net/download.html to see if newer versions are
+available), or you can pass the -fnesc-separator=__ option to nescc (ncc
+if using TinyOS) to use __ rather than $ in generated code. See the
+nescc man page for details.
