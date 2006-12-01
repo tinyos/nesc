@@ -175,12 +175,6 @@ static void copy_fields(region r, tag_declaration copy, tag_declaration orig)
 
       *cfield = *ofield;
       /* type's in fields come from the source code, so cannot be unknown */
-      cfield->type = instantiate_type(cfield->type);
-      if (cfield->ast) /* fields from anonymous struct/union have no ast */
-	{
-	  cfield->ast = CAST(field_decl, ofield->ast->instantiation);
-	  cfield->ast->fdecl = cfield;
-	}
       ofield->instantiation = cfield;
       cfield->instantiation = NULL;
       if (cfield->name)
@@ -621,10 +615,23 @@ static AST_walker_result clone_tag_ref(AST_walker spec, void *data,
 {
   tag_ref new = clone(data, n);
 
-  AST_walk_children(spec, data, CAST(node, new));
   forward_tdecl(data, new);
   if (new->defined)
     new->tdecl->definition = new;
+  AST_walk_children(spec, data, CAST(node, new));
+
+  return aw_done;
+}
+
+static AST_walker_result clone_field_decl(AST_walker spec, void *data,
+				       field_decl *n)
+{
+  field_decl new = clone(data, n);
+
+  AST_walk_children(spec, data, CAST(node, new));
+  new->fdecl = new->fdecl->instantiation;
+  new->fdecl->type = instantiate_type(new->fdecl->type);
+  new->fdecl->ast = new;
 
   return aw_done;
 }
@@ -862,6 +869,7 @@ static void init_clone(void)
   AST_walker_handle(clone_walker, kind_component_ref, clone_component_ref);
   AST_walker_handle(clone_walker, kind_interface_ref, clone_interface_ref);
   AST_walker_handle(clone_walker, kind_tag_ref, clone_tag_ref);
+  AST_walker_handle(clone_walker, kind_field_decl, clone_field_decl);
 }
 
 void set_parameter_values(nesc_declaration cdecl, expression args)
