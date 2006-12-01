@@ -15,7 +15,7 @@ installation directions you find there.
 
 To use nesC with the Atmel AVR processors or the TI MSP processors you
 need the avr-gcc and msp430-gcc packages, and the corresponding GNU
-binutils (avr-binutils and msp430-bintutils respectively). 
+binutils (avr-binutils and msp430-binutils respectively). 
 
 You can use the patched versions of these binutils that allow $ in
 symbol names, available from http://www.tinyos.net/dist-2.0.0 (check
