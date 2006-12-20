@@ -293,6 +293,8 @@ tag_declaration declare_tag_env(environment env, tag_ref t)
 
   if (env->global_level)
     tdecl->container = current.container;
+  if (current.function_decl)
+    tdecl->container_function = current.function_decl->ddecl;
 
   /* We register all tags in the environment, even unnamed ones. */
   env_add(env->tag_env, name, tdecl);
@@ -3269,7 +3271,7 @@ type_element finish_struct(type_element t, declaration fields,
 	    printname = nice_field_name(name);
 
 	    /* Support "flexible arrays" (y[] as field member) --
-	       simply make the size 0 which we already handle below */
+	       simply make the size 0 which we already handle */
 	    if (type_array(field_type) && !type_array_size(field_type))
 	      field_type = make_array_type(type_array_of(field_type),
 					   build_zero(parse_region, dummy_location));

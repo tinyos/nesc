@@ -302,7 +302,7 @@ static bool digest_init(type t, expression init)
 	      largest_uint tsize = cval_uint_value(tcsize);
 
 	      /* Don't count the null char (char x[1] = "a" is ok) */
-	      if (tsize < CAST(string, init)->ddecl->chars_length)
+	      if (tsize && tsize < CAST(string, init)->ddecl->chars_length)
 		pedwarn_init ("initializer-string for array of chars is too long");
 	    }
 
@@ -1219,7 +1219,7 @@ void process_init_element(expression value)
 	  /* Error for non-static initialization of a flexible array member.  */
 	  if (type_array(elttype)
 	      && !require_constant_value
-	      && !type_array_size(elttype)
+	      && (type_array_size(elttype) && definite_zero(type_array_size(elttype)))
 	      && !constructor_fields->next)
 	    {
 	      error_init("non-static initialization of a flexible array member");
@@ -1238,6 +1238,11 @@ void process_init_element(expression value)
 
 	  elttype = type_array_of(constructor_type);
 	  push_array_bounds(constructor_index);
+	  if (type_array(elttype) && !type_array_size(elttype))
+	    {
+	      elttype = error_type;
+	      error_init("array type has incomplete element type");
+	    }
 	  break;
 	case c_scalar:
 	  if (constructor_count == 0)

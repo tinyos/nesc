@@ -119,9 +119,17 @@ static void clone_ddecl(data_declaration ddecl)
 
   /* If already cloned, return. */
   if (ddecl->instantiation &&
-      ddecl->instantiation->container == current.container &&
       (!hack_interface || ddecl->instantiation->interface == hack_interface))
-    return;
+    {
+      /* If the instantiation's context matches the current one, the
+	 instantiation was already done. */
+      if (ddecl->container &&
+	  ddecl->instantiation->container == current.container)
+	return;
+      if (ddecl->container_function && 
+	  ddecl->instantiation->container_function == current.function_decl->ddecl)
+	return;
+    }
 
   /* Copy module functions (incl. tasks) and variables */
 
@@ -130,8 +138,9 @@ static void clone_ddecl(data_declaration ddecl)
 	ddecl->kind == decl_interface_ref))
     return;
 
-  /* Instantiate module-level decls and local static variables */
-  if (!(ddecl->container || is_module_local_static(ddecl)))
+  /* Instantiate decls in modules */
+  if (!(ddecl->container ||
+	(ddecl->container_function && ddecl->container_function->container)))
     return;
 
   copy = declare(current.env, ddecl, TRUE);
@@ -142,10 +151,10 @@ static void clone_ddecl(data_declaration ddecl)
       copy->container = current.container;
       copy->container_function = NULL;
     }
-  else /* local static */
+  else /* local */
     {
       copy->container = NULL;
-      copy->container_function = ddecl->container_function->instantiation;
+      copy->container_function = current.function_decl->ddecl;
     }
 
   ddecl->instantiation = copy;
@@ -174,7 +183,6 @@ static void copy_fields(region r, tag_declaration copy, tag_declaration orig)
       field_declaration cfield = ralloc(r, struct field_declaration);
 
       *cfield = *ofield;
-      /* type's in fields come from the source code, so cannot be unknown */
       ofield->instantiation = cfield;
       cfield->instantiation = NULL;
       if (cfield->name)
@@ -189,18 +197,39 @@ static void forward_tdecl(region r, tag_ref tref)
   tag_declaration tdecl = tref->tdecl, copy;  
 
   /* Ignore non-module tags */
-  if (!tdecl->container)
+  if (!(tdecl->container ||
+	(tdecl->container_function && tdecl->container_function->container)))
     return;
 
   /* If already cloned, use instance & return */
-  if (tdecl->instantiation &&
-      tdecl->instantiation->container == current.container)
+  if (tdecl->instantiation)
     {
+      /* If the instantiation's context matches the current one, the
+	 instantiation was already done. */
       tref->tdecl = tdecl->instantiation;
-      return;
+      if (tdecl->container &&
+	  tdecl->instantiation->container == current.container)
+	return;
+      if (tdecl->container_function && 
+	  tdecl->instantiation->container_function == current.function_decl->ddecl)
+	return;
     }
 
   copy = declare_tag(tref);
+  /* We don't have a proper environment, so the container and 
+     container_function fields are bogus. Set them correctly. */
+  if (tdecl->container) /* module level */
+    {
+      copy->container = current.container;
+      copy->container_function = NULL;
+    }
+  else /* local */
+    {
+      copy->container = NULL;
+      copy->container_function = current.function_decl->ddecl;
+    }
+
+
   tref->tdecl = copy;
   tdecl->instantiation = copy;
 
@@ -510,7 +539,13 @@ static AST_walker_result clone_function_decl(AST_walker spec, void *data,
       new->ddecl = instance;
     }
 
-  return aw_walk;
+  current.function_decl = new;
+  current.env->fdecl = new;
+  AST_walk_children(spec, data, CAST(node, new));
+  current.function_decl = NULL;
+  current.env->fdecl = NULL;
+
+  return aw_done;
 }
 
 static AST_walker_result clone_identifier(AST_walker spec, void *data,

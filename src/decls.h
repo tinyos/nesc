@@ -85,6 +85,9 @@ typedef struct tag_declaration {
 
   nesc_declaration container;	/* as in data_declarations */
 
+  /* Function this declaration occurs in (NULL if outside a function) */
+  struct data_declaration *container_function;
+
   /* In abstract configurations or modules: The latest instantiation
      of this declaration */
   struct tag_declaration *instantiation;
