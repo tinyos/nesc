@@ -33,6 +33,7 @@ Boston, MA 02111-1307, USA.  */
 #include "init.h"
 #include "attributes.h"
 #include "nesc-attributes.h"
+#include "unparse.h"
 
 static AST_walker clone_walker;
 
@@ -1371,7 +1372,8 @@ nesc_declaration specification_copy(region r, component_ref cref,
       char *newname = rstralloc(r, strlen(copy->name) + 20);
 
       copy->instance_number = abs_comp->instance_count++;
-      sprintf(newname, "%s$%d", copy->name, copy->instance_number);
+      sprintf(newname, "%s%s%d", copy->name, get_function_separator(),
+	      copy->instance_number);
       copy->name = newname;
     }
 
