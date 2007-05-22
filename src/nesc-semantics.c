@@ -142,6 +142,7 @@ const char *language_name(source_language l)
     case l_interface: return "interface";
     case l_component: case l_implementation: return "component";
     case l_c: return "C file";
+    case l_any: return "";
     default: assert(0); return "BUG";
     }
 }
