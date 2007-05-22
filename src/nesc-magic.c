@@ -8,7 +8,7 @@
 #include "constants.h"
 #include "unparse.h"
 
-data_declaration magic_unique, magic_uniqueCount;
+data_declaration magic_unique, magic_uniqueN, magic_uniqueCount;
 
 static data_declaration 
 declare_magic(const char *name, type return_type, typelist argument_types,
@@ -133,6 +133,36 @@ static known_cst unique_fold(function_call fcall, int pass)
     return fcall->cst;
 }
 
+static known_cst uniqueN_fold(function_call fcall, int pass)
+{
+  unsigned int *lastval;
+
+  /* On pass 0, we don't know the value (and we can't even look for
+     lastval yet, as we may be in a generic component passing a 
+     string argument to unique)
+     On pass 1, we look for lastval and pick a value
+     On subsequent passes, we stick to our choice
+  */
+  if (pass == 0)
+    return make_unknown_cst(cval_unknown_number, unsigned_int_type);
+
+  lastval = unique_parse("uniqueN", fcall);
+  if (!lastval)
+    return NULL;
+
+  if (pass == 1)
+    {
+      known_cst n = CAST(expression, fcall->args->next)->cst;
+      unsigned int val = *lastval;
+
+      *lastval += constant_uint_value(n);
+
+      return make_unsigned_cst(val, unsigned_int_type);
+    }
+  else
+    return fcall->cst;
+}
+
 static known_cst uniqueCount_fold(function_call fcall, int pass)
 {
   unsigned int *lastval;
@@ -156,12 +186,17 @@ static known_cst uniqueCount_fold(function_call fcall, int pass)
 
 static void unique_init(void)
 {
-  typelist string_args;
+  typelist string_args, string_int_args;
 
   string_args = new_typelist(parse_region);
   typelist_append(string_args, make_pointer_type(char_type));
   magic_unique = declare_magic("unique", unsigned_int_type, string_args,
 			       unique_fold);
+  string_int_args = new_typelist(parse_region);
+  typelist_append(string_int_args, make_pointer_type(char_type));
+  typelist_append(string_int_args, unsigned_int_type);
+  magic_uniqueN = declare_magic("uniqueN", unsigned_int_type, string_int_args,
+				uniqueN_fold);
   magic_uniqueCount = declare_magic("uniqueCount", unsigned_int_type,
 				    string_args, uniqueCount_fold);
   unique_region = newregion();
