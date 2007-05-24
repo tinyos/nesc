@@ -102,5 +102,6 @@ node parse(void) deletes;
 */
 
 declaration make_error_decl(void);
+declarator make_identifier_declarator(location l, cstring id);
 
 #endif

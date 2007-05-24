@@ -5,6 +5,8 @@ typedef struct {
   size_t size, align;
 } machine_type_spec;
 
+struct yystype;
+
 typedef struct {
   const char *machine_name;
 
@@ -26,6 +28,13 @@ typedef struct {
   bool (*tag_attribute)(gcc_attribute attr, tag_declaration tdecl);
   bool (*field_attribute)(gcc_attribute attr, field_declaration fdecl);
   bool (*type_attribute)(gcc_attribute attr, type *t);
+
+  void (*init)(void);
+  int (*token)(const char *word, int length, struct yystype *lvalp);
+
+  /* A Keil C for 8051 special... */
+  declaration (*keilc_definition)(location loc, cstring keyword, cstring name,
+				  expression address);
   
 } machine_spec;
 

@@ -1793,7 +1793,7 @@ bool builtin_declaration(data_declaration dd)
   return strncmp(dd->name, "__builtin_", 10) == 0;
 }
 
-static void declare_builtin_type(const char *name, type t)
+data_declaration declare_builtin_type(const char *name, type t)
 {
   struct data_declaration tempdecl;
 
@@ -1802,7 +1802,7 @@ static void declare_builtin_type(const char *name, type t)
   tempdecl.kind = decl_typedef;
   tempdecl.in_system_header = TRUE;
 
-  declare(current.env, &tempdecl, TRUE);
+  return declare(current.env, &tempdecl, TRUE);
 }
 
 static tag_declaration make_anonymous_struct(void)

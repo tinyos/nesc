@@ -350,6 +350,8 @@ void nesc_compile(const char *filename, const char *target_name)
   init_network();
   init_internal_nesc_attributes();
   init_isatomic();
+  if (target->init)
+    target->init();
 
   for (includes = includelist; includes; includes = includes->next)
     require_c(toplevel_location, includes->name);

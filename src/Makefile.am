@@ -178,7 +178,9 @@ libparser_a_SOURCES =				\
 	unparse.c				\
 	unparse.h				\
 	utils.c					\
-	utils.h
+	utils.h					\
+	machine/keil-gperf.h			\
+	machine/sdcc-gperf.h
 
 nesc1_SOURCES = toplev.c
 nesc1_LDADD = libparser.a $(libregions) -lm
@@ -202,7 +204,9 @@ BUILT_SOURCES =					\
 	c-parse.tab.h				\
 	lex.nd.c				\
 	nesc-dspec.tab.c			\
-	nesc-dspec.tab.h
+	nesc-dspec.tab.h			\
+	machine/keil-gperf.h			\
+	machine/sdcc-gperf.h
 
 EXTRA_DIST = 					\
 	build-basics.el				\
@@ -278,5 +282,13 @@ $(srcdir)/AST_walk_children.c: build-walk.el nodetypes.def build-basics.el
 $(srcdir)/c-gperf.h: c-parse.gperf qualifiers.h nesc-keywords.h
 	cd $(srcdir) && $(M4) $(M4FLAGS) c-parse.gperf | grep -v '^$$' | \
 	$(GPERF) $(GPERFFLAGS) -p -j1 -i 1 -g -o -t -G -N is_reserved_word -k1,3,8,$$ >$@-
+	mv $@- $@
+
+$(srcdir)/machine/sdcc-gperf.h: machine/sdcc.gperf
+	$(GPERF) $(GPERFFLAGS) -j1 -t -E -H sdcc_hash -N is_sdcc_word -k1,3 machine/sdcc.gperf >$@-
+	mv $@- $@
+
+$(srcdir)/machine/keil-gperf.h: machine/keil.gperf
+	$(GPERF) $(GPERFFLAGS) -j1 -t -E -H keil_hash -N is_keil_word -k1,3 machine/keil.gperf >$@-
 	mv $@- $@
 

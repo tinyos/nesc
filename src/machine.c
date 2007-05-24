@@ -18,10 +18,15 @@ Boston, MA 02111-1307, USA.  */
 #include "parser.h"
 #include "machine.h"
 #include "errors.h"
+#include "c-parse.tab.h"
+#undef yystype
+#include "c-parse.h"
+#include "semantics.h"
 
 #include "machine/avr.c"
 #include "machine/self.c"
 #include "machine/keil.c"
+#include "machine/sdcc.c"
 #include "machine/msp430.c"
 #include "machine/env_machine.c"
 
@@ -29,6 +34,7 @@ static machine_spec *machines[] = {
   &avr_machine,
   &self_machine,
   &keil_machine,
+  &sdcc_machine,
   &msp430_machine,
   &env_machine,
   NULL

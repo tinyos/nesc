@@ -28,8 +28,7 @@ Boston, MA 02111-1307, USA. */
    written by AT&T, but I have never seen it.  */
 
 %pure_parser
-%expect 8
-
+%expect 12
 
 %{
 #include <stdio.h>
@@ -56,6 +55,7 @@ Boston, MA 02111-1307, USA. */
 #include "nesc-task.h"
 #include "nesc-cpp.h"
 #include "attributes.h"
+#include "machine.h"
 
 int yyparse(void) deletes;
 
@@ -142,8 +142,8 @@ void yyerror();
 %type <u.asm_operand> asm_operand asm_operands nonnull_asm_operands
 %type <u.asm_stmt> maybeasm
 %type <u.attribute> maybe_attribute attributes attribute attribute_list
-%type <u.attribute> nesc_attributes nattrib
-%type <u.gcc_attribute> attrib
+%type <u.attribute> nesc_attributes nattrib 
+%type <u.gcc_attribute> attrib target_attribute
 %type <u.constant> CONSTANT
 %type <u.decl> datadecl datadecls datadef decl decls extdef extdefs fndef
 %type <u.decl> initdecls initdecls_ notype_initdecls notype_initdecls_ fndef2
@@ -161,7 +161,7 @@ void yyerror();
 %type <u.nested> absfn_declarator array_or_absfn_declarator
 %type <u.expr> cast_expr expr expr_no_commas exprlist init initlist_maybe_comma
 %type <u.expr> initlist1 initelt nonnull_exprlist primary string_component 
-%type <u.expr> STRING string_list nonnull_exprlist_ initval
+%type <u.expr> STRING string_list nonnull_exprlist_ initval restricted_expr
 %type <u.designator> designator_list designator
 %type <u.expr> unary_expr xexpr function_call
 %type <u.expr> generic_type typelist
@@ -222,6 +222,7 @@ void yyerror();
 %token <u.itoken> SIGNAL POST GENERIC NEW NX_STRUCT NX_UNION
 /* words reserved for nesC's future. Some may never be used... */
 %token <u.itoken> ABSTRACT COMPONENT EXTENDS
+%token <idtoken> TARGET_ATTRIBUTE0 TARGET_ATTRIBUTE1 TARGET_DEF
 
 %type <u.itoken> callkind
 %type <u.decl> datadef_list 
@@ -233,6 +234,7 @@ void yyerror();
 %type <u.decl> interface_parms interface_parm_list interface_parm
 %type <u.decl> component_parms 
 %type <u.decl> template_parms template_parmlist template_parm
+%type <u.decl> target_def
 %type <u.iref> interface_ref interface_type
 %type <u.cref> component_ref component_ref2 component_list cuses
 %type <u.conn> connection
@@ -893,9 +895,13 @@ just_datadef:
 		{ if (pedantic)
 		    pedwarn("ANSI C does not allow extra `;' outside of a function");
 		  $$ = NULL; }
+	| target_def
 	;
 
-
+target_def:
+	  TARGET_DEF identifier '=' expr ';'
+		  { $$ = target->keilc_definition($1.location, $1.id, $2.id, $4); }
+	;
 
 fndef:
 	  declspecs_ts setspecs declarator fndef2 { $$ = $4; }
@@ -1716,7 +1722,7 @@ maybeasm:
 initdcl:
 	  declarator maybeasm maybe_attribute '='
 		{ $<u.decl>$ = start_decl($1, $2, pstate.declspecs, 1,
-					  prefix_attr($3));
+                                          prefix_attr($3));
 		  start_init($<u.decl>$, NULL); }
 	  init
 /* Note how the declaration of the variable is in effect while its init is parsed! */
@@ -1742,6 +1748,7 @@ notype_initdcl:
 					     prefix_attr($3));
 		  $$ = finish_decl(d, NULL); }
 	;
+
 maybe_attribute:
 	  /* empty */
   		{ $$ = NULL; }
@@ -1769,7 +1776,26 @@ attributes:
 attribute:
 	  ATTRIBUTE '(' '(' attribute_list ')' ')'
 		{ $$ = $4; }
+	| target_attribute { $$ = CAST(attribute, $1); }
 	| nattrib
+	;
+
+target_attribute:
+	  TARGET_ATTRIBUTE0
+		{ word w = new_word(pr, $1.location, $1.id);
+		  $$ = new_gcc_attribute(pr, $1.location, w, NULL); }
+	| TARGET_ATTRIBUTE1 restricted_expr
+		{ word w = new_word(pr, $1.location, $1.id);
+		  $$ = new_gcc_attribute(pr, $1.location, w, $2); }
+	| '@' restricted_expr
+		{ word w = new_word(pr, $2->location, str2cstring(pr, "iar_at"));
+		  $$ = new_gcc_attribute(pr, $2->location, w, $2); }
+	;
+
+restricted_expr:
+	  CONSTANT { $$ = CAST(expression, $1); }
+	| string { $$ = CAST(expression, $1); }
+	| '(' expr ')' { $$ = $2; }
 	;
 
 attribute_list:

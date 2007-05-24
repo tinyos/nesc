@@ -235,5 +235,6 @@ const char *tagkind_name(int tagkind);
 bool handle_mode_attribute(location loc, data_declaration ddecl, const char *mode);
 /* Make "word" argument of attributes into an expression */
 expression make_attr_args(location loc, cstring id, expression args);
+data_declaration declare_builtin_type(const char *name, type t);
 
 #endif

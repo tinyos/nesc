@@ -1,6 +1,10 @@
-This is version 1.2.8a of the nesC compiler.
+This is version 1.2.X of the nesC compiler.
 
 Installation instructions are in INSTALL. 
+
+Changes in nesC 1.2.9
+=====================
+- fix -fnesc-separator
 
 Changes in nesC 1.2.8a
 ======================

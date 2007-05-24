@@ -32,6 +32,7 @@ Boston, MA 02111-1307, USA. */
 #include "semantics.h"
 #include "constants.h"
 #include "nesc-cpp.h"
+#include "machine.h"
 
 #include <ctype.h>
 
@@ -1440,17 +1441,25 @@ static int lextoken(struct yystype *lvalp)
 
 	  lvalp->idtoken.location = last_location;
 	  lvalp->idtoken.id = make_token_cstring();
-	  decl = lookup_id(lvalp->idtoken.id.data, FALSE);
-	  lvalp->idtoken.decl = decl;
+	  lvalp->idtoken.decl = NULL;
 
-	  if (decl)
-	    switch (decl->kind)
-	      {
-	      case decl_typedef: value = TYPENAME; break;
-	      case decl_magic_string: value = MAGIC_STRING; break;
-	      case decl_component_ref: value = COMPONENTREF; break;
-	      default: break;
-	      }
+	  if (value == IDENTIFIER && target->token)
+	    value = target->token(token_buffer, token_ptr - token_buffer, lvalp);
+
+	  if (value == IDENTIFIER)
+	    {
+	      decl = lookup_id(lvalp->idtoken.id.data, FALSE);
+	      lvalp->idtoken.decl = decl;
+
+	      if (decl)
+		switch (decl->kind)
+		  {
+		  case decl_typedef: value = TYPENAME; break;
+		  case decl_magic_string: value = MAGIC_STRING; break;
+		  case decl_component_ref: value = COMPONENTREF; break;
+		  default: break;
+		  }
+	    }
 	}
 
       break;
