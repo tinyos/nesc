@@ -4,7 +4,7 @@
 /* Partial model for supporting SDCC.
 
    Maps the address space keywords into attributes (see sdcc_token).
-   Maps __at into an attribute (see sdcc_token).
+   Maps __at, __using, __interrupt, etc into attributes (see sdcc_token).
    Defines typedefs for bit, sbit, sfr, sfr16 and sfr32.
 
    Does not:

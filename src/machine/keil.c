@@ -1,4 +1,28 @@
-/* Thanks to David Patnode (dpatnode@bradley.edu) for this file. */
+/* 
+
+/* Partial model for supporting Keil C (original version based on work 
+   by David Patnode (dpatnode@bradley.edu) for this file). 
+
+   Maps the address space keywords into attributes (see keil_token).
+   Maps using, interrupt, etc into attributes (see keil_token).
+
+   Defines typedefs for bit. The magic 
+     sfr/sfr16/sbit name = address
+   Keil extension is rewritten to 
+     sfr __attribute((keil_address(address))) name
+   using predefined typedefs for sbit, sfr and sfr16. This rewrite depends
+   on the special Keil hack in the parser (look for TARGET_DEF in c-parse.y).
+
+   Does not:
+   - compute pointer size correctly (assumes they are all 2 bytes);
+     could improve by writing attribute handling functions to compute
+     the correct pointer size based on the address space attributes...
+     (note the default pointer size should be 2 bytes anyway, because that
+     size is used to size ptrdiff_t_type and intptr_type, and those will be
+     unhappy if there's no integer type of the same size as the pointer size)
+   - check any of the semantic restrictions associated with all these extensions
+
+*/
 
 #include "machine/keil-gperf.h"
 
