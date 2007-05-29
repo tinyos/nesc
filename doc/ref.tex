@@ -895,8 +895,10 @@ Atomic statements:
 atomic-stmt: \\
 \>	\kw{atomic} statement\\
 \end{tabbing} \end{quote}
-guarantee that the statement is executed ``as-if'' no other computation
-occurred simultaneously. It is used to implement mutual exclusion, for
+guarantee that the statement is executed ``as-if'' no other
+computation occurred simultaneously, and furthermore any values stored
+inside an atomic statement are visible inside all subsequent atomic
+statements.  Atomic statements are used to implement mutual exclusion, for
 updates to concurrent data structures, etc. The following example
 uses \kw{atomic} to prevent concurrent execution of \code{do\_something}:
 \begin{verbatim}
@@ -1862,18 +1864,35 @@ implementation {
 \subsection{Compile-time Constant Functions}
 \label{sec:constant-functions}
 
-\nesc currently has two constant functions:
+\nesc currently has three constant functions:
 \begin{itemize}
 \item 
-\code{unsigned int unique(char *identifier)} \\ Returns: each call to
-\code{unique} with the same \code{identifier} string returns a different
-value. The expansion of \code{unique} calls happens after generic component
-instantiation (Section~\ref{sec:load-component}): calls to \code{unique} in
-generic components return a different value in each instantiation. The
-range of values returned by \code{unique($s$)} is $0 .. n-1$, where $n$ is
-the number of different values returned by \code{unique($s$)} in the whole
-application. For purposes of checking constant expressions,
-\code{unique($s$)} behaves as if it were an unknown constant.
+\code{unsigned int unique(char *identifier)} \\ 
+\code{unsigned int uniqueN(char *identifier, unsigned int nb)}
+
+Given a program with $k$ uses of \code{uniqueN} with the same
+\code{identifier} and values $n_1, \ldots n_k$ for \code{nb}, each use
+returns an integer $u_i$ from the sequence $0 \ldots (\sum_{i=0}^k
+n_i) - 1$. Furthermore, the sequences $u_i \ldots u_i + n_i - 1$ do
+not overlap with each other. Note that $n_i = 0$ is allowed. The
+behaviour is undefined if $ \sum_{i=0}^k n_i >= \code{UINT\_MAX}$
+(\code{UINT\_MAX} from \code{<limits.h>}).
+
+
+Less formally, \code{uniqueN("S", N)} allocates a sequence of
+\code{N} consecutive numbers distinct from all other sequences
+allocated for identifier \code{S}, returns the smallest value
+from the sequence, and guarantees that the sequences are compact
+(start at 0, no gaps between sequences).
+
+A use of \code{unique(S)} is short for \code{uniqueN(S, 1)}.
+
+The expansion of \code{uniqueN} calls happens after generic component
+instantiation (Section~\ref{sec:load-component}): calls to \code{uniqueN} in
+generic components return a different value in each instantiation.
+
+For purposes of checking constant expressions, \code{uniqueN($s$, $n$)}
+behaves as if it were an unknown constant.
 
 Using \code{unique}, a component providing a service (defined by interface
 \code{X}) can uniquely identify its clients with the following idiom:
@@ -1898,18 +1917,19 @@ implementation {
 Each client of \code{XService} will be connected to interface \code{X} with
 a different \code{id}.
 
-\item \code{unsigned int uniqueCount(char *identifier)} \\ Returns:
-\code{uniqueCount($s$)} returns one more than the largest value returned by
-any of the calls to \code{unique($s$)}, or 0 if there are no calls to
-\code{unique($s$)}. For purposes of checking constant expressions,
+\item \code{unsigned int uniqueCount(char *identifier)}
+
+\code{uniqueCount($s$)} returns the sum of all \code{nb} parameters
+for all uses of \code{uniqueN($s$, nb)}, or 0 if there are no calls to
+\code{uniqueN($s$)}. For purposes of checking constant expressions,
 \code{uniqueCount($s$)} behaves as if it were an unknown constant.
 
-The intended use of \code{uniqueCount} is for dimensioning arrays (or other
-data structures) which will be indexed using the numbers returned by
-\kw{unique}. For instance, a \kw{Timer} service that identifies its clients
-(and hence each independent timer) via a parameterised interface and
-\kw{unique} can use \kw{uniqueCount} to allocate the correct number of
-timer data structures.
+The intended use of \code{uniqueCount} is for dimensioning arrays (or
+other data structures) which will be indexed using the numbers
+returned by \kw{unique} and \kw{uniqueN}. For instance, a \kw{Timer}
+service that identifies its clients (and hence each independent timer)
+via a parameterised interface and \kw{unique} can use \kw{uniqueCount}
+to allocate the correct number of timer data structures.
 
 \end{itemize}
 
