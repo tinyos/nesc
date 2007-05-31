@@ -49,6 +49,11 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	elsif (/^-o/) {
 	    ($i, $objtarget) = &extractarg($i);
 	}
+	elsif (/^--param$/) {
+	    ($i, $param) = &nextarg($i);
+	    push @gcc_args, "--param";
+	    push @gcc_args, $param;
+	}
 	elsif (/^-S$/) {
 	    $asmonly = 1;
 	}

@@ -1,10 +1,12 @@
-This is version 1.2.X of the nesC compiler.
+This is version 1.2.9 of the nesC compiler.
 
 Installation instructions are in INSTALL. 
 
 Changes in nesC 1.2.9
 =====================
+- added uniqueN constant function to allocated N consecutive numbers
 - fix -fnesc-separator
+- bug fixes
 
 Changes in nesC 1.2.8a
 ======================
