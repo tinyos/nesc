@@ -86,10 +86,10 @@ static int length, offset;
 
 void nd_read(const char *str)
 {
-  if (!mbuf) mbuf = nd_create_buffer(stdin, YY_BUF_SIZE);
-  else nd_init_buffer(mbuf, stdin);
+  if (mbuf) 
+    nd_delete_buffer(mbuf);
+  mbuf = nd_create_buffer(stdin, YY_BUF_SIZE);
   
-  yy_current_buffer = 0;
   nd_switch_to_buffer(mbuf);
   line = str;
   offset = 0;
