@@ -59,7 +59,9 @@ EXTRA_DIST =					\
 	$(vim_DATA)				\
 	$(kde_DATA)
 
-nesc.jar: FORCE
+NESC_JAR_DEPS = $(shell find java -name '*.java')
+
+nesc.jar: $(NESC_JAR_DEPS)
 	(cd java && $(MAKE))
 	(cd java && jar cf ../$@ `find . -name '*.class'`)
 
