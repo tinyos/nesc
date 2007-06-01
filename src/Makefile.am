@@ -234,6 +234,9 @@ EXTRA_DIST = 					\
 	machine/env_machine.c			\
 	machine/msp430.c			\
 	machine/keil.c				\
+	machine/keil.gperf			\
+	machine/sdcc.c				\
+	machine/sdcc.gperf			\
 	nesc-dspec.def				\
 	nesc-dspec.l				\
 	nesc-dspec.y				\
