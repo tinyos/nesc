@@ -625,6 +625,14 @@ nesc_declaration original_component(nesc_declaration c)
   return c;
 }
 
+static void attr_C_tdecl(nesc_attribute attr, tag_declaration tdecl)
+{
+  if (tdecl->container_function)
+    error_with_location(attr->location, "`@C()' is for symbols with external scope only");
+  else
+    tdecl->Cname = TRUE;
+}
+
 static void attr_C_decl(nesc_attribute attr, data_declaration ddecl)
 {
   if (!ddecl->isexternalscope)
@@ -692,7 +700,7 @@ static void attr_combine_decl(nesc_attribute attr, data_declaration ddecl)
 
 void init_internal_nesc_attributes(void)
 {
-  define_internal_attribute("C", NULL, attr_C_decl, NULL, NULL, NULL);
+  define_internal_attribute("C", NULL, attr_C_decl, attr_C_tdecl, NULL, NULL);
   define_internal_attribute("hwevent", NULL, attr_hwevent_decl, NULL, NULL, NULL);
   define_internal_attribute("atomic_hwevent", NULL, attr_atomic_hwevent_decl, NULL, NULL, NULL);
   define_internal_attribute("spontaneous", NULL, attr_spontaneous_decl, NULL, NULL, NULL);

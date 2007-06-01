@@ -1109,7 +1109,7 @@ void prt_tag_ref(tag_ref tr, pte_options options)
 
   if (tr->word1)
     {
-      if (tr->tdecl && tr->tdecl->container)
+      if (tr->tdecl && tr->tdecl->container && !tr->tdecl->Cname)
 	prt_container(tr->tdecl->container);
       if (tr->kind == kind_attribute_ref)
 	output("__nesc_attr_");

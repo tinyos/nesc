@@ -279,6 +279,13 @@ void handle_gcc_tag_attribute(gcc_attribute attr, tag_declaration tdecl)
       if (cval_isinteger(arg))
 	tdecl->user_alignment = arg;
     }
+  else if (is_attr_name(name, "C"))
+    {
+      if (tdecl->container_function)
+	error_with_location(attr->location, "`C' attribute is for symbols with external scope only");
+      else
+	tdecl->Cname = TRUE;
+    }
   else if (!(target->tag_attribute &&
 	     target->tag_attribute(attr, tdecl)))
     /*ignored_gcc_attribute(attr)*/;

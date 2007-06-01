@@ -279,6 +279,7 @@ tag_declaration declare_tag_env(environment env, tag_ref t)
   tdecl->container = NULL;
   tdecl->dumped = FALSE;
   tdecl->instanceof = NULL;
+  tdecl->Cname = FALSE;
 #endif
 
   if (name)

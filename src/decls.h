@@ -82,6 +82,7 @@ typedef struct tag_declaration {
   cval alignment, user_alignment;
   bool packed;			/* if packed attribute specified */
   bool dumped;			/* TRUE if already added to dump list */
+  bool Cname;			/* TRUE if has @C() attribute */
 
   nesc_declaration container;	/* as in data_declarations */
 
