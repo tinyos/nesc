@@ -289,6 +289,6 @@ $(srcdir)/machine/sdcc-gperf.h: machine/sdcc.gperf
 	mv $@- $@
 
 $(srcdir)/machine/keil-gperf.h: machine/keil.gperf
-	$(GPERF) $(GPERFFLAGS) -j1 -t -E -H keil_hash -N is_keil_word -k1,3 machine/keil.gperf >$@-
+	$(GPERF) $(GPERFFLAGS) -j1 -t -E -H keil_hash -N is_keil_word -k1,3,$$ machine/keil.gperf >$@-
 	mv $@- $@
 
