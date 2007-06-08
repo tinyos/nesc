@@ -3600,7 +3600,7 @@ asttype make_type(type_element elements, declarator d)
   parse_declarator(t->qualifiers, t->declarator, FALSE, FALSE,
 		   &class, &scf, NULL, &name, 
 		   &t->type, &defaulted_int, NULL, &extra_attr);
-  assert(t->type && !(defaulted_int || class || scf || name));
+  assert(t->type && !(class || scf || name));
 
   return t;
 }
