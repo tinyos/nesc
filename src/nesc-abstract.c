@@ -1276,7 +1276,7 @@ void check_abstract_arguments(const char *kind, data_declaration ddecl,
 		errmsg = "parameter %d must be an integer type";
 	      break;
 	    case typevar_number:
-	      if (!type_integer(arglist->type))
+	      if (!type_real(arglist->type))
 		errmsg = "parameter %d must be a numerical type";
 	      break;
 	    default: assert(0); break;
