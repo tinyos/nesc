@@ -1,4 +1,6 @@
+#define signal oops
 #include <stdlib.h>
+#undef signal
 
 generic configuration docheck(int test, size_t nesc_size, size_t nesc_align, typedef t) { }
 implementation {
