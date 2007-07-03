@@ -1,9 +1,9 @@
-%define version 1.2.8a
+%define version 1.2.9
 %define theprefix /usr
 
 Summary: nesC compiler 
 Name: nesc
-Version: 1.2.8a
+Version: 1.2.9
 Release: 1
 License: GNU GPL Version 2
 Packager: TinyOS Group, UC Berkeley
@@ -38,6 +38,7 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %doc
 
 %changelog
+* Tue Jul 3 2007  <david.e.gay@intel.com> 1.2.9
 * Wed Dec 20 2006  <david.e.gay@intel.com> 1.2.8a
 * Fri Dec 1 2006  <david.e.gay@intel.com> 1.2.8
 * Thu Jul 6 2006  <kwright@archrock.com> 1.2.7a
