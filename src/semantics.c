@@ -3544,6 +3544,7 @@ declaration make_enumerator(location loc, cstring id, expression value)
   declaration ast;
   struct data_declaration tempdecl;
   data_declaration ddecl, old_decl;
+  environment env = current.env;
 
   if (value && !type_integer(value->type))
     {
@@ -3557,12 +3558,20 @@ declaration make_enumerator(location loc, cstring id, expression value)
   tempdecl.definition = ast;
   tempdecl.value = layout_enum_value(CAST(enumerator, ast));
 
-  old_decl = lookup_id(id.data, TRUE);
+  if (current.language == l_interface)
+    {
+      error("only commands and events can be defined in interfaces");
+      /* We don't want the symbol in the interface's env, so give
+	 it it's own private home! */
+      env = new_environment(parse_region, NULL, FALSE, FALSE);
+    }
+
+  old_decl = env_lookup(env->id_env, id.data, TRUE);
 
   if (old_decl && duplicate_decls(&tempdecl, old_decl, FALSE, FALSE))
     ddecl = old_decl;
   else
-    ddecl = declare(current.env, &tempdecl, FALSE);
+    ddecl = declare(env, &tempdecl, FALSE);
 
   CAST(enumerator, ast)->ddecl = ddecl;
 
