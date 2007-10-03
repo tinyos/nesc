@@ -1738,8 +1738,8 @@ Note that neither \code{@hwevent()} or \code{@atomic\_hwevent()} provide any
 linkage of $f$ with a particular interrupt handler. The mechanism by
 which that is achieved is platform-specific.
 
-Inside a function with the \code{@atomic\_hwevent()} attribute, a call to a
-function named \code{\_\_nesc\_enable\_interrupt()} is assumed to terminate
+Inside a function with the \code{@atomic\_hwevent()} attribute, a call to
+\code{\_\_nesc\_enable\_interrupt()} is assumed to terminate
 the implicit \kw{atomic} statement. This is useful for interrupt handlers
 which must start with interrupts disabled, but can reenable interrupts
 after a little work.
@@ -1749,7 +1749,7 @@ function for a type in a \kw{typedef} declaration. The combining function
 specifies how to combine the multiple results of a call to a command
 or event which has ``fan-out''. For example:
 \begin{verbatim}
-  typedef uint8_t result_t __attribute__((combine(rcombine)));
+  typedef uint8_t result_t @combine("rcombine");
 
   result_t rcombine(result_t r1, result_t r2)
   {
