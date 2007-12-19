@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Authors: Ariel Núñez, Marco Barisione, Emanuele Aina
+ Copyright (C) 2005-2007 Marco Barisione <barisione@gmail.com>
+ Copyright (C) 2005-2007 Emanuele Aina
+ Copyright (C) 2007 Ariel Núñez (Adapted to NesC the cpp.lang written by Marco and Emanuele)
+
+ This library is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Library General Public
+ License as published by the Free Software Foundation; either
+ version 2 of the License, or (at your option) any later version.
+
+ This library is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Library General Public License for more details.
+
+ You should have received a copy of the GNU Library General Public
+ License along with this library; if not, write to the
+ Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ Boston, MA 02111-1307, USA.
+
+-->
+<language id="nc" _name="NesC" version="2.0" _section="Sources">
+    <metadata>
+      <property name="mimetypes">application/x-netcdf;text/x-chdr;text/x-csrc;text/plain</property>
+      <property name="globs">*.nc</property>
+      <property name="line-comment-start">//</property>
+      <property name="block-comment-start">/*</property>
+      <property name="block-comment-end">*/</property>
+    </metadata>
+
+    <styles>
+        <style id="keyword" _name="Keyword" map-to="c:keyword"/>
+        <style id="type" _name="Data Type" map-to="c:type"/>
+        <style id="common-defines" _name="Common Defines" map-to="c:common-defines"/>
+    </styles>
+
+    <definitions>
+        <!-- NesC-specific stuff (i.e. stuff which is not C) -->
+        <context id="ncc-proper">
+            <include>
+                <context id="keywords" style-ref="keyword">
+		  	<keyword>interface</keyword>
+			<keyword>norace</keyword>
+			<keyword>command</keyword>
+			<keyword>module</keyword>
+			<keyword>post</keyword>
+			<keyword>provides</keyword>
+			<keyword>components</keyword>
+			<keyword>implementation</keyword>
+			<keyword>configuration</keyword>
+			<keyword>includes</keyword>
+			<keyword>uses</keyword>
+			<keyword>call</keyword>
+			<keyword>dbg</keyword>
+			<keyword>event</keyword>
+			<keyword>task</keyword>
+			<keyword>signal</keyword>
+                </context>
+
+                <context id="types" style-ref="type">
+			<keyword>uint8_t</keyword>
+			<keyword>uint16_t</keyword>
+			<keyword>uint32_t</keyword>
+			<keyword>bool</keyword>
+			<keyword>result_t</keyword>
+			<keyword>int32_t</keyword>
+			<keyword>int16_t</keyword>
+			<keyword>int8_t</keyword>
+                </context>
+
+                <context id="common-defines" style-ref="common-defines">
+                    <keyword>__STDC__</keyword>
+                </context>
+            </include>
+        </context>
+
+        <!-- actual language definition: NesC-specific stuff plus everything from C -->
+        <context id="nc">
+            <include>
+                <context ref="ncc-proper"/>
+                <context ref="c:c"/>
+            </include>
+        </context>
+    </definitions>
+</language>

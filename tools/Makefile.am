@@ -25,6 +25,7 @@ editordir=$(nccdatadir)/editor-modes
 emacsdir=$(editordir)/emacs
 vimdir=$(editordir)/vim
 kdedir=$(editordir)/kde
+geditdir=$(editordir)/gedit
 
 bin_SCRIPTS = nescc-mig nescc-ncg nescc nescc-wiring
 
@@ -52,12 +53,16 @@ vim_DATA =					\
 kde_DATA = 					\
 	editor-modes/kde/nesc.xml		\
 	editor-modes/kde/readme.txt
+gedit_DATA = 					\
+	editor-modes/gedit/ncc.xml		\
+	editor-modes/gedit/readme.txt
 
 EXTRA_DIST =					\
 	$(ncclib_DATA)				\
 	$(emacs_DATA)				\
 	$(vim_DATA)				\
-	$(kde_DATA)
+	$(kde_DATA)				\
+	$(gedit_DATA)
 
 NESC_JAR_DEPS = $(shell find java -name '*.java')
 
