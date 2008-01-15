@@ -142,10 +142,10 @@ sub gen() {
 	    if ($bitlength > 32) {
 	      print "          s += \"0x\"+Long.toHexString(getElement_$javafield(i))+\" \";\n";
 	    }
-	    elsif (bitlength > 16) {
+	    elsif ($bitlength > 16) {
 	      print "          s += \"0x\"+Long.toHexString(getElement_$javafield(i) & 0xffffffff)+\" \";\n";
 	    }
-	    elsif (bitlength > 8) {
+	    elsif ($bitlength > 8) {
 	      print "          s += \"0x\"+Long.toHexString(getElement_$javafield(i) & 0xffff)+\" \";\n";
 	    }
 	    else {
