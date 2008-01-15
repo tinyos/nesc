@@ -1,0 +1,8 @@
+.deps
+Makefile
+config.status
+configure
+config.in
+config.log
+stamp-h1
+localedir.hs
