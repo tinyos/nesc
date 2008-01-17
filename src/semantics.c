@@ -22,7 +22,6 @@ Boston, MA 02111-1307, USA. */
 
 #include "parser.h"
 #include "semantics.h"
-#include "input.h"
 #include "flags.h"
 #include "c-parse.h"
 #include "c-lex.h"
@@ -118,8 +117,8 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->isparameter = FALSE;
   dd->islimbo = FALSE;
   dd->value = NULL;
-  dd->chars = NULL;
-  dd->chars_length = 0;
+  dd->schars.data = NULL;
+  dd->schars.length = 0;
   dd->id = 0;
   dd->defined = FALSE;
   dd->suppress_definition = FALSE;
@@ -380,7 +379,7 @@ void shadow_tag_warned(type_element elements, int warned)
 	}
       else
 	{
-	  if (!warned && ! input_file_stack->l.in_system_header)
+	  if (!warned && ! current.lex.input->l.in_system_header)
 	    {
 	      warning("useless keyword or type name in empty declaration");
 	      warned = 2;
@@ -429,15 +428,6 @@ bool is_void_parms(declaration parms)
 
   return !vd->declarator && dd->modifiers && !dd->modifiers->next &&
     is_rid(dd->modifiers) && CAST(rid, dd->modifiers)->id == RID_VOID;
-}
-
-bool error_if_void_parms(declaration parms)
-{
-  bool vp;
-
-  if ((vp = is_void_parms(parms)))
-    error("use (), not (void), for 0-argument functios");
-  return vp;
 }
 
 /* At end of parameter list, warn about any struct, union or enum tags
@@ -718,7 +708,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 					  "`long long long' is too long for GCC");
 		    else
 		      {
-			if (pedantic && !input_file_stack->l.in_system_header)
+			if (pedantic && !current.lex.input->l.in_system_header)
 			  pedwarn_with_location(spec->location,
 						"ANSI C does not support `long long'");
 			longlong = TRUE;
@@ -935,7 +925,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
     }
 
   if (pedantic && type_function(t) && (type_const(t) || type_volatile(t)) &&
-      !input_file_stack->l.in_system_header)
+      !current.lex.input->l.in_system_header)
     pedwarn_with_location(loc, "ANSI C forbids const or volatile function types");
 
   /* Now figure out the structure of the declarator proper.
@@ -1031,9 +1021,6 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	    /* Require new-style declarations */
 	    if (current.language != l_c)
 	      {
-		if (error_if_void_parms(fd->parms))
-		  fd->parms = NULL; /* avoid 2nd error for tasks */
-
 		newstyle = !fd->parms || !is_oldidentifier_decl(fd->parms);
 		if (!newstyle)
 		  error("old-style parameter lists not supported");
@@ -1656,7 +1643,7 @@ void check_function(data_declaration dd, declaration fd, int class,
   /* XXX: Does this volatile/const stuff actually work with my imp ? */
   if (pedantic && type_void(return_type) &&
       (type_const(return_type) || type_volatile(return_type)) &&
-      !input_file_stack->l.in_system_header)
+      !current.lex.input->l.in_system_header)
     pedwarn("ANSI C forbids const or volatile void function return type");
 
   if (type_volatile(function_type) && !type_void(return_type))
@@ -1754,10 +1741,10 @@ void check_function(data_declaration dd, declaration fd, int class,
     }
 }
 
-data_declaration declare_string(const char *name, bool wide, size_t length)
+data_declaration declare_string(const char *name, cstring value, bool wide)
 {
   struct data_declaration tempdecl;
-  expression expr_l = build_uint_constant(parse_region, dummy_location, size_t_type, length + 1);
+  expression expr_l = build_uint_constant(parse_region, dummy_location, size_t_type, value.length + 1);
   type value_type = make_array_type(wide ? wchar_type : char_type, expr_l);
 
   init_data_declaration(&tempdecl, new_error_decl(parse_region, dummy_location),
@@ -1766,24 +1753,14 @@ data_declaration declare_string(const char *name, bool wide, size_t length)
   tempdecl.needsmemory = TRUE;
   tempdecl.in_system_header = TRUE;
   tempdecl.vtype = variable_static;
-
-  /* Save value. */
-  tempdecl.chars_length = length;
-  tempdecl.chars = rarrayalloc(parse_region, length + 1, wchar_t);
+  tempdecl.schars = value;
 
   return declare(current.env, &tempdecl, TRUE);
 }
 
 static void declare_magic_string(const char *name, const char *value)
 {
-  int i, l = strlen(value);
-  data_declaration dd = declare_string(name, FALSE, l);
-  wchar_t *chars = (wchar_t *)dd->chars;
-
-  /* Save value. */
-  for (i = 0; i < l; i++)
-    chars[i] = value[i];
-  chars[l] = 0;
+  declare_string(name, str2cstring(parse_region, value), FALSE);
 }
 
 bool builtin_declaration(data_declaration dd)
@@ -3692,7 +3669,7 @@ void init_semantics(void)
   bad_decl->kind = decl_error;
   bad_decl->name = "undeclared";
   bad_decl->type = error_type;
-  bad_decl->ast = new_error_decl(parse_region, last_location);
+  bad_decl->ast = new_error_decl(parse_region, dummy_location);
 
   dummy_function_declarator = 
     new_function_declarator(parse_region, dummy_location, NULL, NULL, NULL, NULL,   NULL);

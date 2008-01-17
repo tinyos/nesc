@@ -23,22 +23,10 @@ Boston, MA 02111-1307, USA. */
 #ifndef INPUT_H
 #define INPUT_H
 
-#include "c-lex-state.h"
-
-struct file_stack
-  {
-    struct file_stack *next;
-    struct location l;
-    struct lex_state lex; /* internal info for lexer only */
-  };
-
-/* Stack of currently pending input files. */
-extern struct file_stack *input_file_stack;
-
-/* Incremented on each change to input_file_stack.  */
+/* Incremented on each change to the input file stack.  */
 extern int input_file_stack_tick;
 
-void set_input(FILE *f, const char *filename);
+void set_input(cpp_reader *f, const char *filename);
 void end_input(void);
 void push_input(void);
 void pop_input(void);

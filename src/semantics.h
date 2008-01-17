@@ -38,6 +38,7 @@ extern data_declaration builtin_constant_p;
 
 #include "cstring.h"
 #include "decls.h"
+#include "c-lex-state.h"
 
 /* Print an error message now
    for a recent invalid struct, union or enum cross reference.
@@ -167,7 +168,7 @@ data_declaration declare(environment env, data_declaration from,
 			 bool ignore_shadow);
 
 /* Build a declaration object for a string */
-data_declaration declare_string(const char *name, bool wide, size_t length);
+data_declaration declare_string(const char *name, cstring value, bool wide);
 
 environment new_environment(region r, environment parent,
 			    bool global_level, bool parm_level);
@@ -204,6 +205,7 @@ struct semantic_state
   atomic_stmt in_atomic;		/* The lexically containing atomic statement
 				   (NULL for none) */
   char *preprocessed_file;	/* Temp file holding preprocessor output */
+  struct lex_state lex;
 };
 
 extern struct semantic_state current;

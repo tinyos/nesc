@@ -210,8 +210,7 @@ struct data_declaration {
   bool substitute;		/* Substitute value when unparsing */
 
   /* For magic_strings */
-  const wchar_t *chars;
-  size_t chars_length;
+  cstring schars;
 
   /* For interface_ref */
   nesc_declaration itype;

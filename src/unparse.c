@@ -153,24 +153,27 @@ void output_quoted(const char *s)
 }
 
 
-void output_quoted_wide(const wchar_t *s)
+void output_quoted_cs(cstring s)
 {
   /* Output a string which may contain newlines, \ and " */
-  while (*s)
+  int i;
+
+  for (i = 0; i < s.length; i++)
     {
-      if (*s == '\n') /* don't confuse the line numbers */
+      char c = s.data[i];
+
+      if (c == '\n') /* don't confuse the line numbers */
 	fputs("\\n", of);
-      else if ((unsigned char)*s == *s && isprint(*s))
+      else if ((unsigned char)c == c && isprint(c))
 	{
-	  if (*s == '\\' || *s == '"')
+	  if (c == '\\' || c == '"')
 	    putc('\\', of);
-	  putc(*s, of);
+	  putc(c, of);
 	}
       else 
 	/* The "" at the end avoids confusion if the next character
 	   is '0'-'9', 'a'-'f' or 'A'-'F' */
-	output("\\x%lx\"\"", (unsigned long)*s);
-      s++;
+	output("\\x%lx\"\"", (unsigned long)c);
     }
 }
 
@@ -334,7 +337,10 @@ void output_constant(known_cst c)
 
       assert(ddecl && ddecl->kind == decl_magic_string);
       output("\"");
-      output_quoted_wide(ddecl->chars);
+      /* FIXME we ignore wide char issues, just outputting the raw bytes - 
+	 this should be ok for now as we don't actually allow wide-char
+	 strings as arguments to generics anyway */
+      output_quoted_cs(ddecl->schars);
       output("\"");
     }
   else
@@ -1766,10 +1772,10 @@ void prt_lexical_cst(lexical_cst e, int context_priority)
 
 void prt_string(string e, int context_priority)
 {
-  expression s;
+  lexical_cst s;
 
-  scan_expression (s, e->strings)
-    prt_expression(s, P_TOP);
+  scan_lexical_cst (s, CAST(lexical_cst, e->strings))
+    prt_lexical_cst(s, P_TOP);
 }
 
 void prt_init_list(init_list e, int context_priority)

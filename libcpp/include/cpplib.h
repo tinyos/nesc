@@ -111,6 +111,7 @@ struct _cpp_file;
   OP(PLUS_PLUS,		"++")	/* increment */				\
   OP(MINUS_MINUS,	"--")						\
   OP(DEREF,		"->")	/* accessors */				\
+  OP(FERED,		"<-")	/* wiring */				\
   OP(DOT,		".")						\
   OP(SCOPE,		"::")						\
   OP(DEREF_STAR,	"->*")						\

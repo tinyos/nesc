@@ -52,8 +52,8 @@ struct dhash_table
   region sameregion r;
   void **sameregion elements;
   unsigned long size, used, log2size;
-  int (*traditional compare)(void *key, void *y);
-  unsigned long (*traditional hash)(void *x);
+  int (*compare)(void *key, void *y);
+  unsigned long (*hash)(void *x);
 };
 
 dhash_table new_dhash_table(region r, unsigned long initial_size,

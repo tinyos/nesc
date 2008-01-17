@@ -59,6 +59,8 @@ static void self_handle_option(const char *arg)
 static machine_spec self_machine = {
   "pc", SELF_HANDLE_OPTION,
 
+  FALSE,			/* FIXME big_endian */
+
   /* pcc_bitfield_type_matters */
   sizeof(struct self_pcc1) != sizeof(struct self_pcc2),	
 

@@ -1,5 +1,3 @@
-/* 
-
 /* Partial model for supporting Keil C (original version based on work 
    by David Patnode (dpatnode@bradley.edu) for this file). 
 
@@ -82,6 +80,7 @@ declaration keil_special(location loc, cstring keyword, cstring name,
 /* Basic pointer sizes and alignments for the 8051's compiled w/ Keil C51 */
 static machine_spec keil_machine = {
   "keil", NULL,
+  TRUE,				/* big_endian */
   FALSE,			/* pcc_bitfield_type_matters */
   8,				/* empty field boundary - in bits */
   8,				/* structure size boundary - in bits */

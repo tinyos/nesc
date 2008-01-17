@@ -12,7 +12,7 @@ typedef struct {
 
   void (*handle_option)(const char *opt);
 
-  bool pcc_bitfield_type_matters;
+  bool big_endian, pcc_bitfield_type_matters;
   size_t empty_field_boundary, structure_size_boundary;
 
   size_t word_size;

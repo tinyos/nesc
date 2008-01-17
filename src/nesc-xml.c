@@ -121,20 +121,23 @@ void xqputs(const char *s)
     }
 }
 
-void xwqputs(const wchar_t *s)
+void xqputcs(const cstring s)
 {
+  int i;
+
   if (!xml_file)
     return;
 
   /* Output a wide-char string quoted to match XML AttValue rules */
-  while (*s)
+  for (i = 0; i < s.length; i++)
     {
-      if ((unsigned char)*s == *s && isprint(*s) &&
-	  !(*s == '"' || *s == '<' || *s == '&'))
-	putc(*s, xml_file);
+      char c = s.data[i];
+
+      if ((unsigned char)c == c && isprint(c) &&
+	  !(c == '"' || c == '<' || c == '&'))
+	putc(c, xml_file);
       else 
-	xprintf("&#%d;", *s);
-      s++;
+	xprintf("&#%d;", c);
     }
 }
 
@@ -254,8 +257,9 @@ void xml_attr_cval(const char *name, cval val)
       /* XXX: We don't (yet) support strings with an offset */
       if (ddecl && ddecl->kind == decl_magic_string && cval_knownbool(val))
 	{
+	  /* Wide strings are printed as their byte-by-byte rep. FIXME */
 	  xputs("S:");
-	  xwqputs(ddecl->chars);
+	  xqputcs(ddecl->schars);
 	}
       else
 	unknown = TRUE;

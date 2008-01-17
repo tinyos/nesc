@@ -44,7 +44,6 @@ typedef struct AST_node *noderef;
 #include "c-lex.h"
 #include "AST_types.h"
 #include "AST_list_node.h"
-#include "config.h"
 #include "decls.h"
 #include "env.h"
 #include "types.h"

@@ -49,6 +49,7 @@ static int sdcc_token(const char *token, int len, struct yystype *lvalp)
 
 static machine_spec sdcc_machine = {
   "sdcc", NULL,
+  FALSE,			/* big_endian */
   FALSE,			/* pcc_bitfield_type_matters */
   8,				/* empty field boundary - in bits */
   8,				/* structure size boundary - in bits */

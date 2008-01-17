@@ -28,7 +28,6 @@ Boston, MA 02111-1307, USA.  */
 #include "flags.h"
 #include "semantics.h"
 #include "c-parse.h"
-#include "input.h"
 
 static region pragma_region;
 dd_list pragmas;
@@ -513,13 +512,13 @@ void handle_directive(const char *directive, const char *args)
 
   if (!strcmp(directive, "pragma"))
     {
-      save_pragma(input_file_stack->l, args);
+      save_pragma(current.lex.input->l, args);
       return;
     }
 
   /* If the filename starts with <, these are special macros (built in
      or from the command line) */
-  if (input_file_stack && input_file_stack->l.filename[0] == '<')
+  if (current.lex.input && current.lex.input->l.filename[0] == '<')
     return;
 
   if (!(strcmp(directive, "define") == 0 || strcmp(directive, "undef") == 0))

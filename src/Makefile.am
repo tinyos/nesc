@@ -43,7 +43,7 @@ endif
 
 ncclibdir=$(libdir)/ncc
 
-INCLUDES = $(regionflags) -I$(srcdir)/$(regiondir) $(extra_inc)
+INCLUDES = $(regionflags) -I$(srcdir)/$(regiondir) -I$(srcdir)/../libcpp/include -I$(srcdir)/../libcpp -I$(srcdir)/../include $(extra_inc)
 
 noinst_LIBRARIES = libparser.a
 ncclib_PROGRAMS = nesc1
@@ -100,8 +100,6 @@ libparser_a_SOURCES =				\
 	graph.h					\
 	init.c					\
 	init.h					\
-	input.c					\
-	input.h					\
 	lex.nd.c				\
 	machine.c				\
 	machine.h				\
@@ -183,7 +181,12 @@ libparser_a_SOURCES =				\
 	machine/sdcc-gperf.h
 
 nesc1_SOURCES = toplev.c
-nesc1_LDADD = libparser.a $(libregions) -lm
+nesc1_LDADD = 	libparser.a 			\
+		$(libregions)			\
+		../libcpp/libcpp.a		\
+		../libiberty/libiberty.a	\
+		-lm				\
+		-liconv
 
 BUILT_SOURCES =					\
 	AST_defs.h				\

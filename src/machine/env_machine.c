@@ -32,6 +32,7 @@ Boston, MA 02111-1307, USA.  */
 static machine_spec env_machine = {
   "env", NULL,
   /* [default] */       /* [keyname] */
+  FALSE,		/* big_endian */
   FALSE,		/* pcc_bitfield_type_matters */
   8,			/* empty_field_boundary */
   8,			/* structure_size_boundary */
@@ -141,6 +142,19 @@ static bool scan_env_machine(machine_spec * machine, const char *envname)
 	  if (b != -1)
 	    {
 	      machine->pcc_bitfield_type_matters = b ? TRUE : FALSE;
+	    }
+	  else
+	    {
+	      error("%s.%s, expected 'false' or 'true'", envname, name);
+	      n_errors++;
+	    }
+	}
+      else if (is_literali(name = "big_endian", begin, equal))
+	{
+	  int b = scan_boolean(value, space);
+	  if (b != -1)
+	    {
+	      machine->big_endian = b ? TRUE : FALSE;
 	    }
 	  else
 	    {

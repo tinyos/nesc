@@ -70,7 +70,7 @@
 (deffield cstring cstring (init))
 (deffield word1 word (init tree))
 (deffield word2 word (init tree))
-(deffield strings expression (init tree))
+(deffield strings string_cst (init tree))
 (deffield args expression (init tree))
 (deffield modifiers type_element (init tree))
 (deffield qualifiers type_element (init tree))
@@ -95,7 +95,6 @@
 (deffield incrementrc bool (init))
 (deffield old_parms declaration (init))
 (deffield attributes attribute (init tree))
-(deffield chars "wchar_t *" (init))
 (deffield length size_t (init))
 (deffield cval cval (init))
 (deffield va_arg_call asttype (init))
@@ -546,9 +545,10 @@ ARG2 is a GCC extension")
   "A constant represented as in its unparsed lexical form CSTRING. These
 appear in the AST.")
 
-(deftype string_cst lexical_cst (chars length)
-  "A single lexical string whose LENGTH characters are CHARS. The source
-form of the constant can be found in CSTRING.")
+(deftype string_cst lexical_cst ()
+  "A single lexical string - a sequence of these gets concatenated to
+form a string. The source form of the constant can be found in
+CSTRING.")
 
 (deftype string expression (strings ddecl)
   "A list of STRINGS forming a single string constant.

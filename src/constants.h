@@ -48,8 +48,8 @@ lexical_cst fold_lexical_real(type realtype, location loc, cstring tok);
 /* XXX: What's the right type for charvalue ? (must hold wchar_t or int) */
 lexical_cst fold_lexical_char(location loc, cstring tok,
 			      bool wide_flag, int charvalue);
-string_cst fold_lexical_string(location loc, cstring tok,
-			       bool wide_flag, wchar_array stringvalue);
+string fold_lexical_string(location loc, string_cst components, cstring value,
+			   bool wide_flag);
 
 known_cst fold_label_address(expression e);
 known_cst fold_sizeof(expression e, type stype);
@@ -132,12 +132,6 @@ void constant_overflow_warning(known_cst c);
    Requires: cval_knownbool(c)
  */
 #define constant_boolvalue(c) cval_boolvalue((c)->cval)
-
-char *string_cst_to_c(region r, string_cst s);
-/* Returns: A C string representation of s allocated in r, or NULL if 
-     no such representation can be created (which means s is a wide character
-     string and wcstombs failed)
-*/
 
 typedef enum {
   cst_any,

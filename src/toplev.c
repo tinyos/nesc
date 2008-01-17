@@ -25,7 +25,6 @@ Boston, MA 02111-1307, USA. */
 #include <stdlib.h>
 
 #include "parser.h"
-#include "input.h"
 #include "c-parse.h"
 #include "unparse.h"
 #include "semantics.h"
@@ -353,7 +352,7 @@ static void rcc_aborting(int s)
   signal(SIGABRT, 0);
   fprintf(stderr, "nesC: Internal error. Please send a bug report to the nesC bug mailing list\nat nescc-bugs@lists.sourceforge.net\n");
   where = current_location();
-  if (where)
+  if (where != dummy_location)
     fprintf(stderr, "Current location (guess): %s:%lu\n", where->filename, where->lineno);
   if (getenv("RCCDEBUG"))
     abort();

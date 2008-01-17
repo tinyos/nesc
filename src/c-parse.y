@@ -40,7 +40,6 @@ Boston, MA 02111-1307, USA. */
 #include "c-lex.h"
 #include "c-lex-int.h"
 #include "semantics.h"
-#include "input.h"
 #include "expr.h"
 #include "stmt.h"
 #include "init.h"
@@ -102,8 +101,7 @@ void yyerror();
    yylval is the node for the constant.  */
 %token CONSTANT
 
-/* String constants in raw form.
-   yylval is a STRING_CST node.  */
+/* String constants in raw form. */
 %token STRING MAGIC_STRING
 
 /* "...", used for functions with variable arglists.  */
@@ -160,8 +158,8 @@ void yyerror();
 %type <u.nested> array_declarator fn_declarator array_or_fn_declarator
 %type <u.nested> absfn_declarator array_or_absfn_declarator
 %type <u.expr> cast_expr expr expr_no_commas exprlist init initlist_maybe_comma
-%type <u.expr> initlist1 initelt nonnull_exprlist primary string_component 
-%type <u.expr> STRING string_list nonnull_exprlist_ initval restricted_expr
+%type <u.expr> initlist1 initelt nonnull_exprlist primary string
+%type <u.expr> nonnull_exprlist_ initval restricted_expr
 %type <u.designator> designator_list designator
 %type <u.expr> unary_expr xexpr function_call
 %type <u.expr> generic_type typelist
@@ -177,7 +175,7 @@ void yyerror();
 %type <u.stmt> stmts xstmts compstmt_or_error compstmt
 %type <u.stmt> labeled_stmt stmt stmt_or_error atomic_stmt
 %type <u.cstmt> do_stmt_start
-%type <u.string> asm_clobbers string
+%type <u.string> asm_clobbers STRING
 %type <u.telement> declspecs_nosc_nots_nosa_noea
 %type <u.telement> declspecs_nosc_nots_nosa_ea
 %type <u.telement> declspecs_nosc_nots_sa_noea
@@ -421,7 +419,7 @@ declaration make_data_decl(type_element modifiers, declaration decls)
 
 declaration make_error_decl(void)
 {
-  return new_error_decl(pr, last_location);
+  return new_error_decl(pr, dummy_location);
 }
 
 declaration make_extension_decl(int old_pedantic, location l, declaration d)
@@ -457,7 +455,7 @@ declarator make_identifier_declarator(location l, cstring id)
 
 statement make_error_stmt(void)
 {
-  return new_error_stmt(pr, last_location);
+  return new_error_stmt(pr, dummy_location);
 }
 
 /* Tell yyparse how to print a token's value, if yydebug is set.  */
@@ -1150,11 +1148,11 @@ primary:
 		  $$ = make_identifier($1.location, $1.id, yychar == '('); 
 		}
 	| CONSTANT { $$ = CAST(expression, $1); }
-	| string { $$ = CAST(expression, $1); }
+	| string { $$ = $1; }
 	| '(' expr ')'
 		{ $$ = $2; $$->parens = TRUE; }
 	| '(' error ')'
-		{ $$ = make_error_expr(last_location); }
+		{ $$ = make_error_expr(); }
 	| '('
 		{ if (current.function_decl == 0)
 		    {
@@ -1215,24 +1213,9 @@ function_call:
 	  	{ $$ = make_function_call($2.location, $1, $3); }
 	;
 
-/* Produces a STRING_CST with perhaps more STRING_CSTs chained onto it.  */
-string:
-	  string_list { $$ = make_string($1->location, expression_reverse($1)); }
+string:   STRING { $$ = CAST(expression, $1); }
+	| MAGIC_STRING { $$ = make_identifier($1.location, $1.id, FALSE); }
         ;
-
-string_list:
-	  string_component { $$ = $1; }
-	| string_list string_component
-		{ $$ = expression_chain($2, $1); }
-	;
-
-string_component:
-	  STRING { $$ = CAST(expression, $1); }
-	| MAGIC_STRING
-	  { $$ = make_identifier($1.location, $1.id, FALSE);
-	  }
-	;
-
 
 old_style_parm_decls:
 	  /* empty */ { $$ = NULL; }
@@ -1714,7 +1697,7 @@ notype_initdecls_:
 maybeasm:
 	  /* empty */
 		{ $$ = NULL; }
-	| ASM_KEYWORD '(' string ')'
+	| ASM_KEYWORD '(' STRING ')'
 		{ $$ = new_asm_stmt(pr, $1.location, CAST(expression, $3),
 				    NULL, NULL, NULL, NULL); }
 	;
@@ -1794,7 +1777,7 @@ target_attribute:
 
 restricted_expr:
 	  CONSTANT { $$ = CAST(expression, $1); }
-	| string { $$ = CAST(expression, $1); }
+	| string { $$ = $1; }
 	| '(' expr ')' { $$ = $2; }
 	;
 
@@ -1853,7 +1836,7 @@ init:
 	  initlist_maybe_comma '}'
 		{ $$ = make_init_list($1.location, $3); }
 	| error
-		{ $$ = make_error_expr(last_location); }
+		{ $$ = make_error_expr(); }
 	;
 
 /* `initlist_maybe_comma' is the guts of an initializer in braces.  */
@@ -1898,7 +1881,7 @@ initval:
 		  process_init_element(NULL); }
 	| expr_no_commas
 		{ process_init_element($1); $$ = $1; }
-	| error { $$ = make_error_expr(last_location); }
+	| error { $$ = make_error_expr(); }
 	;
 
 designator_list:
@@ -2574,19 +2557,15 @@ nonnull_asm_operands:
 
 asm_operand:
 	  STRING '(' expr ')'
-		{ $$ = new_asm_operand(pr, $1->location, NULL, 
-				       make_string($1->location, CAST(expression, $1)),
-				       $3);  }
+		{ $$ = new_asm_operand(pr, $1->location, NULL, $1, $3);  }
 	| '[' idword ']' STRING '(' expr ')'
-		{ $$ = new_asm_operand(pr, $1.location, $2, 
-				       make_string($4->location, CAST(expression, $4)),
-				       $6);  }
+		{ $$ = new_asm_operand(pr, $1.location, $2, $4, $6);  }
 	;
 
 asm_clobbers:
-	  string
+	  STRING
 		{ $$ = $1; }
-	| asm_clobbers ',' string
+	| asm_clobbers ',' STRING
 		{ $$ = string_chain($1, $3); }
 	;
 
@@ -2610,7 +2589,7 @@ parmlist_1:
 	  parmlist_1
 		{ $$ = declaration_chain($1, $4); }
 	| error ')'
-		{ $$ = new_error_decl(pr, last_location); }
+		{ $$ = make_error_decl(); }
 	;
 
 /* This is what appears inside the parens in a function declarator.
@@ -2618,7 +2597,7 @@ parmlist_1:
 parmlist_2:  /* empty */
 		{ $$ = NULL; }
 	| ELLIPSIS
-		{ $$ = new_error_decl(pr, last_location);
+		{ $$ = make_error_decl();
 		  /* Gcc used to allow this as an extension.  However, it does
 		     not work for all targets, and thus has been disabled.
 		     Also, since func (...) and func () are indistinguishable,

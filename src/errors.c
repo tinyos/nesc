@@ -26,8 +26,9 @@ Boston, MA 02111-1307, USA. */
 #include "errors.h"
 #include "semantics.h"
 #include "nesc-semantics.h"
-#include "input.h"
 #include "flags.h"
+
+int input_file_stack_tick;
 
 /* Name of program invoked (from argv[0]).  */
 const char *progname;
@@ -51,12 +52,12 @@ void clear_error_location(void)
 
 location current_location(void)
 {
-  if (input_file_stack)
-    return &input_file_stack->l;
+  if (current.lex.input)
+    return &current.lex.input->l;
   else if (error_location)
     return error_location;
   else
-    return NULL;
+    return dummy_location;
 }
 
 /* Count an error or warning.  Return 1 if the message should be printed.  */
@@ -87,7 +88,7 @@ int count_error(int warningp)
    then we don't have to mention the function name.  */
 static function_decl last_error_function = NULL;
 
-/* Used to detect when input_file_stack has changed since last described.  */
+/* Used to detect when current.lex.input has changed since last described.  */
 static int last_error_tick;
 
 /* The default function to print out name of current function that caused
@@ -141,12 +142,12 @@ void report_error_function(const char *file)
 {
   struct file_stack *p;
 
-  if (input_file_stack && input_file_stack->next != 0
+  if (current.lex.input && current.lex.input->next != 0
       && input_file_stack_tick != last_error_tick
-      && file == input_file_stack->l.filename)
+      && file == current.lex.input->l.filename)
     {
       fprintf (stderr, "In file included");
-      for (p = input_file_stack->next; p; p = p->next)
+      for (p = current.lex.input->next; p; p = p->next)
 	{
 	  fprintf (stderr, " from %s:%lu", p->l.filename, p->l.lineno);
 	  if (p->next)
@@ -190,8 +191,8 @@ void verror_with_decl(declaration d, const char *format, va_list args)
 /* Report error msg at current filename, lineno */
 void verror(const char *format, va_list args)
 {
-  if (input_file_stack)
-    verror_with_location(&input_file_stack->l, format, args);
+  if (current.lex.input)
+    verror_with_location(&current.lex.input->l, format, args);
   else if (error_location)
     verror_with_location(error_location, format, args);
   else
@@ -271,8 +272,8 @@ void vwarning_with_decl(declaration d, const char *format, va_list args)
 /* Report warning msg at current filename, lineno */
 void vwarning(const char *format, va_list args)
 {
-  if (input_file_stack)
-    vwarning_with_location(&input_file_stack->l, format, args);
+  if (current.lex.input)
+    vwarning_with_location(&current.lex.input->l, format, args);
   else if (error_location)
     vwarning_with_location(error_location, format, args);
   else if (count_error(TRUE))

@@ -122,34 +122,13 @@ word build_word(region r, const char *cword)
   return new_word(r, dummy_location, str2cstring(r, cword));
 }
 
-static void wchar_copy(wchar_t *chars, const char *s, size_t l)
-{
-  size_t i;
-
-  for (i = 0; i < l; i++)
-    chars[i] = s[i];
-  chars[l] = 0;
-}
-
-static string_cst build_string_cst(region r, location loc, const char *s)
-{
-  size_t l = strlen(s);
-  wchar_t *chars = rarrayalloc(r, l + 1, wchar_t);
-
-  wchar_copy(chars, s, l);
-  return new_string_cst(r, loc, str2cstring(r, "oops"), chars, l);
-}
-
 expression build_string(region r, location loc, const char *str)
 {
-  string_cst elems = build_string_cst(r, loc, str);
-  string s = new_string(r, loc, CAST(expression, elems), NULL);
-  size_t total_length;
+  string_cst elems = new_string_cst(r, loc, str2cstring(r, "oops"));
+  data_declaration sdecl = declare_string(NULL, str2cstring(r, str), FALSE);
+  string s = new_string(r, loc, elems, sdecl);
 
-  total_length = strlen(str);
-  s->ddecl = declare_string(NULL, FALSE, total_length);
-  s->type = s->ddecl->type;
-  wchar_copy((wchar_t *)s->ddecl->chars, str, total_length);
+  s->type = sdecl->type;
   s->static_address = foldaddress_string(s);
   s->lvalue = TRUE;
 

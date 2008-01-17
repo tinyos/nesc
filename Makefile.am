@@ -1,6 +1,8 @@
 AUTOMAKE_OPTIONS = foreign
 
-SUBDIRS = src doc tools
+SUBDIRS = libcpp libiberty src doc tools
+
+src: libcpp libiberty
 
 EXTRA_DIST =					\
 	COPYING					\

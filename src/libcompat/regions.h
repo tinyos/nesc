@@ -35,7 +35,7 @@
 #define REGIONS_H
 
 #define deletes
-#define traditional
+//#define traditional
 #define sameregion
 #define parentptr
 

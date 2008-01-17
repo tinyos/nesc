@@ -23,8 +23,6 @@ Boston, MA 02111-1307, USA. */
 #ifndef C_LEX_H
 #define C_LEX_H
 
-#include "config.h"
-
 typedef enum { l_c, l_interface, l_component, l_implementation, l_any } source_language;
 
 typedef struct location
@@ -35,7 +33,7 @@ typedef struct location
   bool in_system_header;
 } *location;
 
-extern location last_location, dummy_location, toplevel_location;
+extern location dummy_location, toplevel_location;
 
 location new_location(const char *filename, int lineno);
 
@@ -74,7 +72,8 @@ enum rid
 #define NORID RID_UNUSED
 
 void init_lex(void);
-void start_lex(source_language l);
+bool start_lex(source_language l, const char *path);
+void end_lex(void);
 int lex_getc(void);
 void lex_ungetc(int c);
 void skip_c_comment(void);
@@ -85,8 +84,6 @@ void skip_cpp_comment(void);
  * place the documentation into the appropriate data_declaration.
  **/
 void get_latest_docstring(char **short_s, char **long_s, struct location **loc);
-char *get_docstring();
-void separate_short_docstring(char *str, char **short_s, char **long_s);
 
 location make_location(struct location l);
 

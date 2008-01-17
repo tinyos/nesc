@@ -514,9 +514,9 @@ bool check_assignment(type lhstype, type rhstype, expression rhs,
   return FALSE;
 }
 
-expression make_error_expr(location loc)
+expression make_error_expr(void)
 {
-  expression result = CAST(expression, new_error_expr(parse_region, loc));
+  expression result = CAST(expression, new_error_expr(parse_region, dummy_location));
 
   result->type = error_type;
 
@@ -1348,7 +1348,7 @@ expression make_identifier(location loc, cstring id, bool maybe_implicit)
 expression make_compound_expr(location loc, statement block)
 {
   if (is_error_stmt(block))
-    return make_error_expr(loc);
+    return make_error_expr();
   else
     {
       expression result = CAST(expression, new_compound_expr(parse_region, loc, block));
@@ -1714,63 +1714,4 @@ expression make_predecrement(location loc, expression e)
 {
   return finish_increment(CAST(unary, new_predecrement(parse_region, loc, e)),
 			  "decrement");
-}
-
-static size_t extract_strings(expression string_components,
-			      wchar_t *into, bool *wide)
-{
-  size_t total_length = 0;
-  expression astring;
-  
-  *wide = FALSE;
-  scan_expression (astring, string_components)
-    {
-      const wchar_t *chars;
-      size_t length;
-
-      if (!type_equal(type_array_of(astring->type), char_type))
-	*wide = TRUE;
-
-      if (is_identifier(astring))
-	{
-	  data_declaration dd = CAST(identifier, astring)->ddecl;
-
-	  chars = dd->chars;
-	  length = dd->chars_length;
-	}
-      else
-	{
-	  string_cst s = CAST(string_cst, astring);
-
-	  chars = s->chars;
-	  length = s->length;
-	}
-      if (into)
-	{
-	  memcpy(into, chars, length * sizeof(wchar_t));
-	  into += length;
-	}
-
-      total_length += length;
-    }
-  if (into)
-    into[0] = 0;
-
-  return total_length;
-}
-
-string make_string(location loc, expression string_components)
-{
-  string s = new_string(parse_region, loc, string_components, NULL);
-  size_t total_length = 0;
-  bool wide;
-
-  total_length = extract_strings(string_components, NULL, &wide);
-  s->ddecl = declare_string(NULL, wide, total_length);
-  s->type = s->ddecl->type;
-  extract_strings(string_components, (wchar_t *)s->ddecl->chars, &wide);
-  s->static_address = foldaddress_string(s);
-  s->lvalue = TRUE;
-
-  return s;
 }

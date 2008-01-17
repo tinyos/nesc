@@ -30,7 +30,7 @@ Boston, MA 02111-1307, USA. */
 #include <stdarg.h>
 #include <stddef.h>
 
-#include "config.h"
+#include "nconfig.h"
 #include "array.h"
 #include "utils.h"
 #include "AST.h"

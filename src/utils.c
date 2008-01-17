@@ -4,6 +4,10 @@ This file is derived from the RC Compiler. It is thus
    Copyright (C) 2000-2001 The Regents of the University of California.
 Changes for nesC are
    Copyright (C) 2002 Intel Corporation
+It also includes 
+   Public domain code from Pat Rankin <rankin@eql.caltech.edu>
+and code from libiberty that is
+   Copyright (C) 2001, 2002 Free Software Foundation, Inc.
 
 The attached "nesC" software is provided to you under the terms and
 conditions of the GNU General Public License Version 2 as published by the
@@ -44,6 +48,19 @@ void *xmalloc(size_t size)
   return x;
 }
 
+void *xcalloc(size_t count, size_t size)
+{
+#ifdef BWGC
+  void *x = GC_calloc(count, size);
+#else
+  void *x = calloc(count, size);
+#endif
+
+  if (!x) abort();
+
+  return x;
+}
+
 void *xrealloc(void *p, size_t newsize)
 {
 #ifdef BWGC
@@ -55,6 +72,53 @@ void *xrealloc(void *p, size_t newsize)
   if (!x) abort();
 
   return x;
+}
+
+char *xstrdup(const char *s)
+{
+  char *t = strdup(s);
+
+  if (!t) abort();
+
+  return t;
+}
+
+void *xmemdup(const void *from, size_t s, size_t nsize)
+{
+  void *x = xcalloc(1, nsize);
+
+  return memcpy(x, from, s);
+}
+
+#define ERRSTR_FMT "undocumented error #%d"
+static char xstrerror_buf[sizeof ERRSTR_FMT + 20];
+
+/* Like strerror, but result is never a null pointer.  */
+char *xstrerror (int errnum)
+{
+  char *errstr;
+#ifdef VMS
+  char *(*vmslib_strerror) (int,...);
+
+  /* Override any possibly-conflicting declaration from system header.  */
+  vmslib_strerror = (char *(*) (int,...)) strerror;
+  /* Second argument matters iff first is EVMSERR, but it's simpler to
+     pass it unconditionally.  `vaxc$errno' is declared in <errno.h>
+     and maintained by the run-time library in parallel to `errno'.
+     We assume that `errnum' corresponds to the last value assigned to
+     errno by the run-time library, hence vaxc$errno will be relevant.  */
+  errstr = (*vmslib_strerror) (errnum, vaxc$errno);
+#else
+  errstr = strerror (errnum);
+#endif
+
+  /* If `errnum' is out of range, result might be NULL.  We'll fix that.  */
+  if (!errstr)
+    {
+      sprintf (xstrerror_buf, ERRSTR_FMT, errnum);
+      errstr = xstrerror_buf;
+    }
+  return errstr;
 }
 
 /* Make a new unintialised cstring of length l */
@@ -83,6 +147,17 @@ cstring make_cstring(region r, const char *s, int l)
 cstring str2cstring(region r, const char *s)
 {
   return make_cstring(r, s, strlen(s));
+}
+
+/* Make a new C string with a copy of cstring s */
+char *cstring2str(region r, cstring s)
+{
+  int len = s.length + 1;
+  char *str = rstralloc(r, len);
+
+  memcpy(str, s.data, len);
+
+  return str;
 }
 
 unsigned long align_to(unsigned long n, unsigned long alignment)
@@ -128,7 +203,6 @@ int ilog2(largest_uint x)
   return v == x ? log2 : -1;
 }
 
-DEFINE_ARRAY(wchar_array, wchar_t)
 DEFINE_ARRAY(char_array, char)
 
 #ifdef __CYGWIN32__

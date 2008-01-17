@@ -41,7 +41,7 @@ static type set_array_length(type t, largest_int length)
 
 static largest_int string_constant_length(expression e)
 {
-  return CAST(string, e)->ddecl->chars_length + 1;
+  return CAST(string, e)->ddecl->schars.length + 1;
 }
 
 /* Make a version of tdecl (an array type) with its length set to the 
@@ -300,9 +300,10 @@ static bool digest_init(type t, expression init)
 	  if (!cval_istop(tcsize))
 	    {
 	      largest_uint tsize = cval_uint_value(tcsize);
+	      data_declaration sdecl = CAST(string, init)->ddecl;
 
 	      /* Don't count the null char (char x[1] = "a" is ok) */
-	      if (tsize && tsize < CAST(string, init)->ddecl->chars_length)
+	      if (tsize && tsize < sdecl->schars.length / type_size_int(type_array_of(sdecl->type)))
 		pedwarn_init ("initializer-string for array of chars is too long");
 	    }
 

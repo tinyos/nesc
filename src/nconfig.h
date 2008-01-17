@@ -19,11 +19,17 @@ along with nesC; see the file COPYING.  If not, write to
 the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA. */
 
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef NCONFIG_H
+#define NCONFIG_H
 
 /* autoconf/configure options */
 #include "autoconf.h"
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_VERSION
 
 /* Target type structure information.
    This setup assumes that we are compiling on self, with gcc 

@@ -31,7 +31,7 @@ void xstartline_noindent(void);
 void xvprintf(char *format, va_list args);
 void xprintf(char *format, ...);
 void xqputs(const char *s);
-void xwqputs(const wchar_t *s);
+void xqputcs(cstring cs);
 void xputs(const char *s);
 
 /* Tag/attribute handling */

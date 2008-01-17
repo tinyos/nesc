@@ -23,7 +23,7 @@ Boston, MA 02111-1307, USA. */
 #ifndef EXPR_H
 #define EXPR_H
 
-expression make_error_expr(location loc);
+expression make_error_expr(void);
 
 expression make_comma(location loc, expression elist);
 expression make_dereference(location loc, expression e);
@@ -52,8 +52,6 @@ expression make_postincrement(location loc, expression e);
 expression make_preincrement(location loc, expression e);
 expression make_postdecrement(location loc, expression e);
 expression make_predecrement(location loc, expression e);
-
-string make_string(location loc, expression string_components);
 
 /* Return TRUE if no error and lhstype and rhstype are not error_type */
 bool check_assignment(type lhstype, type rhstype, expression rhs,

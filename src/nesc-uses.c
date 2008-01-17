@@ -342,7 +342,7 @@ static void collect_uses_asm_operands(asm_operand operands,
 
   scan_asm_operand (aop, operands)
     {
-      wchar_t mode = asm_rwmode(aop->string);
+      int mode = asm_rwmode(aop->string);
       context c = exe_c;
 
       /* = is write, + is r/w, everything else is read */

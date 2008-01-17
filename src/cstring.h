@@ -43,4 +43,7 @@ cstring alloc_cstring(region r, int l);
 /* Make a new cstring with a copy of regular C string s */
 cstring str2cstring(region r, const char *s);
 
+/* Make a new C string with a copy of cstring s */
+char *cstring2str(region r, cstring s);
+
 #endif

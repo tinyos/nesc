@@ -20,7 +20,6 @@ Boston, MA 02111-1307, USA.  */
 #include "semantics.h"
 #include "nesc-decls.h"
 #include "c-parse.h"
-#include "input.h"
 #include "AST_utils.h"
 #include "nesc-paths.h"
 #include "nesc-cpp.h"
@@ -153,9 +152,9 @@ node compile(location loc, nesc_declaration container,
   source_language l = container ? container->kind : l_c;
   const char *path =
     name_is_path ? name : find_nesc_file(parse_region, l, name);
-  FILE *f = NULL;
   node parse_tree = NULL;
   struct semantic_state old_semantic_state = current;
+  bool ok;
 
   if (!path)
     error_with_location(loc, "%s %s not found", language_name(l), name);
@@ -163,24 +162,17 @@ node compile(location loc, nesc_declaration container,
     {
       if (flag_verbose)
 	fprintf(stderr, "preprocessing %s\n", path);
-      f = preprocess(path, l);
 
-      if (!f)
+      current.file = container;
+      current.fileregion = newregion();
+      start_semantics(l_c, NULL, global_env);
+      ok = start_lex(l, path);
+      if (!ok)
 	error_with_location(loc, "failed to preprocess %s", path);
       else
-	{
-	  set_input(f, path);
-
-	  start_lex(l);
-	  start_semantics(l_c, NULL, global_env);
-	  current.file = container;
-	  current.fileregion = newregion();
-	  parse_tree = parse();
-	  deleteregion_ptr(&current.fileregion);
-	  end_input();
-
-	  preprocess_file_end();
-	}
+	parse_tree = parse();
+      deleteregion_ptr(&current.fileregion);
+      end_lex();
     }
 
   current = old_semantic_state;
@@ -291,6 +283,7 @@ nesc_declaration load(source_language sl, location l,
 nesc_declaration start_nesc_entity(source_language sl, word name)
 {
   nesc_declaration decl;
+  location doc_location;
 
   /* If the kind of entity in the file matches the expected kind
      (passed to load), reuse the existing declaration. Otherwise
@@ -301,11 +294,7 @@ nesc_declaration start_nesc_entity(source_language sl, word name)
   else
     decl = new_nesc_declaration(parse_region, sl, name->cstring.data);
 
-  char *docstring = get_docstring();
-    
-  if (docstring)
-    separate_short_docstring(docstring, &decl->short_docstring,
-			     &decl->long_docstring);
+  get_latest_docstring(&decl->short_docstring, &decl->long_docstring, &doc_location);
 
   start_semantics(sl, decl, decl->env);
 

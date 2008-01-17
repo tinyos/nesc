@@ -20,7 +20,6 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-paths.h"
 #include "nesc-semantics.h"
 #include "c-parse.h"
-#include "input.h"
 #include "nesc-cpp.h"
 
 declaration all_cdecls;

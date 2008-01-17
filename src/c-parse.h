@@ -32,7 +32,6 @@ struct yystype {
     attribute attribute;
     gcc_attribute gcc_attribute;
     lexical_cst constant;
-    string_cst string_cst;
     declaration decl;
     declarator declarator;
     nested_declarator nested;

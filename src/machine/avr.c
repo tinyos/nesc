@@ -20,6 +20,7 @@ static bool avr_decl_attribute(gcc_attribute attr, data_declaration ddecl)
 /* Basic pointer sizes and alignments for the AVR */
 static machine_spec avr_machine = {
   "avr", NULL,
+  FALSE,			/* big_endian */
   FALSE,			/* pcc_bitfield_type_matters */
   8,				/* empty field boundary - in bits */
   8,				/* structure size boundary - in bits */

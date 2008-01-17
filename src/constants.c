@@ -461,20 +461,17 @@ lexical_cst fold_lexical_char(location loc, cstring tok,
   return c;
 }
 
-string_cst fold_lexical_string(location loc, cstring tok,
-			       bool wide_flag, wchar_array stringvalue)
+string fold_lexical_string(location loc, string_cst components, cstring value,
+			   bool wide_flag)
 {
-  size_t length = wchar_array_length(stringvalue);
-  wchar_t *chars = rarrayalloc(parse_region, length + 1, wchar_t);
-  string_cst c = new_string_cst(parse_region, loc, tok, chars, length);
+  data_declaration sdecl = declare_string(NULL, value, wide_flag);
+  string s = new_string(parse_region, loc, components, sdecl);
 
-  c->type = wide_flag ? wchar_array_type : char_array_type;
-  memcpy(chars, wchar_array_data(stringvalue), length * sizeof(wchar_t));
-  chars[length] = 0;
+  s->type = sdecl->type;
+  s->static_address = foldaddress_string(s);
+  s->lvalue = TRUE;
 
-  /* We don't set c->cst as a C string constant is a sequence of string_cst,
-     not a single one. See make_string. */
-  return c;
+  return s;
 }
 
 lexical_cst fold_lexical_int(type itype, location loc, cstring tok,
@@ -548,33 +545,6 @@ bool is_zero_constant(known_cst c)
    requires to be a constant expression. */
 void constant_overflow_warning(known_cst c)
 {
-}
-
-char *string_cst_to_c(region r, string_cst s)
-{
-  const wchar_t *wstr = s->chars;
-  char *str;
-
-  if (type_wchararray(s->type, FALSE))
-    {
-      int length_as_str = wcs_mb_size(wstr);
-      if (length_as_str < 0)
-	return NULL;
-
-      str = rarrayalloc(r, length_as_str, char);
-      length_as_str = wcstombs(str, wstr, length_as_str);
-      assert(length_as_str >= 0);
-    }
-  else
-    {
-      size_t i;
-
-      str = rarrayalloc(r, s->length + 1, char);
-      for (i = 0; i < s->length; i++)
-	str[i] = s->chars[i];
-    }
-
-  return str;
 }
 
 bool check_constant_once(expression e, cst_kind k)

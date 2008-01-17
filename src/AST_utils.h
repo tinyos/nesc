@@ -51,10 +51,10 @@ expression build_identifier(region r, location loc, data_declaration id);
 
 cval value_of_enumerator(enumerator e);
 
-wchar_t asm_rwmode(string s);
+int asm_rwmode(string s);
 /* Return: The first char of asm operand mode specifier s, this indicates
      the r/w mode for the operand (see gcc docs)
-     The result is (wchar_t)-1 if s is the empty string.
+     The result is -1 if s is the empty string.
 */
 
 declaration ignore_extensions(declaration d);

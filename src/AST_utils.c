@@ -229,12 +229,12 @@ expression build_identifier(region r, location loc, data_declaration id)
   return CAST(expression, e);
 }
 
-wchar_t asm_rwmode(string s)
+int asm_rwmode(string s)
 {
-  if (s->ddecl->chars_length > 0)
-    return s->ddecl->chars[0];
+  if (s->ddecl->schars.length > 0)
+    return s->ddecl->schars.data[0];
   else
-    return (wchar_t)-1;
+    return -1;
 }
 
 declaration ignore_extensions(declaration d)
@@ -327,21 +327,12 @@ char *ddecl2str(region r, data_declaration ddecl)
    Requires: ddecl->kind == decl_magic_string
 */
 {
-  const wchar_t *wstr;
-  char *str;
-  int length_as_str;
+  assert(ddecl->kind == decl_magic_string);
 
-  wstr = ddecl->chars;
-  length_as_str = wcs_mb_size(wstr);
-  if (length_as_str < 0)
-    return NULL;
-
-  str = rstralloc(r, length_as_str);
-  length_as_str = wcstombs(str, wstr, length_as_str);
-  assert(length_as_str >= 0);
-  str[length_as_str] = '\0';
-
-  return str;
+  if (!type_char(type_array_of(ddecl->type)))
+    return NULL; /* Wide string */
+  else
+    return cstring2str(r, ddecl->schars);
 }
 
 /* True if arg is name or __name__ */

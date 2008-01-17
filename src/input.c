@@ -29,7 +29,7 @@ struct file_stack *input_file_stack;
 /* Incremented on each change to input_file_stack.  */
 int input_file_stack_tick;
 
-void set_input(FILE *f, const char *filename)
+void set_input(cpp_reader *f, const char *filename)
 {
   struct file_stack *p = (struct file_stack *)xmalloc(sizeof(struct file_stack));
   p->next = input_file_stack;
@@ -46,7 +46,7 @@ void set_input(FILE *f, const char *filename)
 
 void end_input(void)
 {
-  FILE *f = input_file_stack->lex.finput;
+  cpp_reader *f = input_file_stack->lex.finput;
 
   while (input_file_stack && input_file_stack->lex.finput == f)
     {
@@ -58,8 +58,6 @@ void end_input(void)
   if (input_file_stack)
     input_file_stack->lex.token_buffer_valid = FALSE;
 
-  if (f)
-    fclose(f);
   input_file_stack_tick++;
 }
 
