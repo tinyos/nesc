@@ -3,6 +3,8 @@
 
 #include "c-parse.h"
 
+extern int input_file_stack_tick;
+
 struct file_stack
 {
   struct file_stack *next;

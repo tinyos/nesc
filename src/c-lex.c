@@ -54,6 +54,8 @@ static const cpp_token *last_token;
 
 location dummy_location, toplevel_location;
 
+int input_file_stack_tick;
+
 /* Location cache handling */
 static location last_allocated_location;
 
@@ -84,7 +86,64 @@ location new_location(const char *filename, int lineno)
 
 static location last_location(void)
 {
-  return dummy_location;//make_location(current.lex.input->l);
+  return make_location(current.lex.input->l);
+}
+
+
+static void push_input(void)
+{
+  /* Pushing to a new file.  */
+  struct file_stack *p = ralloc(current.fileregion, struct file_stack);
+
+  p->next = current.lex.input;
+  p->l.filename = NULL;
+  p->l.lineno = 0;
+  p->l.in_system_header = FALSE;
+  p->l.container = NULL;
+  current.lex.input = p;
+
+  input_file_stack_tick++;
+}
+
+static void pop_input(void)
+{
+  current.lex.input = current.lex.input->next;
+  input_file_stack_tick++;
+}
+
+static void cb_file_change(cpp_reader *reader, const struct line_map *new_map)
+{
+  if (new_map == NULL)
+    return;
+
+  if (new_map->reason == LC_ENTER)
+    {
+      if (!MAIN_FILE_P(new_map))
+	{
+	  int included_at = LAST_SOURCE_LINE(new_map - 1);
+	  current.lex.input->l.lineno = included_at;
+	}
+      push_input();
+    }
+  else if (new_map->reason == LC_LEAVE)
+    pop_input();
+
+  current.lex.input->l.in_system_header = new_map->sysp != 0;
+  /* The filename must last till the end of compilation */
+  current.lex.input->l.filename = rstrdup(parse_region, new_map->to_file);
+  current.lex.input->l.lineno = new_map->to_line;
+}
+
+static void cb_line_change(cpp_reader *reader, const cpp_token *token,
+			   int parsing_args)
+{
+  if (token->type != CPP_EOF && !parsing_args)
+    {
+      source_location loc = token->src_loc;
+      const struct line_map *map = linemap_lookup(current.lex.line_map, loc);
+
+      current.lex.input->l.lineno = SOURCE_LINE(map, loc);
+    }
 }
 
 /* Do not insert generated code into the source, instead, include it.
@@ -144,6 +203,7 @@ static cpp_reader *current_reader(void)
 bool start_lex(source_language l, const char *path)
 {
   cpp_options *cpp_opts;
+  cpp_callbacks *cpp_cbacks;
 
   switch (l)
     {
@@ -175,6 +235,10 @@ bool start_lex(source_language l, const char *path)
   //cpp_opts->extended_numbers = ?;
   cpp_opts->bytes_big_endian = target->big_endian;
   cpp_init_iconv(current_reader());
+
+  cpp_cbacks = cpp_get_callbacks(current_reader());
+  cpp_cbacks->file_change = cb_file_change;
+  cpp_cbacks->line_change = cb_line_change;
 
   return cpp_read_main_file(current.lex.finput, path) != NULL;
 }

@@ -28,8 +28,6 @@ Boston, MA 02111-1307, USA. */
 #include "nesc-semantics.h"
 #include "flags.h"
 
-int input_file_stack_tick;
-
 /* Name of program invoked (from argv[0]).  */
 const char *progname;
 
