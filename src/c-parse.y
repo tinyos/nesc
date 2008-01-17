@@ -1111,9 +1111,9 @@ expr_no_commas:
 	| expr_no_commas ARITHCOMPARE expr_no_commas
 	    	{ $$ = make_binary($2.location, $2.i, $1, $3); }
 	| expr_no_commas '<' expr_no_commas
-	    	{ $$ = make_binary($2.location, $2.i, $1, $3); }
+	    	{ $$ = make_binary($2.location, kind_lt, $1, $3); }
 	| expr_no_commas '>' expr_no_commas
-	    	{ $$ = make_binary($2.location, $2.i, $1, $3); }
+	    	{ $$ = make_binary($2.location, kind_gt, $1, $3); }
 	| expr_no_commas EQCOMPARE expr_no_commas
 	    	{ $$ = make_binary($2.location, $2.i, $1, $3); }
 	| expr_no_commas '&' expr_no_commas

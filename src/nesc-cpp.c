@@ -534,7 +534,7 @@ void handle_directive(const char *directive, const char *args)
 
 void end_macro_saving(void)
 {
-  fclose(macros_file);
+  //fclose(macros_file);
   macros_file = NULL;
 }
 

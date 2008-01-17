@@ -84,7 +84,7 @@ location new_location(const char *filename, int lineno)
 
 static location last_location(void)
 {
-  return make_location(current.lex.input->l);
+  return dummy_location;//make_location(current.lex.input->l);
 }
 
 /* Do not insert generated code into the source, instead, include it.
@@ -136,6 +136,11 @@ void init_lex(void)
     }
 }
 
+static cpp_reader *current_reader(void)
+{
+  return current.lex.finput;
+}
+
 bool start_lex(source_language l, const char *path)
 {
   cpp_options *cpp_opts;
@@ -157,9 +162,10 @@ bool start_lex(source_language l, const char *path)
   current.lex.line_map = ralloc(current.fileregion, struct line_maps);
   linemap_init(current.lex.line_map);
   current.lex.finput = cpp_create_reader(CLK_GNUC89, NULL, current.lex.line_map);
-  cpp_opts = cpp_get_options(current.lex.finput);
+  cpp_opts = cpp_get_options(current_reader());
   cpp_opts->discard_comments = 0;
   cpp_opts->dollars_in_ident = 0;
+  cpp_opts->warn_long_long = 0;
   cpp_opts->wchar_precision = CHAR_BIT * target->wchar_t_size;
   cpp_opts->int_precision = CHAR_BIT * target->tint.size;
   cpp_opts->precision = CHAR_BIT * target->tlong.size;
@@ -168,6 +174,7 @@ bool start_lex(source_language l, const char *path)
   cpp_opts->cplusplus_comments = 1;
   //cpp_opts->extended_numbers = ?;
   cpp_opts->bytes_big_endian = target->big_endian;
+  cpp_init_iconv(current_reader());
 
   return cpp_read_main_file(current.lex.finput, path) != NULL;
 }
@@ -175,11 +182,6 @@ bool start_lex(source_language l, const char *path)
 void end_lex(void)
 {
   errorcount += cpp_finish(current.lex.finput, NULL);
-}
-
-static cpp_reader *current_reader(void)
-{
-  return current.lex.finput;
 }
 
 static cstring make_token_cstring(const cpp_token *token)
@@ -191,6 +193,7 @@ static cstring make_token_cstring(const cpp_token *token)
   end = cpp_spell_token(current_reader(), token,
 			(unsigned char *)tokcs.data, FALSE);
   end[0] = '\0';
+  tokcs.length = (char *)end - tokcs.data;
 
   return tokcs;
 }
@@ -669,8 +672,9 @@ void yyerror(char *string)
       return;
     }
 
-  ttext = cpp_token_as_text(current_reader(), last_token);
   ttype = last_token->type;
+  if (ttype != CPP_EOF)
+    ttext = cpp_token_as_text(current_reader(), last_token);
 
   strcpy (buf, string);
 

@@ -54,7 +54,7 @@ kde_DATA = 					\
 	editor-modes/kde/nesc.xml		\
 	editor-modes/kde/readme.txt
 gedit_DATA = 					\
-	editor-modes/gedit/ncc.xml		\
+	editor-modes/gedit/ncc.lang		\
 	editor-modes/gedit/readme.txt
 
 EXTRA_DIST =					\
