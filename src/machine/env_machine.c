@@ -52,6 +52,11 @@ static machine_spec env_machine = {
   NULL,				/* adjust_field_align */
 
   NULL, NULL, NULL, NULL	/* Attributes: need some way to specify this */
+  NULL,				/* init */
+  NULL,				/* token */
+  NULL,				/* keil special */
+  gcc_global_cpp_init,		/* global cpp support */
+  NULL				/* per-file cpp support */
 };
 
 static const char *find_char(const char *str, const char *strend, char ch)

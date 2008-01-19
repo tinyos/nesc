@@ -33,14 +33,8 @@ Boston, MA 02111-1307, USA. */
 #include "nesc-cpp.h"
 #include "machine.h"
 
-/* libcpp */
-#include "system.h"
-#include "config.h"
-#include "cpplib.h"
-#include "line-map.h"
-#undef bool
-#define TRUE 1
-#define FALSE 0
+#include "gcc_cpp.h"
+
 
 static char_array doc_string;
 static location doc_location;
@@ -229,16 +223,36 @@ bool start_lex(source_language l, const char *path)
   cpp_opts->wchar_precision = CHAR_BIT * target->wchar_t_size;
   cpp_opts->int_precision = CHAR_BIT * target->tint.size;
   cpp_opts->precision = CHAR_BIT * target->tlong.size;
-  cpp_opts->unsigned_char = !target->char_signed;
+  cpp_opts->unsigned_char = !flag_signed_char;
   cpp_opts->unsigned_wchar = !target->wchar_t_signed;
   cpp_opts->cplusplus_comments = 1;
   //cpp_opts->extended_numbers = ?;
   cpp_opts->bytes_big_endian = target->big_endian;
+
+  cpp_opts->warnings_are_errors = warnings_are_errors;
+  cpp_opts->inhibit_warnings = inhibit_warnings;
+  cpp_opts->trigraphs = flag_trigraphs;
+  cpp_opts->warn_comments = warn_comments;
+  cpp_opts->warn_trigraphs = warn_trigraphs;
+  cpp_opts->warn_unused_macros = warn_unused_macros;
+  cpp_opts->warn_endif_labels = warn_endif_labels || pedantic;
+  cpp_opts->warn_system_headers = warn_system_headers;
+  cpp_opts->warn_undef = warn_undef;
+  cpp_opts->warn_missing_include_dirs = warn_missing_include_dirs;
+  cpp_opts->warn_multichar = warn_multichar;
+  cpp_opts->warn_traditional = warn_traditional;
+  cpp_opts->pedantic_errors = flag_pedantic_errors;
+  cpp_opts->pedantic = pedantic;
+
   cpp_init_iconv(current_reader());
+  cpp_init_builtins(current_reader(), TRUE);
 
   cpp_cbacks = cpp_get_callbacks(current_reader());
   cpp_cbacks->file_change = cb_file_change;
   cpp_cbacks->line_change = cb_line_change;
+
+  set_cpp_include_path();
+  start_macro_saving();
 
   return cpp_read_main_file(current.lex.finput, path) != NULL;
 }
@@ -246,6 +260,8 @@ bool start_lex(source_language l, const char *path)
 void end_lex(void)
 {
   errorcount += cpp_finish(current.lex.finput, NULL);
+  cpp_destroy(current.lex.finput);
+  current.lex.finput = NULL;
 }
 
 static cstring make_token_cstring(const cpp_token *token)

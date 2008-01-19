@@ -19,14 +19,14 @@ Boston, MA 02111-1307, USA.  */
 #define NESC_PATHS_H
 /* Locate components/interfaces from their name */
 
+enum { CHAIN_QUOTE, CHAIN_BRACKET, CHAIN_SYSTEM, CHAIN_AFTER };
+
 void init_nesc_paths_start(region r);
-void add_nesc_path(const char *path);
-void add_nesc_dir(const char *path);
+void add_nesc_path(const char *path, int chain);
+void add_nesc_dir(const char *path, int chain);
 void init_nesc_paths_end(void);
 
+void set_cpp_include_path(void);
 const char *find_nesc_file(region r, source_language l, const char *name);
-
-extern char **path_argv;
-extern int path_argv_count;
 
 #endif

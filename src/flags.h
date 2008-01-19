@@ -25,12 +25,6 @@ Boston, MA 02111-1307, USA. */
 
 /* -f flags.  */
 
-/* Nonzero means all references through pointers are volatile.  */
-extern int flag_volatile;
-
-/* Nonzero means treat all global and extern variables as global.  */
-extern int flag_volatile_global;
-
 /* Nonzero means just do syntax checking; don't output anything.  */
 extern int flag_syntax_only;
 
@@ -191,10 +185,6 @@ extern int warn_missing_prototypes;
    without separate previous decl.  */
 extern int warn_missing_declarations;
 
-/* Don't print functions as they are compiled and don't print
-   times taken by the various passes.  -quiet.  */
-extern int quiet_flag;
-
 /* Nonzero means `char' should be signed.  */
 extern int flag_signed_char;
 
@@ -203,7 +193,6 @@ extern int flag_short_enums;
 
 /* Nonzero means to treat bitfields as signed unless they say `unsigned'.  */
 extern int flag_signed_bitfields;
-extern int explicit_flag_signed_bitfields;
 
 /* Nonzero means don't run real cc1 afterwards */
 extern int flag_parse_only;
@@ -267,5 +256,40 @@ extern int flag_mingw_gcc;
 /* If true, check for atomic statements whose body is guaranteed to be
    atomic (e.g., one single-byte read) */
 extern int nesc_optimise_atomic;
+
+/* Warn about possibly nested block comments, and C++ comments
+   spanning more than one physical line */
+extern int warn_comments;
+
+/* Warn if trigraphs are encountered that might affect the meaning of
+   the program */
+extern int warn_trigraphs;
+
+/* Warn about macros defined in the main file that are not used */
+extern int warn_unused_macros;
+
+/* Warn about stray tokens after #elif and #endif */
+extern int warn_endif_labels;
+
+/* Do not suppress warnings from system headers */
+extern int warn_system_headers;
+
+/* Warn if an undefined macro is used in an #if directive */
+extern int warn_undef;
+
+/* Warn about user-specified include directories that do not exist */
+extern int warn_missing_include_dirs;
+
+/* Warn about use of multi-character character constants */
+extern int warn_multichar;
+
+/* Support ISO C trigraphs */
+extern int flag_trigraphs;
+
+/* Do not search standard system include directories */
+extern int flag_nostdinc;
+
+/* Do not predefine system-specific and GCC-specific macros */
+extern int flag_undef;
 
 #endif

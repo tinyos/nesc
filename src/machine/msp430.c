@@ -35,7 +35,7 @@ static machine_spec msp430_machine = {
   { 2, 2 },			/* int */
   { 4, 2 },			/* long */
   { 8, 2 },			/* long long */
-  1, 2, 2, 2,		/* int1/2/4/8 align */
+  1, 2, 2, 2,			/* int1/2/4/8 align */
   2, 2,				/* wchar_t, size_t size */
   TRUE, TRUE,			/* char, wchar_t signed */
 
@@ -43,4 +43,9 @@ static machine_spec msp430_machine = {
 
   msp430_decl_attribute,	/* Attribute handling: declarations */
   NULL, NULL, NULL		/* Attribute handling: tag, field, type */
+  NULL,				/* init */
+  NULL,				/* token */
+  NULL,				/* keil special */
+  gcc_global_cpp_init,		/* global cpp support */
+  NULL				/* per-file cpp support */
 };

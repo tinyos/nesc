@@ -29,21 +29,17 @@ Boston, MA 02111-1307, USA.  */
 #include "semantics.h"
 #include "c-parse.h"
 
-static region pragma_region;
-dd_list pragmas;
+struct cpp_option {
+  struct cpp_option *next;
+  const char *opt, *arg;
+};
 
 static region opt_region;
 static char *cpp_dir;
-
-struct cpp_option {
-  struct cpp_option *next;
-  const char *opt;
-};
-
+static dhash_table current_macros;
 static struct cpp_option *saved_options;
-static int saved_options_count;
 
-void save_option(const char *option)
+void save_cpp_option(const char *option, const char *arg)
 {
   struct cpp_option *newopt;
 
@@ -52,9 +48,9 @@ void save_option(const char *option)
 
   newopt = ralloc(opt_region, struct cpp_option);
   newopt->opt = option;
+  newopt->arg = arg;
   newopt->next = saved_options;
   saved_options = newopt;
-  saved_options_count++;
 }
 
 static void cpp_unlink(const char *name)
@@ -71,20 +67,6 @@ static void cpp_unlink(const char *name)
   if (!nounlink)
     unlink(name);
 }
-
-static char *kwd_macros, tkwd_macros[] = "/tmp/nesccppkXXXXXX";
-static char *cpp_macros1, tcpp_macros1[] = "/tmp/nesccppm1XXXXXX";
-static char *cpp_macros2, tcpp_macros2[] = "/tmp/nesccppm2XXXXXX";
-static char *cpp_macros;
-
-static char *nesc_keywords[] = {
-#define K(name, token, rid) #name,
-#include "nesc-keywords.h"
-NULL
-};
-
-static FILE *macros_file;
-static const char *macros_mode;
 
 static char *mktempfile(region r, const char *name)
 {
@@ -153,15 +135,15 @@ static void dup_restore(int to, int save)
     }
 }
 
-static FILE *exec_gcc(char *gcc_output_template, bool mktmp,
-		      char **gcc_output_file, bool redirect_errors, 
-		      int nargs,
-		      void (*setargs)(void *data, const char **argv), void *data)
+static bool 
+exec_gcc(char *gcc_output_template, bool mkotmp, char **gcc_output_file,
+	 char *gcc_error_template, bool mketmp, char **gcc_error_file, 
+	 int nargs, void (*setargs)(void *data, const char **argv), void *data)
 {
-  int gcc_stat, res, destfd;
+  int gcc_stat, res, outputfd, errorfd;
   const char **argv;
   static int tmpfd1 = -1, tmpfd2 = -1;
-  char *outputf;
+  char *outputf, *errorf;
 
   argv = alloca((nargs + 2) * sizeof *argv);
   argv[0] = target_compiler;
@@ -189,27 +171,42 @@ static FILE *exec_gcc(char *gcc_output_template, bool mktmp,
 	}
     }
 
-  if (mktmp)
+  if (mkotmp)
     outputf = mktempfile(permanent, gcc_output_template);
   else
     outputf = gcc_output_template;
   *gcc_output_file = outputf;
-  destfd = creat(outputf, 0666);
 
-  if (destfd < 0)
-    return NULL;
+  if (mketmp)
+    errorf = mktempfile(permanent, gcc_error_template);
+  else
+    errorf = gcc_error_template;
+  *gcc_error_file = errorf;
 
-  if (!safe_dup(destfd, 1, tmpfd1))
-    return NULL;
+  outputfd = creat(outputf, 0666);
+  errorfd = creat(errorf, 0666);
+  
+  if (outputfd < 0 || errorfd < 0)
+    {
+      if (outputfd >= 0)
+	close(outputfd);
+      if (errorfd >= 0)
+	close(errorfd);
 
-  if (redirect_errors)
-    if (!safe_dup(destfd, 2, tmpfd2))
-      {
-	dup_restore(1, tmpfd1);
-	return NULL;
-      }
+      return FALSE;
+    }
 
-  close(destfd);
+  if (!safe_dup(outputfd, 1, tmpfd1))
+    return FALSE;
+
+  if (!safe_dup(errorfd, 2, tmpfd2))
+    {
+      dup_restore(1, tmpfd1);
+      return FALSE;
+    }
+
+  close(outputfd);
+  close(errorfd);
 
   gcc_stat = spawnvp(_P_WAIT, target_compiler, argv);
 #ifdef WIN32
@@ -222,44 +219,45 @@ static FILE *exec_gcc(char *gcc_output_template, bool mktmp,
 #endif
 
   dup_restore(1, tmpfd1);
-  if (redirect_errors)
-    dup_restore(2, tmpfd2);
+  dup_restore(2, tmpfd2);
 
-  if (res == 0) /* gcc succeeded */
-    return fopen(outputf, "r");
-  else
-    return NULL;
+  return res == 0;
 }
 #else
 #include <sys/wait.h>
 
-static FILE *exec_gcc(char *gcc_output_template, bool mktmp,
-		      char **gcc_output_file,
-		      bool redirect_errors, int nargs,
-		      void (*setargs)(void *data, const char **argv), void *data)
+static bool 
+exec_gcc(char *gcc_output_template, bool mkotmp, char **gcc_output_file,
+	 char *gcc_error_template, bool mketmp, char **gcc_error_file, 
+	 int nargs, void (*setargs)(void *data, const char **argv), void *data)
 {
   int gcc_pid, gcc_stat, res;
-  char *outputf;
+  char *outputf, *errorf;
 
-  if (mktmp)
+  if (mkotmp)
     outputf = mktempfile(permanent, gcc_output_template);
   else
     outputf = gcc_output_template;
   *gcc_output_file = outputf;
 
+  if (mketmp)
+    errorf = mktempfile(permanent, gcc_error_template);
+  else
+    errorf = gcc_error_template;
+  *gcc_error_file = errorf;
+
   if ((gcc_pid = fork()) == 0)
     {
       const char **argv;
-      int destfd = creat(outputf, 0666);
+      int outputfd = creat(outputf, 0666);
+      int errorfd = creat(errorf, 0666);
 
-      if (destfd < 0 || dup2(destfd, 1) < 0)
+      if (outputfd < 0 || dup2(outputfd, 1) < 0 ||
+	  errorfd < 0 || dup2(errorfd, 2) < 0)
 	exit(2);
 
-      if (redirect_errors)
-	if (dup2(destfd, 2) < 0)
-	  exit(2);
-
-      close(destfd);
+      close(outputfd);
+      close(errorfd);
 
       argv = alloca((nargs + 2) * sizeof *argv);
       argv[0] = target_compiler;
@@ -304,247 +302,181 @@ static FILE *exec_gcc(char *gcc_output_template, bool mktmp,
 	}
     }
 
-  if (res == 0) /* gcc succeeded */
-    return fopen(outputf, "r");
-  else
-    return NULL;
+  return res == 0;
 }
 #endif
 
-void preprocess_cleanup(void)
-{
-  cpp_unlink(cpp_macros1);
-  cpp_unlink(cpp_macros2);
-  cpp_unlink(kwd_macros);
-}
-
-void create_nesc_keyword_macros(const char *macro_filename)
-{
-  FILE *mf = fopen(macro_filename, "w");
-  int i;
-
-  if (!mf) 
-    {
-      fprintf(stderr, "couldn't create temporary file - aborting\n");
-      exit(2);
-    }
-
-  for (i = 0; nesc_keywords[i]; i++) 
-    fprintf(mf, "#define %s __nesc_keyword_%s\n",
-	    nesc_keywords[i], nesc_keywords[i]);
-
-  /* this will set the enum value of TOSNODES to the value specified
-     during compilation by the flag "-fnesc-nido-tosnodes = 1000"
-     which in this case is 1000. */     
-  if (use_nido)
-    fprintf(mf, "#define TOSH_NUM_NODES %s\n", nido_num_nodes);
-
-  fclose(mf);
-}
-
-static void version_setargs(void *data, const char **argv)
-{
-  argv[0] = "-v";
-  argv[1] = NULL;
-}
-
 #define LINELEN 160
 
-void select_macros_mode(void)
+/* Make a copy of path with trailing whitespace (normally CRs, LFs) removed */
+static char *sanitize_path(region r, const char *path)
 {
-  static char gcc_version_name[] = "/tmp/nesccppvXXXXXX";
-  char *gcc_version_file;
-  FILE *gcc_version = exec_gcc(gcc_version_name, TRUE, &gcc_version_file, TRUE, 1, version_setargs, NULL);
+  char *pcopy = rstrdup(r, path);
+  int l = strlen(pcopy);
 
-  macros_mode = "w";
+  while (l > 0 && isspace(pcopy[l - 1]))
+    *pcopy[--l] = '\0';
 
-  if (gcc_version)
+  return pcopy;
+}
+
+static void gcc_preprocess_init_setargs(void *data, const char **argv)
+{
+  argv[0] = "-v";
+  argv[1] = "-x";
+  argv[2] = "c";
+  argv[3] = "/dev/null";
+  argv[4] = "-dM";
+  if (flag_nostdinc)
+    argv[5] = "-nostdinc";
+  else
+    argv[5] = NULL;
+  argv[6] = NULL;
+}
+
+static char *gcc_builtin_macros_file;
+
+static void gcc_cpp_cleanup(void)
+{
+  if (gcc_builtin_macros_file)
+    cpp_unlink(gcc_builtin_macros_file);
+}
+
+const char *gcc_global_cpp_init(void)
+{
+  static char *tbuiltins[] = "/tmp/nesccppbXXXXXX";
+  static char *tincludes[] = "/tmp/nesccppiXXXXXX";
+  char *includes;
+  FILE *incf;
+  char line[LINELEN];
+  bool quote_includes = FALSE, bracket_includes = FALSE;
+
+  atexit(gcc_cpp_cleanup);
+
+  /* Execute gcc to get builtin macros and include search path */
+  if (!exec_gcc(tbuiltins, TRUE, &gcc_builtin_macros_file,
+		tincludes, TRUE, &includes, 
+		6, gcc_preprocess_init_setargs))
+    return NULL;
+
+  /* Read gcc error output to get search path */
+  incf = fopen(includes, "r");
+  if (!incf)
     {
-      char line[LINELEN];
-
-      while (fgets(line, LINELEN - 1, gcc_version))
-	{
-	  if (!strncmp(line, "gcc version ", 12))
-	    {
-	      double version;
-
-	      if (sscanf(line, "gcc version %lf", &version) == 1)
-		{
-		  if (version <= 2.95)
-		    macros_mode = "a";
-		}
-	    }
-	}
-      fclose(gcc_version);
+      cpp_unlink(includes);
+      return NULL;
     }
-  cpp_unlink(gcc_version_file);
+
+  while (fgets(line, LINELEN - 1, incf))
+    {
+      if (!strncmp(line, "#include \"...\"", 14))
+	quote_includes = TRUE;
+      else if (!strncmp(line, "#include \<...\>", 14))
+	bracket_includes = TRUE;
+      else if (!strncmp(line, "End of search list.", 19))
+	break;
+      else if (bracket_includes)
+	add_nesc_dir(sanitize_path(permanent, line), CHAIN_SYSTEM);
+      else if (quote_includes)
+	add_nesc_dir(sanitize_path(permanent, line), CHAIN_QUOTE);
+    }
+  fclose(incf);
+  cpp_unlink(includes);
+
+  return gcc_builtin_macros_file;
 }
 
 void preprocess_init(void)
 {
-  atexit(preprocess_cleanup);
+  struct saved_option *opt;
+  cpp_reader *reader;
+  const char *builtin_macros_file;
 
-  cpp_macros1 = mktempfile(permanent, tcpp_macros1);
-  cpp_macros2 = mktempfile(permanent, tcpp_macros2);
-  kwd_macros = mktempfile(permanent, tkwd_macros);
+  builtin_macros_file = target->global_cpp_init();
+  init_nesc_paths_end();
+  if (!start_lex(l_c, builtin_macros_file))
+    {
+      error("internal error: couldn't define builtin macros - exiting");
+      exit(2);
+    }
 
-  create_nesc_keyword_macros(kwd_macros);
+  reader = current.lex.finput;
+  reader->warn_unused_macros = 0;
+  if (!flag_undef)
+    cpp_scan_nooutput(reader);
 
-  select_macros_mode();
-
-  pragma_region = newregion();
-  pragmas = dd_new_list(pragma_region);
+  /* Process saved options */
+  current.lex.input->l.filename = "<command-line>";
+  current.lex.input->l.lineno = 0;
+  for (opt = saved_options; opt; opt = opt->next)
+    {
+      if (opt->opt[0] == 'D')
+	cpp_define(reader, opt->arg);
+      else if (opt->opt[0] == 'U')
+	cpp_undef(reader, opt->arg);
+      else if (opt->opt[0] == 'A')
+	{
+	  if (opt->arg[0] == '-')
+	    cpp_unassert(reader, opt->arg + 1);
+	  else
+	    cpp_assert(reader, opt->arg);
+	}
+    }
+  end_lex();
 }
 
-struct preprocess_args_closure
+static void macro_set(unsigned char *name, unsigned char *value)
 {
-  /* Ok, ok, the function isn't *in* the closure */
-  source_language l;
-  const char *filename;
-  int nargs;
-};
+  unsigned char **old_value = dhlookup(current_macros, name);
 
-static void preprocess_setargs(void *data, const char **argv)
-{
-  struct preprocess_args_closure *closure = data;
-  struct cpp_option *saved;
-  region filename_region = newregion();
-  int arg = 0, i;
-
-  rarraycopy(argv + arg, path_argv, path_argv_count, const char *);
-  arg += path_argv_count;
-
-  /* The saved options are reversed */
-  for (saved = saved_options, i = saved_options_count; saved;
-       saved = saved->next)
-    argv[arg + --i] = (char *)saved->opt;
-  arg += saved_options_count;
-
-  argv[arg++] = "-E";
-  argv[arg++] = "-C";
-  argv[arg++] = "-dD"; /* ask cpp to output macros */
-
-  /* For C files, we define keywords away (kwd_macros) */
-  if (closure->l == l_c)
+  if (!old_value)
     {
-      argv[arg++] = "-imacros";
-      argv[arg++] = fix_filename(filename_region, kwd_macros);
+      old_value = ralloc(permanent, unsigned char *);
+      dhadd(current_macros, old_value);
     }
-  else
-    {
-      argv[arg++] = "-x"; /* preprocess as C file */
-      argv[arg++] = "c";
-    }
-
-  if (cpp_macros)
-    {
-      argv[arg++] = "-imacros";
-      argv[arg++] = fix_filename(filename_region, cpp_macros);
-    }
-  argv[arg++] = fix_filename(filename_region, closure->filename);
-  argv[arg++] = NULL;
-  assert(arg <= closure->nargs);
+  *old_value = value;
 }
 
-FILE *preprocess(const char *filename, source_language l)
+static void cb_define(cpp_reader *reader, source_location loc, 
+		      cpp_hashnode *macro)
 {
-  struct preprocess_args_closure closure;
-  char *cpp_dest;
-  int nargs = 12 + path_argv_count + saved_options_count;
-  FILE *output;
-
-  closure.l = l;
-  closure.filename = filename;
-  closure.nargs = nargs;
-  if (cpp_dir)
-    {
-      char *tmp = rstrdup(parse_region, filename);
-      char *base = basename(tmp);
-
-      cpp_dest = rstralloc(parse_region, strlen(cpp_dir) + strlen(base) + 2);
-      sprintf(cpp_dest, "%s/%s", cpp_dir, base);
-    }
-  else
-    cpp_dest = rstrdup(parse_region, "/tmp/nesccppsXXXXXX");
-  output = exec_gcc(cpp_dest, cpp_dir == 0, &current.preprocessed_file,
-		    FALSE, nargs, preprocess_setargs, &closure);
-
-
-  if (output)
-    {
-      /* Save macros */
-      /* Note: this works with a global macros file because we use it one
-	 of two modes:
-	 - old style with 'includes': 
-	   we only keep macros from C files, which don't cause any other files
-	   to be loaded
-	 - new style with #include:
-	   we only keep macros from before the module, interface, configuration
-	   or component keyword => we complete using the file before loading
-	   the next one.
-      */
-      if (cpp_macros == cpp_macros1)
-	cpp_macros = cpp_macros2;
-      else
-	cpp_macros = cpp_macros1;
-      macros_file = fopen(cpp_macros, macros_mode);
-      if (!macros_file)
-	error("failed to create temporary file");
-
-      return output;
-    }
-  else
-    return NULL;
+  macro_set(NODE_NAME(macro), cpp_macro_definition(reader, macro));
 }
 
-void save_pragma(struct location l, const char *args)
+static void cb_undef (cpp_reader *reader, source_location loc,
+		      cpp_hashnode *macro)
 {
-  struct pragma *p = ralloc(pragma_region, struct pragma);
-
-  p->l = make_location(l);
-  p->args = rstrdup(pragma_region, args);
-  dd_add_last(pragma_region, pragmas, p);
+  macro_set(NODE_NAME(macro), NULL);
 }
 
-void handle_directive(const char *directive, const char *args)
+void start_macro_saving(void)
 {
-  const char *arg2;
+  cpp_reader *reader = current.lex.finput;
+  cpp_callbacks *cbacks = cpp_get_callbacks(reader);
+  dhash_scan existing_macros;
+  unsigned char **macro;
 
-  if (!strcmp(directive, "pragma"))
-    {
-      save_pragma(current.lex.input->l, args);
-      return;
-    }
+  /* Start by defining the current macros */
+  existing_macros = dhscan(&current_macros);
+  while ((macro = dhnext(&existing_macros)))
+    if (*macro) /* Ignore undef'ed macros - see cb_undef */
+      cpp_define(reader, *macro);
 
-  /* If the filename starts with <, these are special macros (built in
-     or from the command line) */
-  if (current.lex.input && current.lex.input->l.filename[0] == '<')
-    return;
+  /* And set the include chain stuff */
 
-  if (!(strcmp(directive, "define") == 0 || strcmp(directive, "undef") == 0))
-    return;
-
-  arg2 = strchr(args, ' ');
-  if (arg2 && strncmp(arg2 + 1, "__nesc_keyword_", 15) == 0)
-    return;
-
-  if (macros_file)
-    fprintf(macros_file, "#%s %s\n", directive, args);
+  cbacks->define = cb_define;
+  cbacks->undef = cb_undef;
+  if (target->file_cpp_init)
+    target->file_cpp_init();
 }
 
 void end_macro_saving(void)
 {
-  //fclose(macros_file);
-  macros_file = NULL;
-}
+  cpp_reader *reader = current.lex.finput;
+  cpp_callbacks *cbacks = cpp_get_callbacks(reader);
 
-void preprocess_file_end(void)
-{
-  if (macros_file)
-    end_macro_saving();
-
-  if (!cpp_dir)
-    cpp_unlink(current.preprocessed_file);
+  cbacks->define = NULL;
+  cbacks->undef = NULL;
 }
 
 void set_cpp_dir(const char *dir)

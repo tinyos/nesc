@@ -20,20 +20,13 @@ Boston, MA 02111-1307, USA.  */
 
 #include "parser.h"
 
+void save_cpp_option(const char *option, const char *arg);
+void set_cpp_dir(const char *dir);
 void preprocess_init(void);
-FILE *preprocess(const char *filename, source_language l);
-void preprocess_file_end(void);
 
-void handle_directive(const char *directive, const char *args);
-void save_option(const char *option);
+void start_macro_saving(void);
 void end_macro_saving(void);
 
-void set_cpp_dir(const char *dir);
-
-struct pragma {
-  location l;
-  const char *args; /* The uninterpreted pragma argument line */
-};
-extern dd_list/* struct pragma * */ pragmas;
+const char *gcc_global_cpp_init(void);
 
 #endif

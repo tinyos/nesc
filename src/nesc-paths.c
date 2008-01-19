@@ -1,5 +1,10 @@
 /* This file is part of the nesC compiler.
-   Copyright (C) 2002 Intel Corporation
+   Copyright (C) 2002-2008 Intel Corporation
+
+   This file also includes code from gcc that is
+   Copyright (C) 1986, 1987, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+   1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
+   Free Software Foundation, Inc.
 
 The attached "nesC" software is provided to you under the terms and
 conditions of the GNU General Public License Version 2 as published by the
@@ -19,43 +24,16 @@ Boston, MA 02111-1307, USA.  */
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "gcc_cpp.h"
+
 /* Locate components/interfaces from their name */
 
-struct path
-{
-  struct path *next;
-  char *dirname;
-};
-
-static struct path *searchpath;
-static int maxdirlen;
 static region pathregion;
+/* Include chains heads and tails.  */
+static struct cpp_dir *heads[4];
+static struct cpp_dir *tails[4];
 static bool include_current_dir;
-
-char **path_argv;
-int path_argv_count;
-
-static void build_include_argv(void)
-{
-  int n = 0;
-  struct path *p;
-  size_t bytes = 0;
-  char *pathdata;
-
-  for (p = searchpath; p; p = p->next)
-    n += 2;
-
-  path_argv_count = n;
-  path_argv = rarrayalloc(pathregion, n, char *);
-  pathdata = rarrayalloc(pathregion, bytes, char);
-
-  n = 0;
-  for (p = searchpath; p; p = p->next)
-    {
-      path_argv[n++] = "-I";
-      path_argv[n++] = p->dirname ? fix_filename(pathregion, p->dirname) : "-";
-    }
-}
+static int maxdirlen;
 
 static char *canonicalise(region r, const char *path, int len)
 {
@@ -82,53 +60,47 @@ static char *canonicalise(region r, const char *path, int len)
   return cp;
 }
 
+/* Handle -I- */
 static void add_minus(region r)
-/* Add special marker for -I- directive */
 {
-  struct path *np = ralloc(r, struct path);
-
-  np->next = searchpath;
-  searchpath = np;
-  np->dirname = NULL;
-
+  if (!include_current_dir)
+    error("-I- specified twice");
   include_current_dir = FALSE;
+
+  heads[QUOTE] = heads[BRACKET];
+  tails[QUOTE] = tails[BRACKET];
+  heads[BRACKET] = NULL;
+  tails[BRACKET] = NULL;
 }
 
-static void add_dir(region r, const char *path, int len)
+static void add_dir(region r, const char *path, int len, int chain)
 {
-  struct path *np = ralloc(r, struct path);
+  cpp_dir *np = ralloc(r, struct cpp_dir);
   int l;
 
-  np->next = searchpath;
-  searchpath = np;
-  np->dirname = canonicalise(r, path, len);
-  l = strlen(np->dirname);
+  np->next = NULL;
+  np->name = canonicalise(r, path, len);;
+  np->sysp = chain == SYSTEM || chain == AFTER;
+  np->construct = 0;
+  np->user_supplied_p = 1;	/* appears unused */
+
+  if (tails[chain])
+    tails[chain]->next = np;
+  else
+    heads[chain] = np;
+  tails[chain] = np;
+
+  l = strlen(np->name);
   if (l > maxdirlen)
     maxdirlen = l;
 }
 
-void add_nesc_dir(const char *path)
+void add_nesc_dir(const char *path, int chain)
 {
   if (!strcmp(path, "-"))
     add_minus(pathregion);
   else
     add_dir(pathregion, path, strlen(path));
-}
-
-static void reverse_searchpath(void)
-{
-  struct path *last, *p, *next;
-
-  last = NULL;
-  p = searchpath;
-  while (p)
-    {
-      next = p->next;
-      p->next = last;
-      last = p;
-      p = next;
-    }
-  searchpath = last;
 }
 
 static bool file_exists(const char *fullname)
@@ -144,19 +116,16 @@ static const char *find_file(char *filename)
 
   if (include_current_dir && file_exists(filename))
     return "";
-  for (p = searchpath; p; p = p->next)
-    /* Hack 'if' to skip '-' directory, while keeping it in searchpath
-       so as to preserve its position for preprocessor invocations */
-    if (p->dirname)
-      {
-	sprintf(fullname, "%s%s", p->dirname, filename);
-	if (file_exists(fullname))
-	  return p->dirname;
-      }
+  for (p = heads[CHAIN_QUOTE]; p; p = p->next)
+    {
+      sprintf(fullname, "%s%s", p->name, filename);
+      if (file_exists(fullname))
+	return p->name;
+    }
   return NULL;
 }
 
-static void build_search_path(region r, const char *pathlist)
+static void build_search_path(region r, const char *pathlist, int chain)
 {
   if (pathlist)
     {
@@ -165,10 +134,10 @@ static void build_search_path(region r, const char *pathlist)
       while ((colon = strchr(pathlist, ':')))
 	{
 	  *colon = '\0';
-	  add_dir(r, pathlist, colon - pathlist);
+	  add_dir(r, pathlist, colon - pathlist, chain);
 	  pathlist = colon + 1;
 	}
-      add_dir(r, pathlist, strlen(pathlist));
+      add_dir(r, pathlist, strlen(pathlist), chain);
     }
 }
 
@@ -179,16 +148,51 @@ void init_nesc_paths_start(region r)
   pathregion = r;
 }
 
-void add_nesc_path(const char *path)
+void add_nesc_path(const char *path, int chain)
 {
-  build_search_path(pathregion, path);
+  build_search_path(pathregion, path, chain);
+}
+
+static void join(int c1, int c2)
+{
+  if (heads[c1])
+    tails[c1]->next = heads[c2];
+  else
+    heads[c1] = heads[c2];
 }
 
 void init_nesc_paths_end(void)
 {
-  build_search_path(pathregion, getenv("NESCPATH"));
-  reverse_searchpath();
-  build_include_argv();
+  add_nesc_path(getenv("NESCPATH"), CHAIN_BRACKET);
+
+  join(CHAIN_SYSTEM, CHAIN_AFTER);
+  join(CHAIN_BRACKET, CHAIN_SYSTEM);
+  join(CHAIN_QUOTE, CHAIN_BRACKET);
+
+  /* If verbose, print the list of dirs to search.  */
+  if (flag_verbose)
+    {
+      struct cpp_dir *p;
+
+      fprintf (stderr, "#include \"...\" and component search starts here:\n");
+      for (p = heads[CHAIN_QUOTE];; p = p->next)
+	{
+	  if (p == heads[CHAIN_BRACKET])
+	    fprintf (stderr, "#include <...> search starts here:\n");
+	  if (!p)
+	    break;
+	  fprintf (stderr, " %s\n", p->name);
+	}
+      fprintf (stderr, "End of search list.\n");
+    }
+}
+
+void set_cpp_include_path(void)
+{
+  cpp_reader *reader = current.lex.finput;
+
+  cpp_set_include_chains(reader, heads[CHAIN_QUOTE], heads[CHAIN_BRACKET],
+			 !include_current_dir);
 }
 
 #define MAX_EXT_LEN 2

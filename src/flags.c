@@ -24,12 +24,6 @@ Boston, MA 02111-1307, USA. */
 
 /* -f flags.  */
 
-/* Nonzero means all references through pointers are volatile.  */
-int flag_volatile;
-
-/* Nonzero means treat all global and extern variables as global.  */
-int flag_volatile_global;
-
 /* Nonzero means just do syntax checking; don't output anything.  */
 int flag_syntax_only;
 
@@ -191,10 +185,6 @@ int warn_missing_prototypes;
    without separate previous decl.  */
 int warn_missing_declarations;
 
-/* Don't print functions as they are compiled and don't print
-   times taken by the various passes.  -quiet.  */
-int quiet_flag;
-
 /* Nonzero means `char' should be signed.  */
 int flag_signed_char;
 
@@ -203,7 +193,6 @@ int flag_short_enums;
 
 /* Nonzero means to treat bitfields as signed unless they say `unsigned'.  */
 int flag_signed_bitfields = 1;
-int explicit_flag_signed_bitfields;
 
 /* Nonzero means don't run real cc1 afterwards */
 int flag_parse_only;
@@ -270,3 +259,38 @@ int flag_mingw_gcc;
 /* If true, check for atomic statements whose body is guaranteed to be
    atomic (e.g., one single-byte read) */
 int nesc_optimise_atomic;
+
+/* Warn about possibly nested block comments, and C++ comments
+   spanning more than one physical line */
+int warn_comments;
+
+/* Warn if trigraphs are encountered that might affect the meaning of
+   the program */
+int warn_trigraphs;
+
+/* Warn about macros defined in the main file that are not used */
+int warn_unused_macros;
+
+/* Warn about stray tokens after #elif and #endif */
+int warn_endif_labels;
+
+/* Do not suppress warnings from system headers */
+int warn_system_headers;
+
+/* Warn if an undefined macro is used in an #if directive */
+int warn_undef;
+
+/* Warn about user-specified include directories that do not exist */
+int warn_missing_include_dirs;
+
+/* Warn about use of multi-character character constants */
+int warn_multichar;
+
+/* Support ISO C trigraphs */
+int flag_trigraphs;
+
+/* Do not search standard system include directories */
+int flag_nostdinc;
+
+/* Do not predefine system-specific and GCC-specific macros */
+int flag_undef;

@@ -87,4 +87,9 @@ static machine_spec self_machine = {
   SELF_ADJUST_FIELD_ALIGN,			     /* adjust_field_align */
 
   NULL, NULL, NULL, NULL	/* No special attributes */
+  NULL,				/* init */
+  NULL,				/* token */
+  NULL,				/* keil special */
+  gcc_global_cpp_init,		/* global cpp support */
+  NULL				/* per-file cpp support */
 };

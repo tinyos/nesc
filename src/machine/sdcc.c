@@ -71,4 +71,6 @@ static machine_spec sdcc_machine = {
   sdcc_init,
   sdcc_token,
   NULL				/* Keil C special */
+  NULL,				/* global cpp support */
+  NULL				/* per-file cpp support */
 };

@@ -35,6 +35,17 @@ typedef struct {
   /* A Keil C for 8051 special... */
   declaration (*keilc_definition)(location loc, cstring keyword, cstring name,
 				  expression address);
+
+  /* Called once when compilation starts. Should:
+     - setup system-specific include paths
+     - return name of a file definining system-specific macros
+     Targets using gcc can set this field to gcc_global_cpp_init
+  */
+  const char *(*global_cpp_init)(void);
+
+  /* Called just before preprocessing each file. Modify current.lex.finput
+     as needed (eg, add pragma handlers). Can be NULL. */
+  void (*file_cpp_init)(void); 
   
 } machine_spec;
 

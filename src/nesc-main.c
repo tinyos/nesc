@@ -154,7 +154,7 @@ static void connect_graphs(region r, nesc_declaration program, nesc_declaration 
   pop_instance();
 }
 
-bool nesc_option(char *p)
+int nesc_option(char *p)
 {
   if (p[0] != '-')
     return FALSE;
@@ -180,7 +180,7 @@ bool nesc_option(char *p)
     }
   else if (!strncmp (p, "fnesc-path=", strlen("fnesc-path=")))
     {
-      add_nesc_path(p + strlen("fnesc-path="));
+      add_nesc_path(p + strlen("fnesc-path="), CHAIN_BRACKET);
     }
   else if (!strncmp (p, "fnesc-msg=", strlen("fnesc-msg=")))
     {
@@ -342,7 +342,6 @@ void nesc_compile(const char *filename, const char *target_name)
   init_lex();
   init_semantics();
   init_nesc_env(parse_region);
-  init_nesc_paths_end();
   init_magic_functions();
   init_uses();
   init_abstract();

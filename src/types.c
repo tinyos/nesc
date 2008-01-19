@@ -585,7 +585,7 @@ bool type_unsigned(type t)
   if (t->kind == tk_primitive)
     switch (t->u.primitive)
       {
-      case tp_char: return !target->char_signed;
+      case tp_char: return !flag_signed_char;
       case tp_unsigned_char:
       case tp_unsigned_short:
       case tp_unsigned_int:
