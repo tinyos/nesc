@@ -29,13 +29,15 @@ Boston, MA 02111-1307, USA.  */
 #include "semantics.h"
 #include "c-parse.h"
 
+#include "gcc-cpp.h"
+
 struct cpp_option {
   struct cpp_option *next;
   const char *opt, *arg;
 };
 
 static region opt_region;
-static char *cpp_dir;
+static char *cpp_save_dir;
 static dhash_table current_macros;
 static struct cpp_option *saved_options;
 
@@ -314,8 +316,8 @@ static char *sanitize_path(region r, const char *path)
   char *pcopy = rstrdup(r, path);
   int l = strlen(pcopy);
 
-  while (l > 0 && isspace(pcopy[l - 1]))
-    *pcopy[--l] = '\0';
+  while (l > 0 && (pcopy[l - 1] == '\r' || pcopy[l - 1] == '\n'))
+    pcopy[--l] = '\0';
 
   return pcopy;
 }
@@ -344,8 +346,8 @@ static void gcc_cpp_cleanup(void)
 
 const char *gcc_global_cpp_init(void)
 {
-  static char *tbuiltins[] = "/tmp/nesccppbXXXXXX";
-  static char *tincludes[] = "/tmp/nesccppiXXXXXX";
+  static char tbuiltins[] = "/tmp/nesccppbXXXXXX";
+  static char tincludes[] = "/tmp/nesccppiXXXXXX";
   char *includes;
   FILE *incf;
   char line[LINELEN];
@@ -356,7 +358,7 @@ const char *gcc_global_cpp_init(void)
   /* Execute gcc to get builtin macros and include search path */
   if (!exec_gcc(tbuiltins, TRUE, &gcc_builtin_macros_file,
 		tincludes, TRUE, &includes, 
-		6, gcc_preprocess_init_setargs))
+		6, gcc_preprocess_init_setargs, NULL))
     return NULL;
 
   /* Read gcc error output to get search path */
@@ -371,7 +373,7 @@ const char *gcc_global_cpp_init(void)
     {
       if (!strncmp(line, "#include \"...\"", 14))
 	quote_includes = TRUE;
-      else if (!strncmp(line, "#include \<...\>", 14))
+      else if (!strncmp(line, "#include <...>", 14))
 	bracket_includes = TRUE;
       else if (!strncmp(line, "End of search list.", 19))
 	break;
@@ -388,8 +390,9 @@ const char *gcc_global_cpp_init(void)
 
 void preprocess_init(void)
 {
-  struct saved_option *opt;
+  struct cpp_option *opt;
   cpp_reader *reader;
+  cpp_options *cpp_opts;
   const char *builtin_macros_file;
 
   builtin_macros_file = target->global_cpp_init();
@@ -401,7 +404,8 @@ void preprocess_init(void)
     }
 
   reader = current.lex.finput;
-  reader->warn_unused_macros = 0;
+  cpp_opts = cpp_get_options(reader);
+  cpp_opts->warn_unused_macros = 0;
   if (!flag_undef)
     cpp_scan_nooutput(reader);
 
@@ -425,13 +429,13 @@ void preprocess_init(void)
   end_lex();
 }
 
-static void macro_set(unsigned char *name, unsigned char *value)
+static void macro_set(const unsigned char *name, const unsigned char *value)
 {
-  unsigned char **old_value = dhlookup(current_macros, name);
+  const unsigned char **old_value = dhlookup(current_macros, (char *)name);
 
   if (!old_value)
     {
-      old_value = ralloc(permanent, unsigned char *);
+      old_value = ralloc(permanent, const unsigned char *);
       dhadd(current_macros, old_value);
     }
   *old_value = value;
@@ -457,10 +461,10 @@ void start_macro_saving(void)
   unsigned char **macro;
 
   /* Start by defining the current macros */
-  existing_macros = dhscan(&current_macros);
+  existing_macros = dhscan(current_macros);
   while ((macro = dhnext(&existing_macros)))
     if (*macro) /* Ignore undef'ed macros - see cb_undef */
-      cpp_define(reader, *macro);
+      cpp_define(reader, (const char *)*macro);
 
   /* And set the include chain stuff */
 
@@ -484,17 +488,17 @@ void set_cpp_dir(const char *dir)
   struct stat dbuf;
   int l = strlen(dir);
 
-  cpp_dir = strdup(dir);
+  cpp_save_dir = xstrdup(dir);
 
   /* Remove trailing slashes */
-  while (l > 1 && cpp_dir[l - 1] == '/')
-    cpp_dir[--l] = '\0';
+  while (l > 1 && cpp_save_dir[l - 1] == '/')
+    cpp_save_dir[--l] = '\0';
 
-  mkdir(cpp_dir, 0777);
-  if (stat(cpp_dir, &dbuf) < 0 || !S_ISDIR(dbuf.st_mode))
+  mkdir(cpp_save_dir, 0777);
+  if (stat(cpp_save_dir, &dbuf) < 0 || !S_ISDIR(dbuf.st_mode))
     {
       /* There's no real recovery from this problem */
-      fprintf(stderr, "Couldn't create directory `%s'\n", cpp_dir);
+      fprintf(stderr, "Couldn't create directory `%s'\n", cpp_save_dir);
       exit(2);
     }
 }

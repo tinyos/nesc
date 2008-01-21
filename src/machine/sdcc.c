@@ -70,7 +70,7 @@ static machine_spec sdcc_machine = {
   NULL, NULL, NULL, NULL, 	/* attribute handling functions */
   sdcc_init,
   sdcc_token,
-  NULL				/* Keil C special */
+  NULL,				/* Keil C special */
   NULL,				/* global cpp support */
   NULL				/* per-file cpp support */
 };

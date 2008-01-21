@@ -101,7 +101,7 @@ static machine_spec keil_machine = {
   NULL, NULL, NULL, NULL, 	/* attribute handling functions */
   keil_init,
   keil_token,
-  keil_special			/* Keil C special */
+  keil_special,			/* Keil C special */
   NULL,				/* global cpp support */
   NULL				/* per-file cpp support */
 };

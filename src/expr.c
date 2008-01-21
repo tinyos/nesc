@@ -588,7 +588,7 @@ static void check_dereference(expression result, type dereferenced,
 #endif
       if (type_void(t) && !unevaluated_expression())
 	warning("dereferencing `void *' pointer");
-      result->side_effects |= type_volatile(t) || flag_volatile;
+      result->side_effects |= type_volatile(t) /*|| flag_volatile*/;
     }
   else
     {

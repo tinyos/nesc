@@ -22,6 +22,7 @@ Boston, MA 02111-1307, USA.  */
 #undef yystype
 #include "c-parse.h"
 #include "semantics.h"
+#include "nesc-cpp.h"
 
 #include "machine/avr.c"
 #include "machine/self.c"

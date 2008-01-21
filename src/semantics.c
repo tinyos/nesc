@@ -880,7 +880,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
   if ((specbits & 1 << RID_UNSIGNED)
       /* Traditionally, all bitfields are unsigned.  */
       || (bitfield && flag_traditional
-	  && (!explicit_flag_signed_bitfields || !flag_signed_bitfields))
+	  && (/*!explicit_flag_signed_bitfields ||*/ !flag_signed_bitfields))
       || (bitfield && !flag_signed_bitfields
 	  && ((specbits & 1 << RID_INT) || (specbits & 1 << RID_CHAR))
 	  && !(specbits & 1 << RID_SIGNED)))

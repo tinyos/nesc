@@ -32,8 +32,9 @@ Boston, MA 02111-1307, USA. */
 #include "constants.h"
 #include "nesc-cpp.h"
 #include "machine.h"
+#include "nesc-paths.h"
 
-#include "gcc_cpp.h"
+#include "gcc-cpp.h"
 
 
 static char_array doc_string;

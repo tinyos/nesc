@@ -86,7 +86,7 @@ static machine_spec self_machine = {
 
   SELF_ADJUST_FIELD_ALIGN,			     /* adjust_field_align */
 
-  NULL, NULL, NULL, NULL	/* No special attributes */
+  NULL, NULL, NULL, NULL,	/* No special attributes */
   NULL,				/* init */
   NULL,				/* token */
   NULL,				/* keil special */

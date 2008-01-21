@@ -130,19 +130,17 @@ static void pipe_closed (int signo)
 /* Decode the string P as a language-specific option for C. */
 static bool c_option(char *p)
 {
-  if (!strcmp (str, "-v"))
+  if (!strcmp (p, "-v"))
     flag_verbose = 1;
-  else if (!strcmp (str, "-version"))
-    version_flag = 1;
   else if (!strcmp (p, "-traditional"))
     flag_traditional = 1;
   else if (!strcmp (p, "-trigraphs"))
     flag_trigraphs = 1;
   else if (!strcmp (p, "-ansi"))
     flag_no_asm = 1;
-  else if (!strcmp (str, "-pedantic"))
+  else if (!strcmp (p, "-pedantic"))
     pedantic = 1;
-  else if (!strcmp (str, "-pedantic-errors"))
+  else if (!strcmp (p, "-pedantic-errors"))
     flag_pedantic_errors = pedantic = 1;
   else if (!strcmp (p, "-nostdinc"))
     flag_nostdinc = 1;
@@ -152,7 +150,7 @@ static bool c_option(char *p)
     fprintf(stderr, "nesC does not support $ in identifiers");
   else if (!strcmp (p, "-fno-dollars-in-identifiers"))
     dollars_in_ident = 0;
-  else if (!strcmp (str, "-w"))
+  else if (!strcmp (p, "-w"))
     inhibit_warnings = 1;
   else if (!strcmp (p, "-Wimplicit"))
     {
@@ -162,7 +160,7 @@ static bool c_option(char *p)
     }
   else if (!strcmp (p, "-Wno-implicit"))
     warn_implicit_int = 0, mesg_implicit_function_declaration = 0;
-  else if (!strcmp (str, "-W"))
+  else if (!strcmp (p, "-W"))
     {
       extra_warnings = 1;
       /* We save the value of warn_uninitialized, since if they put
@@ -230,7 +228,6 @@ int region_main(int argc, char **argv) deletes
   int i;
   char *filename = 0;
   char *targetfile = 0;
-  int version_flag = 0;
   char *p;
 
 #if HAVE_POLL
@@ -316,7 +313,7 @@ int region_main(int argc, char **argv) deletes
 	  else if (str[0] == 'I')
 	    add_nesc_dir(arg, CHAIN_BRACKET);
 	  else if (str[0] == 'D' || str[0] == 'U' || str[0] == 'A')
-	    save_option(str, arg);
+	    save_cpp_option(str, arg);
 	  else if (str[0] == 'f' || str[0] == 'W')
 	    {
 	      char kind = str[0];
@@ -329,17 +326,17 @@ int region_main(int argc, char **argv) deletes
 		   j < sizeof (fW_options) / sizeof (fW_options[0]);
 		   j++)
 		{
-		  if (kind = fW_options[j].c &&
-		      !strcmp (p, f_options[j].string))
+		  if (kind == fW_options[j].c &&
+		      !strcmp (p, fW_options[j].string))
 		    {
 		      *fW_options[j].variable = fW_options[j].on_value;
 		      break;
 		    }
-		  if (kind = fW_options[j].c &&
+		  if (kind == fW_options[j].c &&
 		      p[0] == 'n' && p[1] == 'o' && p[2] == '-' &&
-		      !strcmp (p+3, f_options[j].string))
+		      !strcmp (p+3, fW_options[j].string))
 		    {
-		      *f_options[j].variable = ! f_options[j].on_value;
+		      *fW_options[j].variable = ! fW_options[j].on_value;
 		      break;
 		    }
 		}

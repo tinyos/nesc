@@ -23,8 +23,10 @@ Boston, MA 02111-1307, USA.  */
 #include "parser.h"
 #include <sys/stat.h>
 #include <unistd.h>
+#include "nesc-paths.h"
+#include "semantics.h"
 
-#include "gcc_cpp.h"
+#include "gcc-cpp.h"
 
 /* Locate components/interfaces from their name */
 
@@ -67,10 +69,10 @@ static void add_minus(region r)
     error("-I- specified twice");
   include_current_dir = FALSE;
 
-  heads[QUOTE] = heads[BRACKET];
-  tails[QUOTE] = tails[BRACKET];
-  heads[BRACKET] = NULL;
-  tails[BRACKET] = NULL;
+  heads[CHAIN_QUOTE] = heads[CHAIN_BRACKET];
+  tails[CHAIN_QUOTE] = tails[CHAIN_BRACKET];
+  heads[CHAIN_BRACKET] = NULL;
+  tails[CHAIN_BRACKET] = NULL;
 }
 
 static void add_dir(region r, const char *path, int len, int chain)
@@ -80,7 +82,7 @@ static void add_dir(region r, const char *path, int len, int chain)
 
   np->next = NULL;
   np->name = canonicalise(r, path, len);;
-  np->sysp = chain == SYSTEM || chain == AFTER;
+  np->sysp = chain == CHAIN_SYSTEM || chain == CHAIN_AFTER;
   np->construct = 0;
   np->user_supplied_p = 1;	/* appears unused */
 
@@ -100,7 +102,7 @@ void add_nesc_dir(const char *path, int chain)
   if (!strcmp(path, "-"))
     add_minus(pathregion);
   else
-    add_dir(pathregion, path, strlen(path));
+    add_dir(pathregion, path, strlen(path), CHAIN_BRACKET);
 }
 
 static bool file_exists(const char *fullname)
@@ -112,7 +114,7 @@ static bool file_exists(const char *fullname)
 static const char *find_file(char *filename)
 {
   char *fullname = alloca(maxdirlen + strlen(filename) + 1);
-  struct path *p;
+  struct cpp_dir *p;
 
   if (include_current_dir && file_exists(filename))
     return "";

@@ -42,7 +42,7 @@ static machine_spec msp430_machine = {
   NULL,				/* adjust_field_align */
 
   msp430_decl_attribute,	/* Attribute handling: declarations */
-  NULL, NULL, NULL		/* Attribute handling: tag, field, type */
+  NULL, NULL, NULL,		/* Attribute handling: tag, field, type */
   NULL,				/* init */
   NULL,				/* token */
   NULL,				/* keil special */

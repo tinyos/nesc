@@ -40,11 +40,11 @@ static machine_spec avr_machine = {
   NULL,				/* adjust_field_align */
 
   avr_decl_attribute,		/* Attribute handling: declarations */
-  NULL, NULL, NULL		/* Attribute handling: tag, field, type */
+  NULL, NULL, NULL,		/* Attribute handling: tag, field, type */
   NULL,				/* init */
   NULL,				/* token */
   NULL,				/* keil special */
-  gcc_preprocess_init,		/* global cpp support */
+  gcc_global_cpp_init,		/* global cpp support */
   NULL				/* per-file cpp support */
 };
 

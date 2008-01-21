@@ -51,7 +51,7 @@ static machine_spec env_machine = {
 
   NULL,				/* adjust_field_align */
 
-  NULL, NULL, NULL, NULL	/* Attributes: need some way to specify this */
+  NULL, NULL, NULL, NULL,	/* Attributes: need some way to specify this */
   NULL,				/* init */
   NULL,				/* token */
   NULL,				/* keil special */
