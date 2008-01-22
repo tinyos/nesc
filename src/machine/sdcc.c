@@ -68,7 +68,7 @@ static machine_spec sdcc_machine = {
 
   NULL,				/* adjust_field_align function */
   NULL, NULL, NULL, NULL, 	/* attribute handling functions */
-  sdcc_init,
+  NULL, sdcc_init,
   sdcc_token,
   NULL,				/* Keil C special */
   NULL,				/* global cpp support */

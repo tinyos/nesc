@@ -126,6 +126,8 @@ libparser_a_SOURCES =				\
 	nesc-decls.h				\
 	nesc-dfilter.c				\
 	nesc-dfilter.h				\
+	nesc-doc.c				\
+	nesc-doc.h				\
 	nesc-dspec.h				\
 	nesc-dspec-int.h			\
 	nesc-dspec.tab.c			\
@@ -134,12 +136,12 @@ libparser_a_SOURCES =				\
 	nesc-dump.h				\
 	nesc-env.c				\
 	nesc-env.h				\
+	nesc-gcc.c				\
+	nesc-gcc.h				\
 	nesc-generate.c				\
 	nesc-generate.h				\
 	nesc-inline.c				\
 	nesc-inline.h				\
-	nesc-doc.c				\
-	nesc-doc.h				\
 	nesc-interface.c			\
 	nesc-interface.h			\
 	nesc-keywords.h				\

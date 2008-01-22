@@ -30,7 +30,8 @@ Boston, MA 02111-1307, USA.  */
 #include <string.h>
 
 static machine_spec env_machine = {
-  "env", NULL,
+  "env", 
+  gcc_save_machine_options,
   /* [default] */       /* [keyname] */
   FALSE,		/* big_endian */
   FALSE,		/* pcc_bitfield_type_matters */
@@ -52,7 +53,7 @@ static machine_spec env_machine = {
   NULL,				/* adjust_field_align */
 
   NULL, NULL, NULL, NULL,	/* Attributes: need some way to specify this */
-  NULL,				/* init */
+  NULL, NULL,			/* preint, init */
   NULL,				/* token */
   NULL,				/* keil special */
   gcc_global_cpp_init,		/* global cpp support */

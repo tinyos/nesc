@@ -100,27 +100,35 @@ void xprintf(char *format, ...)
   va_end(args);
 }
 
+/* Output an arbitrary C character in an XML-friendly way. Control
+   characters are remapped to 0x2400, except CR, LF and Tab */
+void xqputc(int c)
+{
+  if ((unsigned char)c == c && isprint(c) &&
+      !(c == '"' || c == '<' || c == '&'))
+    putc(c, xml_file);
+  else 
+    {
+      /* Ahh, the joys of XML. The control characters are lurking
+	 from 0x2400 onwards, except for CR, LF and Tab which exist
+	 at their usual value */
+      if (!(c == '\r' || c == '\n' || c == '\t'))
+	c += 0x2400;
+      xprintf("&#%d;", c);
+    }
+}
+
+/* Output a string quoted to match XML AttValue rules */
 void xqputs(const char *s)
 {
   if (!xml_file)
     return;
 
-  /* Output a string quoted to match XML AttValue rules */
   while (*s)
-    {
-      switch (*s)
-	{
-	case '\n': case '"': case '<': case '&': 
-	  xprintf("&#%d;", (unsigned char)*s);
-	  break;
-	default:
-	  putc(*s, xml_file);
-	  break;
-	}
-      s++;
-    }
+    xqputc(*s++);
 }
 
+/* Output a wide-char string quoted to match XML AttValue rules */
 void xqputcs(const cstring s)
 {
   int i;
@@ -128,17 +136,8 @@ void xqputcs(const cstring s)
   if (!xml_file)
     return;
 
-  /* Output a wide-char string quoted to match XML AttValue rules */
   for (i = 0; i < s.length; i++)
-    {
-      char c = s.data[i];
-
-      if ((unsigned char)c == c && isprint(c) &&
-	  !(c == '"' || c == '<' || c == '&'))
-	putc(c, xml_file);
-      else 
-	xprintf("&#%d;", c);
-    }
+    xqputc(s.data[i]);
 }
 
 

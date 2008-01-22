@@ -1,5 +1,5 @@
 /* This file is part of the nesC compiler.
-   Copyright (C) 2002 Intel Corporation
+   Copyright (C) 2002-2008 Intel Corporation
 
 The attached "nesC" software is provided to you under the terms and
 conditions of the GNU General Public License Version 2 as published by the
@@ -15,16 +15,11 @@ along with nesC; see the file COPYING.  If not, write to
 the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
-#ifndef NESC_CPP_H
-#define NESC_CPP_H
+#ifndef NESC_GCC_H
+#define NESC_GCC_H
 
-#include "parser.h"
-
-void save_cpp_option(const char *option, const char *arg);
-void set_cpp_dir(const char *dir);
-void preprocess_init(void);
-
-void start_macro_saving(void);
-void end_macro_saving(void);
+const char *gcc_global_cpp_init(void);
+void add_gcc_option(const char *option);
+void gcc_save_machine_options(const char *opt);
 
 #endif

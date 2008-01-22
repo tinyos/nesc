@@ -352,6 +352,9 @@ int region_main(int argc, char **argv) deletes
       if (argv[i][0] == '-' && argv[i][1] != 0)
 	target->handle_option(argv[i]);
 
+  if (target->preinit)
+    target->preinit();
+
   if (flag_signed_char == 2) /* not set by user */
     flag_signed_char = target->char_signed;
 

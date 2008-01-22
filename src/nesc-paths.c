@@ -102,7 +102,7 @@ void add_nesc_dir(const char *path, int chain)
   if (!strcmp(path, "-"))
     add_minus(pathregion);
   else
-    add_dir(pathregion, path, strlen(path), CHAIN_BRACKET);
+    add_dir(pathregion, path, strlen(path), chain);
 }
 
 static bool file_exists(const char *fullname)

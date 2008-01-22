@@ -29,6 +29,8 @@ struct self_pcc2 {
   char x : 1;
 };
 
+static void self_preinit(void);
+
 #ifdef __i386__
 #define SELF_ADJUST_FIELD_ALIGN self_adjust_field_align
 #define SELF_HANDLE_OPTION self_handle_option
@@ -48,11 +50,12 @@ static void self_handle_option(const char *arg)
     align_double = TRUE;
   else if (!strcmp(arg, "-mnoalign-double"))
     align_double = FALSE;
+  gcc_save_machine_options(arg);
 }
 
 #else
 #define SELF_ADJUST_FIELD_ALIGN NULL
-#define SELF_HANDLE_OPTION NULL
+#define SELF_HANDLE_OPTION gcc_save_machine_options
 
 #endif
 
@@ -87,9 +90,20 @@ static machine_spec self_machine = {
   SELF_ADJUST_FIELD_ALIGN,			     /* adjust_field_align */
 
   NULL, NULL, NULL, NULL,	/* No special attributes */
-  NULL,				/* init */
+  self_preinit, NULL,		/* init */
   NULL,				/* token */
   NULL,				/* keil special */
   gcc_global_cpp_init,		/* global cpp support */
   NULL				/* per-file cpp support */
 };
+
+static void self_preinit(void)
+{
+  union {
+    uint8_t a;
+    uint16_t b;
+  } endian;
+
+  endian.b = 1;
+  self_machine.big_endian = endian.a != 1;
+}

@@ -372,7 +372,7 @@ static void lex_string(const cpp_token *tok, struct yystype *lvalp)
 			   string_array_length(string_sequence),
 			   &istr, wide))
     {
-      cstr = make_cstring(parse_region, (char *)istr.text, istr.len);
+      cstr = make_cstring(parse_region, (char *)istr.text, istr.len - 1);
       free((char *)istr.text);
     }
   else
@@ -408,7 +408,11 @@ static lexical_cst interpret_integer(const cpp_token *token, unsigned int flags)
   integer = cpp_interpret_integer(current_reader(), token, flags);
   integer = cpp_num_sign_extend(integer, options->precision);
 
-  if (flags & CPP_N_UNSIGNED)
+  if (flags & CPP_N_UNSIGNED ||
+      /* what earlier nesC versions did, not correct as per C89/C99:
+	 In both C89 and C99, octal and hex constants may be signed or
+	 unsigned, whichever fits tighter.  */
+      (flags & CPP_N_RADIX) != CPP_N_DECIMAL) 
     if ((flags & CPP_N_WIDTH) == CPP_N_SMALL)
       t = unsigned_int_type;
     else if ((flags & CPP_N_WIDTH) == CPP_N_MEDIUM)

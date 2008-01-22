@@ -29,7 +29,8 @@ typedef struct {
   bool (*field_attribute)(gcc_attribute attr, field_declaration fdecl);
   bool (*type_attribute)(gcc_attribute attr, type *t);
 
-  void (*init)(void);
+  void (*preinit)(void); /* Immediately after target selection */
+  void (*init)(void);    /* After everything else is setup */
   int (*token)(const char *word, int length, struct yystype *lvalp);
 
   /* A Keil C for 8051 special... */

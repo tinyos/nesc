@@ -21,7 +21,8 @@ static bool msp430_decl_attribute(gcc_attribute attr, data_declaration ddecl)
 
 /* Basic pointer sizes and alignments for the TI MSP430 */
 static machine_spec msp430_machine = {
-  "msp430", NULL,
+  "msp430", 
+  gcc_save_machine_options,
   FALSE,			/* big_endian */
   FALSE,			/* pcc_bitfield_type_matters */
   16,				/* empty field boundary - in bits */
@@ -43,7 +44,7 @@ static machine_spec msp430_machine = {
 
   msp430_decl_attribute,	/* Attribute handling: declarations */
   NULL, NULL, NULL,		/* Attribute handling: tag, field, type */
-  NULL,				/* init */
+  NULL, NULL,			/* preint, init */
   NULL,				/* token */
   NULL,				/* keil special */
   gcc_global_cpp_init,		/* global cpp support */
