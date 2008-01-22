@@ -29,7 +29,7 @@ AC_CONFIG_AUX_DIR(config-aux)
 
 AM_INIT_AUTOMAKE
 
-AC_CONFIG_SUBDIRS(src)
+AC_CONFIG_SUBDIRS(src libiberty libcpp)
 
 AC_PROG_CC
 

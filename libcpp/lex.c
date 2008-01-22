@@ -1065,6 +1065,8 @@ _cpp_lex_direct (cpp_reader *pfile)
       result->type = CPP_LESS;
       if (*buffer->cur == '=')
 	buffer->cur++, result->type = CPP_LESS_EQ;
+      else if (*buffer->cur == '-')
+	buffer->cur++, result->type = CPP_FERED;
       else if (*buffer->cur == '<')
 	{
 	  buffer->cur++;

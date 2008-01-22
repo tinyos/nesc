@@ -25,5 +25,14 @@ set -x
     $AUTOCONF
     $AUTOMAKE -a -c
     cd ..
+
+    cd libiberty
+    $AUTOCONF
+    cd ..
+
+    cd libcpp
+    $ACLOCAL -I ../config-aux
+    $AUTOCONF
+    cd ..
 )
 rm -f config.cache $srcdir/config.cache

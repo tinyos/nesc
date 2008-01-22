@@ -61,8 +61,8 @@ localedir = $(datadir)/locale
 prefix = @prefix@
 
 MSGMERGE = msgmerge
-mkinstalldirs = $(SHELL) $(srcdir)/../mkinstalldirs
-depcomp = $(SHELL) $(srcdir)/../depcomp
+mkinstalldirs = $(SHELL) $(srcdir)/../config-aux/mkinstalldirs
+depcomp = $(SHELL) $(srcdir)/../config-aux/depcomp
 
 INCLUDES = -I$(srcdir) -I. -I$(srcdir)/../include @INCINTL@ \
 	-I$(srcdir)/include
@@ -141,17 +141,7 @@ installdirs:
 	  fi; \
 	done
 
-install-strip install: all installdirs
-	cats="$(CATALOGS)"; for cat in $$cats; do \
-	  lang=`basename $$cat | sed 's/\.gmo$$//'`; \
-	  if [ -f $$cat ]; then :; \
-	  elif [ -f $(srcdir)/$$cat ]; then cat=$(srcdir)/$$cat; \
-	  else continue; \
-	  fi; \
-	  dir=$(localedir)/$$lang/LC_MESSAGES; \
-	  echo $(INSTALL_DATA) $$cat $(DESTDIR)$$dir/$(PACKAGE).mo; \
-	  $(INSTALL_DATA) $$cat $(DESTDIR)$$dir/$(PACKAGE).mo; \
-	done
+install-strip install: 
 
 mostlyclean:
 	-rm -f *.o
