@@ -125,7 +125,7 @@ static void cb_file_change(cpp_reader *reader, const struct line_map *new_map)
 
   current.lex.input->l.in_system_header = new_map->sysp != 0;
   /* The filename must last till the end of compilation */
-  current.lex.input->l.filename = rstrdup(parse_region, new_map->to_file);
+  current.lex.input->l.filename = rstrdup(permanent, new_map->to_file);
   current.lex.input->l.lineno = new_map->to_line;
 }
 
@@ -246,16 +246,24 @@ bool start_lex(source_language l, const char *path)
   cpp_opts->pedantic = pedantic;
 
   cpp_init_iconv(current_reader());
-  cpp_init_builtins(current_reader(), TRUE);
+  cpp_init_special_builtins(current_reader());
 
   cpp_cbacks = cpp_get_callbacks(current_reader());
   cpp_cbacks->file_change = cb_file_change;
   cpp_cbacks->line_change = cb_line_change;
 
+  path = cpp_read_main_file(current.lex.finput, path);
+
+  cb_file_change(current_reader(),
+		 linemap_add(current.lex.line_map, LC_ENTER, 0, "<built-in>", 0));
+
   set_cpp_include_path();
   start_macro_saving();
+  cb_file_change(current_reader(),
+		 linemap_add(current.lex.line_map, LC_LEAVE, 0, NULL, 0));
 
-  return cpp_read_main_file(current.lex.finput, path) != NULL;
+
+  return path != NULL;
 }
 
 void end_lex(void)

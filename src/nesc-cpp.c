@@ -36,6 +36,11 @@ struct cpp_option {
   const char *opt, *arg;
 };
 
+struct macro_def {
+  const unsigned char *name;
+  const unsigned char *def;
+};
+
 static region opt_region;
 static char *cpp_save_dir;
 static dhash_table current_macros;
@@ -265,16 +270,6 @@ exec_gcc(char *gcc_output_template, bool mkotmp, char **gcc_output_file,
       argv[0] = target_compiler;
       setargs(data, argv + 1);
 
-      /* It's really spammy with this on */
-      if (flag_verbose >= 2)
-	{
-	  int i;
-
-	  for (i = 0; argv[i]; i++)
-	    fprintf(stderr, "%s ", argv[i]);
-	  fprintf(stderr, "\n");
-	}
-
       execvp(target_compiler, (char **)argv);
       exit(2);
     }
@@ -328,12 +323,13 @@ static void gcc_preprocess_init_setargs(void *data, const char **argv)
   argv[1] = "-x";
   argv[2] = "c";
   argv[3] = "/dev/null";
-  argv[4] = "-dM";
+  argv[4] = "-E";
+  argv[5] = "-dM";
   if (flag_nostdinc)
-    argv[5] = "-nostdinc";
+    argv[6] = "-nostdinc";
   else
-    argv[5] = NULL;
-  argv[6] = NULL;
+    argv[6] = NULL;
+  argv[7] = NULL;
 }
 
 static char *gcc_builtin_macros_file;
@@ -358,7 +354,7 @@ const char *gcc_global_cpp_init(void)
   /* Execute gcc to get builtin macros and include search path */
   if (!exec_gcc(tbuiltins, TRUE, &gcc_builtin_macros_file,
 		tincludes, TRUE, &includes, 
-		6, gcc_preprocess_init_setargs, NULL))
+		7, gcc_preprocess_init_setargs, NULL))
     return NULL;
 
   /* Read gcc error output to get search path */
@@ -388,16 +384,34 @@ const char *gcc_global_cpp_init(void)
   return gcc_builtin_macros_file;
 }
 
+static int macro_compare(void *entry1, void *entry2)
+{
+  struct macro_def *e1 = entry1, *e2 = entry2;
+
+  return !strcmp((const char *)e1->name, (const char *)e2->name);
+}
+
+static unsigned long macro_hash(void *entry)
+{
+  struct macro_def *e = entry;
+
+  return hash_str((const char *)e->name);
+}
+
 void preprocess_init(void)
 {
   struct cpp_option *opt;
+  cpp_callbacks *cpp_cbacks;
   cpp_reader *reader;
   cpp_options *cpp_opts;
   const char *builtin_macros_file;
 
+  current_macros = new_dhash_table(permanent, 512, macro_compare, macro_hash);
+
   builtin_macros_file = target->global_cpp_init();
   init_nesc_paths_end();
-  if (!start_lex(l_c, builtin_macros_file))
+  current.fileregion = newregion();
+  if (!builtin_macros_file || !start_lex(l_c, builtin_macros_file))
     {
       error("internal error: couldn't define builtin macros - exiting");
       exit(2);
@@ -405,13 +419,15 @@ void preprocess_init(void)
 
   reader = current.lex.finput;
   cpp_opts = cpp_get_options(reader);
+  cpp_cbacks = cpp_get_callbacks(reader);
   cpp_opts->warn_unused_macros = 0;
   if (!flag_undef)
     cpp_scan_nooutput(reader);
 
   /* Process saved options */
-  current.lex.input->l.filename = "<command-line>";
-  current.lex.input->l.lineno = 0;
+  cpp_cbacks->file_change(reader, linemap_add(current.lex.line_map, LC_RENAME, 0,
+					      "<command-line>", 0));
+
   for (opt = saved_options; opt; opt = opt->next)
     {
       if (opt->opt[0] == 'D')
@@ -427,24 +443,33 @@ void preprocess_init(void)
 	}
     }
   end_lex();
+  current.lex.input = NULL;
+  deleteregion_ptr(&current.fileregion);
 }
 
 static void macro_set(const unsigned char *name, const unsigned char *value)
 {
-  const unsigned char **old_value = dhlookup(current_macros, (char *)name);
+  struct macro_def fake = { name, NULL };
+  struct macro_def *old_value = dhlookup(current_macros, &fake);
 
   if (!old_value)
     {
-      old_value = ralloc(permanent, const unsigned char *);
+      old_value = ralloc(permanent, struct macro_def);
+      old_value->name = name;
       dhadd(current_macros, old_value);
     }
-  *old_value = value;
+  old_value->def = value;
 }
 
 static void cb_define(cpp_reader *reader, source_location loc, 
 		      cpp_hashnode *macro)
 {
-  macro_set(NODE_NAME(macro), cpp_macro_definition(reader, macro));
+  char *def = rstrdup(permanent, (char *)cpp_macro_definition(reader, macro));
+  char *firstspace = strchr(def, ' ');
+
+  /* Massage def into cpp_define's format (same as -D) */
+  *firstspace = '=';
+  macro_set(NODE_NAME(macro), (const unsigned char *)def);
 }
 
 static void cb_undef (cpp_reader *reader, source_location loc,
@@ -458,13 +483,13 @@ void start_macro_saving(void)
   cpp_reader *reader = current.lex.finput;
   cpp_callbacks *cbacks = cpp_get_callbacks(reader);
   dhash_scan existing_macros;
-  unsigned char **macro;
+  struct macro_def *macro;
 
   /* Start by defining the current macros */
   existing_macros = dhscan(current_macros);
   while ((macro = dhnext(&existing_macros)))
-    if (*macro) /* Ignore undef'ed macros - see cb_undef */
-      cpp_define(reader, (const char *)*macro);
+    if (macro->def) /* Ignore undef'ed macros - see cb_undef */
+      cpp_define(reader, (const char *)macro->def);
 
   /* And set the include chain stuff */
 
