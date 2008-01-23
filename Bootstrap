@@ -27,11 +27,13 @@ set -x
     cd ..
 
     cd libiberty
+    $AUTOHEADER
     $AUTOCONF
     cd ..
 
     cd libcpp
     $ACLOCAL -I ../config-aux
+    $AUTOHEADER
     $AUTOCONF
     cd ..
 )
