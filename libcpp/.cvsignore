@@ -6,3 +6,4 @@ config.in
 config.log
 stamp-h1
 localedir.hs
+autom4te.cache
