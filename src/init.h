@@ -58,7 +58,7 @@ typedef struct ivalue_field {
 
 ivalue new_ivalue(region r, int kind, type t);
 
-void start_init(declaration decl, const char *attribute);
+void start_init(declaration decl, nesc_attribute attr);
 void finish_init(void);
 void simple_init(expression expr);
 void really_start_incremental_init(type t);

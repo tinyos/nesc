@@ -1314,19 +1314,25 @@ expression make_identifier(location loc, cstring id, bool maybe_implicit)
 
   if (!decl)
     {
-      if (!current.function_decl)
-	error("`%s' undeclared here (not in a function)", id.data);
-      else if (!env_lookup(current.function_decl->undeclared_variables, id.data, FALSE))
+      /* Suppress undeclare identifier errors in deputy scopes - they
+	 will be reprocessed later under deputy scoping rules (see
+	 nesc-deputy.c) */
+      if (!current.env->deputy_scope)
 	{
-	  static bool undeclared_variable_notice;
-
-	  error("`%s' undeclared (first use in this function)", id.data);
-	  env_add(current.function_decl->undeclared_variables, id.data, (void *)1);
-	  if (!undeclared_variable_notice)
+	  if (!current.function_decl)
+	    error("`%s' undeclared here (not in a function)", id.data);
+	  else if (!env_lookup(current.function_decl->undeclared_variables, id.data, FALSE))
 	    {
-	      error("(Each undeclared identifier is reported only once");
-	      error("for each function it appears in.)");
-	      undeclared_variable_notice = TRUE;
+	      static bool undeclared_variable_notice;
+
+	      error("`%s' undeclared (first use in this function)", id.data);
+	      env_add(current.function_decl->undeclared_variables, id.data, (void *)1);
+	      if (!undeclared_variable_notice)
+		{
+		  error("(Each undeclared identifier is reported only once");
+		  error("for each function it appears in.)");
+		  undeclared_variable_notice = TRUE;
+		}
 	    }
 	}
       decl = bad_decl;

@@ -325,7 +325,12 @@ bool handle_type_attribute(attribute attr, type *t)
   if (is_gcc_attribute(attr))
     return handle_gcc_type_attribute(CAST(gcc_attribute, attr), t);
   else
-    return handle_nesc_type_attribute(CAST(nesc_attribute, attr), t);
+    {
+      /* nesC attributes don't have a broken syntax, so don't need
+	 to flow up to the declaration */
+      handle_nesc_type_attribute(CAST(nesc_attribute, attr), t);
+      return TRUE;
+    }
 }
 
 /* Functions to handle regular and dd list of attributes */

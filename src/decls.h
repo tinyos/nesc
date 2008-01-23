@@ -97,6 +97,7 @@ typedef struct tag_declaration {
   /* Name of a macro to use in nesC's output for instances of this attribute - 
      if this is NULL, attributes are not printed */
   const char *macro_name;
+  bool deputy_scope;		/* TRUE for deputy attributes (@deputy_scope()) */
 } *tag_declaration;
 
 typedef enum { decl_variable, decl_constant, decl_function,
@@ -258,6 +259,7 @@ struct environment
   function_decl fdecl;
   bool parm_level : 1;
   bool global_level : 1;	/* Both system and component */
+  bool deputy_scope : 1;
   env sameregion id_env;
   env sameregion tag_env;
 };

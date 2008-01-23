@@ -205,29 +205,6 @@ int ilog2(largest_uint x)
 
 DEFINE_ARRAY(char_array, char)
 
-#ifdef __CYGWIN32__
-#include <sys/cygwin.h>
-#include <w32api/windows.h>
-
-char *fix_filename(region r, const char *unix_filename)
-{
-  char winpath[MAX_PATH];
-
-  if (flag_mingw_gcc)
-    {
-      cygwin_conv_to_win32_path(unix_filename, winpath);
-      return rstrdup(r, winpath[0] ? winpath : ".");
-    }
-  else
-    return rstrdup(r, unix_filename);
-}
-#else
-char *fix_filename(region r, const char *unix_filename)
-{
-  return rstrdup(r, unix_filename);
-}
-#endif
-
 /* For some obscure reason, there's no standard function for this
    (Linux's wctombs does it, but it's not standard) */
 int wcs_mb_size(const wchar_t *wstr)

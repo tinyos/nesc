@@ -42,6 +42,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-dump.h"
 #include "nesc-network.h"
 #include "nesc-task.h"
+#include "nesc-deputy.h"
 #include "edit.h"
 #include "machine.h"
 #include "nesc-atomic.h"
@@ -252,6 +253,8 @@ int nesc_option(char *p)
     }
   else if (!strcmp (p, "fnesc-optimize-atomic"))
     nesc_optimise_atomic = 1;
+  else if (!strncmp (p, "fnesc-genprefix=", strlen("fnesc-genprefix=")))
+    unparse_prefix(p + strlen("fnesc-genprefix="));
   else if (!strcmp (p, "Wnesc-docstring"))
     warn_unexpected_docstring = 1;
   else if (!strcmp (p, "Wno-nesc-docstring"))
@@ -349,6 +352,7 @@ void nesc_compile(const char *filename, const char *target_name)
   init_network();
   init_internal_nesc_attributes();
   init_isatomic();
+  init_deputy();
   if (target->init)
     target->init();
 

@@ -142,6 +142,7 @@ void yyerror();
 %type <u.attribute> maybe_attribute attributes attribute attribute_list
 %type <u.attribute> nesc_attributes nattrib 
 %type <u.gcc_attribute> attrib target_attribute
+%type <u.nesc_attribute> nastart
 %type <u.constant> CONSTANT
 %type <u.decl> datadecl datadecls datadef decl decls extdef extdefs fndef
 %type <u.decl> initdecls initdecls_ notype_initdecls notype_initdecls_ fndef2
@@ -907,7 +908,7 @@ fndef:
 	| setspecs notype_declarator fndef2 { $$ = $3; }
 	;
 
-fndef2:	  maybeasm maybe_attribute
+fndef2:	   maybeasm maybe_attribute
 		{ 
 		  /* maybeasm is only here to avoid a s/r conflict */
 		  refuse_asm($1);
@@ -1806,10 +1807,15 @@ attrib:
 	;
 
 nattrib:
-	  '@' idword '(' 
-		 { $<u.tdecl>$ = start_attribute_use($2); }
-	  initlist_maybe_comma ')' 
-		{ $$ = finish_attribute_use($2, $5, $<u.tdecl>4); }
+	  '@' nastart '(' initlist_maybe_comma ')'
+		{ $$ = finish_attribute_use($2, $4); }
+	| '@' nastart error ')'
+		{ $$ = finish_attribute_use($2, make_error_expr()); }
+	;
+
+nastart:
+	  idword
+	  	{ $$ = start_attribute_use($1); }
 	;
 
 /* This still leaves out most reserved keywords,

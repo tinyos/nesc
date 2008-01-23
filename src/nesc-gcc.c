@@ -316,7 +316,10 @@ static void gcc_preprocess_init_setargs(void *data, const char **argv)
   argv[opt++] = "-v";
   argv[opt++] = "-x";
   argv[opt++] = "c";
-  argv[opt++] = "/dev/null";
+  if (flag_mingw_gcc)
+    argv[opt++] = "nul:";
+  else
+    argv[opt++] = "/dev/null";
   argv[opt++] = "-E";
   argv[opt++] = "-dM";
   if (flag_nostdinc)

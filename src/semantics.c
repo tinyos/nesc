@@ -72,6 +72,7 @@ environment new_environment(region r, environment parent,
   env->parent = parent;
   env->parm_level = parm_level;
   env->global_level = global_level;
+  env->deputy_scope = FALSE;
   if (parent)
     {
       env->fdecl = parent->fdecl;
@@ -280,6 +281,7 @@ tag_declaration declare_tag_env(environment env, tag_ref t)
   tdecl->instanceof = NULL;
   tdecl->Cname = FALSE;
   tdecl->macro_name = NULL;
+  tdecl->deputy_scope = FALSE;
 #endif
 
   if (name)

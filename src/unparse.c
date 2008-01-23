@@ -55,6 +55,9 @@ static char *function_separator = "$";
 /* modify behavior of low-level functions when printing docs */
 static bool documentation_mode;
 
+/* List of lines to output at start of file */
+static dd_list unparse_header;
+
 typedef struct prt_closure {
   void (*fn)(struct prt_closure *closure);
 
@@ -458,6 +461,8 @@ region unparse_region;
 
 void unparse_start(FILE *to, FILE *symbols)
 {
+  dd_list_pos header_line;
+
   of = to;
   symf = symbols;
   output_loc = *dummy_location;
@@ -466,6 +471,12 @@ void unparse_start(FILE *to, FILE *symbols)
   documentation_mode = FALSE;
   indent_level = 0;
   unparse_region = newregion();
+
+  dd_scan (header_line, unparse_header)
+    {
+      output_string(DD_GET(const char *, header_line));
+      newline();
+    }
 }
 
 void unparse_end(void) deletes
@@ -478,6 +489,14 @@ void unparse(FILE *to, declaration program) deletes
   unparse_start(to, NULL);
   prt_toplevel_declarations(program);
   unparse_end();
+}
+
+void unparse_prefix(const char *line)
+{
+  if (!unparse_header)
+    unparse_header = dd_new_list(permanent);
+
+  dd_add_last(permanent, unparse_header, (char *)line);
 }
 
 void enable_line_directives(void)

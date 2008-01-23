@@ -31,6 +31,7 @@ struct yystype {
     asm_stmt asm_stmt;
     attribute attribute;
     gcc_attribute gcc_attribute;
+    nesc_attribute nesc_attribute;
     lexical_cst constant;
     declaration decl;
     declarator declarator;

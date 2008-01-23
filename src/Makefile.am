@@ -124,6 +124,8 @@ libparser_a_SOURCES =				\
 	nesc-cpp.c				\
 	nesc-cpp.h				\
 	nesc-decls.h				\
+	nesc-deputy.c				\
+	nesc-deputy.h				\
 	nesc-dfilter.c				\
 	nesc-dfilter.h				\
 	nesc-doc.c				\

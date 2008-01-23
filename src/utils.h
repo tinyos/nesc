@@ -44,8 +44,6 @@ unsigned long lcm(unsigned long x, unsigned long y);
 DECLARE_ARRAY(wchar_array, wchar_t)
 DECLARE_ARRAY(char_array, char)
 
-char *fix_filename(region r, const char *unix_filename);
-
 int wcs_mb_size(const wchar_t *wstr);
 /* Returns: number of bytes to be allocated for a C string buffer
      that will successfully hold the result of wcstombs(buffer, wstr, ?),

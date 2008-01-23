@@ -31,6 +31,7 @@ Boston, MA 02111-1307, USA. */
 #include "expr.h"
 #include "constants.h"
 #include "AST_utils.h"
+#include "semantics.h"
 
 static type set_array_length(type t, largest_int length)
 {
@@ -534,7 +535,7 @@ static void pop_exhausted_levels(void)
 
 /* Prepare to parse and output the initializer for variable DECL.  */
 
-void start_init(declaration decl, const char *attribute)
+void start_init(declaration decl, nesc_attribute attr)
 /* decl is really a variable_decl */
 {
   const char *locus;
@@ -561,11 +562,14 @@ void start_init(declaration decl, const char *attribute)
       require_constant_value = ddecl->needsmemory;
       locus = ddecl->name;
     }
-  else if (attribute)
+  else if (attr)
     {
+      cstring aname = attr->word1->cstring;
+
       constructor_decl = NULL;
-      require_constant_value = 1;
-      locus = attribute;
+      require_constant_value = !(attr->tdecl && attr->tdecl->deputy_scope);
+      locus = rstralloc(current.fileregion, aname.length + 2);
+      sprintf((char *)locus, "@%s", aname.data);
     }
   else
     {

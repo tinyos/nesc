@@ -31,6 +31,7 @@ extern region unparse_region;
 void unparse(FILE *to, declaration program) deletes;
 void unparse_start(FILE *to, FILE *symbols);
 void unparse_end(void) deletes;
+void unparse_prefix(const char *line);
 void enable_line_directives(void);
 void disable_line_directives(void);
 void set_function_separator(char *sep);

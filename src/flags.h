@@ -250,7 +250,7 @@ extern char *diff_input, *diff_output;
 extern int flag_use_scheduler;
 
 /* If true, we're using a mingw based gcc from a cygwin environment. We
-   should fix filenames before invoking gcc. */
+   should use windows filenames when invoking gcc. */
 extern int flag_mingw_gcc;
 
 /* If true, check for atomic statements whose body is guaranteed to be

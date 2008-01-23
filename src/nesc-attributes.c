@@ -41,29 +41,40 @@ tag_ref lookup_attribute(word tag)
   return tref;
 }
 
-tag_declaration start_attribute_use(word name)
+nesc_attribute start_attribute_use(word name)
 {
   /* Prepare to read an initialiser for the attribute definition 
      specified by name */
-  tag_ref aref = lookup_attribute(name);
-  type atype = aref->tdecl ? make_tagged_type(aref->tdecl) : error_type;
-  char *attrname = rstralloc(current.fileregion, strlen(name->cstring.data) + 2);
+  nesc_attribute attr = new_nesc_attribute(parse_region, name->location, name,
+					   NULL);
+  tag_ref aref = lookup_attribute(name); /* XXX: aref leaks */
+  type atype = error_type;
 
-  sprintf(attrname, "@%s", name->cstring.data);
-  start_init(NULL, attrname);
+  /* Create new environment so that we can track whether this is a
+     deputy scope or not. Using an environment makes it easy to
+     recover parsing errors: we just call poplevel in the appropriate
+     error production (see nattrib rules in c-parse.y). */
+  pushlevel(FALSE);
+
+  attr->tdecl = aref->tdecl;
+  if (aref->tdecl)
+    {
+      atype = make_tagged_type(aref->tdecl);
+      if (aref->tdecl->deputy_scope)
+	current.env->deputy_scope = TRUE;
+    }
+
+  start_init(NULL, attr);
   really_start_incremental_init(atype);
 
-  /* XXX: aref leaks */
-  return aref->tdecl;
+  return attr;
 }
 
-attribute finish_attribute_use(word name, expression init, tag_declaration tdecl)
+attribute finish_attribute_use(nesc_attribute attr, expression init)
 {
-  expression args = make_init_list(name->location, init); 
-  nesc_attribute attr = new_nesc_attribute(parse_region, name->location, name, args);
-
+  attr->arg1 = make_init_list(attr->word1->location, init); 
   finish_init(); 
-  attr->tdecl = tdecl;
+  poplevel();
 
   return CAST(attribute, attr);
 }
@@ -158,7 +169,7 @@ static void save_user_attribute(nesc_attribute attr, dd_list *alist)
   dd_add_last(parse_region, *alist, attr);
 }
 
-bool handle_nesc_type_attribute(nesc_attribute attr, type *t)
+void handle_nesc_type_attribute(nesc_attribute attr, type *t)
 {
   iattr handler = internal_lookup(attr);
 
@@ -169,10 +180,10 @@ bool handle_nesc_type_attribute(nesc_attribute attr, type *t)
       else
 	ignored_nesc_attribute(attr);
     }
-  else
-    ignored_nesc_attribute(attr); /* FIXME? Support user attributes */
-
-  return TRUE;
+  /* In the future, we might want to record the attribute on the type,
+     and support dumping this information in nesc-dump.c. For now,
+     though, attributes on types are only useful if they are @macro()
+     attributes */
 }
 
 void handle_nesc_decl_attribute(nesc_attribute attr, data_declaration ddecl)
