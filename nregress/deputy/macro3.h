@@ -1,0 +1,1 @@
+struct @fun @macro("a-") { };
