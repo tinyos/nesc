@@ -7,3 +7,5 @@ config.log
 stamp-h1
 localedir.hs
 autom4te.cache
+config.h
+localedir.h
