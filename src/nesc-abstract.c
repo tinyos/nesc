@@ -1415,7 +1415,7 @@ void init_abstract(void)
 {
   init_clone();
   define_internal_attribute("integer", NULL, handle_integer_decl, NULL, NULL,
-			    NULL);
+			    NULL, NULL);
   define_internal_attribute("number", NULL, handle_number_decl, NULL, NULL,
-			    NULL);
+			    NULL, NULL);
 }

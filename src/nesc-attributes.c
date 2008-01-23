@@ -19,6 +19,8 @@ typedef struct internal_attribute
 		     tag_declaration tdecl);
   void (*handle_field)(nesc_attribute attr,
 		       field_declaration fdecl);
+  void (*handle_type)(nesc_attribute attr,
+		      type *t);
 } *iattr;
 
 static env internal_attributes;
@@ -75,6 +77,8 @@ void define_internal_attribute(const char *name,
 						  tag_declaration tdecl),
 			       void (*handle_field)(nesc_attribute attr,
 						    field_declaration fdecl),
+			       void (*handle_type)(nesc_attribute attr,
+						   type *t),
 			       ...)
 {
   va_list args;
@@ -95,7 +99,7 @@ void define_internal_attribute(const char *name,
   /* Fields. A fieldname, fieldtype argument list, terminated with a
      null fieldname. We build a semi-fake struct for these.
   */
-  va_start(args, handle_field);
+  va_start(args, handle_type);
   for (;;)
     {
       const char *field_name = va_arg(args, const char *);
@@ -122,6 +126,7 @@ void define_internal_attribute(const char *name,
   iattr->handle_decl = handle_decl;
   iattr->handle_tag = handle_tag;
   iattr->handle_field = handle_field;
+  iattr->handle_type = handle_type;
   env_add(internal_attributes, name, iattr);
 }
 
@@ -155,7 +160,19 @@ static void save_user_attribute(nesc_attribute attr, dd_list *alist)
 
 bool handle_nesc_type_attribute(nesc_attribute attr, type *t)
 {
-  assert(0); /* not used at the moment */
+  iattr handler = internal_lookup(attr);
+
+  if (handler)
+    {
+      if (handler->handle_type)
+	handler->handle_type(attr, t);
+      else
+	ignored_nesc_attribute(attr);
+    }
+  else
+    ignored_nesc_attribute(attr); /* FIXME? Support user attributes */
+
+  return TRUE;
 }
 
 void handle_nesc_decl_attribute(nesc_attribute attr, data_declaration ddecl)

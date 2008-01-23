@@ -34,6 +34,7 @@ Boston, MA 02111-1307, USA.  */
 #include "init.h"
 #include "unparse.h"
 
+#include <ctype.h>
 #include <errno.h>
 
 bool nesc_attributep(gcc_attribute a)
@@ -687,14 +688,53 @@ static void attr_combine_decl(nesc_attribute attr, data_declaration ddecl)
     error_with_location(attr->location, "usage is @combine(\"function-name\")");
 }
 
+static void attr_macro_tdecl(nesc_attribute attr, tag_declaration tdecl)
+{
+  ivalue macro_name_init = lookup_attribute_field(attr, "macro_name");
+  data_declaration macro_name_ddecl;
+  char *macro_name, *m;
+
+  if (tdecl->kind != kind_attribute_ref)
+    {
+      error_with_location(attr->location, "@macro() can only be applied to attribute declarations");
+      return;
+    }
+
+  if (!(macro_name_init && macro_name_init->kind == iv_base &&
+	(macro_name_ddecl = string_ddecl(macro_name_init->u.base.expr)) &&
+	(macro_name = ddecl2str(parse_region, macro_name_ddecl))))
+    goto bad;
+
+  /* Check that the symbol name is a valid macro name (C symbol) */
+  if (!(isalpha(macro_name[0]) || macro_name[0] == '_'))
+    goto bad;
+
+  for (m = macro_name + 1; *m; m++)
+    if (!(isalnum(*m) || *m == '_'))
+      goto bad;
+
+  tdecl->macro_name = macro_name;
+  return;
+
+ bad:
+  error_with_location(attr->location, "usage is @macro(\"macro-name\")");
+}
+
 void init_internal_nesc_attributes(void)
 {
-  define_internal_attribute("C", NULL, attr_C_decl, attr_C_tdecl, NULL, NULL);
-  define_internal_attribute("hwevent", NULL, attr_hwevent_decl, NULL, NULL, NULL);
-  define_internal_attribute("atomic_hwevent", NULL, attr_atomic_hwevent_decl, NULL, NULL, NULL);
-  define_internal_attribute("spontaneous", NULL, attr_spontaneous_decl, NULL, NULL, NULL);
+  define_internal_attribute("C", NULL, attr_C_decl, attr_C_tdecl, NULL, NULL,
+			    NULL);
+  define_internal_attribute("hwevent", NULL, attr_hwevent_decl, NULL, NULL,
+			    NULL, NULL);
+  define_internal_attribute("atomic_hwevent", NULL, attr_atomic_hwevent_decl,
+			    NULL, NULL, NULL, NULL);
+  define_internal_attribute("spontaneous", NULL, attr_spontaneous_decl, NULL,
+			    NULL, NULL, NULL);
   define_internal_attribute("combine", NULL, attr_combine_decl, NULL, NULL,
+			    NULL,
 			    "fn", make_pointer_type(char_type), NULL);
+  define_internal_attribute("macro", NULL, NULL, attr_macro_tdecl, NULL, NULL,
+			    "macro_name", make_pointer_type(char_type), NULL);
 }
 
 void check_name(const char *name)

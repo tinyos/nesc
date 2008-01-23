@@ -2025,12 +2025,12 @@ structdef:
 		}
 	  component_decl_list '}' maybe_attribute 
 		{ $$ = finish_struct($<u.telement>5, $6, attribute_chain($3, $8)); }
-	| STRUCT '@' tag '{'
+	| STRUCT '@' tag nesc_attributes '{'
 		{ $$ = start_struct($1.location, kind_attribute_ref, $3);
 		  /* Start scope of tag before parsing components.  */
 		}
 	  component_decl_list '}' maybe_attribute 
-		{ $$ = finish_struct($<u.telement>5, $6, $8); }
+		{ $$ = finish_struct($<u.telement>6, $7, attribute_chain($4, $9)); }
 	| structkind '{' component_decl_list '}' maybe_attribute
 		{ $$ = finish_struct(start_struct($1.location, $1.i,
 						  NULL), $3, $5);

@@ -1063,7 +1063,46 @@ void prt_gcc_attribute(gcc_attribute a)
 
 void prt_nesc_attribute(nesc_attribute a)
 {
-  /* We just ignore these. */
+  /* If the attribute has a macro_name, then print attribute like
+     a macro call. If not, just ignore the attribute. */
+  if (a->tdecl->macro_name)
+    {
+      init_list args = CAST(init_list, a->arg1);
+      expression e;
+      int count = 0, field_count = 0;
+      field_declaration field;
+
+      /* This code checks that the attribute can be printed as a
+	 macro call, i.e., that complex initializers are not used
+	 and that all fields have an initializer - this is done here
+	 because it seems easier than enforcing these rules elsewhere
+      */
+      set_location(a->location);
+      output("%s(", a->tdecl->macro_name);
+
+      /* Like prt_expressions, but check that we can rewrite what was
+	 a structure initializer as arguments to a macro */
+      scan_expression (e, args->args)
+	{
+	  if (count > 0) output(", ");
+	  count++;
+	  if (is_init_list(e) || is_init_specific(e))
+	    error_with_location(e->location, "complex initializers not allowed with @macro() attributes");
+	  prt_expression(e, P_ASSIGN); /* priority is that of assignment */
+	}
+
+      output(")");
+
+      /* Check that all arguments are specified, so that the macro
+	 gets the same argument count on all uses. Could extend to
+	 "at least enough" arguments to allow the case of a variably-sized
+	 array at the end of the attribute, and a variable-argument macro
+      */
+      for (field = a->tdecl->fieldlist; field; field = field->next)
+	field_count++;
+      if (field_count != count)
+	error_with_location(a->location, "incorrect argument count to @macro() attribute");
+    }
 }
 
 void prt_rid(rid r, pte_options options)

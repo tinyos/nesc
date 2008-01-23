@@ -59,7 +59,7 @@ typedef struct field_declaration {
 
 /* A struct, union or enum */
 typedef struct tag_declaration {
-  int kind; /* One of kind_{struct/union/enum}_ref */
+  int kind; /* One of kind_{struct/union/enum/attribute}_ref */
   const char *name; /* NULL for anonynous struct/union/enum */
   type reptype; /* The type used to represent an enum, NULL for struct
 		   and unions */
@@ -93,6 +93,10 @@ typedef struct tag_declaration {
      of this declaration */
   struct tag_declaration *instantiation;
   struct tag_declaration *instanceof; /* Inside instantiated components: what this tag is an instance of */
+
+  /* Name of a macro to use in nesC's output for instances of this attribute - 
+     if this is NULL, attributes are not printed */
+  const char *macro_name;
 } *tag_declaration;
 
 typedef enum { decl_variable, decl_constant, decl_function,

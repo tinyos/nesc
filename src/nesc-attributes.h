@@ -15,6 +15,8 @@ void define_internal_attribute(const char *name,
 						  tag_declaration tdecl),
 			       void (*handle_field)(nesc_attribute attr,
 						    field_declaration fdecl),
+			       void (*handle_type)(nesc_attribute attr,
+						   type *t),
 			       ...);
 /* Effects: Declare an internal (compiler) @-style attribute called 'name',
      handled by the handle functions. Functions can be NULL if the

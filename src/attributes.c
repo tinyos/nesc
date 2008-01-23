@@ -325,11 +325,7 @@ bool handle_type_attribute(attribute attr, type *t)
   if (is_gcc_attribute(attr))
     return handle_gcc_type_attribute(CAST(gcc_attribute, attr), t);
   else
-    {
-      /* No '@'-style type attributes */
-      ignored_attribute(attr);
-      return FALSE;
-    }
+    return handle_nesc_type_attribute(CAST(nesc_attribute, attr), t);
 }
 
 /* Functions to handle regular and dd list of attributes */

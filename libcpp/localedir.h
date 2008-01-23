@@ -1,1 +1,1 @@
-#define LOCALEDIR "/usr/local/share/locale"
+#define LOCALEDIR "/usr/share/locale"
