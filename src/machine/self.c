@@ -1,3 +1,5 @@
+#include <inttypes.h>
+
 /* Basic pointer sizes and alignments for this machine */
 
 /* GCC is broken (could be a broken design issue ;-)), so need the

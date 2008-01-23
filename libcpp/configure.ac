@@ -150,7 +150,7 @@ case $need_64bit_hwint:$ac_cv_sizeof_long in
 esac
 m4_changequote([,])
 
-AC_DEFINE_UNQUOTED(HOST_WIDE_INT, $host_wide_int,
+AC_DEFINE_UNQUOTED(HOST_WIDE_INT, long long,
 [Define to the widest efficient host integer type at least
    as wide as the target's size_t type.])
 

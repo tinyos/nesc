@@ -182,13 +182,17 @@ libparser_a_SOURCES =				\
 	machine/keil-gperf.h			\
 	machine/sdcc-gperf.h
 
+# Character encoding conversion library.
+LIBICONV = @LIBICONV@
+LIBICONV_DEP = @LIBICONV_DEP@
+
 nesc1_SOURCES = toplev.c
 nesc1_LDADD = 	libparser.a 			\
 		$(libregions)			\
 		../libcpp/libcpp.a		\
 		../libiberty/libiberty.a	\
 		-lm				\
-		-liconv
+		$(LIBICONV)
 
 BUILT_SOURCES =					\
 	AST_defs.h				\
