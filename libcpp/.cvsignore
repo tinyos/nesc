@@ -9,3 +9,4 @@ localedir.hs
 autom4te.cache
 config.h
 localedir.h
+aclocal.m4
