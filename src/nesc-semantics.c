@@ -99,7 +99,7 @@ bool ddecl_is_command_or_event(data_declaration decl)
 
 bool nesc_filename(const char *name)
 {
-  char *dot = strrchr(basename((char *)name), '.');
+  char *dot = strrchr(lbasename(name), '.');
 
   if (dot)
     {
@@ -117,7 +117,7 @@ const char *element_name(region r, const char *path)
 {
   const char *base, *dot;
 
-  base = basename((char *)path);
+  base = lbasename(path);
   dot = strrchr(base, '.');
 
   if (dot)

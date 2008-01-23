@@ -62,11 +62,8 @@ unsigned long hash_str(const char *);
 char *realpath(const char *path, char *resolved_path);
 #endif
 
-#if HAVE_BASENAME
-#include <libgen.h>
-#else
-char *basename(const char *path);
-#endif
+/* From libiberty */
+extern const char *lbasename (const char *);
 
 /* On machines with DIR_SEPARATOR defined, replace all DIR_SEPARATOR's
    by / */

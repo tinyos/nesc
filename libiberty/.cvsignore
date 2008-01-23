@@ -6,3 +6,9 @@ config.in
 config.log
 stamp-h1
 autom4te.cache
+config.h
+needed-list
+required-list
+stamp-h
+stamp-picdir
+temp-frag

@@ -295,28 +295,6 @@ void unixify_path(char *path)
 #endif
 }
 
-#if !HAVE_BASENAME
-/* A trivial version, which should work for unix and cygwin, and for 
-   our purposes.
-   Does NOT handle trailing / properly (we're using it for files only)
-   (returns "" in that case)
-*/
-char *basename(const char *path)
-{
-  char *end;
-
-  if (!path || !*path)
-    return ".";
-
-  end = (char *)path + strlen(path);
-  while (end > path)
-    if (*--end == '/' || *end == '\\')
-      return end + 1;
-
-  return (char *)path;
-}
-#endif
-
 /* TRUE if path is absolute, false otherwise */
 bool absolute_path(char *path)
 {
