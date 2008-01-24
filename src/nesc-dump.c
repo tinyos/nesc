@@ -213,8 +213,7 @@ void dump_ddecl(data_declaration ddecl)
   /* Symbols have either a nesC container, a containing function, containing
      interface or none of these (global symbols) */
   xstartline();
-  if (ddecl->short_docstring)
-    nxml_doc(ddecl->short_docstring, ddecl->long_docstring, ddecl->doc_location);
+  nxml_doc(&ddecl->doc);
 
   if (ddecl->container)
     nxml_ndecl_ref(ddecl->container);
@@ -345,8 +344,7 @@ static void dump_wiring(cgraph cg)
 
 static void dump_ndecl_doc(nesc_declaration ndecl)
 {
-  if (ndecl->short_docstring)
-    nxml_doc(ndecl->short_docstring, ndecl->long_docstring, ndecl->ast->location);
+  nxml_doc(&ndecl->doc);
 }
 
 static void do_wiring(int wiring, cgraph cg, cgraph userg)

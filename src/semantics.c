@@ -153,6 +153,8 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->bf_encoder = dd->bf_decoder = NULL;
   dd->basetype = NULL;
   dd->typevar_kind = typevar_none;
+  dd->doc.short_s = dd->doc.long_s = NULL;
+  dd->doc.loc = NULL;
 }
 
 data_declaration lookup_id(const char *s, bool this_level_only)
@@ -251,10 +253,6 @@ data_declaration declare(environment b, data_declaration from,
       if (dd->spontaneous || (getenv("ALLCODE") && dd->kind == decl_function))
 	dd_add_last(parse_region, spontaneous_calls, dd);
     }
-
-  /* init doc stuff to NULL */
-  dd->short_docstring = NULL;
-  dd->long_docstring = NULL;
 
   return dd;
 }
@@ -1900,9 +1898,7 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   env_scanner scan;
   const char *id;
   void *idval;
-  char *short_docstring = NULL;
-  char *long_docstring = NULL;
-  location doc_location = NULL;
+  dd_list doc_tags = NULL;
   dd_list extra_attr;
 
   detect_bogus_env();
@@ -1920,7 +1916,6 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   if (!type_functional(actual_function_type))
     return FALSE;
 
-
   /* We don't set current.function_decl yet so that error messages do not
      say "In function <thisfunctioname>" as we're not "in" the function yet */
   fdecl = new_function_decl(parse_region, d->location, d, elements, attribs,
@@ -1928,14 +1923,6 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   fdecl->declared_type = function_type;
   fdecl->undeclared_variables = new_env(parse_region, NULL);
   fdecl->current_loop = NULL;
-
-
-  /* save any docstrings now.  This ensures that the docs aren't
-     incorrectly placed with a lower-down declaration (for example,
-     attaching docs to a parameter in a function declaration, rather
-     than the function itself.) */
-  get_latest_docstring( &short_docstring, &long_docstring, &doc_location );
-
 
   if (class == RID_AUTO)
     {
@@ -2106,7 +2093,7 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   fdecl->ddecl = ddecl;
   fdecl->fdeclarator = fdeclarator;
 
-  set_doc_string(fdecl->ddecl, short_docstring, long_docstring, doc_location);
+  get_latest_docstring(&ddecl->doc, current.fileregion, &doc_tags);
 
   /* If requested, replace post/task by references to an interface */
   if (type_task(ddecl->type) && flag_use_scheduler)
@@ -2369,17 +2356,9 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
   dd_list extra_attr;
   struct data_declaration tempdecl;
   data_declaration ddecl = NULL, old_decl;
-  char *short_docstring = NULL;
-  char *long_docstring = NULL;
-  location doc_location = NULL;
+  dd_list doc_tags = NULL;
 
   detect_bogus_env();
-
-  /* save any docstrings now.  This ensures that the docs aren't
-     incorrectly placed with a lower-down declaration (for example,
-     attaching docs to a parameter in a function declaration, rather
-     than the function itself.) */
-  get_latest_docstring( &short_docstring, &long_docstring, &doc_location );
 
   if (current.env->parm_level)
     {
@@ -2681,7 +2660,7 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
   if (ddecl->kind == decl_typedef)
     set_typedef_type(ddecl, ddecl->basetype != NULL);
 
-  set_doc_string(vd->ddecl, short_docstring, long_docstring, doc_location);
+  get_latest_docstring(&ddecl->doc, current.fileregion, &doc_tags);
 
   return CAST(declaration, vd);
 }

@@ -155,6 +155,8 @@ libparser_a_SOURCES =				\
 	nesc-module.h				\
 	nesc-msg.c				\
 	nesc-msg.h				\
+	nesc-ndoc.c				\
+	nesc-ndoc.h				\
 	nesc-network.c				\
 	nesc-network.h				\
 	nesc-paths.c				\
@@ -306,3 +308,10 @@ $(srcdir)/machine/keil-gperf.h: machine/keil.gperf
 	$(GPERF) $(GPERFFLAGS) -j1 -t -E -H keil_hash -N is_keil_word -k1,3,$$ machine/keil.gperf >$@-
 	mv $@- $@
 
+# Regression testing stuff
+
+testdoc: nesc-ndoc.c nesc-ndoc.h dd_list.c $(libregions)
+	 $(COMPILE) -o $@ -DTESTING nesc-ndoc.c dd_list.c $(libregions)
+
+regress: nesc1 testdoc
+	 (cd ../nregress && ./runtest)

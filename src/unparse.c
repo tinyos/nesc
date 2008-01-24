@@ -472,11 +472,12 @@ void unparse_start(FILE *to, FILE *symbols)
   indent_level = 0;
   unparse_region = newregion();
 
-  dd_scan (header_line, unparse_header)
-    {
-      output_string(DD_GET(const char *, header_line));
-      newline();
-    }
+  if (unparse_header)
+    dd_scan (header_line, unparse_header)
+      {
+	output_string(DD_GET(const char *, header_line));
+	newline();
+      }
 }
 
 void unparse_end(void) deletes

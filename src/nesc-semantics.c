@@ -284,7 +284,6 @@ nesc_declaration load(source_language sl, location l,
 nesc_declaration start_nesc_entity(source_language sl, word name)
 {
   nesc_declaration decl;
-  location doc_location;
 
   /* If the kind of entity in the file matches the expected kind
      (passed to load), reuse the existing declaration. Otherwise
@@ -295,7 +294,7 @@ nesc_declaration start_nesc_entity(source_language sl, word name)
   else
     decl = new_nesc_declaration(parse_region, sl, name->cstring.data);
 
-  get_latest_docstring(&decl->short_docstring, &decl->long_docstring, &doc_location);
+  get_latest_docstring(&decl->doc, permanent, NULL);
 
   start_semantics(sl, decl, decl->env);
 

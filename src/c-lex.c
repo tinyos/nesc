@@ -316,10 +316,18 @@ static void handle_comment(const cpp_token *token)
     }
 }
 
-void get_latest_docstring(char **short_s, char **long_s, struct location **loc)
+bool get_raw_docstring(const char **docs, location *docl)
 {
-  *short_s = *long_s = NULL;
-  *loc = NULL;
+  if (char_array_length(doc_string))
+    {
+      *docs = char_array_data(doc_string);
+      *docl = doc_location;
+      char_array_reset(doc_string);
+
+      return TRUE;
+    }
+  else
+    return FALSE;
 }
 
 /* Convert a series of STRING and/or WSTRING tokens into a string,

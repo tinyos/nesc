@@ -33,8 +33,7 @@ typedef struct nesc_declaration {
   int instance_number;
   nesc_decl ast;
   struct environment *env;
-  char *short_docstring;	/* For documentation comments */
-  char *long_docstring;
+  struct docstring doc;
 
   bool abstract;		/* true for abstract components and
 				   generic interfaces */

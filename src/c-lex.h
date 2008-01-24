@@ -83,7 +83,7 @@ void skip_cpp_comment(void);
  * Retrieve the latest code documentation string.  This is used to
  * place the documentation into the appropriate data_declaration.
  **/
-void get_latest_docstring(char **short_s, char **long_s, struct location **loc);
+bool get_raw_docstring(const char **docs, location *docl);
 
 location make_location(struct location l);
 

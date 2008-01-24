@@ -1306,8 +1306,7 @@ nesc_declaration_copy(region r, nesc_declaration old, expression args,
 
   copy = new_nesc_declaration(r, old->kind, old->name);
   copy->configuration = old->configuration;
-  copy->short_docstring = old->short_docstring;
-  copy->long_docstring = old->long_docstring;
+  copy->doc = old->doc;
   copy->abstract = copy_is_abstract;
   copy->original = old;
 

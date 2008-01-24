@@ -788,7 +788,7 @@ static void ic_add_entry(nesc_declaration cdecl)
     entry->is_iface = FALSE;
 
   // docstring
-  entry->desc = cdecl->short_docstring;
+  entry->desc = (char *)cdecl->doc.short_s;
 
   // implementor list
   if( cdecl->kind == l_component ) {
@@ -1179,9 +1179,9 @@ static void print_short_variable_html(data_decl ddecl, variable_decl vd) {
   output("\n");
 
   // show the description, if any 
-  if( vd->ddecl->short_docstring ) { 
+  if( vd->ddecl->doc.short_s ) { 
     output("        <br><menu>");
-    output_docstring(vd->ddecl->short_docstring, vd->ddecl->doc_location);
+    output_docstring((char *)vd->ddecl->doc.short_s, vd->ddecl->doc.loc);
     output("</menu>\n");
   }
   
@@ -1278,9 +1278,9 @@ static void print_function_header(function_decl fd, data_decl dd, variable_decl 
 static bool has_long_desc(function_decl fd, data_decl dd, variable_decl vd) 
 {
   if( fd ) {
-    return (fd->ddecl->long_docstring != NULL);
+    return (fd->ddecl->doc.long_s != NULL);
   } else {
-    return (vd->ddecl->long_docstring != NULL);
+    return (vd->ddecl->doc.long_s != NULL);
   }
 }
 
@@ -1314,13 +1314,13 @@ static void print_function_html(function_decl fd, data_decl dd, variable_decl vd
 
   // set up the description pointers
   if( fd ) {
-    sdoc = fd->ddecl->short_docstring;
-    ldoc = fd->ddecl->long_docstring;
-    loc  = fd->ddecl->doc_location;
+    sdoc = (char *)fd->ddecl->doc.short_s;
+    ldoc = (char *)fd->ddecl->doc.long_s;
+    loc  = fd->ddecl->doc.loc;
   } else {
-    sdoc = vd->ddecl->short_docstring;
-    ldoc = vd->ddecl->long_docstring;
-    loc  = vd->ddecl->doc_location;
+    sdoc = (char *)vd->ddecl->doc.short_s;
+    ldoc = (char *)vd->ddecl->doc.long_s;
+    loc  = vd->ddecl->doc.loc;
   }
 
 
@@ -1901,10 +1901,10 @@ static void generate_component_html(nesc_declaration cdecl)
   }  
 
   // print the overview documentation
-  if( cdecl->short_docstring ) {
+  if( cdecl->doc.short_s ) {
     output("<p>\n");
-    if(cdecl->long_docstring)   output_docstring(cdecl->long_docstring, cdecl->ast->location);
-    else                        output_docstring(cdecl->short_docstring, cdecl->ast->location);
+    if(cdecl->doc.long_s)   output_docstring((char *)cdecl->doc.long_s, cdecl->ast->location);
+    else                        output_docstring((char *)cdecl->doc.short_s, cdecl->ast->location);
     output("\n<p>\n\n");
   }
 
@@ -2127,10 +2127,10 @@ static void generate_interface_html(nesc_declaration idecl)
 <h1 align=\"center\">Interface: %s</h1>\n\
 ", idecl->name);
   }  
-  if( idecl->short_docstring ) {
+  if( idecl->doc.short_s ) {
     output("<p>\n");
-    if(idecl->long_docstring)   output_docstring(idecl->long_docstring, idecl->ast->location);
-    else                        output_docstring(idecl->short_docstring, idecl->ast->location);
+    if(idecl->doc.long_s)   output_docstring((char *)idecl->doc.long_s, idecl->ast->location);
+    else                        output_docstring((char *)idecl->doc.short_s, idecl->ast->location);
     output("\n<p>\n\n");
   }
 
@@ -2829,20 +2829,4 @@ void generate_docs(const char *ofilename, cgraph cg)
 
     assert(chdir(original_wd) == 0);
   }
-}
-
-
-// Support functions
-
-void set_doc_string(data_declaration ddecl, char *shortd, char *longd,
-		    location l)
-{
-  if (shortd)
-    {
-      if (warn_unexpected_docstring && ddecl->short_docstring)
-	warning("duplicate documentation string");
-      ddecl->short_docstring = shortd;
-      ddecl->long_docstring = longd;
-      ddecl->doc_location = l;
-    }
 }

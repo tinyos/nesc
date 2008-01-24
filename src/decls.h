@@ -227,9 +227,7 @@ struct data_declaration {
   nesc_declaration ctype;
 
   /* For documentation comments */
-  char *short_docstring;
-  char *long_docstring;
-  location doc_location;
+  struct docstring doc;
 
   /* For typedefs of network base types */
   data_declaration encoder, decoder; /* encoder and decoder functions */

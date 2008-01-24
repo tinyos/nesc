@@ -491,22 +491,22 @@ void nxml_value(ivalue value)
     }
 }
 
-void nxml_doc(const char *short_doc, const char *long_doc, location loc)
+void nxml_doc(struct docstring *doc)
 {
-  if (!short_doc)
+  if (!doc->short_s)
     return;
   indentedtag_start("documentation");
-  xml_attr_loc(loc);
+  xml_attr_loc(doc->loc);
   xml_tag_end();
   xnewline();
   xml_tag("short");
-  xqputs(short_doc);
+  xqputs(doc->short_s);
   xml_pop();
   xnewline();
-  if (long_doc)
+  if (doc->long_s)
     {
       xml_tag("long");
-      xqputs(long_doc);
+      xqputs(doc->long_s);
       xml_pop();
       xnewline();
     }

@@ -42,6 +42,7 @@ typedef struct AST_node *noderef;
 #include "dhash.h"
 
 #include "c-lex.h"
+#include "nesc-ndoc.h"
 #include "AST_types.h"
 #include "AST_list_node.h"
 #include "decls.h"
