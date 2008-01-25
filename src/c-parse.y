@@ -213,7 +213,7 @@ void yyerror();
 %type <u.itoken> structkind
 
 /* the dispatching (fake) tokens */
-%token <u.itoken> DISPATCH_C DISPATCH_NESC
+%token <u.itoken> DISPATCH_C DISPATCH_NESC DISPATCH_PARM DISPATCH_TYPE
 
 /* nesC reserved words */
 %token <u.itoken> ATOMIC USES INTERFACE COMPONENTS PROVIDES MODULE 
@@ -474,6 +474,10 @@ dispatch:
 	    declaration cdecls = declaration_reverse($2); 
 	    parse_tree = CAST(node, cdecls); }
 	| DISPATCH_C { parse_tree = NULL; }
+	| DISPATCH_PARM parm { parse_tree = CAST(node, $2); }
+	| DISPATCH_PARM error { parse_tree = CAST(node, make_error_decl()); }
+	| DISPATCH_TYPE typename { parse_tree = CAST(node, $2); }
+	| DISPATCH_TYPE error { parse_tree = NULL; }
 	;
 
 ncheader:
@@ -2590,7 +2594,7 @@ parmlist_1:
 	| parms ';'
 		{ if (pedantic)
 		    pedwarn("ANSI C forbids forward parameter declarations");
-		  mark_forward_parameters($1);
+		  allow_parameter_redeclaration($1, TRUE);
 		}
 	  parmlist_1
 		{ $$ = declaration_chain($1, $4); }

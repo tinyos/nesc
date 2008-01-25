@@ -103,8 +103,9 @@ declaration finish_decl(declaration decl, expression init);
 declaration declare_parameter(declarator d, type_element elements,
 			      attribute attributes);
 
-/* Mark parms as forward-declared parameters */
-void mark_forward_parameters(declaration parms);
+/* Allow parameters to be redeclared. mark_forward should be TRUE
+   if these are "forward" parameter declarations (gcc extension) */
+void allow_parameter_redeclaration(declaration parms, bool mark_forward);
 
 declaration declare_old_parameter(location l, cstring id);
 

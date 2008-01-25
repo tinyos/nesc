@@ -4,6 +4,7 @@
 #include "nesc-ndoc.h"
 #include "c-parse.h"
 #include "semantics.h"
+#include "AST_utils.h"
 
 static char *rmakestr(region r, char *s, char *e)
 {
@@ -197,6 +198,146 @@ bool get_latest_docstring(struct docstring *doc, region tags_r, dd_list *tags)
     doc->short_s = rmakestr(parse_region, parsed, p);
 
   return TRUE;
+}
+
+static void update_parameters(function_declarator fd)
+{
+  node *parm = CASTPTR(node, &fd->parms);
+
+  while (*parm)
+    {
+      if (is_data_decl(*parm)) /* skip errors */
+	{
+	  /* The ddecl points to the variable_decl of the new
+	     definition.  New variable_decls have a parent field
+	     pointing to their containing data_decl (from the call to
+	     AST_set_parents below). Use this to update the
+	     declaration list. */
+	  data_decl pd = CAST(data_decl, *parm);
+	  variable_decl vd = CAST(variable_decl, pd->decls);
+
+	  if (vd->ddecl)
+	    {
+	      node newdecl = vd->ddecl->ast->parent;
+
+	      /* We also ignore forward parameter declarations (gcc ext) */
+	      if (!vd->forward && newdecl)
+		{
+		  newdecl->next = (*parm)->next;
+		  *parm = CAST(node, newdecl);
+		}
+	    }
+	}
+      parm = &(*parm)->next;
+    }
+}
+
+static void enforce_redeclaration(node newdecl)
+{
+  if (is_data_decl(newdecl))
+    {
+      variable_decl vd = CAST(variable_decl, CAST(data_decl, newdecl)->decls);
+
+      if (vd->ddecl->definition == vd->ddecl->ast)
+	error("%s is not a function parameter", vd->ddecl->name);
+    }
+}
+
+void ignored_doctag(location docloc, struct doctag *tag)
+{
+  struct location tagloc = *docloc;
+
+  tagloc.lineno += tag->lineno;
+  warning_with_location(&tagloc, "@%s tag ignored", tag->tag);
+}
+
+void ignored_doctags(location docloc, dd_list tags)
+{
+  dd_list_pos stags;
+
+  dd_scan (stags, tags)
+    ignored_doctag(docloc, DD_GET(struct doctag *, stags));
+}
+
+void handle_ddecl_doc_tags(location docloc, data_declaration ddecl,
+			   dd_list tags)
+{
+  struct semantic_state old;
+  struct location cloc;
+  declarator d;
+  function_declarator fd;
+  declaration ast;
+  dd_list_pos stags;
+
+  if (!tags)
+    return;
+
+  if (!type_function(ddecl->type))
+    {
+      ignored_doctags(docloc, tags);
+      return;
+    }
+
+  old = current;
+  cloc = current.lex.input->l;
+
+  /* think about commands and events */
+  ast = ddecl->ast;
+  if (is_function_decl(ast))
+    d = CAST(function_decl, ast)->declarator;
+  else
+    d = CAST(variable_decl, ast)->declarator;
+  fd = get_fdeclarator(d);
+
+  current.env = fd->env;
+  allow_parameter_redeclaration(fd->parms, FALSE);
+  dd_scan (stags, tags)
+    {
+      struct doctag *tag = DD_GET(struct doctag *, stags);
+      struct location tagloc = *docloc;
+      node parsed;
+
+      tagloc.lineno += tag->lineno;
+      if (!strcmp(tag->tag, "param"))
+	{
+	  int old_errorcount = errorcount;
+
+	  start_lex_string(l_parameter, tag->args[0]);
+	  set_lex_location(&tagloc);
+	  parsed = parse();
+	  AST_set_parents(parsed);
+	  /* Type errors in redeclaration confuse the redeclaration check,
+	     and we've already failed compilation anyway */
+	  if (errorcount == old_errorcount)
+	    enforce_redeclaration(parsed);
+	  end_lex();
+	}
+      else if (!strcmp(tag->tag, "return"))
+	{
+	  if (ddecl->return_type)
+	    warning_with_location(&tagloc, "duplicate @return tag ignored");
+	  else
+	    {
+	      start_lex_string(l_type, tag->args[0]);
+	      set_lex_location(&tagloc);
+	      parsed = parse();
+	      end_lex();
+	      if (parsed)
+		{
+		  ddecl->return_type = CAST(asttype, parsed);
+		  if (!type_equal(type_function_return_type(ddecl->type),
+				  ddecl->return_type->type))
+		    error("inconsistent return type in @return tag");
+		}
+	    }
+	}
+      else
+	ignored_doctag(docloc, tag);
+    }
+  update_parameters(fd);
+
+  current = old;
+  set_lex_location(&cloc);
 }
 
 #ifdef TESTING

@@ -79,6 +79,15 @@ location new_location(const char *filename, int lineno)
   return l;
 }
 
+void set_lex_location(location loc)
+{
+  const struct line_map *new_line;
+
+  new_line = linemap_add(current.lex.line_map, LC_RENAME, 0,
+			 loc->filename, loc->lineno);
+  current.lex.input->l = *loc;
+}
+
 static location last_location(void)
 {
   return make_location(current.lex.input->l);
@@ -195,7 +204,7 @@ static cpp_reader *current_reader(void)
   return current.lex.finput;
 }
 
-bool start_lex(source_language l, const char *path)
+static void start_lex_common(source_language l)
 {
   cpp_options *cpp_opts;
   cpp_callbacks *cpp_cbacks;
@@ -207,6 +216,12 @@ bool start_lex(source_language l, const char *path)
       break;
     case l_c:
       current.lex.token_s1 = DISPATCH_C;
+      break;
+    case l_parameter:
+      current.lex.token_s1 = DISPATCH_PARM;
+      break;
+    case l_type:
+      current.lex.token_s1 = DISPATCH_TYPE;
       break;
     default:
       assert(0); 
@@ -252,24 +267,48 @@ bool start_lex(source_language l, const char *path)
   cpp_cbacks->file_change = cb_file_change;
   cpp_cbacks->line_change = cb_line_change;
 
-  path = cpp_read_main_file(current.lex.finput, path);
+  set_cpp_include_path();
+}
 
+static void setup_macros(void)
+{
   cb_file_change(current_reader(),
 		 linemap_add(current.lex.line_map, LC_ENTER, 0, "<built-in>", 0));
 
-  set_cpp_include_path();
   start_macro_saving();
   cb_file_change(current_reader(),
 		 linemap_add(current.lex.line_map, LC_LEAVE, 0, NULL, 0));
+}
 
+bool start_lex(source_language l, const char *path)
+{
+  start_lex_common(l);
+  path = cpp_read_main_file(current_reader(), path);
+  setup_macros();
 
   return path != NULL;
 }
 
+void start_lex_string(source_language l, const char *string)
+{
+  int slen = strlen(string);
+  char *scopy = rstralloc(current.fileregion, slen + 2);
+
+  /* lex input must be \n terminated */
+  memcpy(scopy, string, slen);
+  scopy[slen] = '\n';
+  scopy[slen + 1] = '\0';
+
+  start_lex_common(l);
+  cpp_push_buffer(current_reader(), (const unsigned char *)scopy, slen + 1, TRUE);
+
+  setup_macros();
+}
+
 void end_lex(void)
 {
-  errorcount += cpp_finish(current.lex.finput, NULL);
-  cpp_destroy(current.lex.finput);
+  errorcount += cpp_finish(current_reader(), NULL);
+  cpp_destroy(current_reader());
   current.lex.finput = NULL;
 }
 

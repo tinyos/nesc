@@ -36,4 +36,11 @@ struct doctag
 
 bool get_latest_docstring(struct docstring *doc, region tags_r, dd_list *tags);
 
+struct data_declaration;
+void handle_ddecl_doc_tags(location docloc, struct data_declaration *ddecl,
+			   dd_list tags);
+
+void ignored_doctag(location docloc, struct doctag *tag);
+void ignored_doctags(location docloc, dd_list tags);
+
 #endif

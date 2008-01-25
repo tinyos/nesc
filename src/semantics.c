@@ -102,6 +102,7 @@ void init_data_declaration(data_declaration dd, declaration ast,
 
   dd->shadowed = NULL;
   dd->ast = ast;
+  dd->return_type = NULL;
   dd->definition = NULL;
   dd->isexternalscope = FALSE;
   dd->isfilescoperef = FALSE;
@@ -1289,7 +1290,11 @@ int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
      style parameter (oldtype == void) return 1 so old decl will be reused. */
   if ((oldtype == void_type || types_match) && newdecl->isparameter &&
       !olddecl->isused)
-    return 1;
+    {
+      /* Point to the latest declaration */
+      olddecl->ast = newdecl->ast;
+      return 1;
+    }
 
   /* The new declaration is the same kind of object as the old one.
      The declarations may partially match.  Print warnings if they don't
@@ -2094,6 +2099,7 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   fdecl->fdeclarator = fdeclarator;
 
   get_latest_docstring(&ddecl->doc, current.fileregion, &doc_tags);
+  handle_ddecl_doc_tags(ddecl->doc.loc, ddecl, doc_tags);
 
   /* If requested, replace post/task by references to an interface */
   if (type_task(ddecl->type) && flag_use_scheduler)
@@ -2661,6 +2667,7 @@ declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
     set_typedef_type(ddecl, ddecl->basetype != NULL);
 
   get_latest_docstring(&ddecl->doc, current.fileregion, &doc_tags);
+  handle_ddecl_doc_tags(ddecl->doc.loc, ddecl, doc_tags);
 
   return CAST(declaration, vd);
 }
@@ -2778,7 +2785,7 @@ declaration declare_parameter(declarator d, type_element elements,
   return CAST(declaration, dd);
 }
 
-void mark_forward_parameters(declaration parms)
+void allow_parameter_redeclaration(declaration parms, bool mark_forward)
 {
   declaration parm;
 
@@ -2790,9 +2797,11 @@ void mark_forward_parameters(declaration parms)
       {
 	data_decl pd = CAST(data_decl, parm);
 	variable_decl vd = CAST(variable_decl, pd->decls);
-
-	vd->forward = TRUE;
-	vd->ddecl->isused = FALSE;
+	
+	if (mark_forward)
+	  vd->forward = TRUE;
+	if (vd->ddecl)
+	  vd->ddecl->isused = FALSE;
       }
 }
 
