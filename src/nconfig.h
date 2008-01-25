@@ -83,9 +83,4 @@ void *alloca(size_t n);
 #define DIR_SEPARATOR '\\'
 #endif
 
-/* Set to 0 to not rename arguments in connection functions to
-   arg_0x... Note that arguments corresponding to parameterised
-   interfaces are always renamed */
-#define RENAME_ALL_ARGS 1
-
 #endif

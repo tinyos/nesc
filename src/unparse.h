@@ -108,7 +108,7 @@ typedef enum {
   psd_print_ddecl = 64, /* print ddecl as the name inside a declarator */
   psd_prefix_nxbase = 128, /* add the __nesc_nxbase_ prefix to declared names */
   psd_rewrite_nxbase = 256, /* add the __nesc_nxbase_ prefix to base type */
-  psd_print_ddecl_fdeclarator = 512, /* print innermost fdeclarator from ddecl */
+  psd_print_ddecl_fdeclarator = 512 /* print innermost fdeclarator from ddecl */
 } psd_options;
 
 void prt_variable_decl(variable_decl d, psd_options options);

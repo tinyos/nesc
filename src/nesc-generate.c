@@ -219,7 +219,7 @@ void prt_ncf_direct_call(struct connections *c,
   else
     assert(!ccall->args);
 
-  prt_arguments(called_fd->parms, first_arg, RENAME_ALL_ARGS);
+  prt_arguments(called_fd->parms, first_arg, FALSE);
 
   if (calling_combiner)
     output(")");

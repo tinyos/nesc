@@ -272,7 +272,7 @@ void handle_ddecl_doc_tags(location docloc, data_declaration ddecl,
   if (!tags)
     return;
 
-  if (!type_function(ddecl->type))
+  if (!type_functional(ddecl->type))
     {
       ignored_doctags(docloc, tags);
       return;
