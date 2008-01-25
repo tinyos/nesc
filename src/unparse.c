@@ -711,9 +711,10 @@ void prt_data_decl(data_decl d)
 	  extraopts = prefix_decl(vdecl);
 	}
 
-      prt_diff_info(vdd->ddecl);
+      prt_diff_info(vdecl);
 
-      prt_type_elements(d->modifiers, opts | extraopts);
+      if (!vdecl || !vdecl->return_type)
+	prt_type_elements(d->modifiers, opts | extraopts);
       opts |= pte_duplicate;
       prt_variable_decl(vdd, vopts);
       outputln(";");
@@ -747,11 +748,17 @@ void prt_function_decl(function_decl d)
 {
   if (d->ddecl->isused && !d->ddecl->suppress_definition)
     {
+      asttype ret = d->ddecl->return_type;
+
       prt_diff_info(d->ddecl);
       set_location(d->location);
       prefix_decl(d->ddecl);
-      prt_declarator(d->declarator, d->modifiers, d->attributes, d->ddecl,
-		     psd_print_default);
+      if (ret)
+	prt_declarator(ret->declarator, ret->qualifiers, NULL, d->ddecl,
+		       psd_print_default | psd_print_ddecl_fdeclarator);
+      else
+	prt_declarator(d->declarator, d->modifiers, d->attributes, d->ddecl,
+		       psd_print_default);
       outputln(";");
     }
 }
@@ -790,7 +797,13 @@ void prt_function_body(function_decl d)
 
 void prt_variable_decl(variable_decl d, psd_options options)
 {
-  prt_declarator(d->declarator, NULL, d->attributes, d->ddecl, options);
+  asttype ret;
+
+  if (d->ddecl && (ret = d->ddecl->return_type))
+    prt_declarator(ret->declarator, ret->qualifiers, NULL, d->ddecl,
+		   options | psd_print_ddecl_fdeclarator);
+  else
+    prt_declarator(d->declarator, NULL, d->attributes, d->ddecl, options);
 
   if (d->asm_stmt)
     prt_asm_stmt_plain(d->asm_stmt);
@@ -872,12 +885,24 @@ bool prt_simple_declarator(declarator d, data_declaration ddecl,
 {
   if (!d)
     {
-      if (options & psd_print_ddecl)
-	prt_ddecl_full_name(ddecl, options);
-      else if (options & psd_rename_identifier)
-	output("arg_%p", ddecl);
+      if (options & psd_print_ddecl_fdeclarator)
+	{
+	  if (is_function_decl(ddecl->ast))
+	    d = CAST(function_decl, ddecl->ast)->declarator;
+	  else
+	    d = CAST(variable_decl, ddecl->ast)->declarator;
+	  d = CAST(declarator, get_fdeclarator(d));
+	  options &= ~psd_print_ddecl_fdeclarator;
+	}
+      else
+	{
+	  if (options & psd_print_ddecl)
+	    prt_ddecl_full_name(ddecl, options);
+	  else if (options & psd_rename_identifier)
+	    output("arg_%p", ddecl);
 
-      return FALSE;
+	  return FALSE;
+	}
     }
 
   switch (d->kind)

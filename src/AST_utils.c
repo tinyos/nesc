@@ -30,13 +30,16 @@ bool oldstyle_function(function_decl fn)
 
 function_declarator get_fdeclarator(declarator d)
 {
+  function_declarator fd = NULL;
+
   for (;;)
     switch (d->kind)
       {
-      case kind_function_declarator:
-	return CAST(function_declarator, d);
       case kind_identifier_declarator:
-	return NULL;
+	return fd;
+      case kind_function_declarator:
+	fd = CAST(function_declarator, d);
+	/* fallthrough */
       default:
 	d = CAST(nested_declarator, d)->declarator;
 	break;
