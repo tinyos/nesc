@@ -33,6 +33,7 @@ Boston, MA 02111-1307, USA.  */
 #include "attributes.h"
 #include "init.h"
 #include "unparse.h"
+#include "nesc-deputy.h"
 
 #include <ctype.h>
 #include <errno.h>

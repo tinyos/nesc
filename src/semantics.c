@@ -99,6 +99,7 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->name = name;
   dd->type = t;
   dd->attributes = NULL;
+  dd->safe = DEFAULT_SAFETY;
 
   dd->shadowed = NULL;
   dd->ast = ast;
@@ -1998,6 +1999,8 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   check_function(&tempdecl, CAST(declaration, fdecl), class, scf,
 		 name, function_type, nested, FALSE, defaulted_int);
   tempdecl.definition = tempdecl.ast;
+  if (current.container)
+    tempdecl.safe = current.container->safe;
 
   handle_decl_attributes(attribs, &tempdecl);
   handle_decl_dd_attributes(extra_attr, &tempdecl);
@@ -2088,7 +2091,11 @@ bool start_function(type_element elements, declarator d, attribute attribs,
     }
 
   if (old_decl && duplicate_decls(&tempdecl, old_decl, FALSE, FALSE))
-    ddecl = old_decl;
+    {
+      ddecl = old_decl;
+      /* Safety annotation from implementation is the only one that counts */
+      ddecl->safe = tempdecl.safe;
+    }
   else
     ddecl = declare(current.env, &tempdecl, FALSE);
 

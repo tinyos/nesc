@@ -292,4 +292,7 @@ extern int flag_nostdinc;
 /* Do not predefine system-specific and GCC-specific macros */
 extern int flag_undef;
 
+/* True if compiling for deputy */
+extern int flag_deputy;
+
 #endif

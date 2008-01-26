@@ -294,3 +294,7 @@ int flag_nostdinc;
 
 /* Do not predefine system-specific and GCC-specific macros */
 int flag_undef;
+
+/* True if compiling for deputy */
+int flag_deputy;
+

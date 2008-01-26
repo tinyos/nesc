@@ -255,6 +255,10 @@ int nesc_option(char *p)
     nesc_optimise_atomic = 1;
   else if (!strncmp (p, "fnesc-genprefix=", strlen("fnesc-genprefix=")))
     unparse_prefix(p + strlen("fnesc-genprefix="));
+  else if (!strcmp (p, "fnesc-deputy"))
+    flag_deputy = 1;
+  else if (!strcmp (p, "fnesc-no-deputy"))
+    flag_deputy = 0;
   else if (!strcmp (p, "Wnesc-docstring"))
     warn_unexpected_docstring = 1;
   else if (!strcmp (p, "Wno-nesc-docstring"))

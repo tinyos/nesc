@@ -428,7 +428,7 @@ void prt_parameter_declarations(declaration dlist);
 void prt_parameter_declaration(declaration d);
 
 void prt_statement(statement s);
-void prt_compound_stmt(compound_stmt s);
+void prt_compound_stmt(compound_stmt s, bool trusted);
 void prt_compound_declarations(declaration dlist);
 void prt_compound_declaration(declaration d);
 void prt_asm_stmt(asm_stmt s);
@@ -783,7 +783,7 @@ void prt_function_body(function_decl d)
       prt_parameter_declarations(d->old_parms);
       extrablock = prt_network_parameter_copies(d);
       assert(is_compound_stmt(d->stmt));
-      prt_statement(d->stmt);
+      prt_compound_stmt(CAST(compound_stmt, d->stmt), !d->ddecl->safe);
       newline();
       if (extrablock)
 	{
@@ -1571,7 +1571,7 @@ void prt_compound_expr(compound_expr e, int context_priority)
 {
   set_location(e->location);
   output("(");
-  prt_compound_stmt(CAST(compound_stmt, e->stmt));
+  prt_compound_stmt(CAST(compound_stmt, e->stmt), FALSE);
   output(")");
 }
 
@@ -1911,7 +1911,6 @@ void prt_statement(statement s)
   switch (s->kind)
     {
       PRTCASE(asm_stmt, s);
-      PRTCASE(compound_stmt, s);
       PRTCASE(if_stmt, s);
       PRTCASE(labeled_stmt, s);
       PRTCASE(expression_stmt, s);
@@ -1926,6 +1925,10 @@ void prt_statement(statement s)
       PRTCASE(computed_goto_stmt, s);
       PRTCASE(empty_stmt, s);
       PRTCASE(atomic_stmt, s);
+
+    case kind_compound_stmt:
+      prt_compound_stmt(CAST(compound_stmt, s), FALSE);
+      return;
     default: assert(0); return;
     }
 }
@@ -1942,12 +1945,15 @@ static void prt_as_compound(statement s)
     }
 }
 
-void prt_compound_stmt(compound_stmt s)
+void prt_compound_stmt(compound_stmt s, bool trusted)
 {
   statement s1;
 
   set_location(s->location);
-  outputln("{");
+  if (trusted && flag_deputy)
+    outputln("{ TRUSTEDBLOCK");
+  else
+    outputln("{");
   indent();
   if (s->id_labels)
     {

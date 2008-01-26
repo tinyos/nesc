@@ -55,6 +55,7 @@ typedef struct nesc_declaration {
   bool configuration;		/* TRUE for configurations, FALSE for modules
 				   (needed before impl is set) and binary
 				   components. */
+  bool safe;			/* TRUE if safety checks should be performed in here */
   implementation impl;
   struct cgraph *connections;
   struct cgraph *user_connections; /* interfaces are not expanded */

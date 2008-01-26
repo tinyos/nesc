@@ -360,25 +360,19 @@ node parse(void) deletes
   return parse_tree;
 }
 
-static void set_nesc_parse_tree(void *tree)
-{
-  nesc_declaration cdecl = current.container;
-  nesc_decl nd = CAST(nesc_decl, tree);
-
-  handle_nescdecl_attributes(nd->attributes, cdecl);
-  nd->cdecl = cdecl;
-  cdecl->ast = nd;
-  parse_tree = CAST(node, nd);
-}
-
 static void set_nesc_ast(void *tree)
 {
   nesc_declaration cdecl = current.container;
   nesc_decl nd = CAST(nesc_decl, tree);
 
-  handle_nescdecl_attributes(nd->attributes, cdecl);
   nd->cdecl = cdecl;
   cdecl->ast = nd;
+}
+
+static void set_nesc_parse_tree(void *tree)
+{
+  set_nesc_ast(tree);
+  parse_tree = CAST(node, tree);
 }
 
 static void set_nesc_impl(implementation impl)
@@ -511,9 +505,13 @@ interface:
 		{ 
 		  start_nesc_entity(l_interface, $3);
 		} 
-	  interface_parms nesc_attributes '{' datadef_list '}' 
+	  interface_parms nesc_attributes 
 		{
-		  interface intf = new_interface(pr, $2.location, $3, $6, declaration_reverse($8));
+		  handle_nescdecl_attributes($6, current.container);
+		}
+	  '{' datadef_list '}' 
+		{
+		  interface intf = new_interface(pr, $2.location, $3, $6, declaration_reverse($9));
 
 		  set_nesc_parse_tree(intf);
 
@@ -585,12 +583,16 @@ module:
 		  start_nesc_entity(l_component, $3);
 		  current.container->abstract = $1; 
 		} 
-	  component_parms nesc_attributes '{' requires_or_provides_list '}'
+	  component_parms nesc_attributes 
+		{
+		  handle_nescdecl_attributes($6, current.container);
+		}
+	  '{' requires_or_provides_list '}'
 	  imodule
 		{
 		  declaration intfs = 
-		    declaration_chain(declaration_reverse($8), all_tasks);
-		  set_nesc_parse_tree(new_component(pr, $2.location, $3, $6, $1, $5, intfs, $10));
+		    declaration_chain(declaration_reverse($9), all_tasks);
+		  set_nesc_parse_tree(new_component(pr, $2.location, $3, $6, $1, $5, intfs, $11));
 	        }
 	;
 
@@ -601,13 +603,17 @@ configuration:
 		  current.container->abstract = $1; 
 		  current.container->configuration = TRUE;
 		} 
-	  component_parms nesc_attributes '{' requires_or_provides_list '}'
+	  component_parms nesc_attributes 
 		{
-		  set_nesc_ast(new_component(pr, $2.location, $3, $6, $1, $5, declaration_reverse($8), NULL));
+		  handle_nescdecl_attributes($6, current.container);
+		}
+	  '{' requires_or_provides_list '}'
+		{
+		  set_nesc_ast(new_component(pr, $2.location, $3, $6, $1, $5, declaration_reverse($9), NULL));
 		}
 	  iconfiguration
 		{
-		  set_nesc_impl($11);
+		  set_nesc_impl($12);
 	        }
         ;
 
@@ -616,10 +622,14 @@ binary_component:
 	        { 
 		  start_nesc_entity(l_component, $2);
 		} 
-	  nesc_attributes '{' requires_or_provides_list '}'
+	  nesc_attributes 
+		{
+		  handle_nescdecl_attributes($4, current.container);
+		}
+	  '{' requires_or_provides_list '}'
 		{ 
 		  binary_component dummy = new_binary_component(pr, $1.location, start_implementation());
-		  component c = new_component(pr, $1.location, $2, $4, FALSE, NULL, declaration_reverse($6), CAST(implementation, dummy));
+		  component c = new_component(pr, $1.location, $2, $4, FALSE, NULL, declaration_reverse($7), CAST(implementation, dummy));
 		  set_nesc_parse_tree(c);
 	        }
 	;

@@ -204,10 +204,40 @@ static void attr_dscope_tdecl(nesc_attribute attr, tag_declaration tdecl)
     error_with_location(attr->location, "@deputy_scope() can only be applied to attribute declarations");
 }
 
+static void attr_ndecl_safe(nesc_attribute attr, nesc_declaration ndecl)
+{
+  if (ndecl->kind == l_component)
+    ndecl->safe = TRUE;
+  else
+    warning_with_location(attr->location, "@safe() attribute ignored");
+}
+
+static void attr_decl_safe(nesc_attribute attr, data_declaration ddecl)
+{
+  ddecl->safe = TRUE;
+}
+
+static void attr_ndecl_unsafe(nesc_attribute attr, nesc_declaration ndecl)
+{
+  if (ndecl->kind == l_component)
+    ndecl->safe = FALSE;
+  else
+    warning_with_location(attr->location, "@unsafe() attribute ignored");
+}
+
+static void attr_decl_unsafe(nesc_attribute attr, data_declaration ddecl)
+{
+  ddecl->safe = FALSE;
+}
+
 void init_deputy(void)
 {
   define_internal_attribute("deputy_scope", NULL, NULL, attr_dscope_tdecl, NULL,
 			    NULL, NULL);
+  define_internal_attribute("safe", attr_ndecl_safe, attr_decl_safe, NULL,
+			    NULL, NULL, NULL);
+  define_internal_attribute("unsafe", attr_ndecl_unsafe, attr_decl_unsafe, NULL,
+			    NULL, NULL, NULL);
 
   deputy_walker = new_AST_walker(permanent);
   AST_walker_handle(deputy_walker, kind_identifier, deputy_identifier);

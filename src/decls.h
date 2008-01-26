@@ -163,6 +163,8 @@ struct data_declaration {
   bool in_system_header;
   bool Cname;			/* name is in C name space (don't rename!)
 				   Set by the `C' attribute. */
+  bool safe;			/* True if deputy safety checks should
+				   be enabled */
   call_contexts spontaneous;	/* Call contexts for environmental calls
 				   (main, interrupt handlers, e.g.). Set by
 				   the `spontaneous', `interrupt' and
