@@ -281,7 +281,6 @@ void handle_ddecl_doc_tags(location docloc, data_declaration ddecl,
   old = current;
   cloc = current.lex.input->l;
 
-  /* think about commands and events */
   ast = ddecl->ast;
   if (is_function_decl(ast))
     d = CAST(function_decl, ast)->declarator;

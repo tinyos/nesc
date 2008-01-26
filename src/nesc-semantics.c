@@ -220,6 +220,8 @@ void build(nesc_decl ast)
 
   current.container = decl;
 
+  resolve_deputy_scopes(ast);
+
   switch (decl->kind)
     {
     case l_interface:

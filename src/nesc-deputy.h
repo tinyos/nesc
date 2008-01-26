@@ -18,6 +18,7 @@ Boston, MA 02111-1307, USA.  */
 #ifndef NESC_DEPUTY_H
 #define NESC_DEPUTY_H
 
+void resolve_deputy_scopes(nesc_decl ast);
 void init_deputy(void);
 
 #endif
