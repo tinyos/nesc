@@ -1,6 +1,37 @@
-This is version 1.2.9 of the nesC compiler.
+This is version 1.3.0 (alpha state) of the nesC compiler.
 
 Installation instructions are in INSTALL. 
+
+Changes in nesC 1.3.0
+=====================
+- C preprocessor is integrated into nesC, which should significantly speed
+  up compilation (esp. on Windows)
+- Support for the Deputy type-safety-for-C system (see
+  deputy.cs.berkeley.edu), which takes the form of a -safe/-unsafe
+  argument to nescc (not yet implemented in this alpha release), extra
+  information on types via nesC attributes (@count(<expr>), @nts,
+  etc), @safe() and @unsafe() nesC attributes to turn safety on/off on
+  a per-function or per-module basis (safety defaults to off). 
+  Furthermore, deputy's attributes can be placed in nesdoc comments
+  to avoid cluttering/confusing existing type declarations:
+    /** ... @param 'int *@count(n) x' x is an array of n ints ... */
+    void f(int *x, int n);
+- Internal support (in nesc1) for Deputy based on @deputy_scope() and
+  @macro("NAME") attributes, and a -fnesc-genprefix=<line> option.
+- @macro() and -fnesc-genprerix= may be useful in other contexts too:
+  if a nesC attribute declaration has an @macro() attribute:
+    struct @myattr @macro("MYMACRO") { int x; char *y; };
+  then uses of @myattr in nesC source are output as calls to MYMACRO in
+  nesC's intermediate C output. For instance
+    int x @myattr(23, "fun");
+  becomes
+    int x MYMACRO(23, "fun");
+  The -fnesc-genprefix=<line> adds <line> to the start of the generated C
+  output, e.g., it could be a #define definition for MYMACRO, or a 
+  #include of a file with appropriate definitions.
+- wide strings in XML output now show up as arrays of bytes (and follow
+  the target's byte-level representation of wide strings)
+  
 
 Changes in nesC 1.2.9
 =====================
