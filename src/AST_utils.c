@@ -32,7 +32,7 @@ function_declarator get_fdeclarator(declarator d)
 {
   function_declarator fd = NULL;
 
-  for (;;)
+  while (d)
     switch (d->kind)
       {
       case kind_identifier_declarator:
@@ -44,6 +44,8 @@ function_declarator get_fdeclarator(declarator d)
 	d = CAST(nested_declarator, d)->declarator;
 	break;
       }
+
+  return fd;
 }
 
 data_declaration get_parameter(declaration d)

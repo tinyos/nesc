@@ -20,7 +20,7 @@ set -x
     $AUTOMAKE -a -c
 
     cd $srcdir
-    $ACLOCAL
+    $ACLOCAL -I ../config-aux
     $AUTOHEADER
     $AUTOCONF
     $AUTOMAKE -a -c
