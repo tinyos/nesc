@@ -1951,7 +1951,7 @@ void prt_compound_stmt(compound_stmt s, bool trusted)
 
   set_location(s->location);
   if (trusted && flag_deputy)
-    outputln("{ TRUSTEDBLOCK");
+    outputln("{ __DEPUTY_TRUSTEDBLOCK");
   else
     outputln("{");
   indent();
