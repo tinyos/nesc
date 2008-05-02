@@ -621,6 +621,8 @@ static void attr_C_tdecl(nesc_attribute attr, tag_declaration tdecl)
 {
   if (tdecl->container_function)
     error_with_location(attr->location, "`@C()' is for symbols with external scope only");
+  else if (current.container && current.container->abstract)
+    error_with_location(attr->location, "@C() cannot be used inside generic components");
   else
     tdecl->Cname = TRUE;
 }
@@ -629,6 +631,8 @@ static void attr_C_decl(nesc_attribute attr, data_declaration ddecl)
 {
   if (!ddecl->isexternalscope)
     error_with_location(attr->location, "`@C()' is for symbols with external scope only");
+  else if (current.container && current.container->abstract)
+    error_with_location(attr->location, "@C() cannot be used inside generic components");
   else
     ddecl->Cname = TRUE;
 }
