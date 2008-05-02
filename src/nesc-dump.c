@@ -195,6 +195,7 @@ void dump_ddecl(data_declaration ddecl)
 	  break;
 	default: break;
 	}
+      xml_attr_bool("safe", ddecl->safe);
       break;
     case decl_typedef: indentedtag_start("typedef"); break;
     case decl_interface_ref:
@@ -366,6 +367,7 @@ static void dump_component(void *entry)
   xml_attr("qname", comp->instance_name);
   xml_attr_loc(comp->ast->location);
   xml_attr_bool("abstract", comp->abstract);
+  xml_attr_bool("safe", comp->safe);
   xml_tag_end();
   xnewline();
 
