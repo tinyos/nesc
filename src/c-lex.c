@@ -212,11 +212,10 @@ static void start_lex_common(source_language l)
   cpp_opts->warn_long_long = 0;
   cpp_opts->wchar_precision = CHAR_BIT * target->wchar_t_size;
   cpp_opts->int_precision = CHAR_BIT * target->tint.size;
-  cpp_opts->precision = CHAR_BIT * target->tlong.size;
+  cpp_opts->precision = CHAR_BIT * target->tlong_long.size;
   cpp_opts->unsigned_char = !flag_signed_char;
   cpp_opts->unsigned_wchar = !target->wchar_t_signed;
   cpp_opts->cplusplus_comments = 1;
-  //cpp_opts->extended_numbers = ?;
   cpp_opts->bytes_big_endian = target->big_endian;
 
   cpp_opts->warnings_are_errors = warnings_are_errors;
