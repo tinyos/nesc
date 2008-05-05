@@ -290,7 +290,7 @@ void handle_fdecl_doc_tags(location docloc, data_declaration ddecl,
   struct location cloc;
   dd_list_pos stags;
 
-  if (!tags)
+  if (!tags || !fd)
     return;
 
   old = current;
