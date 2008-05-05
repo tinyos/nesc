@@ -884,9 +884,9 @@ void prt_variable_decl(type_element modifiers, variable_decl d,
 void prt_declarator(declarator d, type_element elements, attribute attributes,
 		    data_declaration ddecl, psd_options options)
 {
-  psd_options te_opts = 0;
+  psd_options te_opts = options & (psd_duplicate | psd_rewrite_nxbase);
 
-  if ((options & psd_rewrite_nxbase) || (d && is_function_declarator(d)))
+  if (d && is_function_declarator(d))
     te_opts |= psd_rewrite_nxbase;
   prt_type_elements(elements, te_opts);
 
