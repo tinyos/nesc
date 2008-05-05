@@ -21,10 +21,18 @@ Boston, MA 02111-1307, USA.  */
 #include "parser.h"
 
 void save_cpp_option(const char *option, const char *arg);
-void set_cpp_dir(const char *dir);
 void preprocess_init(void);
 
 void start_macro_saving(void);
 void end_macro_saving(void);
+
+struct cpp_token;
+struct cpp_reader;
+
+void save_pp_dir(const char *dir);
+void save_pp_file_start(const char *path);
+void save_pp_file_end(void);
+void save_pp_token(const struct cpp_token *tok);
+void save_pp_line_change(struct cpp_reader *pfile, const struct cpp_token *token);
 
 #endif

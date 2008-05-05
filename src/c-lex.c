@@ -147,6 +147,8 @@ static void cb_line_change(cpp_reader *reader, const cpp_token *token,
       const struct line_map *map = linemap_lookup(current.lex.line_map, loc);
 
       current.lex.input->l.lineno = SOURCE_LINE(map, loc);
+
+      save_pp_line_change(reader, token);
     }
 }
 
@@ -206,6 +208,7 @@ static void start_lex_common(source_language l)
   current.lex.line_map = ralloc(current.fileregion, struct line_maps);
   linemap_init(current.lex.line_map);
   current.lex.finput = cpp_create_reader(CLK_GNUC89, NULL, current.lex.line_map);
+  current.lex.pp.outf = NULL;
   cpp_opts = cpp_get_options(current_reader());
   cpp_opts->discard_comments = 0;
   cpp_opts->dollars_in_ident = 0;
@@ -357,6 +360,7 @@ bool get_raw_docstring(const char **docs, location *docl)
 
 static void lex_string(const cpp_token *tok, struct yystype *lvalp)
 {
+  const cpp_token *first = tok;
   bool wide = FALSE;
   location first_loc = last_location();
   cpp_string istr;
@@ -379,7 +383,11 @@ static void lex_string(const cpp_token *tok, struct yystype *lvalp)
 	wide = true;
 
       do
-	tok = cpp_get_token(current_reader());
+	{
+	  if (tok != first)
+	    save_pp_token(tok);
+	  tok = cpp_get_token(current_reader());
+	}
       while (tok->type == CPP_PADDING);
     }
   while (tok->type == CPP_STRING || tok->type == CPP_WSTRING);
@@ -545,6 +553,7 @@ static int lex_token(struct yystype *lvalp)
 
  retry:
   last_token = tok = cpp_get_token(current_reader());
+  save_pp_token(tok);
   type = tok->type;
   lvalp->u.itoken.location = last_location();
   lvalp->u.itoken.i = 0;

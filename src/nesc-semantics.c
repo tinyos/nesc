@@ -169,12 +169,14 @@ node compile(location loc, nesc_declaration container,
       current.fileregion = newregion();
       start_semantics(l_c, NULL, global_env);
       ok = start_lex(l, path);
+      save_pp_file_start(path);
       if (!ok)
 	error_with_location(loc, "failed to preprocess %s", path);
       else
 	parse_tree = parse();
       deleteregion_ptr(&current.fileregion);
       end_lex();
+      save_pp_file_end();
     }
 
   current = old_semantic_state;
