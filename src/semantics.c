@@ -251,6 +251,8 @@ data_declaration declare(environment b, data_declaration from,
       /* C names go all the way to the top... */
       if (dd->Cname)
 	env_add(global_env->id_env, dd->name, dd);
+      if (!dd->container_function && flag_c && !dd->spontaneous)
+	dd->spontaneous = c_call_nonatomic;
       if (dd->spontaneous || (getenv("ALLCODE") && dd->kind == decl_function))
 	dd_add_last(parse_region, spontaneous_calls, dd);
     }

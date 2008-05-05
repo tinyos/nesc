@@ -295,4 +295,7 @@ extern int flag_undef;
 /* True if compiling for deputy */
 extern int flag_deputy;
 
+/* True if transforming plain C code */
+extern int flag_c;
+
 #endif

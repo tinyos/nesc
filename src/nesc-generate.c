@@ -1317,7 +1317,8 @@ void generate_c_code(const char *target_name, nesc_declaration program,
   check_races(callgraph);
   isatomic(callgraph);
 
-  inline_functions(callgraph);
+  if (!flag_c)
+    inline_functions(callgraph);
 
   /* Then we print the code. */
   /* The C declarations first */
@@ -1328,7 +1329,8 @@ void generate_c_code(const char *target_name, nesc_declaration program,
   /* Typedefs for abstract module type arguments. This relies on the fact
      that abstract configurations are present in the components list ahead
      of the abstract modules that they instantiate */
-  prt_nesc_typedefs(program);
+  if (program)
+    prt_nesc_typedefs(program);
 
   enable_line_directives();
 

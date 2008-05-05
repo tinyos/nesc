@@ -298,3 +298,6 @@ int flag_undef;
 /* True if compiling for deputy */
 int flag_deputy;
 
+/* True if transforming plain C code */
+int flag_c;
+

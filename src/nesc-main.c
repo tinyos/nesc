@@ -371,7 +371,10 @@ void nesc_compile(const char *filename, const char *target_name)
        see the actual file */
     program = load(l_any, toplevel_location, filename, TRUE);
   else
-    load_c(toplevel_location, filename, TRUE);
+    {
+      flag_c = TRUE;
+      load_c(toplevel_location, filename, TRUE);
+    }
 
   if (errorcount)
     return;
@@ -415,4 +418,8 @@ void nesc_compile(const char *filename, const char *target_name)
     dump_info(program, cg, userg, modules, components);
   if (gencode)
     generate_c_code(target_name, program, cg, modules, components);
+  else if (flag_c)
+    generate_c_code(target_name, NULL,
+		    new_cgraph(permanent), dd_new_list(permanent),
+		    dd_new_list(permanent));
 }
