@@ -746,12 +746,20 @@ void init_internal_nesc_attributes(void)
 void check_name(const char *name)
 {
   const char *occ, *sep = get_function_separator();
+  int lsep = strlen(sep);
 
-  if (!name[0])
+  /* Ignore leading instances of the separator */
+  while (!strncmp(name, sep, lsep))
+    name++;
+
+  occ = strstr(name, sep);
+  if (!occ)
     return;
 
-  occ = strstr(name + 1, sep);
-  if (occ && occ[strlen(sep)])
+  /* Ignore trailing instances of the separator */
+  while (occ[lsep] && !strncmp(occ + 1, sep, lsep))
+    occ++;
+  if (occ[lsep])
     {
       static int first = 1;
 

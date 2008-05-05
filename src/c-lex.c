@@ -171,32 +171,6 @@ void init_lex(void)
 
   string_sequence = new_string_array(parse_region, 16);
   doc_string = new_char_array(parse_region, 2048);
-
-  /* Some options inhibit certain reserved words.
-     Clear those words out of the hash table so they won't be recognized.  */
-#define UNSET_RESERVED_WORD(STRING) \
-  do { struct resword *s = is_reserved_word (STRING, sizeof (STRING) - 1); \
-       if (s) s->name = ""; } while (0)
-
-  if (flag_traditional)
-    {
-      UNSET_RESERVED_WORD ("const");
-      UNSET_RESERVED_WORD ("volatile");
-      UNSET_RESERVED_WORD ("typeof");
-      UNSET_RESERVED_WORD ("signed");
-      UNSET_RESERVED_WORD ("inline");
-      UNSET_RESERVED_WORD ("iterator");
-      UNSET_RESERVED_WORD ("complex");
-    }
-
-  if (flag_no_asm)
-    {
-      UNSET_RESERVED_WORD ("asm");
-      UNSET_RESERVED_WORD ("typeof");
-      UNSET_RESERVED_WORD ("inline");
-      UNSET_RESERVED_WORD ("iterator");
-      UNSET_RESERVED_WORD ("complex");
-    }
 }
 
 static cpp_reader *current_reader(void)
@@ -511,6 +485,11 @@ static lexical_cst interpret_float(const cpp_token *token, unsigned int flags)
   return fold_lexical_real(t, last_location(), make_token_cstring(token));
 }
 
+static bool is_nesc_keyword(struct resword *word)
+{
+  return word->token != TYPE_QUAL && (word->rid & RID_NESC);
+}
+
 static int interpret_name(const cpp_token *token, struct yystype *lvalp)
 {
   ht_identifier *id = HT_NODE(token->val.node);
@@ -519,9 +498,13 @@ static int interpret_name(const cpp_token *token, struct yystype *lvalp)
   int kind = IDENTIFIER;
 
   /* Try to recognize a keyword.  Uses minimum-perfect hash function */
-  if ((ptr = is_reserved_word(id->str, id->len)))
+  if ((ptr = is_reserved_word(id->str, id->len)) &&
+      !(is_nesc_keyword(ptr) && current.language == l_c))
     {
-      lvalp->u.itoken.i = ptr->rid;
+      if (ptr->token == TYPE_QUAL)
+	lvalp->u.itoken.i = ptr->rid;
+      else
+	lvalp->u.itoken.i = ptr->rid & ~RID_NESC;
 
       /* Even if we decided to recognize asm, still perhaps warn.  */
       if (pedantic &&

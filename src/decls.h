@@ -140,7 +140,6 @@ struct data_declaration {
 
   declaration definition; /* Pointer to actual definition, if any */
   declaration ast; /* Last declaration */
-  asttype return_type;		/* overridden return type from nesdoc */
   expression initialiser; /* NULL if none. For type arguments, this gets set
 			     to the argument type (type_argument node) */
 

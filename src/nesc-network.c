@@ -486,7 +486,7 @@ static void network_align_to(largest_uint offset, struct network_state *ns)
 void prt_network_field_data_decl(data_decl d, struct network_state *ns)
 {
   declaration fd;
-  pte_options opts = 0;
+  psd_options opts = 0;
 
   scan_declaration (fd, d->decls)
     {
@@ -510,12 +510,12 @@ void prt_network_field_data_decl(data_decl d, struct network_state *ns)
 	  if (ns->isextension)
 	    output("__extension__ ");
 	  prt_type_elements(d->modifiers, opts);
-	  opts |= pte_duplicate;
+	  opts |= psd_duplicate;
 	  prt_field_decl(fdd);
 	  outputln(";");
 	}
     }
-  if (!(opts & pte_duplicate))
+  if (!(opts & psd_duplicate))
     prt_interesting_elements(d->modifiers, opts);
 }
 

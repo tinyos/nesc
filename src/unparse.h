@@ -89,16 +89,6 @@ void prt_expression(expression e, int context_priority);
 void prt_expression_helper(expression e, int context_priority);
 
 typedef enum {
-  pte_duplicate = 1,
-  pte_noextern = 2,
-  pte_skip_command_event = 4,
-  pte_rewrite_nxbase = 8,
-} pte_options;
-
-void prt_type_elements(type_element elements, pte_options options);
-void prt_interesting_elements(type_element elements, pte_options options);
-
-typedef enum {
   psd_need_paren_for_star = 1,
   psd_need_paren_for_qual = 2,
   psd_rename_parameters = 4,
@@ -108,10 +98,18 @@ typedef enum {
   psd_print_ddecl = 64, /* print ddecl as the name inside a declarator */
   psd_prefix_nxbase = 128, /* add the __nesc_nxbase_ prefix to declared names */
   psd_rewrite_nxbase = 256, /* add the __nesc_nxbase_ prefix to base type */
-  psd_print_ddecl_fdeclarator = 512 /* print innermost fdeclarator from ddecl */
+  psd_print_ddecl_fdeclarator = 512, /* print innermost fdeclarator from ddecl */
+  psd_duplicate = 1024,
+  psd_noextern = 2048,
+  psd_skip_command_event = 4096
 } psd_options;
 
-void prt_variable_decl(variable_decl d, psd_options options);
+void prt_type_elements(type_element elements, psd_options options);
+void prt_attribute_elements(type_element elements);
+void prt_interesting_elements(type_element elements, psd_options options);
+
+void prt_variable_decl(type_element modifiers, variable_decl d, 
+		       psd_options dopts);
 void prt_declarator(declarator d, type_element elements, attribute attributes,
 		    data_declaration ddecl, psd_options options);
 bool prt_simple_declarator(declarator d, data_declaration ddecl,

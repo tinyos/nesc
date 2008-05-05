@@ -98,6 +98,7 @@ static AST_walker_result deputy_fdeclarator(AST_walker unused, void *data,
      (from the AST perspective) the fdeclarator's declarator */
   ndd.env = fd->env->parent;
   dwalk(&ndd, fd->declarator);
+  dwalk(data, fd->return_type);
   dwalk(data, fd->parms);
   dwalk(data, fd->gparms);
   dwalk(data, fd->qualifiers);
@@ -119,7 +120,6 @@ static AST_walker_result deputy_function_decl(AST_walker unused, void *data,
   dwalk(&ndd, fdecl->declarator);
   dwalk(&ndd, fdecl->modifiers);
   dwalk(&ndd, fdecl->attributes);
-  dwalk(&ndd, fdecl->ddecl->return_type);
   dwalk(data, fdecl->stmt);
 
   return aw_done;
@@ -152,7 +152,6 @@ static AST_walker_result deputy_data_decl(AST_walker unused, void *data,
   ndd.in_struct = NULL;
   dwalk(&ndd, dd->modifiers);
   dwalk(&ndd, dd->decls);
-  dwalk(&ndd, vd->ddecl->return_type);
 
   return aw_done;
 }

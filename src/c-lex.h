@@ -54,8 +54,10 @@ enum rid
   RID_SHORT,
   RID_LONG,
   RID_SIGNED,
-  RID_INLINE,
   RID_COMPLEX,
+  RID_LASTTYPE,
+
+  RID_INLINE = RID_LASTTYPE,
   RID_DEFAULT,
   RID_NORACE,
 
@@ -69,7 +71,9 @@ enum rid
   RID_TASK,
   RID_ASYNC,
 
-  RID_MAX
+  RID_MAX,
+
+  RID_NESC = 256
 };
 
 #define NORID RID_UNUSED

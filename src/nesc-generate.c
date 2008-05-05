@@ -43,7 +43,7 @@ static void prt_nesc_function_hdr(data_declaration fn_decl,
      prt_declarator will use the name from fn_decl in its output. */
   variable_decl ifn_vd = CAST(variable_decl, fn_decl->ast);
   data_decl fn_dd = CAST(data_decl, ifn_vd->parent);
-  pte_options opts = 0;
+  psd_options opts = 0;
 
   prt_diff_info(fn_decl);
   set_location(fn_dd->location);
@@ -52,7 +52,7 @@ static void prt_nesc_function_hdr(data_declaration fn_decl,
   /* Functions returning a network type should return the base type
      instead */
   if (is_function_declarator(ifn_vd->declarator))
-    opts |= pte_rewrite_nxbase;
+    opts |= psd_rewrite_nxbase;
   prt_type_elements(fn_dd->modifiers, opts);
 
   prt_declarator(ifn_vd->declarator, NULL, ifn_vd->attributes, fn_decl, 
@@ -513,8 +513,7 @@ void prt_nesc_module(cgraph cg, nesc_declaration mod)
 	     don't (easily) know here if the elements will be printed
 	     several times. If the type elements define a new type we most
 	     likely have a problem anyway (see discussion above) */
-	  prt_type_elements(localsdd->modifiers, 0);
-	  prt_variable_decl(localsvd, 0);
+	  prt_variable_decl(localsdd->modifiers, localsvd, 0);
 	  outputln(";");
 	}
     }

@@ -103,7 +103,6 @@ void init_data_declaration(data_declaration dd, declaration ast,
 
   dd->shadowed = NULL;
   dd->ast = ast;
-  dd->return_type = NULL;
   dd->definition = NULL;
   dd->isexternalscope = FALSE;
   dd->isfilescoperef = FALSE;
@@ -2106,7 +2105,7 @@ bool start_function(type_element elements, declarator d, attribute attribs,
   fdecl->fdeclarator = fdeclarator;
 
   get_latest_docstring(&ddecl->doc, current.fileregion, &doc_tags);
-  handle_ddecl_doc_tags(ddecl->doc.loc, ddecl, doc_tags);
+  handle_fdecl_doc_tags(ddecl->doc.loc, ddecl, fdeclarator, doc_tags);
 
   /* If requested, replace post/task by references to an interface */
   if (type_task(ddecl->type) && flag_use_scheduler)
@@ -2808,7 +2807,13 @@ void allow_parameter_redeclaration(declaration parms, bool mark_forward)
 	if (mark_forward)
 	  vd->forward = TRUE;
 	if (vd->ddecl)
-	  vd->ddecl->isused = FALSE;
+	  {
+	    vd->ddecl->isused = FALSE;
+	    /* This being non-NULL is used to detect redeclarations 
+	       in handle_fdecl_doc_tags - it being non-NULL is an indication
+	       that we're not working on a "fresh" (just-parsed) AST */
+	    assert(vd->ddecl->ast->parent == NULL);
+	  }
       }
 }
 

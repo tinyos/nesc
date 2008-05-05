@@ -143,6 +143,7 @@
 (deffield containing_atomic atomic_stmt ())
 (deffield type_checked bool ())
 (deffield isatomic atomic_t ((default "NOT_ATOMIC")))
+(deffield return_type asttype (tree))
 
 (deffield cdecl nesc_declaration ())
 (deffield temp1 data_declaration ())
@@ -332,10 +333,12 @@ TDECL points to the internal declaration node for this type")
   "A common supertype for function/pointer/array declarator which includes
 the nested DECLARATOR")
 
-(deftype function_declarator nested_declarator (parms gparms qualifiers env)
+(deftype function_declarator nested_declarator (parms gparms qualifiers env
+						return_type)
   "Function declarator DECLARATOR(PARMS). PARMS is a list of declarations.
 ENV is the environment for parms
-GPARMS is the list of declarations of generic parameters (commands, events only)")
+GPARMS is the list of declarations of generic parameters (commands, events only)
+RETURN_TYPE (optional) contains an overridden return type from nesdoc")
 
 (deftype pointer_declarator nested_declarator ()
   "Pointer declarator *DECLARATOR")

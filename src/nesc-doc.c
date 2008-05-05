@@ -1162,7 +1162,7 @@ static void print_short_variable_html(data_decl ddecl, variable_decl vd) {
 
 
   // FIXME: did this fix the variable declaration printing?
-  prt_type_elements(ddecl->modifiers, FALSE); 
+  prt_type_elements(ddecl->modifiers, 0); 
 
   prt_declarator(vd->declarator, NULL, vd->attributes, vd->ddecl, psd_skip_container);
 
@@ -1225,7 +1225,7 @@ static void print_func_return(function_decl fd, data_decl dd, variable_decl vd)
   if(fd) {
     prt_declarator(NULL, fd->modifiers, fd->attributes, fd->ddecl, psd_skip_container);
   } else {
-    prt_type_elements(dd->modifiers, pte_skip_command_event); 
+    prt_type_elements(dd->modifiers, psd_skip_command_event); 
   }
 }
 

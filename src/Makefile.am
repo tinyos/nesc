@@ -75,7 +75,6 @@ libparser_a_SOURCES =				\
 	c-parse.h				\
 	c-parse.tab.h				\
 	c-parse.tab.c				\
-	config.h				\
 	constants.c				\
 	constants.h				\
 	cstring.h				\
@@ -103,6 +102,7 @@ libparser_a_SOURCES =				\
 	lex.nd.c				\
 	machine.c				\
 	machine.h				\
+	nconfig.h				\
 	nesc-abstract.c				\
 	nesc-abstract.h				\
 	nesc-atomic.c				\

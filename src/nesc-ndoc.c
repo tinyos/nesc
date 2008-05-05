@@ -262,12 +262,8 @@ void ignored_doctags(location docloc, dd_list tags)
 void handle_ddecl_doc_tags(location docloc, data_declaration ddecl,
 			   dd_list tags)
 {
-  struct semantic_state old;
-  struct location cloc;
   declarator d;
-  function_declarator fd;
   declaration ast;
-  dd_list_pos stags;
 
   if (!tags)
     return;
@@ -278,15 +274,27 @@ void handle_ddecl_doc_tags(location docloc, data_declaration ddecl,
       return;
     }
 
-  old = current;
-  cloc = current.lex.input->l;
-
   ast = ddecl->ast;
   if (is_function_decl(ast))
     d = CAST(function_decl, ast)->declarator;
   else
     d = CAST(variable_decl, ast)->declarator;
-  fd = get_fdeclarator(d);
+
+  handle_fdecl_doc_tags(docloc, ddecl, get_fdeclarator(d), tags);
+}
+
+void handle_fdecl_doc_tags(location docloc, data_declaration ddecl,
+			   function_declarator fd, dd_list tags)
+{
+  struct semantic_state old;
+  struct location cloc;
+  dd_list_pos stags;
+
+  if (!tags)
+    return;
+
+  old = current;
+  cloc = current.lex.input->l;
 
   current.env = fd->env;
   allow_parameter_redeclaration(fd->parms, FALSE);
@@ -313,7 +321,7 @@ void handle_ddecl_doc_tags(location docloc, data_declaration ddecl,
 	}
       else if (!strcmp(tag->tag, "return"))
 	{
-	  if (ddecl->return_type)
+	  if (fd->return_type)
 	    warning_with_location(&tagloc, "duplicate @return tag ignored");
 	  else
 	    {
@@ -323,9 +331,9 @@ void handle_ddecl_doc_tags(location docloc, data_declaration ddecl,
 	      end_lex();
 	      if (parsed)
 		{
-		  ddecl->return_type = CAST(asttype, parsed);
+		  fd->return_type = CAST(asttype, parsed);
 		  if (!type_equal(type_function_return_type(ddecl->type),
-				  ddecl->return_type->type))
+				  fd->return_type->type))
 		    error("inconsistent return type in @return tag");
 		}
 	    }

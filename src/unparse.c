@@ -380,18 +380,21 @@ void prt_extension_decl(extension_decl d);
 void prt_data_decl(data_decl d);
 void prt_ellipsis_decl(ellipsis_decl d);
 void prt_function_decl(function_decl d);
-void prt_variable_decl(variable_decl d, psd_options options);
-void prt_type_elements(type_element elements, pte_options options);
-void prt_interesting_elements(type_element elements, pte_options options);
-void prt_type_element(type_element em, pte_options options);
-void prt_typename(typename tname, pte_options options);
+void prt_variable_decl(type_element modifier, variable_decl d,
+		       psd_options options);
+void prt_interesting_elements(type_element elements, psd_options options);
+void prt_type_elements(type_element elements, psd_options options);
+bool prt_type_element(type_element em, psd_options options);
+void prt_attribute_elements(type_element elements);
+bool prt_attribute_element(type_element em);
+void prt_typename(typename tname, psd_options options);
 void prt_typeof_expr(typeof_expr texpr);
 void prt_typeof_type(typeof_type ttype);
 void prt_gcc_attribute(gcc_attribute a);
 void prt_nesc_attribute(nesc_attribute a);
-void prt_rid(rid r, pte_options options);
+void prt_rid(rid r, psd_options options);
 void prt_qualifier(qualifier q);
-void prt_tag_ref(tag_ref sr, pte_options options);
+void prt_tag_ref(tag_ref sr, psd_options options);
 void prt_fields(declaration flist);
 void prt_enumerators(declaration elist, tag_declaration ddecl);
 void prt_field_declaration(declaration d);
@@ -600,20 +603,55 @@ static type_element interesting_element(type_element elems)
   return NULL;
 }
 
-static pte_options prefix_decl(data_declaration ddecl)
+static void prt_prefix(location loc, data_declaration ddecl,
+		       type_element modifiers)
 {
+  bool pinline = FALSE, pstatic = FALSE;
+  type_element em;
+
+  set_location(loc);
   /* Hack to add static and inline where necessary */
-  if (ddecl->kind == decl_function && !ddecl->isexterninline &&
+  if (ddecl && ddecl->kind == decl_function && !ddecl->isexterninline &&
       !ddecl->spontaneous && ddecl->definition)
     {
       if (ddecl->ftype != function_static)
-	output("static ");
+	{
+	  output("static ");
+	  pstatic = TRUE;
+	}
       if (ddecl->makeinline && flag_no_inline < 2)
-	output("inline ");
-      return pte_noextern;
+	{
+	  output("inline ");
+	  pinline = TRUE;
+	}
     }
-  return 0;
+
+  scan_type_element (em, modifiers)
+    if (is_rid(em))
+      {
+	rid r = CAST(rid, em);
+
+	/* Filter-out rids that should not be printed by calling continue */
+	switch (r->id)
+	  {
+	  default:
+	    continue;
+	  case RID_EXTERN: case RID_STATIC:
+	    if (pstatic)
+	      continue;
+	    break;
+	  case RID_INLINE:
+	    if (pinline)
+	      continue;
+	    break;
+	  case RID_REGISTER: case RID_TYPEDEF:
+	    break;
+	  }
+	set_location(r->location);
+	output("%s ", rid_name(r));
+      }
 }
+		       
 
 void prt_symbol_name(FILE *f, data_declaration ddecl)
 {
@@ -680,14 +718,13 @@ void prt_diff_info(data_declaration ddecl)
 void prt_data_decl(data_decl d)
 {
   declaration vd;
-  pte_options opts = 0;
+  psd_options opts = 0;
 
   scan_declaration (vd, d->decls)
     {
       variable_decl vdd = CAST(variable_decl, vd);
       data_declaration vdecl = vdd->ddecl;
-      pte_options extraopts = 0;
-      psd_options vopts = 0;
+      psd_options vopts = opts;
 
       if (vdecl) /* because build_declaration does not make a
 		    data_declaration */
@@ -706,21 +743,16 @@ void prt_data_decl(data_decl d)
 
 	  if (type_task(vdecl->type) && vdecl->interface)
 	    continue;
-
-	  set_location(vdd->location);
-	  extraopts = prefix_decl(vdecl);
 	}
 
       prt_diff_info(vdecl);
 
-      if (!vdecl || !vdecl->return_type)
-	prt_type_elements(d->modifiers, opts | extraopts);
-      opts |= pte_duplicate;
-      prt_variable_decl(vdd, vopts);
+      prt_variable_decl(d->modifiers, vdd, vopts);
+      opts |= psd_duplicate;
       outputln(";");
     }
 
-  if (!(opts & pte_duplicate))
+  if (!(opts & psd_duplicate))
     prt_interesting_elements(d->modifiers, opts);
 }
 
@@ -748,17 +780,25 @@ void prt_function_decl(function_decl d)
 {
   if (d->ddecl->isused && !d->ddecl->suppress_definition)
     {
-      asttype ret = d->ddecl->return_type;
+      function_declarator fd = get_fdeclarator(d->declarator);
+      asttype ret = fd->return_type;
 
       prt_diff_info(d->ddecl);
-      set_location(d->location);
-      prefix_decl(d->ddecl);
+      prt_prefix(d->location, d->ddecl, d->modifiers);
       if (ret)
-	prt_declarator(ret->declarator, ret->qualifiers, NULL, d->ddecl,
-		       psd_print_default | psd_print_ddecl_fdeclarator);
+	{
+	  prt_attribute_elements(d->modifiers);
+	  prt_declarator(ret->declarator, ret->qualifiers, NULL, d->ddecl,
+			 psd_print_default | psd_print_ddecl_fdeclarator);
+	}
       else
-	prt_declarator(d->declarator, d->modifiers, d->attributes, d->ddecl,
+	prt_declarator(d->declarator, d->modifiers, NULL, d->ddecl,
 		       psd_print_default);
+      if (d->attributes)
+	{
+	  output(" ");
+	  prt_type_elements(CAST(type_element, d->attributes), 0);
+	}
       outputln(";");
     }
 }
@@ -767,18 +807,30 @@ void prt_function_body(function_decl d)
 {
   if (d->ddecl->isused && !d->ddecl->suppress_definition)
     {
+      function_declarator fd = get_fdeclarator(d->declarator);
+      asttype ret = fd->return_type;
+      bool extrablock;
+
       /* We set current.function_decl because unparsing may produce error
 	 messages */
       current.function_decl = d;
       current.container = d->ddecl->container;
-      bool extrablock;
 
       prt_diff_info(d->ddecl);
-      set_location(d->location);
-      prefix_decl(d->ddecl);
+      prt_prefix(d->location, d->ddecl, d->modifiers);
+      /* gcc wants the attributes here */
       prt_type_elements(CAST(type_element, d->attributes), 0);
-      prt_declarator(d->declarator, d->modifiers, NULL, d->ddecl,
-		     psd_print_default);
+
+      if (ret)
+	{
+	  prt_attribute_elements(d->modifiers);
+	  prt_declarator(ret->declarator, ret->qualifiers, NULL, d->ddecl,
+			 psd_print_default | psd_print_ddecl_fdeclarator);
+	}
+      else
+	prt_declarator(d->declarator, d->modifiers, NULL, d->ddecl,
+		       psd_print_default);
+
       startline();
       prt_parameter_declarations(d->old_parms);
       extrablock = prt_network_parameter_copies(d);
@@ -795,15 +847,29 @@ void prt_function_body(function_decl d)
     }
 }
 
-void prt_variable_decl(variable_decl d, psd_options options)
+void prt_variable_decl(type_element modifiers, variable_decl d,
+		       psd_options options)
 {
+  function_declarator fd = get_fdeclarator(d->declarator);
   asttype ret;
 
-  if (d->ddecl && (ret = d->ddecl->return_type))
-    prt_declarator(ret->declarator, ret->qualifiers, NULL, d->ddecl,
-		   options | psd_print_ddecl_fdeclarator);
+  prt_prefix(d->location, d->ddecl, modifiers);
+
+  /* Handle nesdoc-overridden return type */
+  if (fd && (ret = fd->return_type))
+    {
+      prt_attribute_elements(modifiers);
+      prt_declarator(ret->declarator, ret->qualifiers, NULL, d->ddecl,
+		     options | psd_print_ddecl_fdeclarator);
+    }
   else
-    prt_declarator(d->declarator, NULL, d->attributes, d->ddecl, options);
+    prt_declarator(d->declarator, modifiers, NULL, d->ddecl, options);
+
+  if (d->attributes)
+    {
+      output(" ");
+      prt_type_elements(CAST(type_element, d->attributes), 0);
+    }
 
   if (d->asm_stmt)
     prt_asm_stmt_plain(d->asm_stmt);
@@ -818,10 +884,10 @@ void prt_variable_decl(variable_decl d, psd_options options)
 void prt_declarator(declarator d, type_element elements, attribute attributes,
 		    data_declaration ddecl, psd_options options)
 {
-  pte_options te_opts = 0;
+  psd_options te_opts = 0;
 
   if ((options & psd_rewrite_nxbase) || (d && is_function_declarator(d)))
-    te_opts |= pte_rewrite_nxbase;
+    te_opts |= psd_rewrite_nxbase;
   prt_type_elements(elements, te_opts);
 
   options |= psd_need_paren_for_qual;
@@ -1015,18 +1081,29 @@ bool prt_simple_declarator(declarator d, data_declaration ddecl,
   return FALSE;
 }
 
-void prt_type_elements(type_element elements, pte_options options)
+void prt_type_elements(type_element elements, psd_options options)
 {
   type_element em;
 
   scan_type_element (em, elements)
     {
-      prt_type_element(em, options);
-      output(" ");
+      if (prt_type_element(em, options))
+	output(" ");
     }
 }
 
-void prt_interesting_elements(type_element elements, pte_options options)
+void prt_attribute_elements(type_element elements)
+{
+  type_element em;
+
+  scan_type_element (em, elements)
+    {
+      if (prt_attribute_element(em))
+	output(" ");
+    }
+}
+
+void prt_interesting_elements(type_element elements, psd_options options)
 {
   type_element interesting = interesting_element(elements);
 
@@ -1037,22 +1114,26 @@ void prt_interesting_elements(type_element elements, pte_options options)
     }
 }
 
-void prt_type_element(type_element em, pte_options options)
+bool prt_type_element(type_element em, psd_options options)
 {
   switch (em->kind)
     {
     case kind_component_typeref: /* fall through to prt_typename */
-    case kind_typename:
-      prt_typename(CAST(typename, em), options);
-      break;
-      PRTCASE(typeof_expr, em);
-      PRTCASE(typeof_type, em);
-      PRTCASE(gcc_attribute, em);
-      PRTCASE(nesc_attribute, em);
-      PRTCASE(qualifier, em);
+    case kind_typename: prt_typename(CAST(typename, em), options); break;
+    case kind_typeof_expr: prt_typeof_expr(CAST(typeof_expr, em)); break;
+    case kind_typeof_type: prt_typeof_type(CAST(typeof_type, em)); break;
+    case kind_gcc_attribute: prt_gcc_attribute(CAST(gcc_attribute, em)); break;
+    case kind_nesc_attribute: prt_nesc_attribute(CAST(nesc_attribute, em)); break;
+    case kind_qualifier: prt_qualifier(CAST(qualifier, em)); break;
     case kind_rid:
-      prt_rid(CAST(rid, em), options);
-      break;
+      {
+	rid r = CAST(rid, em);
+
+	if (!documentation_mode && r->id >= RID_LASTTYPE)
+	  return FALSE;
+	prt_rid(r, options);
+	break;
+      }    
     default:
       if (is_tag_ref(em))
 	prt_tag_ref(CAST(tag_ref, em), options);
@@ -1060,15 +1141,31 @@ void prt_type_element(type_element em, pte_options options)
 	assert(0);
       break;
     }
+  return TRUE;
 }
 
-void prt_typename(typename tname, pte_options options)
+bool prt_attribute_element(type_element em)
+{
+  switch (em->kind)
+    {
+    case kind_gcc_attribute: 
+      prt_gcc_attribute(CAST(gcc_attribute, em)); 
+      return TRUE;
+    case kind_nesc_attribute:
+      prt_nesc_attribute(CAST(nesc_attribute, em)); 
+      return TRUE;
+    default:
+      return FALSE;
+    }
+}
+
+void prt_typename(typename tname, psd_options options)
 {
   data_declaration tdecl = tname->ddecl;
   psd_options newopts = 0;
 
   set_location(tname->location);
-  if (type_network_base_type(tdecl->type) && (options & pte_rewrite_nxbase))
+  if (type_network_base_type(tdecl->type) && (options & psd_rewrite_nxbase))
     newopts |= psd_prefix_nxbase;
   prt_plain_ddecl(tdecl, newopts);
 }
@@ -1150,20 +1247,20 @@ void prt_nesc_attribute(nesc_attribute a)
     }
 }
 
-void prt_rid(rid r, pte_options options)
+void prt_rid(rid r, psd_options options)
 {
   switch (r->id)
     {
     case RID_COMMAND: case RID_EVENT: case RID_TASK: case RID_ASYNC:
     case RID_NORACE:
       // show these in documenation mode, but not otherwise
-      if (documentation_mode && !(options & pte_skip_command_event)) 
+      if (documentation_mode && !(options & psd_skip_command_event)) 
 	output("%s", rid_name(r));
       break;
     case RID_DEFAULT:
       break;
     case RID_EXTERN:
-      if (options & pte_noextern)
+      if (options & psd_noextern)
 	return;
       /* FALLTHROUGH */
     default:
@@ -1179,7 +1276,7 @@ void prt_qualifier(qualifier q)
   output("%s", qualifier_name(q->id));
 }
 
-void prt_tag_ref(tag_ref tr, pte_options options)
+void prt_tag_ref(tag_ref tr, psd_options options)
 {
   /* We must not name anonymous struct/unions (those which are collapsed
      into a containing struct/union) as that would make them non-anonymous
@@ -1205,7 +1302,7 @@ void prt_tag_ref(tag_ref tr, pte_options options)
 	output("__nesc_attr_");
       prt_word(tr->word1);
     }
-  if (!(options & pte_duplicate) && tr->defined)
+  if (!(options & psd_duplicate) && tr->defined)
     {
       if (tr->kind == kind_enum_ref)
         prt_enumerators(tr->fields, tr->tdecl);
