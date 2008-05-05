@@ -82,7 +82,7 @@ static void macro_set(const unsigned char *name, const unsigned char *value)
   if (!old_value)
     {
       old_value = ralloc(permanent, struct macro_def);
-      old_value->name = name;
+      old_value->name = (unsigned char *)rstrdup(permanent, (char *)name);
       dhadd(current_macros, old_value);
     }
   old_value->def = value;
