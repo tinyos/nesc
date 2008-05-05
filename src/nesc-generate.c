@@ -1317,8 +1317,7 @@ void generate_c_code(const char *target_name, nesc_declaration program,
   check_races(callgraph);
   isatomic(callgraph);
 
-  if (!flag_c)
-    inline_functions(callgraph);
+  inline_functions(callgraph);
 
   /* Then we print the code. */
   /* The C declarations first */
