@@ -584,18 +584,21 @@ static AST_walker_result clone_variable_decl(AST_walker spec, void *data,
   declaration old = CAST(declaration, *n);
   variable_decl new = clone(data, n);
 
-  clone_ddecl(new->ddecl);
-
-  if (new->ddecl->instantiation)
+  if (new->ddecl)
     {
-      data_declaration instance = new->ddecl->instantiation;
+      clone_ddecl(new->ddecl);
 
-      /* Forward the ddecl and update the ast and definition fields */
-      if (instance->definition == old)
-	instance->definition = CAST(declaration, new);
-      if (instance->ast == old)
-	instance->ast = CAST(declaration, new);
-      new->ddecl = instance;
+      if (new->ddecl->instantiation)
+	{
+	  data_declaration instance = new->ddecl->instantiation;
+
+	  /* Forward the ddecl and update the ast and definition fields */
+	  if (instance->definition == old)
+	    instance->definition = CAST(declaration, new);
+	  if (instance->ast == old)
+	    instance->ast = CAST(declaration, new);
+	  new->ddecl = instance;
+	}
     }
 
   return aw_walk;

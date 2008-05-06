@@ -162,6 +162,9 @@ static bool prt_arguments(declaration parms, bool first, bool rename)
       data_decl dd = CAST(data_decl, parm);
       variable_decl vd = CAST(variable_decl, dd->decls);
 	  
+      if (!vd->ddecl) /* empty (void) parameter list */
+	break;
+
       if (!first)
 	output(", ");
       first = FALSE;

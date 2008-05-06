@@ -28,6 +28,23 @@ bool oldstyle_function(function_decl fn)
   return !fn->fdeclarator->parms || is_oldidentifier_decl(fn->fdeclarator->parms);
 }
 
+/* True if the parameters is just the parameter list '(void)' */
+bool is_void_parms(declaration parms)
+{
+  data_decl dd;
+  variable_decl vd;
+
+  if (!parms || parms->next || !is_data_decl(parms))
+    return FALSE;
+
+  dd = CAST(data_decl, parms);
+  vd = CAST(variable_decl, dd->decls);
+  assert(!vd->next);
+
+  return !vd->declarator && dd->modifiers && !dd->modifiers->next &&
+    is_rid(dd->modifiers) && CAST(rid, dd->modifiers)->id == RID_VOID;
+}
+
 function_declarator get_fdeclarator(declarator d)
 {
   function_declarator fd = NULL;

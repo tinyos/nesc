@@ -417,23 +417,6 @@ void pending_xref_error(void)
     }
 }
 
-/* True if the parameters is just the parameter list '(void)' */
-bool is_void_parms(declaration parms)
-{
-  data_decl dd;
-  variable_decl vd;
-
-  if (!parms || parms->next || !is_data_decl(parms))
-    return FALSE;
-
-  dd = CAST(data_decl, parms);
-  vd = CAST(variable_decl, dd->decls);
-  assert(!vd->next);
-
-  return !vd->declarator && dd->modifiers && !dd->modifiers->next &&
-    is_rid(dd->modifiers) && CAST(rid, dd->modifiers)->id == RID_VOID;
-}
-
 declaration make_void_parm(location loc)
 {
   region r = parse_region;

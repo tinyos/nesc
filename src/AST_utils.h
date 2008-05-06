@@ -28,6 +28,7 @@ Boston, MA 02111-1307, USA. */
 data_declaration get_parameter(declaration d);
 function_declarator get_fdeclarator(declarator d);
 bool oldstyle_function(function_decl fn);
+bool is_void_parms(declaration parms);
 bool is_localvar(expression e);
 compound_stmt parent_block(node n);
 function_decl parent_function(node n);

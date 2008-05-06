@@ -1424,11 +1424,12 @@ void prt_parameters(declaration gparms, declaration parms, psd_options options)
       prt_parameter(d, first, FALSE, options);
       first = FALSE;
     }
-  scan_declaration (d, parms)
-    {
-      forward = prt_parameter(d, first, forward, 0);
-      first = FALSE;
-    }
+  if (!(gparms && is_void_parms(parms)))
+    scan_declaration (d, parms)
+      {
+	forward = prt_parameter(d, first, forward, 0);
+	first = FALSE;
+      }
   output(")");
 }
 
