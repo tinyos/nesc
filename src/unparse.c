@@ -1429,8 +1429,6 @@ void prt_parameters(declaration gparms, declaration parms, psd_options options)
       forward = prt_parameter(d, first, forward, 0);
       first = FALSE;
     }
-  if (!gparms && !parms)
-    output("void");
   output(")");
 }
 

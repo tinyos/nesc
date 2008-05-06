@@ -434,6 +434,17 @@ bool is_void_parms(declaration parms)
     is_rid(dd->modifiers) && CAST(rid, dd->modifiers)->id == RID_VOID;
 }
 
+declaration make_void_parm(location loc)
+{
+  region r = parse_region;
+  rid rvoid = new_rid(r, loc, RID_VOID);
+  variable_decl vdvoid = new_variable_decl(r, loc, NULL, NULL, NULL, NULL, NULL);
+  data_decl ddvoid = new_data_decl(r, loc, CAST(type_element, rvoid),
+				   CAST(declaration, vdvoid));
+
+  return CAST(declaration, ddvoid);
+}
+
 /* At end of parameter list, warn about any struct, union or enum tags
    defined within.  Do so because these types cannot ever become complete.  */
 static void parmlist_tags_warning(environment parm_env)
@@ -1025,7 +1036,10 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	    /* Require new-style declarations */
 	    if (current.language != l_c)
 	      {
-		newstyle = !fd->parms || !is_oldidentifier_decl(fd->parms);
+		/* Force empty parameter lists to void */
+		if (!fd->parms)
+		  fd->parms = make_void_parm(fd->location);
+		newstyle = !is_oldidentifier_decl(fd->parms);
 		if (!newstyle)
 		  error("old-style parameter lists not supported");
 	      }
@@ -1042,7 +1056,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 
 		if (*oclass == RID_TASK)
 		  {
-		    if (fd->parms)
+		    if (!is_void_parms(fd->parms))
 		      error_with_location(fd->location,
 		        "`%s' declared as a task with parameters", printname);
 		    if (!type_void(t))
