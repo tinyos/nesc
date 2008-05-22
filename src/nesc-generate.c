@@ -977,7 +977,7 @@ static void prt_nido_initializer(region r, variable_decl vd)
 
   if (!init)
     {
-      output("memset(&");
+      output("memset((void *)&");
       prt_ddecl_for_init(r, ddecl);
       output(", 0, sizeof ");
       prt_ddecl_for_init(r, ddecl);
@@ -988,10 +988,10 @@ static void prt_nido_initializer(region r, variable_decl vd)
       declarator vtype;
       type_element vmods;
 
-      output("memcpy(&");
+      output("memcpy((void *)&");
       prt_ddecl_for_init(r, ddecl);
 
-      output(", &");
+      output(", (void *)&");
       type2ast(parse_region, dummy_location, ddecl->type, NULL,
 	       &vtype, &vmods);
       output("(");
