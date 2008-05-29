@@ -68,6 +68,13 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	    if (/^-_?fnesc-gcc=(.*)$/) {
 		$gcc = $1;
 	    }
+            if (/^-_?fnesc-safe$/) {
+                $safe = 1;
+            }
+            if (/^-_?fnesc-deputy-args=(.*)$/) {
+                @deputy_args = split(" ", $1);
+                push @gcc_args, @deputy_args;
+            }
 	}
 	elsif (!(/^-D/)) {
 	    if (!(/^-_?W(no-)?nesc/)) {
@@ -110,6 +117,9 @@ if ($objtarget eq "") {
     $objtarget =~ s/\.nc$/.s/ if $asmonly;
 }
 
+if($safe) {
+    push @nesc_args, "-DSAFE_TINYOS";
+}
 push @nesc_args, $source;
 push @nesc_args, "-o";
 if ($nocompile && !$conly) {
@@ -125,6 +135,10 @@ if ($? != 0) {
     exit 2;
 }
 exit 0 if $nocompile || $conly;
+
+if($safe) {
+    $gcc = "$ENV{'DEPUTY_HOME'}/bin/deputy";
+}
 
 push @gcc_args, "-o";
 push @gcc_args, $objtarget;

@@ -84,6 +84,6 @@ void *alloca(size_t n);
 #endif
 
 /* Define to 1 to make code "safe" (deputy enabled) by default */
-#define DEFAULT_SAFETY 0
+#define DEFAULT_SAFETY 1
 
 #endif
