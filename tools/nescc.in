@@ -119,6 +119,7 @@ unshift @new_args, "-fnesc-include=nesc_nx";
 
 my $safe_home = $ENV{'TOSDIR'}."/lib/safe";
 unshift @new_args, "-fnesc-include=${safe_home}/include/annots_stage1";
+unshift @new_args, "-fnesc-genprefix=#include \"${safe_home}/include/annots_stage2.h\"";
 
 #
 # documentation generation options
