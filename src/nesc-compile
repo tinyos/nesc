@@ -73,7 +73,6 @@ for ($i = 0; $i <= $#ARGV; $i++) {
             }
             if (/^-_?fnesc-deputy-args=(.*)$/) {
                 @deputy_args = split(" ", $1);
-                push @gcc_args, @deputy_args;
             }
 	}
 	elsif (!(/^-D/)) {
@@ -137,7 +136,9 @@ if ($? != 0) {
 exit 0 if $nocompile || $conly;
 
 if($safe) {
-    $gcc = "$ENV{'DEPUTY_HOME'}/bin/deputy";
+    push @deputy_args, "--gcc=$gcc";
+    push @gcc_args, @deputy_args;
+    $gcc = "deputy";
 }
 
 push @gcc_args, "-o";
