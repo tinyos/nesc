@@ -23,6 +23,9 @@
       <m:doc>Present if the component is not, or not fully, instantiated</m:doc>
       <attribute name="abstract"><stringtype ref="nesc:empty"/></attribute>
 
+      <m:doc>Safe components (Deputy enabled) have the following attribute.</m:doc>
+      <attribute name="safe"><stringtype ref="nesc:empty"/></attribute>
+
       <m:doc>Order of these elements is unimportant</m:doc>
       <contents>
         <m:doc>What generic component this is an instance of.</m:doc>

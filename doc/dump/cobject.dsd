@@ -152,6 +152,9 @@
       <attribute name="command"><stringtype ref="nesc:empty"/></attribute>
       <attribute name="event"><stringtype ref="nesc:empty"/></attribute>
 
+      <m:doc>Safe functions (Deputy enabled) have the following attribute.</m:doc>
+      <attribute name="safe"><stringtype ref="nesc:empty"/></attribute>
+
       <contents>
 	<m:doc>Function parameters. Absent for old-style functions and
 	  built-in functions.</m:doc>
