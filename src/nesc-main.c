@@ -259,6 +259,10 @@ int nesc_option(char *p)
     flag_deputy = 1;
   else if (!strcmp (p, "fnesc-no-deputy"))
     flag_deputy = 0;
+  else if (!strcmp (p, "fnesc-default-safe"))
+    flag_default_safe = 1;
+  else if (!strcmp (p, "fnesc-default-unsafe"))
+    flag_default_safe = 0;
   else if (!strcmp (p, "Wnesc-docstring"))
     warn_unexpected_docstring = 1;
   else if (!strcmp (p, "Wno-nesc-docstring"))

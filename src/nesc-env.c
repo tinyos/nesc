@@ -55,7 +55,7 @@ nesc_declaration new_nesc_declaration(region r, source_language kind,
   if (kind == l_component && use_nido)
     new->local_statics = dd_new_list(r);
   new->env = new_environment(r, global_env, TRUE, FALSE);
-  new->safe = DEFAULT_SAFETY;
+  new->safe = flag_default_safe;
 
   return new;
 }

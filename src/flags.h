@@ -295,6 +295,11 @@ extern int flag_undef;
 /* True if compiling for deputy */
 extern int flag_deputy;
 
+/* True if a module lacking a @safe() or @unsafe() attribute defaults
+   to safe; has no effect if flag_deputy is not true; this default can
+   be overridden by -fnesc-default-safe or -fnesc-default-unsafe */
+extern int flag_default_safe;
+
 /* True if transforming plain C code */
 extern int flag_c;
 

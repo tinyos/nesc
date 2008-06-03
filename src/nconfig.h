@@ -83,7 +83,4 @@ void *alloca(size_t n);
 #define DIR_SEPARATOR '\\'
 #endif
 
-/* Define to 1 to make code "safe" (deputy enabled) by default */
-#define DEFAULT_SAFETY 0
-
 #endif

@@ -99,7 +99,7 @@ void init_data_declaration(data_declaration dd, declaration ast,
   dd->name = name;
   dd->type = t;
   dd->attributes = NULL;
-  dd->safe = DEFAULT_SAFETY;
+  dd->safe = flag_default_safe;
 
   dd->shadowed = NULL;
   dd->ast = ast;
