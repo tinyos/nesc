@@ -335,6 +335,7 @@ bool get_raw_docstring(const char **docs, location *docl)
 {
   if (char_array_length(doc_string))
     {
+      *char_array_extend(doc_string, 1) = '\0';
       *docs = char_array_data(doc_string);
       *docl = doc_location;
       char_array_reset(doc_string);
