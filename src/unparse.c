@@ -1468,6 +1468,9 @@ bool prt_parameter(declaration parm, bool first, bool lastforward,
 	    if (vd->ddecl->use_summary & c_addressed)
 	      options |= psd_prefix_nxbase;
 	  }
+	/* Force a name for the parameter when none is given */
+	if (vd->ddecl && !vd->ddecl->name)
+	  options |= psd_rename_identifier;
 	prt_declarator(vd->declarator, dd->modifiers, vd->attributes,
 		       vd->ddecl, options);
 

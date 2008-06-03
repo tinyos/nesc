@@ -53,7 +53,7 @@ static machine_spec env_machine = {
   NULL,				/* adjust_field_align */
 
   NULL, NULL, NULL, NULL,	/* Attributes: need some way to specify this */
-  NULL, NULL,			/* preint, init */
+  NULL, NULL,			/* preinit, init */
   NULL,				/* token */
   NULL,				/* keil special */
   gcc_global_cpp_init,		/* global cpp support */

@@ -169,7 +169,7 @@ static bool prt_arguments(declaration parms, bool first, bool rename)
 	output(", ");
       first = FALSE;
 
-      if (rename)
+      if (rename || !vd->ddecl->name)
 	output("arg_%p", vd->ddecl);
       else
 	output((char *)vd->ddecl->name);

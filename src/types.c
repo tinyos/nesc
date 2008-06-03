@@ -1266,7 +1266,7 @@ static int common_primitive_type(type t1, type t2)
 	       (pk1 >= tp_char && pk2 < tp_char)));
 
       /* the higher rank wins, and if either of the types is unsigned, the
-	 result is (thus unsigned short + int == unsigned int if
+	 result is unsigned (thus unsigned short + int == unsigned int if
 	 sizeof(short) == sizeof(int) */
       if ((type_unsigned(t1) || type_unsigned(t2)) && !type_unsigned(primitive_types[pk]))
 	/* A bit inefficient, admittedly */
