@@ -43,20 +43,38 @@ static void prt_nesc_function_hdr(data_declaration fn_decl,
      prt_declarator will use the name from fn_decl in its output. */
   variable_decl ifn_vd = CAST(variable_decl, fn_decl->ast);
   data_decl fn_dd = CAST(data_decl, ifn_vd->parent);
-  psd_options opts = 0;
+  psd_options opts;
+  function_declarator fd;
+  asttype ret;
 
   prt_diff_info(fn_decl);
   set_location(fn_dd->location);
   if (!is_binary_component(fn_decl->container->impl))
     output("static ");
+
   /* Functions returning a network type should return the base type
      instead */
   if (is_function_declarator(ifn_vd->declarator))
-    opts |= psd_rewrite_nxbase;
-  prt_type_elements(fn_dd->modifiers, opts);
+    opts = psd_rewrite_nxbase;
+  else
+    opts = 0;
+  options |= psd_rename_parameters;
 
-  prt_declarator(ifn_vd->declarator, NULL, ifn_vd->attributes, fn_decl, 
-		 psd_rename_parameters | options);
+  fd = get_fdeclarator(ifn_vd->declarator);
+  /* Handle nesdoc-overridden return type */
+  if (fd && (ret = fd->return_type))
+    {
+      prt_attribute_elements(fn_dd->modifiers);
+      prt_type_elements(ret->qualifiers, opts);
+      prt_declarator(ret->declarator, NULL, ifn_vd->attributes, fn_decl,
+		     options | psd_print_ddecl_fdeclarator);
+    }
+  else
+    {
+      prt_type_elements(fn_dd->modifiers, opts);
+      prt_declarator(ifn_vd->declarator, NULL, ifn_vd->attributes, fn_decl, 
+		     options);
+    }
 }
 
 void prt_nesc_function_declaration(data_declaration fndecl, void *data)
