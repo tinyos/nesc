@@ -68,8 +68,8 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	    if (/^-_?fnesc-gcc=(.*)$/) {
 		$gcc = $1;
 	    }
-            if (/^-_?fnesc-safe$/) {
-                $safe = 1;
+            if (/^-_?fnesc-deputy$/) {
+                $deputy = 1;
             }
             if (/^-_?fnesc-deputy-args=(.*)$/) {
                 @deputy_args = split(" ", $1);
@@ -116,7 +116,7 @@ if ($objtarget eq "") {
     $objtarget =~ s/\.nc$/.s/ if $asmonly;
 }
 
-if($safe) {
+if($deputy) {
     push @nesc_args, "-DSAFE_TINYOS";
 }
 push @nesc_args, $source;
@@ -135,7 +135,7 @@ if ($? != 0) {
 }
 exit 0 if $nocompile || $conly;
 
-if($safe) {
+if($deputy) {
     push @deputy_args, "--gcc=$gcc";
     push @gcc_args, @deputy_args;
     $gcc = "deputy";
