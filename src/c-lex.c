@@ -383,13 +383,19 @@ static void lex_string(const cpp_token *tok, struct yystype *lvalp)
       if (tok->type == CPP_WSTRING)
 	wide = true;
 
-      do
+      /* This was a do-while (FALSE) loop with continues in it, but
+	 gcc doesn't handle those right */
+    retry:
+      if (tok != first)
+	save_pp_token(tok);
+      tok = cpp_get_token(current_reader());
+      if (tok->type == CPP_PADDING)
+	goto retry;
+      if (tok->type == CPP_COMMENT)
 	{
-	  if (tok != first)
-	    save_pp_token(tok);
-	  tok = cpp_get_token(current_reader());
+	  handle_comment(tok);
+	  goto retry;
 	}
-      while (tok->type == CPP_PADDING);
     }
   while (tok->type == CPP_STRING || tok->type == CPP_WSTRING);
 
