@@ -1,6 +1,6 @@
 .deps
 Makefile
-config.status
+config.status*
 configure
 config.in
 config.log

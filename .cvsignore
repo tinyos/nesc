@@ -1,5 +1,5 @@
 configure
-config.status
+config.status*
 config.log
 autom4te.cache
 aclocal.m4

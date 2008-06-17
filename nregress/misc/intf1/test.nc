@@ -12,7 +12,7 @@ MOTOR_OFF = 0
 * Init.
 * @return Always returns SUCCESS.
 */
-command result_t init();
+command void init();
 
 }
 

@@ -95,6 +95,7 @@ libparser_a_SOURCES =				\
 	expr.h					\
 	flags.c					\
 	flags.h					\
+	gcc-cpp.h				\
 	graph.c					\
 	graph.h					\
 	init.c					\
