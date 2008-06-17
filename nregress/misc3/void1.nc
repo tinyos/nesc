@@ -12,6 +12,10 @@ implementation
     f();
   }
 
+  task void p() { }
+
+  task void q(void) { }
+
   void h(void) @spontaneous()
   {
     g();
