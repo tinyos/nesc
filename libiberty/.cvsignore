@@ -2,7 +2,6 @@
 Makefile
 config.status*
 configure
-configure.lineno
 config.in
 config.log
 stamp-h1
