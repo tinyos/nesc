@@ -116,9 +116,15 @@ if ($objtarget eq "") {
     $objtarget =~ s/\.nc$/.s/ if $asmonly;
 }
 
+# Deputy annotations
 if($deputy) {
-    push @nesc_args, "-DSAFE_TINYOS";
+    unshift @nesc_args, "-fnesc-include=deputy_stage1";
+    unshift @nesc_args, "-fnesc-genprefix=#include \"$ENV{NCDIR}/include/deputy_stage2.h\"";
 }
+else {
+    unshift @nesc_args, "-fnesc-include=deputy_nodeputy";
+}
+
 push @nesc_args, $source;
 push @nesc_args, "-o";
 if ($nocompile && !$conly) {

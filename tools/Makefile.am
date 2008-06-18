@@ -29,7 +29,10 @@ geditdir=$(editordir)/gedit
 
 bin_SCRIPTS = nescc-mig nescc-ncg nescc nescc-wiring
 
-ncclib_DATA = genjava.pm 			\
+ncclib_DATA = deputy_nodeputy.h			\
+	      deputy_stage1.h			\
+	      deputy_stage2.h			\
+	      genjava.pm 			\
 	      gencstjava.pm 			\
 	      gencsharp.pm			\
 	      genc.pm				\

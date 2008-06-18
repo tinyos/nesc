@@ -1,4 +1,4 @@
-This is version 1.3.0 (alpha state) of the nesC compiler.
+This is version 1.3.0 (beta2) of the nesC compiler.
 
 Installation instructions are in INSTALL. 
 
@@ -31,6 +31,8 @@ Changes in nesC 1.3.0
   #include of a file with appropriate definitions.
 - wide strings in XML output now show up as arrays of bytes (and follow
   the target's byte-level representation of wide strings)
+- ability to process a C file through nesC (this provides support in C for
+  external types, atomic statements and unique)
   
 
 Changes in nesC 1.2.9
@@ -48,7 +50,7 @@ Changes in nesC 1.2.8
 - -fnesc-cppdir option to save preprocessed output
 - -fnesc-separator option to change symbol separator from $ in generated code
 - little-endian bitfields now supported in network types (thanks to
-  Matti Juhani Öhman <mohman@cc.hut.fi> for the approach and some of the code)
+  Matti Juhani �Öhman <mohman@cc.hut.fi> for the approach and some of the code)
 - internal errors try to report current source location (can be helpful in
   tracking down problems, but only works for errors that occur during parsing)
 - updated vim mode from Cory Sharp (cory@moteiv.com)
