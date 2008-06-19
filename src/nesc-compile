@@ -119,7 +119,7 @@ if ($objtarget eq "") {
 # Deputy annotations
 if($deputy) {
     unshift @nesc_args, "-fnesc-include=deputy_stage1";
-    unshift @nesc_args, "-fnesc-genprefix=#include \"$ENV{NCDIR}/include/deputy_stage2.h\"";
+    unshift @nesc_args, "-fnesc-genprefix=#include \"$ENV{NCDIR}/deputy_stage2.h\"";
 }
 else {
     unshift @nesc_args, "-fnesc-include=deputy_nodeputy";
