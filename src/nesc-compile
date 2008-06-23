@@ -132,6 +132,10 @@ if ($nocompile && !$conly) {
 } else {
     push @nesc_args, $ctarget;
 }
+
+# Check for gcc 4.0.x, which don't tell us about the __STDC__ #define
+unshift @nesc_args, "-D__STDC__" if isgcc40($gcc);
+
 unshift @nesc_args, "nesc1";
 
 &vsystem(@nesc_args);
@@ -191,3 +195,12 @@ sub nextarg {
     return ($i, $arg);
 }
 
+sub isgcc40 {
+    my ($gcc) = @_;
+
+    die "gcc $gcc fails" unless open(GCCV, "gcc -v 2>&1|");
+    while (<GCCV>) {
+	return 1 if /^gcc version 4\.0/;
+    }
+    return 0;
+}
