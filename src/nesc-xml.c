@@ -104,16 +104,20 @@ void xprintf(char *format, ...)
    characters are remapped to 0x2400, except CR, LF and Tab */
 void xqputc(int c)
 {
-  if ((unsigned char)c == c && isprint(c) &&
-      !(c == '"' || c == '<' || c == '&'))
+  /* Ahh, the joys of XML. The control characters are lurking
+     from 0x2400 onwards, except for CR, LF and Tab which exist
+     at their usual value. Furthermore, ", < and & need to be quoted */
+  /* Some characters show up as small numbers */
+  if (c == '"' || c == '<' || c == '&' ||
+      c == '\r' || c == '\n' || c == '\t')
+    xprintf("&#%d;", c);
+  /* Regular ASCII chars show up as themselves */
+  else if ((unsigned char)c == c && isprint(c))
     putc(c, xml_file);
   else 
     {
-      /* Ahh, the joys of XML. The control characters are lurking
-	 from 0x2400 onwards, except for CR, LF and Tab which exist
-	 at their usual value */
-      if (!(c == '\r' || c == '\n' || c == '\t'))
-	c += 0x2400;
+      /* Everything else shows up on the 0x24xx page */
+      c += 0x2400;
       xprintf("&#%d;", c);
     }
 }
