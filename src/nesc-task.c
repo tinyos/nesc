@@ -199,6 +199,8 @@ void handle_task_definition(function_decl fdecl)
 	}
       else
 	{
+	  /* Don't lose safe flag */
+	  rundecl->safe = fdecl->ddecl->safe;
 	  fdecl->ddecl = rundecl;
 	  rundecl->definition = CAST(declaration, fdecl);
 	}
