@@ -23,27 +23,27 @@
 
 #define __NX_DECLARE_FUNCTIONS(bits)					\
   									\
-  inline int ## bits ## _t __nesc_ntoh_int ## bits(const void * COUNT(bits/8) source) { \
+  inline int ## bits ## _t __nesc_ntoh_int ## bits(const void * COUNT(bits/8) source) @safe() { \
     return __nesc_ntoh_uint ## bits(source);				\
   }									\
 									\
-  inline int ## bits ## _t __nesc_hton_int ## bits(void * COUNT(bits/8) target, int ## bits ## _t value) { \
+  inline int ## bits ## _t __nesc_hton_int ## bits(void * COUNT(bits/8) target, int ## bits ## _t value) @safe() { \
     __nesc_hton_uint ## bits(target, value);				\
     return value;							\
   }									\
 									\
-  inline int ## bits ## _t __nesc_ntoh_leint ## bits(const void * COUNT(bits/8) source) { \
+  inline int ## bits ## _t __nesc_ntoh_leint ## bits(const void * COUNT(bits/8) source) @safe() { \
     return __nesc_ntoh_leuint ## bits(source);				\
   }									\
 									\
-  inline int ## bits ## _t __nesc_hton_leint ## bits(void * COUNT(bits/8) target, int ## bits ## _t value) { \
+  inline int ## bits ## _t __nesc_hton_leint ## bits(void * COUNT(bits/8) target, int ## bits ## _t value) @safe() { \
     __nesc_hton_leuint ## bits(target, value);				\
     return value;							\
   }
 
 #define __NX_DECLARE_BF_FUNCTIONS(bits)					\
 									\
-  uint ## bits ## _t __nesc_bf_decode ## bits(const uint8_t *msg, unsigned offset, uint8_t length) \
+  uint ## bits ## _t __nesc_bf_decode ## bits(const uint8_t *msg, unsigned offset, uint8_t length) @safe() \
   {									\
     uint ## bits ## _t x = 0;						\
     unsigned byte_offset = offset >> 3;					\
@@ -75,7 +75,7 @@
     return x;								\
   }									\
 									\
-  void __nesc_bf_encode ## bits(uint8_t *msg, unsigned offset, uint8_t length, uint ## bits ## _t x) \
+  void __nesc_bf_encode ## bits(uint8_t *msg, unsigned offset, uint8_t length, uint ## bits ## _t x) @safe() \
   {									\
     unsigned byte_offset = offset >> 3;					\
     unsigned bit_offset = offset & 7;					\
@@ -116,26 +116,26 @@
       }									\
   }									\
 									\
-  inline uint ## bits ## _t __nesc_ntohbf_uint ## bits(const void *source, unsigned offset, uint8_t length) { \
+  inline uint ## bits ## _t __nesc_ntohbf_uint ## bits(const void *source, unsigned offset, uint8_t length) @safe() { \
     return __nesc_bf_decode ## bits(source, offset, length);		\
   }									\
 									\
-  inline int ## bits ## _t __nesc_ntohbf_int ## bits(const void *source, unsigned offset, uint8_t length) { \
+  inline int ## bits ## _t __nesc_ntohbf_int ## bits(const void *source, unsigned offset, uint8_t length) @safe() { \
     return __nesc_bf_decode ## bits(source, offset, length);		\
   }									\
 									\
-  inline uint ## bits ## _t __nesc_htonbf_uint ## bits(void *target, unsigned offset, uint8_t length, uint ## bits ## _t value) { \
+  inline uint ## bits ## _t __nesc_htonbf_uint ## bits(void *target, unsigned offset, uint8_t length, uint ## bits ## _t value) @safe() { \
     __nesc_bf_encode ## bits(target, offset, length, value);		\
     return value;							\
   }									\
 									\
-  inline int ## bits ## _t __nesc_htonbf_int ## bits(void *target, unsigned offset, uint8_t length, int ## bits ## _t value) { \
+  inline int ## bits ## _t __nesc_htonbf_int ## bits(void *target, unsigned offset, uint8_t length, int ## bits ## _t value) @safe() { \
     __nesc_bf_encode ## bits(target, offset, length, value);		\
     return value;							\
   }									\
 									\
   /* Little-endian functions */						\
-  uint ## bits ## _t __nesc_bfle_decode ## bits(const uint8_t *msg, unsigned offset, uint8_t length) \
+  uint ## bits ## _t __nesc_bfle_decode ## bits(const uint8_t *msg, unsigned offset, uint8_t length) @safe() \
   {									\
     uint ## bits ## _t x = 0;						\
     unsigned byte_offset = offset >> 3;					\
@@ -166,7 +166,7 @@
     return x;								\
   }									\
 									\
-  void __nesc_bfle_encode ## bits(uint8_t *msg, unsigned offset, uint8_t length, uint ## bits ## _t x)					       \
+  void __nesc_bfle_encode ## bits(uint8_t *msg, unsigned offset, uint8_t length, uint ## bits ## _t x) @safe() 					       \
   {									\
     unsigned byte_offset = offset >> 3;					\
     unsigned bit_offset = offset & 7;					\
@@ -210,20 +210,20 @@
       }									\
   }									\
 									\
-  inline uint ## bits ## _t __nesc_ntohbf_leuint ## bits(const void *source, unsigned offset, uint8_t length) { \
+  inline uint ## bits ## _t __nesc_ntohbf_leuint ## bits(const void *source, unsigned offset, uint8_t length) @safe() { \
     return __nesc_bfle_decode ## bits(source, offset, length);		\
   }									\
 									\
-  inline int ## bits ## _t __nesc_ntohbf_leint ## bits(const void *source, unsigned offset, uint8_t length) { \
+  inline int ## bits ## _t __nesc_ntohbf_leint ## bits(const void *source, unsigned offset, uint8_t length) @safe() { \
     return __nesc_bfle_decode ## bits(source, offset, length);		\
   }									\
 									\
-  inline uint ## bits ## _t __nesc_htonbf_leuint ## bits(void *target, unsigned offset, uint8_t length, uint ## bits ## _t value) { \
+  inline uint ## bits ## _t __nesc_htonbf_leuint ## bits(void *target, unsigned offset, uint8_t length, uint ## bits ## _t value) @safe() { \
     __nesc_bfle_encode ## bits(target, offset, length, value);		\
     return value;							\
   }									\
 									\
-  inline int ## bits ## _t __nesc_htonbf_leint ## bits(void *target, unsigned offset, uint8_t length, int ## bits ## _t value) { \
+  inline int ## bits ## _t __nesc_htonbf_leint ## bits(void *target, unsigned offset, uint8_t length, int ## bits ## _t value) @safe() { \
     __nesc_bfle_encode ## bits(target, offset, length, value);		\
     return value;							\
   }									\
@@ -232,23 +232,23 @@
 /* 8-bits */
 /* ------ */
 
-inline uint8_t __nesc_ntoh_uint8(const void * ONE source) {
+inline uint8_t __nesc_ntoh_uint8(const void * ONE source) @safe() {
   const uint8_t *base = source;
   return base[0];
 }
 
-inline uint8_t __nesc_hton_uint8(void * ONE target, uint8_t value) {
+inline uint8_t __nesc_hton_uint8(void * ONE target, uint8_t value) @safe() {
   uint8_t *base = target;
   base[0] = value;
   return value;
 }
 
-inline uint8_t __nesc_ntoh_leuint8(const void * ONE source) {
+inline uint8_t __nesc_ntoh_leuint8(const void * ONE source) @safe() {
   const uint8_t *base = source;
   return base[0];
 }
 
-inline uint8_t __nesc_hton_leuint8(void * ONE target, uint8_t value) {
+inline uint8_t __nesc_hton_leuint8(void * ONE target, uint8_t value) @safe() {
   uint8_t *base = target;
   base[0] = value;
   return value;
@@ -261,24 +261,24 @@ __NX_DECLARE_BF_FUNCTIONS(8)
 /* 16-bits */
 /* ------- */
 
-inline uint16_t __nesc_ntoh_uint16(const void * COUNT(2) source) {
+inline uint16_t __nesc_ntoh_uint16(const void * COUNT(2) source) @safe() {
   const uint8_t *base = source;
   return (uint16_t)base[0] << 8 | base[1];
 }
 
-inline uint16_t __nesc_hton_uint16(void * COUNT(2) target, uint16_t value) {
+inline uint16_t __nesc_hton_uint16(void * COUNT(2) target, uint16_t value) @safe() {
   uint8_t *base = target;
   base[1] = value;
   base[0] = value >> 8;
   return value;
 }
 
-inline uint16_t __nesc_ntoh_leuint16(const void * COUNT(2) source) {
+inline uint16_t __nesc_ntoh_leuint16(const void * COUNT(2) source) @safe() {
   const uint8_t *base = source;
   return (uint16_t)base[1] << 8 | base[0];
 }
 
-inline uint16_t __nesc_hton_leuint16(void * COUNT(2) target, uint16_t value) {
+inline uint16_t __nesc_hton_leuint16(void * COUNT(2) target, uint16_t value) @safe() {
   uint8_t *base = target;
   base[0] = value;
   base[1] = value >> 8;
@@ -291,14 +291,14 @@ __NX_DECLARE_BF_FUNCTIONS(16)
 
 /* 32-bits */
 /* ------- */
-inline uint32_t __nesc_ntoh_uint32(const void * COUNT(4) source) {
+inline uint32_t __nesc_ntoh_uint32(const void * COUNT(4) source) @safe() {
   const uint8_t *base = source;
   return (uint32_t)base[0] << 24 |
          (uint32_t)base[1] << 16 |
          (uint32_t)base[2] << 8 | base[3];
 }
 
-inline uint32_t __nesc_hton_uint32(void * COUNT(4) target, uint32_t value) {
+inline uint32_t __nesc_hton_uint32(void * COUNT(4) target, uint32_t value) @safe() {
   uint8_t *base = target;
   base[3] = value;
   base[2] = value >> 8;
@@ -307,14 +307,14 @@ inline uint32_t __nesc_hton_uint32(void * COUNT(4) target, uint32_t value) {
   return value;
 }
 
-inline uint32_t __nesc_ntoh_leuint32(const void * COUNT(4) source) {
+inline uint32_t __nesc_ntoh_leuint32(const void * COUNT(4) source) @safe() {
   const uint8_t *base = source;
   return (uint32_t)base[3] << 24 |
          (uint32_t)base[2] << 16 |
          (uint32_t)base[1] << 8 | base[0];
 }
 
-inline uint32_t __nesc_hton_leuint32(void * COUNT(4) target, uint32_t value) {
+inline uint32_t __nesc_hton_leuint32(void * COUNT(4) target, uint32_t value) @safe() {
   uint8_t *base = target;
   base[0] = value;
   base[1] = value >> 8;
@@ -329,7 +329,7 @@ __NX_DECLARE_BF_FUNCTIONS(32)
 
 /* 64-bits */
 /* ------- */
-inline uint64_t __nesc_ntoh_uint64(const void * COUNT(8) source) {
+inline uint64_t __nesc_ntoh_uint64(const void * COUNT(8) source) @safe() {
   const uint8_t *base = source;
   return (uint64_t)base[0] << 56 |
          (uint64_t)base[1] << 48 |
@@ -340,7 +340,7 @@ inline uint64_t __nesc_ntoh_uint64(const void * COUNT(8) source) {
          (uint64_t)base[6] << 8  | base[7];
 }
 
-inline uint64_t __nesc_hton_uint64(void * COUNT(8) target, uint64_t value) {
+inline uint64_t __nesc_hton_uint64(void * COUNT(8) target, uint64_t value) @safe() {
   uint8_t *base = target;
   base[7] = value;
   base[6] = value >> 8;
@@ -353,7 +353,7 @@ inline uint64_t __nesc_hton_uint64(void * COUNT(8) target, uint64_t value) {
   return value;
 }
 
-inline uint64_t __nesc_ntoh_leuint64(const void * COUNT(8) source) {
+inline uint64_t __nesc_ntoh_leuint64(const void * COUNT(8) source) @safe() {
   const uint8_t *base = source;
   return (uint64_t)base[7] << 56 |
          (uint64_t)base[6] << 48 |
@@ -364,7 +364,7 @@ inline uint64_t __nesc_ntoh_leuint64(const void * COUNT(8) source) {
          (uint64_t)base[1] << 8  | base[0];
 }
 
-inline uint64_t __nesc_hton_leuint64(void * COUNT(8) target, uint64_t value) {
+inline uint64_t __nesc_hton_leuint64(void * COUNT(8) target, uint64_t value) @safe() {
   uint8_t *base = target;
   base[0] = value;
   base[1] = value >> 8;
