@@ -301,9 +301,9 @@ static bool prt_network_assignment(expression e)
       const char *temp = a->temp1->name;
       bool bitfield;
 
-      output("(%s = (unsigned char *)&", temp);
+      output("(%s = (", temp);
       bitfield = prt_network_lvalue(a->arg1);
-      output(", ");
+      output(").data, ");
       output_hton_expr(a->arg1);
       output("(%s", temp);
       if (bitfield)
@@ -320,9 +320,9 @@ static bool prt_network_assignment(expression e)
   else
     {
       output_hton_expr(a->arg1);
-      output("((unsigned char *)&");
+      output("((");
       prt_network_full_lvalue(a->arg1);
-      output(", ");
+      output(").data, ");
       prt_expression(a->arg2, P_ASSIGN);
       output(")");
     }
@@ -346,9 +346,9 @@ static bool prt_network_increment(expression e)
   /* pre-op:  (t1 = &e, HTON(t1, (t2 = NTOH(t1) +/- 1)), t2)
      post-op: (t1 = &e, HTON(t1, (t2 = NTOH(t1)) +/- 1), t2) */
   set_location(i->location);
-  output("(%s = (unsigned char *)&", temp);
+  output("(%s = (", temp);
   bitfield = prt_network_lvalue(i->arg1);
-  output(", ");
+  output(").data, ");
   output_hton_expr(i->arg1);
   output("(%s", temp);
   if (bitfield)
@@ -377,9 +377,9 @@ static bool prt_network_read(expression e)
     return FALSE;
 
   output_ntoh_expr(e);
-  output("((unsigned char *)&");
+  output("((");
   prt_network_full_lvalue(e);
-  output(")");
+  output(").data)");
 
   return TRUE;
 }
@@ -404,7 +404,7 @@ bool prt_network_typedef(data_decl d, variable_decl vd)
       else
 	{
 	  set_location(vd->location);
-	  output("typedef struct { char data[%d]; } __attribute__((packed)) %s;",
+	  output("typedef struct { unsigned char data[%d]; } __attribute__((packed)) %s;",
 		 (int)type_size_int(basetype), vd->ddecl->name);
 	}
       return TRUE;
@@ -437,7 +437,7 @@ static bool prt_network_parameter_copy(declaration parm, bool copies,
 	  else
 	    {
 	      output_hton(ddecl->type);
-	      outputln("((unsigned char *)&%s, %s%s);", ddecl->name, NXBASE_PREFIX, ddecl->name);
+	      outputln("((%s).data, %s%s);", ddecl->name, NXBASE_PREFIX, ddecl->name);
 	    }
 
 	  return TRUE;
