@@ -5,6 +5,7 @@
 #define __DEPUTY_COUNT(__n)                    __DEPUTY_NONNULL(__n) __DEPUTY_COUNT_NOK(__n)
 #define __DEPUTY_ONE_NOK(__n)                  __DEPUTY_COUNT_NOK(1)
 #define __DEPUTY_ONE(__n)                      __DEPUTY_NONNULL(__n) __DEPUTY_ONE_NOK(__n)
+#define __DEPUTY_NTS(__n)                      __attribute__((nullterm)) __DEPUTY_COUNT_NOK(0)
 #define __DEPUTY_TRUSTEDBLOCK                  __blockattribute__((trusted))
 #define __DEPUTY_DMEMSET(x,y,z)                __attribute__((dmemset((x),(y),(z))))
 #define __DEPUTY_DMEMCPY(x,y,z)                __attribute__((dmemcpy((x),(y),(z))))

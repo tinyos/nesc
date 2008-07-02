@@ -14,6 +14,7 @@ struct @one @deputy_scope() @macro("__DEPUTY_ONE") { };
 struct @one_nok @deputy_scope() @macro("__DEPUTY_ONE_NOK") { };
 struct @dmemset @deputy_scope() @macro("__DEPUTY_DMEMSET") { int a1, a2, a3; };
 struct @dmemcpy @deputy_scope() @macro("__DEPUTY_DMEMCPY") { int a1, a2, a3; };
+struct @nts @deputy_scope() @macro("__DEPUTY_NTS") { }; 
 
 #define NONNULL                                @nonnull()
 #define BND(x,y)                               @bnd(x,y)
@@ -25,6 +26,7 @@ struct @dmemcpy @deputy_scope() @macro("__DEPUTY_DMEMCPY") { int a1, a2, a3; };
 #define DMEMSET(x,y,z)                         @dmemset(x,y,z)
 #define DMEMCPY(x,y,z)                         @dmemcpy(x,y,z)
 #define TRUSTEDBLOCK                           @unsafe()
+#define NTS                                    @nts()
 
 #define __DEPUTY_TRUSTED                       __attribute__((trusted))
 #define __DEPUTY_COPYTYPE                      __attribute__((copytype))
