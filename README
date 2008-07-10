@@ -1,4 +1,4 @@
-This is version 1.3.0 (beta2) of the nesC compiler.
+This is version 1.3.0 (beta5) of the nesC compiler.
 
 Installation instructions are in INSTALL. 
 
@@ -6,18 +6,42 @@ Changes in nesC 1.3.0
 =====================
 - C preprocessor is integrated into nesC, which should significantly speed
   up compilation (esp. on Windows)
+
 - Support for the Deputy type-safety-for-C system (see
-  deputy.cs.berkeley.edu), which takes the form of a -safe/-unsafe
-  argument to nescc (not yet implemented in this alpha release), extra
-  information on types via nesC attributes (@count(<expr>), @nts,
-  etc), @safe() and @unsafe() nesC attributes to turn safety on/off on
-  a per-function or per-module basis (safety defaults to off). 
-  Furthermore, deputy's attributes can be placed in nesdoc comments
-  to avoid cluttering/confusing existing type declarations:
+  deputy.cs.berkeley.edu). To use Deputy, you add type annotations to
+  your nesC code, then compile with the -fnesc-deputy flag. A bunch of
+  small changes to nesC support the use of deputy. 
+
+  Flags to nescc:
+  -fnesc-deputy: use Deputy in this compilation. You need to have
+   a version of Deputy customized for use with nesC installed for
+   this to work.
+  -fnesc-deputy-args: extra arguments to pass to Deputy.
+  -fnesc-default-safe/-fnesc-default-unsafe: the default safety for
+   C functions and nesC modules (with no option specified, 
+   -fnesc-default-unsafe is assumed)
+
+  Type annotations: NONULL, COUNT(...), etc (see the Deputy-for-nesC
+  documentation for full details), which are actually macros which
+  expand to nesC attributes (@nonnull(), @count(...), etc. Using macros
+  allows Deputy-annotated code to be used with earlier versions of nesC.
+
+  Type annotations in nesdoc comments: to reduce clutter for non-Deputy
+  users, Deputy's annotations can be placed within a nesdoc comment
+  rather than in a function signature (which then looks like a regular
+  C signature):
     /** ... @param 'int *@count(n) x' x is an array of n ints ... */
     void f(int *x, int n);
+  is the same as
+    void f(int *@count(n) x, int n);
+  Macros can be used in the comment, so the above could also be
+    /** ... @param 'int *COUNT(n) x' x is an array of n ints ... */
+    void f(int *x, int n);
+  where COUNT(expr) expands to @count(expr).
+
 - Internal support (in nesc1) for Deputy based on @deputy_scope() and
   @macro("NAME") attributes, and a -fnesc-genprefix=<line> option.
+
 - @macro() and -fnesc-genprerix= may be useful in other contexts too:
   if a nesC attribute declaration has an @macro() attribute:
     struct @myattr @macro("MYMACRO") { int x; char *y; };
@@ -29,10 +53,19 @@ Changes in nesC 1.3.0
   The -fnesc-genprefix=<line> adds <line> to the start of the generated C
   output, e.g., it could be a #define definition for MYMACRO, or a 
   #include of a file with appropriate definitions.
+
 - wide strings in XML output now show up as arrays of bytes (and follow
   the target's byte-level representation of wide strings)
+
 - ability to process a C file through nesC (this provides support in C for
-  external types, atomic statements and unique)
+  external types, atomic statements and unique), as follows:
+    nescc <options> -x nesc <filename>.c
+  This forces nescc to pass the C file <filename>.c through the nesC compiler
+  (normally it would be sent to the regular C compiler), which will process
+  the nesC extensions and then compile the generated C code with the regular
+  C compiler (or whatever compiler was specified with -fnesc-gcc=...)
+
+- inside a module, you can now write void f(void) or void f() interchangeably
   
 
 Changes in nesC 1.2.9
