@@ -1,7 +1,7 @@
 cd $1
 cfile=/tmp/runnable.$$.c
 exe=/tmp/runnable.out.$$
-$NESC1 -fnesc-include=nesc_nx -I/usr/lib/ncc test.nc -o $cfile && \
+$NESC1 -fnesc-include=deputy_nodeputy -fnesc-include=nesc_nx -I/usr/lib/ncc test.nc -o $cfile && \
 gcc -o $exe $cfile && \
 $exe
 ok=$?

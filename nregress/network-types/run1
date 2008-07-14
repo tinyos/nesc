@@ -1,1 +1,1 @@
-$NESC1 -fnesc-gcc=avr-gcc -I$NESC/tools -fnesc-target=avr -fnesc-include=nx -fnesc-include=nesc_nx $1 >/dev/null
+$NESC1 -fnesc-gcc=avr-gcc -I$NESC/tools -fnesc-target=avr -fnesc-include=nx -fnesc-include=deputy_nodeputy -fnesc-include=nesc_nx $1 >/dev/null
