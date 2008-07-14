@@ -241,11 +241,17 @@ static bool prt_network_lvalue(expression e)
   bool isbf = network_bitfield(e);
 
   if (isbf)
-    /* Network bitfields have no name in the generated code. Just
-       print the structure. We'll add the offset and size later. */
-    prt_expression(CAST(field_ref, e)->arg1, P_CALL);
+    {
+      /* Network bitfields have no name in the generated code. Just
+	 print the structure. We'll add the offset and size later. */
+      output("(unsigned char *)&");
+      prt_expression(CAST(field_ref, e)->arg1, P_CALL);
+    }
   else
-    prt_expression_helper(e, P_CAST);
+    {
+      prt_expression_helper(e, P_CALL);
+      output(".data");
+    }
 
   return isbf;
 }
@@ -301,9 +307,9 @@ static bool prt_network_assignment(expression e)
       const char *temp = a->temp1->name;
       bool bitfield;
 
-      output("(%s = (", temp);
+      output("(%s = ", temp);
       bitfield = prt_network_lvalue(a->arg1);
-      output(").data, ");
+      output(", ");
       output_hton_expr(a->arg1);
       output("(%s", temp);
       if (bitfield)
@@ -320,9 +326,9 @@ static bool prt_network_assignment(expression e)
   else
     {
       output_hton_expr(a->arg1);
-      output("((");
+      output("(");
       prt_network_full_lvalue(a->arg1);
-      output(").data, ");
+      output(", ");
       prt_expression(a->arg2, P_ASSIGN);
       output(")");
     }
@@ -346,9 +352,9 @@ static bool prt_network_increment(expression e)
   /* pre-op:  (t1 = &e, HTON(t1, (t2 = NTOH(t1) +/- 1)), t2)
      post-op: (t1 = &e, HTON(t1, (t2 = NTOH(t1)) +/- 1), t2) */
   set_location(i->location);
-  output("(%s = (", temp);
+  output("(%s = ", temp);
   bitfield = prt_network_lvalue(i->arg1);
-  output(").data, ");
+  output(", ");
   output_hton_expr(i->arg1);
   output("(%s", temp);
   if (bitfield)
@@ -377,9 +383,9 @@ static bool prt_network_read(expression e)
     return FALSE;
 
   output_ntoh_expr(e);
-  output("((");
+  output("(");
   prt_network_full_lvalue(e);
-  output(").data)");
+  output(")");
 
   return TRUE;
 }
@@ -437,7 +443,7 @@ static bool prt_network_parameter_copy(declaration parm, bool copies,
 	  else
 	    {
 	      output_hton(ddecl->type);
-	      outputln("((%s).data, %s%s);", ddecl->name, NXBASE_PREFIX, ddecl->name);
+	      outputln("(%s.data, %s%s);", ddecl->name, NXBASE_PREFIX, ddecl->name);
 	    }
 
 	  return TRUE;
