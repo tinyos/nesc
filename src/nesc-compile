@@ -198,7 +198,7 @@ sub nextarg {
 sub isgcc40 {
     my ($gcc) = @_;
 
-    die "gcc $gcc fails" unless open(GCCV, "gcc -v 2>&1|");
+    die "gcc $gcc fails" unless open(GCCV, "$gcc -v 2>&1|");
     while (<GCCV>) {
 	return 1 if /^gcc version 4\.0/;
     }
