@@ -105,7 +105,8 @@
         </Int>
         <HlCChar attribute="Char" context="#stay"/>
         <DetectChar attribute="String" context="String" char="&quot;"/>
-        <Detect2Chars attribute="Comment" context="Commentar" char="/" char1="*" beginRegion="Comment"/>
+	<Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
         <StringDetect attribute="Preprocessor" context="Outscoped" String="#if 0" insensitive="FALSE"/>
         <DetectChar attribute="Preprocessor" context="Preprocessor" char="#"/>
         <RegExpr attribute="Function" context="#stay" String="\b[_\w][_\w\d]*(?=[\s]*[(])" />
@@ -120,10 +121,22 @@
       <context attribute="Normal Text" lineEndContext="#pop" name="Member">
         <RegExpr attribute="Function" context="#pop" String="\b[_\w][_\w\d]*(?=[\s]*)" />
       </context>
-      <context attribute="Comment" lineEndContext="#stay" name="Commentar">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
-        <keyword attribute="Decimal" context="#stay" String="attention" />
+      
+            
+      
+      <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
+	      <IncludeRules context="##Alerts" />
       </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+	      <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+	      <keyword attribute="Decimal" context="#stay" String="attention" />
+      </context>
+      
+      
+      
+      
+      
+      
       <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
         <LineContinue attribute="Preprocessor" context="#stay"/>
         <RegExpr attribute="Preprocessor" context="Define" String="define.*((?=\\))"/>
