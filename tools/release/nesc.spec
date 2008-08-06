@@ -1,9 +1,9 @@
-%define version 1.2.9
+%define version 1.3.0
 %define theprefix /usr
 
 Summary: nesC compiler 
 Name: nesc
-Version: 1.2.9
+Version: 1.3.0
 Release: 1
 License: GNU GPL Version 2
 Packager: TinyOS Group, UC Berkeley
@@ -13,10 +13,11 @@ Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-root
 
 %description
-nesC is a compiler for a C-based language designed to 
-support embedded systems including TinyOS. nesC provides 
-several advantages for the TinyOS compiler infrastructure: improved
-syntax, abundant error reporting, and Java-like interfaces.
+nesC is a compiler for a C-based language designed to support embedded
+systems including TinyOS. nesC provides several advantages for the
+TinyOS compiler infrastructure: improved syntax, support for full type
+safety, abundant error reporting, generic components, and Java-like
+interfaces.
 
 %prep
 %setup -q
@@ -38,6 +39,8 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %doc
 
 %changelog
+* Wed Aug 6 2008  <david.e.gay@intel.com> 1.3.0
+- Deputy support
 * Tue Jul 3 2007  <david.e.gay@intel.com> 1.2.9
 * Wed Dec 20 2006  <david.e.gay@intel.com> 1.2.8a
 * Fri Dec 1 2006  <david.e.gay@intel.com> 1.2.8
