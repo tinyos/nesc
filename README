@@ -1,4 +1,4 @@
-This is version 1.3.0 (beta5) of the nesC compiler.
+This is version 1.3.0 of the nesC compiler.
 
 Installation instructions are in INSTALL. 
 
@@ -7,7 +7,7 @@ Changes in nesC 1.3.0
 - C preprocessor is integrated into nesC, which should significantly speed
   up compilation (esp. on Windows)
 
-- Support for the Deputy type-safety-for-C system (see
+- support for the Deputy type-safety-for-C system (see
   deputy.cs.berkeley.edu). To use Deputy, you add type annotations to
   your nesC code, then compile with the -fnesc-deputy flag. A bunch of
   small changes to nesC support the use of deputy. 
@@ -39,7 +39,7 @@ Changes in nesC 1.3.0
     void f(int *x, int n);
   where COUNT(expr) expands to @count(expr).
 
-- Internal support (in nesc1) for Deputy based on @deputy_scope() and
+- internal support (in nesc1) for Deputy based on @deputy_scope() and
   @macro("NAME") attributes, and a -fnesc-genprefix=<line> option.
 
 - @macro() and -fnesc-genprerix= may be useful in other contexts too:
