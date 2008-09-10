@@ -1,0 +1,2 @@
+cd $1
+$NESC1 `cat flags` test.nc >/dev/null

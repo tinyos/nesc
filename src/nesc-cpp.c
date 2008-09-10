@@ -143,6 +143,13 @@ void preprocess_init(void)
 	    cpp_assert(reader, opt->arg);
 	}
     }
+  if (use_nido)
+    {
+      char *buf = alloca(16 + strlen(nido_num_nodes));
+
+      sprintf(buf, "TOSH_NUM_NODES=%s", nido_num_nodes);
+      cpp_define(reader, buf);
+    }
   end_lex();
   current.lex.input = NULL;
   deleteregion_ptr(&current.fileregion);
