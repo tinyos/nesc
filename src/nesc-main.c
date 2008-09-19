@@ -47,18 +47,21 @@ Boston, MA 02111-1307, USA.  */
 #include "machine.h"
 #include "nesc-atomic.h"
 #include "unparse.h"
+#include "nesc-main.h"
+
 
 /* The set of C files to require before loading the main component */
 struct ilist
 {
   struct ilist *next;
   char *name;
+  bool name_is_path;
 };
 
 static struct ilist *includelist, **includelist_end = &includelist;
 static region includeregion;
 
-void add_nesc_include(const char *name)
+void add_nesc_include(const char *name, bool name_is_path)
 {
   struct ilist *np;
 
@@ -68,6 +71,7 @@ void add_nesc_include(const char *name)
   np = ralloc(includeregion, struct ilist);
   np->next = NULL;
   np->name = rstrdup(includeregion, name);
+  np->name_is_path = name_is_path;
 
   *includelist_end = np;
   includelist_end = &np->next;
@@ -177,7 +181,7 @@ int nesc_option(char *p)
     }
   else if (!strncmp (p, "fnesc-include=", strlen("fnesc-include=")))
     {
-      add_nesc_include(p + strlen("fnesc-include="));
+      add_nesc_include(p + strlen("fnesc-include="), FALSE);
     }
   else if (!strncmp (p, "fnesc-path=", strlen("fnesc-path=")))
     {
@@ -365,7 +369,10 @@ void nesc_compile(const char *filename, const char *target_name)
     target->init();
 
   for (includes = includelist; includes; includes = includes->next)
-    require_c(toplevel_location, includes->name);
+    if (includes->name_is_path)
+      load_c(toplevel_location, includes->name, TRUE);
+    else
+      require_c(toplevel_location, includes->name);
 
   if (flag_use_scheduler)
     load_scheduler();

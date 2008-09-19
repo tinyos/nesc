@@ -18,10 +18,10 @@ Boston, MA 02111-1307, USA.  */
 #ifndef NESC_MAIN_H
 #define NESC_MAIN_H
 
-void add_nesc_include(const char *name);
+void add_nesc_include(const char *name, bool name_is_path);
 void nesc_compile(const char *component_name, const char *target_name);
 
-bool nesc_option(char *p);
+int nesc_option(char *p);
 /* Effects: If p is a nesC option, set flags appropriately.
    Returns: TRUE iff p was a nesC option
 */

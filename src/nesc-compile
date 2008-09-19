@@ -54,6 +54,10 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	    push @gcc_args, "--param";
 	    push @gcc_args, $param;
 	}
+	elsif (/^-include$/) {
+	    ($i, $file) = &nextarg($i);
+	    push @nesc_args, "-include", $file;
+	}
 	elsif (/^-S$/) {
 	    $asmonly = 1;
 	}

@@ -341,6 +341,8 @@ int region_main(int argc, char **argv) deletes
 		    }
 		}
 	    }
+	  else if (!strcmp(str, "include"))
+	    add_nesc_include(arg, TRUE);
 	}
       else
 	filename = argv[i++];
