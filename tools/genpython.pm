@@ -95,10 +95,10 @@ sub gen() {
 	    if ($bitlength > 32) {
 	      print "                s += \"0x%x \" % (self.getElement_$pythonfield(i))\n";
 	    }
-	    elsif (bitlength > 16) {
+	    elsif ($bitlength > 16) {
 	      print "                s += \"0x%x \" % (self.getElement_$pythonfield(i) & 0xffffffff)\n";
 	    }
-	    elsif (bitlength > 8) {
+	    elsif ($bitlength > 8) {
 	      print "                s += \"0x%x \" % (self.getElement_$pythonfield(i) & 0xffff)\n";
 	    }
 	    else {
