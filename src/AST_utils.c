@@ -371,3 +371,15 @@ bool is_attr_name(const char *arg, const char *name)
   l = strlen(name);
   return !strncmp(arg + 2, name, l) && !strcmp(arg + 2 + l, "__");
 }
+
+type_element interesting_element(type_element elems)
+{
+  type_element elem;
+
+  scan_type_element (elem, elems)
+    if (is_tag_ref(elem))
+      return elem;
+
+  return NULL;
+}
+

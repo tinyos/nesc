@@ -85,4 +85,6 @@ char *ddecl2str(region r, data_declaration str);
 bool is_attr_name(const char *arg, const char *name);
 /* Returns: True if arg is name or __name__ */
 
+type_element interesting_element(type_element elems);
+
 #endif

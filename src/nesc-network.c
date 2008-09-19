@@ -493,6 +493,7 @@ void prt_network_field_data_decl(data_decl d, struct network_state *ns)
 {
   declaration fd;
   psd_options opts = 0;
+  type_element interesting;
 
   scan_declaration (fd, d->decls)
     {
@@ -521,8 +522,19 @@ void prt_network_field_data_decl(data_decl d, struct network_state *ns)
 	  outputln(";");
 	}
     }
+  /* If there's an unnamed struct/union field, we need to print it and 
+     account for its size in ns */
   if (!(opts & psd_duplicate))
-    prt_interesting_elements(d->modifiers, opts);
+    scan_type_element (interesting, d->modifiers)
+      if (is_tag_ref(interesting))
+	{
+	  tag_ref tr = CAST(tag_ref, interesting);
+
+	  prt_type_element(interesting, opts);
+	  outputln(";");
+	  if (cval_isinteger(tr->tdecl->size))
+	    ns->offset += cval_uint_value(tr->tdecl->size);	  
+	}
 }
 
 void prt_network_field_declaration(declaration d, struct network_state *ns)

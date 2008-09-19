@@ -592,17 +592,6 @@ void prt_ellipsis_decl(ellipsis_decl d)
   output("...");
 }
 
-static type_element interesting_element(type_element elems)
-{
-  type_element elem;
-
-  scan_type_element (elem, elems)
-    if (is_tag_ref(elem))
-      return elem;
-
-  return NULL;
-}
-
 static void prt_prefix(location loc, data_declaration ddecl,
 		       type_element modifiers)
 {
