@@ -185,6 +185,7 @@ sub basetype()
 
     return "PUSH" if $basetype =~ /^AN?[SU]$/;
     return "POP" if $basetype eq "AX";
+    return "F" if $basetype =~ /^Nnx_float/;
     return "U" if $basetype =~ /^Nnxle_u/;
     return "I" if $basetype =~ /^Nnxle_/;
     return "BU" if $basetype =~ /^Nnx_u/;
