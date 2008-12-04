@@ -1,0 +1,36 @@
+== Objects ==
+
+The abstract syntax tree (AST) is defined using a "pure data" (no methods) object-oriented style:
+* a node type is defined by its name, super-type, and fields; there is a root type called '''node'''
+* the actual fields of a node type are the union of its own fields and of those of its super-type
+* all node types have a '''kind''' field that identifies the nodes actual type, allowing for up- and down-casts
+* fields are either data fields (some piece of information, e.g. the name of an identifier) or tree fields, representing a child of the current node in the AST; this child relationship is used in the tree walker (AST_walk.h) and a few other places
+
+Because C is not an object-oriented language, these node types are defined in a file called nodetypes.def, and a series of emacs-lisp scripts generate C types, macros and functions for manipulating the AST nodes. Specifically, if ''X'' is a node definition with fields ''f1'', ..., ''fn'' and super-type ''Y'' then
+
+* ''X'' and ''Y'' are C pointer types to ''AST_X'', ''AST_Y'' structures respectively
+* ''AST_X'', ''AST_Y'' have an initial integer field called '''kind'''
+* the other fields of ''AST_X'' are: the fields of ''AST_Y'', followed by ''f1'', ..., ''fn''
+* ''new_X'', ''new_Y'' allocate nodes of type ''X'' and ''Y'' respectively; these constructors take as arguments a subset of the fields of ''X'', ''Y'' (the choice is made on a per-field basis in nodetypes.def)
+* ''CAST(T, e)''  does a checked cast of expression e to type T; T must be a super- or sub-type of the actual (runtime) type of ''e'' (a pointer to some node)
+* ''CASTPTR(T, e)'' does the same as ''CAST(T, e)'' except that ''e'' must evaluate to a pointer to a pointer to some node (''CASTSRPTR(T, e)'' is the same as ''CASTPTR(T, e)'')
+* ''is_X(e)'' is true if the node ''e'' points to is an ''X'' or a subtype of ''X''
+
+== Lists ==
+
+The '''node''' type has a '''next''' field which points to another node. This is used to represent homogeneous lists of AST nodes, which are rather common (e.g. lists of declarations, lists of arguments to a function, etc, etc). Thus in a node ''a'' whose dynamic type is ''X'', the runtime type of ''a->next'' must be ''X'' even though its static type is '''node'''.
+
+The following functions are defined to simplify handling these lists: for every node type ''X'':
+* ''last_X(a)'' returns the last element in the list rooted at ''a''
+* ''X_length(a)'' returns the length of the list rooted at ''a''
+* ''X_reverse(a)'' reverses the list rooted at ''a''
+* ''scan_X (p, a) s'' iterates ''p'' over the list ''a'', executing statement ''s'' at each list element
+* ''X_merge(a, b)'' concatenates lists ''a'' and ''b''
+
+== Other operations ==
+
+AST nodes have '''parent''' and '''parentptr''' (pointer to the pointer to me in my parent) fields. These are not set automatically, instead a call to '''AST_set_parents(a)''' sets these fields in an AST rooted at ''a''. Individual '''parent''' and ''parentptr'' fields can be set with '''set_parent''' and '''set_parent_list'''.
+
+'''AST_print(a)''' prints the abstract syntax tree rooted at ''a'' (useful for debugging).
+
+The AST_walk.h implements a visitor pattern for abstract syntax trees. You define the operation to perform on some node types (the operation applies to a node type and all its subtype, unless you override it on specific subtypes). The default action is just to visit AST children recursively.

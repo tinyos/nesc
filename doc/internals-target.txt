@@ -1,0 +1,32 @@
+== Target machine specification ==
+
+nesC is a cross-compiler, and uses a target-machine specification to handle various target-dependent aspects of C, as well as idiosyncrasies/extensions present in particular targets. Because nesC generates C code, these target machine specifications remain pretty simple and straightforward, especially for targets that use gcc as their C compiler.
+
+The target is specified by passing a -fnesc-target=''name'' option to nescc. ''name'' must be one of the targets known in machine.c, currently ''self'' (for non-cross compilation, usually combined with tossim), ''avr'', ''msp430'', ''keil'', ''sdcc'' and ''env'' (read a simple specification from an environment variable, as described in doc/envtarget.html). The ''keil'' and ''sdcc'' targets are the only non-gcc targets, and have not been seriously tested yet.
+
+A machine target is specified by filling in a '''machine_spec''' structure, defined in machine.h. This structure has the following fields:
+
+* machine_name: name of the target
+* handle_option: a function that gets to inspect options passed to nesc1 and take appropriate action (example: the '''self''' target adjusts double alignment based on the -malign-double gcc flag).
+* big_endian: must be true for big-endian targets, false for little-endian ones
+* tptr, tfloat, tdouble, tlong_double, tshort, tint, tlong, tlong_long: size and alignment of the corresponding C types.
+* int1_align, int2_align, int4_align, int8_align: with gcc, you can ask for specific size ints (see gcc's mode attribute, and the '''type_for_mode''' function in types.c). On some platforms, some of these sizes may not correspond to any of the normal basic C types, so you get to specify the alignments for those missing sizes here...
+* wchar_t_size: size of the wchar_t type
+* size_t_size: size of the size_t type (actually this should be the C type, knowing just the size can cause problems)
+* char_signed: is '''char''' signed or unsigned?
+* wchar_t_signed: is '''wchar_t''' signed or unsigned?
+* word_size: size of machine word (there's a gcc mode attribute that asks for this...)
+* empty_field_boundary: what alignment is implied by a 0-length bitfield?
+* structure_size_boundary: what's the minimum alignment for a struct or union? (1 on many platforms, 4 on ARM...)
+* pcc_bitfield_type_matters: one choice on how bitfields are handled - I'd recommend checking the gcc target specification for your target if you're worried about getting this right...
+* adjust_field_align: function pointer that gets to adjust alignment of structure fields after the fact (currently used to support -mno-align-double on x86 self-targets).
+* decl_attribute, tag_attribute, field_attribute, type_attribute: your chance to do something with gcc attributes on declarations, struct/union/enums, fields, types.
+* preinit: your chance to do something after target selection.
+* init: your chance to do something after all modules are initialized.
+* token: your chance to turn an identifier into a token (or something even weirder!) (use this to handle simple syntactic extensions, see '''sdcc''' and '''keil''' targets)
+* keilc_definition: a Keil C special. See '''keil''' target.
+* global_cpp_init: called so you can set up any target-specific include paths, preprocessor symbol definitions (you can also choose to add the appropriate -I/-D flags to the nesc1 invocation in one of the driver scripts instead).
+* file_cpp_init: called before each file is preprocessed. Present so you can add your own target-specific preprocessing hooks, e.g. for #pragma.
+
+Note that this information is a very small subset of what could be involved in correctly specifying an arbitrary C target machine (e.g. it assumes all pointers have the same size, which isn't true for all C targets). It basically gets extended with new functionality as required by the addition of new targets. Errors in the target specification (esp. for sizes and alignments) are often hard to notice, as they basically only affect constants passed as generic component arguments, and the type layout information produced by mig and the XML dump facility (other constants are recomputed by the actual C compiler, as nesC spits out the original constant expression, rather than its value - you can change this by enabling the disabled code at the start of '''prt_expression''' in unparse.c if you want to debug your target specification...).
+

@@ -1,0 +1,174 @@
+The most up-to-date version of this document can be found on the TinyOS documentation
+wiki at http://docs.tinyos.net/index.php/Nesc-internals
+
+== Driver Scripts ==
+
+* ncc: driver script for TinyOS, understands TinyOS platforms, etc. Behaves like gcc with extra options. Main task is to generate and execute a nescc command
+
+* nescc: driver script for nesC, understands how to compile a nesC application. Supports cross-compilation. Behaves like gcc with extra options. Main task is to generate and execute a gcc command with the appropriate magic (see the tdspecs file) to invoke nesc-compile on .nc files.
+
+* mig, nescc-mig: TinyOS and non-TinyOS scripts to invoke the message interface generator. End up calling nescc with the "right" options.
+
+* ncg, nescc-ncg: TinyOS and non-TinyOS scripts to invoke the constant generator. End up calling nescc with the "right" options.
+
+== Internal Script ==
+
+* nesc-compile: Invoked by gcc when passed a .nc file. Must generate a .s or .o file depending on options received. Essentially, invokes nesc1 to transform nesC application into a C file, then invokes gcc to compile this C file.
+
+In all these scripts, gcc stands for the target platform's gcc, though, except for the invocation from nesc-compile, this isn't typically crucial.
+
+== nesc1 ==
+
+Overview: takes a "root" .nc file and generates a C file representing the whole nesC application. Also has a few other paths, to generate information for mig, TinyOS 1.x doc info (legacy only, the 2.x docs use the XML output), and a C-with-nesC extensions to C path (new). Accepts gcc options and nescc options, as filtered by nescc/nesc-compile.
+
+Implementation is based on a C frontend derived from gcc 2.8.1, with various additions of code from later versions of gcc. Ideally it should support the current gcc C syntax, but that ends up being more an on-demand thing -- when someone complains that some header file doesn't work, I add support for whatever new C feature is involved. Essentially what's missing is some of the newer ISO C99 features, and all #pragma's. As of 1.3.x, the preprocessor is integrated in nesc1 (nesc1 used to invoke the target gcc to perform preprocessing of nesC files).
+
+=== Directory Structure ===
+
+* top-level: the usual configuration stuff, READMEs, etc. Bootstrap is a script that runs automake, autoconf, etc to generate '''configure'''
+
+* doc: man pages, reference manual, and miscellaneous documentation
+
+* include, libiberty, libcpp: integrated C preprocessor, imported from gcc in early 2008. Very minor (a few lines) changes (sorry, there should be a nice version number and diff, but it isn't very hard to track down exactly which snapshot I used, and hence recompute the diff).
+
+* tests: old stuff, ignore.
+
+* nregress: regression tests, execute '''./runtest''' to run tests. Tests the nesc1 driver in src/nesc1, except some stuff depends on the installation too (this is broken and should be fixed, do a recursive grep for ncc and nescc)
+
+* src: the nesC compiler itself (builds nesc1)
+
+=== nesc1 structure ===
+
+'''nesc-*''' contain the nesC-specific parts of the compiler. The other files are related to handling C, but have a limited amount of nesC-related changes. 
+
+The main files are:
+
+* toplev.c: contains main, parses options and invokes nesc_compile
+* nesc-main.c: nesc_compile is the main entry point to the actual compiler
+* nodetypes.def, AST*.c: nodetypes.def defines the types representing the abstract syntax tree (AST) that is the parsed representation of a nesC program. The AST*.c files are hand-written and automatically-generated files for creating and manipulating AST nodes. See [[nesc-internals/AST]] for more details.
+* decls.h: declarations for types representing the various kinds of C entities (structures, fields, variables, functions, labels, environments, etc)
+* nesc-decls.h: declarations for types representing the various kinds of nesC entities (interfaces, components)
+* c-lex.c: the lexer
+* c-parse.y: the parser
+* machine.c, machine.h, machine/*: cross-compilation support
+* cval.c, constants.c: constants and constant folding
+* expr.c: C expression handling
+* init.c: C initializer handling
+* semantics.c: C declaration handling (structures, variables, functions)
+* stmt.c: C statement handling
+* types.c: C type handling
+* unparse.c: print a C program corresponding to an AST - contains various hacks for nesC support
+
+* nesc-component.c: code common to configurations and modules
+* nesc-configuration.c: configurations
+* nesc-module.c: modules
+* nesc-interface.c: interfaces
+* nesc-abstract.c: generic components
+* nesc-atomic.c: atomic statements
+* nesc-attributes.c: nesC @blah(...) attributes
+* nesc-magic.c: magic functions (unique & co)
+* nesc-network.c: nx_* types
+* nesc-task.c: tasks
+
+* nesc-cg.c: cgraph is used to represent component connection graphs and function call/use graphs...
+* nesc-constants.c: perform a constant-folding pass
+* nesc-deputy.c: support for Deputy's type-safety annotations
+* nesc-msg.c: mig support
+* nesc-cpp.c: interaction between nesC and the C preprocessor
+* nesc-xml.c, nesc-dump.c, nesc-dfilter.c, ND*, nesc-dspec.def: dump information on nesC program in XML (the .def and automatically-generated ND* files reuse the [[nesc-internals/AST|AST infrastructure]])
+* nesc-doc.c: TinyOS 1.x documentation generator (obsolete, doesn't support generic components)
+* nesc-ndoc.c: documentation string handling
+* nesc-generate.c: nesC code generation (builds on unparse.c)
+* nesc-inline.c: decide what to inline
+
+=== Compilation Overview ===
+
+Compilation of a nesC application ''X'' proceeds in the following steps
+
+# Load: the components and interfaces composing ''X'' are loaded, parsed and semantically checked
+# Instantiate and Connect: the components composing ''X'' are instantiated (if generic) and wired together (producing a '''cgraph''' data structure)
+# Fold: constant folding is performed on ''X'' (some constant folding is performed in the Load phase, but it can only be fully completed here, because of uses of '''unique''' and '''uniqueCount''' in generic components)
+# Generate: C code is generated for ''X''
+
+nesC is a cross-compiler and needs some information on the target machine (type sizes, alignment rules, target-specific extensions, etc). These are described at [[nesc-internals/target]].
+
+
+==== 0. Main Types ====
+
+Before proceeding further, here's an overview of the main types used by the compiler to represent nesC programs.
+
+See [[nesc-internals/AST]] for a discussion of the abstract syntax tree representation. The abstract syntax tree closely matches the textual structure of the program, the types described next represent its logical structure, and are pointed to from AST nodes as appropriate (e.g. an AST node representing the use of a variable 'x' contains a field that points to the common '''data_declaration''' object that logically represents 'x' to the nesC compiler). 
+
+These types are all defined in decls.h, types.h, nesc-decls.h and nesc-cg.h.
+
+C has three namespaces, one for symbols (variables, functions, typedefs), one for tags (structure, union and enum names) and one for labels. nesC adds a namespace for interfaces and components. This is reflected in the types below.
+
+'''environment''': a C scope, with definitions for symbols and tags.
+
+'''data_declaration''': a C symbol, with lots of information. AST nodes that declare or use a given symbol have a field (usually called ddecl) that points to the common data_declaration object for the symbol.
+
+'''tag_declaration''': a C tag. Like symbols, AST nodes and types that declare or use the tag have a field (usually called tdecl) that points to the common tag_declaration object.
+
+'''field_declaration''': a C field. As usual, appropriate AST nodes have a field (usually called fdecl) that points to the common field_declaration object. The '''field_declaration'''s can also be found starting at their containg '''tag_declaration'''.
+
+'''label_declaration''': a C label. As usual, appropriate AST nodes have a field (usually called ldecl) that points to the common label_declaration object.
+
+'''nesc_declaration''': a nesC component or interface. As usual, appropriate AST nodes have a field (usually called cdecl) that points to the common nesc_declaration object.
+
+'''type''': an abstract object representing a C type. These objects are manipulated using the functions declared in types.h.
+
+'''cgraph''': a graph between nesC endpoints ('''endp'''). An endpoint is a triple of a component, interface and function. The endpoint also specifies any arguments for parameterized interfaces. The component and interface are both null for global C functions, the interface is null for functions internal to modules, and for commands and events that are not in interfaces. '''cgraph''' is used to represent component connection graphs and call/use graphs.
+
+==== 1. Load ====
+
+Starting from a component '''X''' found at path ''P'' (where ''P'' is of the form '''.../X.nc'''), the compiler starts by preprocessing ''P'', then parses the result with a conventional lexer (c-lex.c) and bison-based parser (c-parse.y). The parser:
+
+# Builds [[nesc-internals/AST|AST]] nodes representing the source code found in ''P''
+# Performs most semantic checks required by C and nesC (resolving symbols, computing and checking types, folding constants when possible, checking uses of goto, break, continue, etc, etc) - the remaining checks are in the Instantiate and Connect, Fold and Generate phases.
+# Recursively loads components and interfaces used by ''X'' (if not previously loaded, locate  the file for the component or interface, then recursively invoke the Load phase)
+
+A couple of notes on preprocessing. The preprocessor is (as of 1.3.0) integrated into the nesC compiler (code borrowed from gcc 4.x). nesC's rules state that preprocessor symbols defined prior to the '''module''', '''configuration''', '''component''' or '''interface''' keyword are visible to subsequently preprocessed files. This is accomplished using the preprocessor library's callbacks, see '''start_macro_saving''' and ''end_macro_saving''' in nesc-cpp.c.
+
+==== 2. Instantiate and Connect ====
+
+Instantiating generic components is one of the trickiest (as in, easiest to get wrong and confused in) parts of the compiler. It's invoked via the '''connect_graphs''' function of nesc-main.c, which recursively walks the nesC program starting from the top-level component, instantiating generic components (using '''instantiate''' from nesc-abstract.c) and building the application's wiring graph as it goes.
+
+Some subtleties:
+* Cloning of a component creates a new nesc_declaration for the clone, along with a copy of the AST, copies of the objects representing variables, structures, etc. This is implemented using an AST visitor, along with a special '''clone''' function built from the AST specifications in nodetypes.def.
+* Cloning has to substitute generic arguments for generic parameters.
+* When a generic configuration is instantiated, the specifications of any generic components it contains
+are immediately cloned, but their implementation isn't: the compiler needs a cloned specification to build the wiring graph for the instantiated generic configuration, but the actual implementation only needs to be cloned when connect_graphs reaches it (and, as a result, '''instantiate''' only clones the implementation, assuming the specification was pre-cloned)
+* Related to the previous point: at the end of the day, there are '''nesc_declaration''' objects representing three kinds of components:
+  # concrete components, i.e. non-generic or instantiated generic components
+  # source generic components, i.e. those produced as a result of parsing a nesC source file
+  # partially-instantiated generic components, which are created to represent each generic component instantiated in a 'source generic configuration'; these are not often seen (but do show up in XML dumps if you ask for the right information, like the wiring graph of an individual generic configuration)
+* To support cloning, AST nodes and the objects representing nesC program entities ('''data_declaration''' & co) have an '''instantiation''' field that points to the most recent instance of the AST node or program entity.
+
+==== 3. Fold ====
+
+Uses of '''unique''' in generic components return a different value in each concrete instance of the generic component, but these aren't known until after Instantiate and Connect completes. Thus, it isn't possible to complete constant folding during the Load phase (unlike in normal C). This phase's job is to repeatedly walk over the whole nesC program, filling in values for '''unique''' and '''uniqueCount''' and finishing constant folding (and reporting any related errors, e.g. negative array sizes). It's implemented by the '''fold_program''' function in nesc-abstract.c, and uses yet another visitor.
+
+==== 4. Generate ====
+
+The nesC compiler essentially generates a C file with all the C code found at the beginning of each component (before the '''module''', '''configuration''', etc keyword), the code from all modules, and ''wiring functions'' that perform the calls specified by the wiring in configurations. The nesC compiler performs three optimizations:
+# It builds a call graph and only outputs those C functions reachable from the program's entry points. Entry points are the functions marked with the nesC @spontaneous() attribute (normally '''main''' and the interrupt handlers). This task is performed by the '''mark_reachable_code''' function in nesc-generate.c. The call-graph is represented using the same '''cgraph''' type as wiring graphs.
+# It marks "small" functions as '''inline''' to force them to be inlined. This also reduces runtime, and the cost of splitting programs into components with small functions. Also, all ''wiring functions'' are marked inline. This task is performed by the '''inline_functions''' function in nesc-generate.c.
+# If the -fnesc-optimize-atomic flag was specified, it analyses the whole program to eliminate unecessary atomic statements (nested, or with bodies which are guaranteed to execute atomically). See '''isatomic''' in nesc-atomic.c.
+
+The code generator also checks that '''async'' was used correctly ('''check_async'''), reports potential data races ('''check_races'''), and calls to unwired functions (see ''prt_identifier''' in unparse.c).
+
+The code generator must be careful to print C code that will compile, i.e. it needs to ensure all types are
+declared before they are used, all functions have prototypes, etc. To ensure this, it prints the output C code in stages, as follows:
+# All global variable and type declarations, in the order they were encountered by the nesC compiler.
+# Typedefs for generic module arguments.
+# Declarations for all commands and events.
+# All variable and type declarations from modules, respecting the original order within the module.
+# All inlined functions, in use-before-call order when possible (older versions of gcc will not inline a function called before its definition).
+# All non-inlined functions.
+# tossim support functions.
+
+==== 5. Miscellaneous Notes ====
+
+The source code mostly uses the word ''abstract'' to refer to generic components, interfaces, etc. nesC's terminology changed after development of generic components was well under way.
+
+Memory allocation in the nesC compiler uses ''regions'' to group related memory allocations into a unit that can be freed in one go (this concept is variously called heaps (in Apache), zones, etc). See libcompat/regions.h for the region-allocation API. At one point in time, it was possible to compile this code with a special C compiler that would check the safety of region deallocation, but I haven't tried this recently... The memory management in nesC is not very complicated, as most allocated data has to live until the compiler exits anyway.
