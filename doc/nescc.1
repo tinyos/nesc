@@ -4,7 +4,7 @@
 nescc - nesC compiler
 .SH SYNOPSIS
 
-\fBnescc\fR [\fB-gcc=\fIgcc-name\fR] [\fB-fnesc-target=\fIarchitecture\fR]
+\fBnescc\fR [\fB-gcc=\fIgcc-name\fR] [\fB-mingw-gcc\fR] [\fB-fnesc-target=\fIarchitecture\fR]
     [\fB-docdir=\fIdir\fR] [\fB-topdir=\fIdir\fR] [\fB-graphviz=y\fI|\fBn\fR]
     [\fB-fnesc-simulate\fR] 
     [\fB-fnesc-nido-tosnodes=\fIn\fR] [\fB-fnesc-nido-motenumber=\fIexpression\fR]
@@ -20,8 +20,8 @@ nescc - nesC compiler
 \fBnescc\fR is an extension to \fBgcc\fR that knows how to compile nesC
 applications. If invoked on regular C files, it behaves exactly like
 \fBgcc\fR. When invoked on a nesC component or interface (\fB.nc\fR
-extension) file it compiles and links (except if the usual \fB-c\fR,
-\fB-S\fR, \fB-E\fR or \fB-fsyntax-only\fR options are used) that component
+extension) file it compiles and links (except if the \fB-c\fR,
+\fB-S\fR, \fB-conly\fR, \fB-E\fR or \fB-fsyntax-only\fR options are used) that component
 with the other files specified on the command line.
 .SH OPTIONS
 
@@ -33,6 +33,11 @@ Specify which gcc compiler to use to compile and link any C files, either
 explicitly specified, or generated as the output of the nesC-to-C compiler.
 This option supports cross-compilation of nesC code (the usual mode of
 operation...).
+.TP
+\fB-mingw-gcc\fR
+Pass this option if the gcc version specified with \fB-gcc=...\fR was
+compiled for Window's mingw environment, and hence expects Windows-style
+rather than Unix-style paths.
 .TP
 \fB-fnesc-target=\fIarchitecture\fR
 Specify the target architecture to compile for. Currently supported

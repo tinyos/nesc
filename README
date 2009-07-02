@@ -1,6 +1,12 @@
-This is version 1.3.0 of the nesC compiler.
+This is version 1.3.1 of the nesC compiler.
 
 Installation instructions are in INSTALL. 
+
+Changes in nesC 1.3.1
+=====================
+- updated reference manual for language changes since version 1.2.0
+- support gcc's -include option when compiling a nesC application
+- bug fixes
 
 Changes in nesC 1.3.0
 =====================

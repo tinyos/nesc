@@ -1,9 +1,9 @@
-%define version 1.3.0
+%define version 1.3.1
 %define theprefix /usr
 
 Summary: nesC compiler 
 Name: nesc
-Version: 1.3.0
+Version: 1.3.1
 Release: 1
 License: GNU GPL Version 2
 Packager: TinyOS Group, UC Berkeley
@@ -39,6 +39,8 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %doc
 
 %changelog
+* Thu Jul 2 2009  <david.e.gay@intel.com> 1.3.1
+- Bug fixes
 * Wed Aug 6 2008  <david.e.gay@intel.com> 1.3.0
 - Deputy support
 * Tue Jul 3 2007  <david.e.gay@intel.com> 1.2.9
