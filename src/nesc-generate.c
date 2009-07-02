@@ -150,7 +150,7 @@ void prt_ncf_header(struct connections *c, type return_type)
   indent();
   if (!type_void(return_type))
     {
-      prt_data_decl(build_declaration(parse_region, NULL, return_type, "result", NULL, NULL));
+      prt_data_decl(build_declaration(parse_region, NULL, return_type, "__nesc_result", NULL, NULL));
       newline();
     }
 }
@@ -160,7 +160,7 @@ void prt_ncf_trailer(type return_type)
   if (!type_void(return_type))
     {
       newline();
-      outputln("return result;");
+      outputln("return __nesc_result;");
     }
   unindent();
   outputln("}");
@@ -211,12 +211,12 @@ void prt_ncf_direct_call(struct connections *c,
 
   if (!type_void(return_type))
     {
-      output("result = ");
+      output("__nesc_result = ");
 
       /* Combine w/ the combiner on subsequent calls */
       if (!first_call && combiner)
 	{
-	  output("%s(result, ", combiner->name);
+	  output("%s(__nesc_result, ", combiner->name);
 	  calling_combiner = TRUE;
 	}
     }

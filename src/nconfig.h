@@ -63,11 +63,13 @@ typedef unsigned char bool;
 #ifdef HAVE_ALLOCA_H
 #include <alloca.h>
 #else
+#ifndef HAVE_ALLOCA
 #ifdef __GNUC__
 #define alloca __builtin_alloca
 void *alloca(size_t n);
 #else
 #error need alloca
+#endif
 #endif
 #endif
 

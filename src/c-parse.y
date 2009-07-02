@@ -2040,13 +2040,13 @@ structuse:
 
 structdef:
 	  structkind tag nesc_attributes '{'
-		{ $$ = start_struct($1.location, $1.i, $2);
+		{ $<u.telement>$ = start_struct($1.location, $1.i, $2);
 		  /* Start scope of tag before parsing components.  */
 		}
 	  component_decl_list '}' maybe_attribute 
 		{ $$ = finish_struct($<u.telement>5, $6, attribute_chain($3, $8)); }
 	| STRUCT '@' tag nesc_attributes '{'
-		{ $$ = start_struct($1.location, kind_attribute_ref, $3);
+		{ $<u.telement>$ = start_struct($1.location, kind_attribute_ref, $3);
 		  /* Start scope of tag before parsing components.  */
 		}
 	  component_decl_list '}' maybe_attribute 
@@ -2056,11 +2056,11 @@ structdef:
 						  NULL), $3, $5);
 		}
 	| ENUM tag nesc_attributes '{'
-		{ $$ = start_enum($1.location, $2); }
+		{ $<u.telement>$ = start_enum($1.location, $2); }
 	  enumlist maybecomma_warn '}' maybe_attribute
 		{ $$ = finish_enum($<u.telement>5, declaration_reverse($6), attribute_chain($3, $9)); }
 	| ENUM '{'
-		{ $$ = start_enum($1.location, NULL); }
+		{ $<u.telement>$ = start_enum($1.location, NULL); }
 	  enumlist maybecomma_warn '}' maybe_attribute
 		{ $$ = finish_enum($<u.telement>3, declaration_reverse($4), $7); }
 	;
