@@ -25,9 +25,9 @@
 
 \begin{document}
 
-\title{\nesc 1.2 Language Reference Manual}
+\title{\nesc 1.3 Language Reference Manual}
 \author{David Gay, Philip Levis, David Culler, Eric Brewer}
-\date{August 2005}
+\date{July 2009}
 
 \maketitle
 
@@ -111,6 +111,21 @@ glossary of terms used in this reference manual.
 
 \section{Changes}
 \label{sec:changes}
+
+The changes from \nesc 1.2 to 1.3 are:
+\begin{itemize}
+\item Support for applying Deputy~\cite{deputy} type-safety for C
+  system to nesC applications~\cite{safe-tinyos}. More information can be
+  found in the separate ``Safe TinyOS'' documentation.
+\item \nesc attributes can be placed in documentation comments to reduce
+  clutter in function declarations.
+\item New \code{uniqueN(\ldots)} compile-time constant function.
+\item Bitfields supported in external types.
+\item External types can used as function parameters and results.
+\item Types defined in interfaces can be used immediately in generic
+  interface arguments (e.g. \code{interface Timer<TMilli>}, where
+  \code{TMilli} is defined in \file{Timer.nc}).
+\end{itemize}
 
 The changes from \nesc 1.1 to 1.2 are:
 \begin{itemize}
@@ -1645,8 +1660,9 @@ beyond the scope of this reference manual; please see the \nesc compiler
 manual for details.
 \end{itemize}
 
-User-defined attributes must be declared prior to use, and have no effect
-on code generation. The language-defined attributes are implicitly
+User-defined attributes must be declared prior to use, and have no
+effect on code generation except when the attribute is declared with
+\code{@macro(\ldots)}. The language-defined attributes are implicitly
 declared; their effects are described in Section~\ref{sec:attributes}.
 
 An attribute declaration is simply a \kw{struct} declaration where the
@@ -1766,6 +1782,11 @@ does not have the following type: \code{$t$ $c$($t$, $t$)}.
 \item \code{@integer()}, \code{@number()}: declare properties of generic
 component type parameters. See Section~\ref{sec:type-parameters}.
 
+\item \code{@macro({\em name})}, \code{@deputy\_scope()}: used to
+  declare attributes used with the Deputy system that provides
+  type-safety for C~\cite{deputy} and nesC~\cite{safe-tinyos}. See the
+  separate ``Safe TinyOS'' documentation for more information.
+
 \end{itemize}
 
 Example of attribute use:
@@ -1783,6 +1804,80 @@ in the C global scope (\code{@C()}), so that the linker can find it. It
 also declares that \code{main} can be called even though there are no
 function calls to \code{main} anywhere in the program
 (\code{@spontaneous()}). 
+
+\subsection{Attributes in Documentation Comments}
+
+To reduce clutter due to annotations, nesC allows attributes placed
+within a documentation comment before a function signature to apply to
+that function's parameters and return type.
+
+Specifically, a comment of the form
+\begin{verbatim}
+/** 
+  ... @param '<parameter-declaration>'
+*/
+\end{verbatim}
+before a function declaration or definition will replace the
+correspondingly named parameter with {\em parameter-declaration}. It
+is a compile-time error if the type doesn't match, i.e. the two
+declarations must only differ in their attributes (on the parameter or
+in its type). It is also a compile-time error if {\em
+  parameter-declaration} does not name a parameter of the function.
+
+For instance:
+\begin{verbatim}
+  struct @count { int size; };
+  /** f is an exiciting function.
+      @param 'int *@count(n) x' x is an array of n ints.
+      @param n n is size of array x.
+    */
+  void f(int *x, int n);
+\end{verbatim}
+is the same as
+\begin{verbatim}
+  struct @count { int size; };
+  void f(int *@count(n) x, int n);
+\end{verbatim}
+
+Macros can be used in the documentation comment, so the above could
+also be written:
+\begin{verbatim}
+  #define COUNT(expr) @count(expr)
+  struct @count { int size; };
+  /** f is an exiciting function.
+      @param 'int *COUNT(n) x' x is an array of n ints.
+      @param n n is the size of array x.
+    */
+  void f(int *x, int n); 
+\end{verbatim}
+
+For return types, a comment of the form
+\begin{verbatim}
+/** 
+  ... @return '<type-name>'
+*/
+\end{verbatim}
+before a function declaration or definition will replace the
+function's return type with {\em type-name}. It
+is a compile-time error if the type doesn't match, i.e. the two
+types must only differ in their attributes.
+
+For instance:
+\begin{verbatim}
+  struct @count { int size; };
+  /** g gives us some data.
+      @param n n is the size of the returned data.
+      @return 'int *@count(n)' the returned data is n ints.
+    */
+  int *g(int n);
+\end{verbatim}
+is the same as
+\begin{verbatim}
+  struct @count { int size; };
+  int *@count(n) g(int n);
+\end{verbatim}
+
+As with parameters, the type in \code{@return} may use macros.
 
 \section{External Types}
 \label{sec:external-types}
@@ -1805,17 +1900,26 @@ types are unsigned. Note that these types are not keywords.
 \item External array types are any array built from an external type, using 
 the usual C syntax, e.g, \code{nx\_int16\_t x[10]}.
 
-\code External structures and unions are declared like C structures and
-unions, but using the \code{nx\_struct} and \code{nx\_union} keywords. An
-external structure can only contain external types as elements. Currently,
-external structures and unions cannot contain bitfields.
+\code External structures and unions are declared like C structures
+and unions, but using the \code{nx\_struct} and \code{nx\_union}
+keywords. An external structure can only contain external types as
+elements. Bitfields are supported as follows:
+
+\begin{itemize}
+\item Big-endian bitfields start filling from a byte's
+high-order bits, while little-endian bitfields fill from the low-order
+bits. 
+\item Consecutive bitfields of the same endianness are packed together.
+Bitfields of different endianness are not stored in the same byte.
+\end{itemize}
+
 \end{itemize}
 
 External types have no alignment restrictions and external structures
-contain no padding. External types can be used exactly like regular C
-types.\footnote{The current \nesc compiler does not support using external
-base types in casts, as function arguments and results, or to declare
-initialised variables.}
+contain no byte padding (but there may be unused bits when bitfields
+are used). External types can be used exactly like regular C
+types.\footnote{The current \nesc compiler does not support using
+  external base types in casts, or to declare initialised variables.}
 
 \section{Miscellaneous}
 \label{sec:misc}
@@ -1976,8 +2080,8 @@ integral type, and all integral operations are allowed on type $t$.
 \subsection{Functions with no arguments, old-style C declarations}
 \label{sec:misc-void}
 
-\nesc functions with no arguments are declared with \code{()}, not
-\code{(void)}. The latter syntax reports a compile-time error.
+\nesc functions with no arguments can be declared with \code{()} or
+\code{(void)}.
 
 Old-style C declarations (with \code{()}) and function definitions 
 (parameters specified after the argument list) are not allowed in
@@ -2341,7 +2445,7 @@ direct-declarator: \emph{also}\\
 \>	direct-declarator instance-parameters \kw{(} parameter-type-list \kw{)}\\
 \\
 struct-or-union-specifier: \emph{also one of}\\
-\>	\kw{struct} \kw{@} identifier \kw{\{} struct-declaration-list \kw{\}}\\
+\>	\kw{struct} \kw{@} identifier attributes \kw{\{} struct-declaration-list \kw{\}}\\
 \>	struct-or-union identifier attributes \kw{\{} struct-declaration-list \kw{\}}\\
 \\
 struct-or-union: \emph{also one of}\\
@@ -2364,6 +2468,9 @@ parameter-declaration: \emph{also}\\
 \\
 function-definition: \emph{also}\\
 \>	declaration-specifiers\opt declarator attributes declaration-list\opt compound-statement\\
+\\
+type-qualifier: \emph{also}\\
+\>	attribute\\
 \\
 statement: \emph{also}\\
 \>	atomic-statement\\
