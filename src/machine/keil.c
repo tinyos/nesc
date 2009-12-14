@@ -40,7 +40,12 @@ static int keil_token(const char *token, int len, struct yystype *lvalp)
   struct keilword *keyword = is_keil_word(token, len);
 
   if (keyword)
-    return keyword->token;
+    {
+      lvalp->idtoken.location = last_location();
+      lvalp->idtoken.id = make_cstring(parse_region, token, len);
+      lvalp->idtoken.decl = NULL;
+      return keyword->token;
+    }
 
   return IDENTIFIER;
 }
@@ -102,6 +107,7 @@ static machine_spec keil_machine = {
   NULL, keil_init,
   keil_token,
   keil_special,			/* Keil C special */
-  NULL,				/* global cpp support */
+  gcc_global_cpp_init,		/* global cpp support: this should be tailored to keil
+				   to get correct behaviour */
   NULL				/* per-file cpp support */
 };

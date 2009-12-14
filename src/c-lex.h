@@ -39,6 +39,7 @@ extern location dummy_location, toplevel_location;
 location new_location(const char *filename, int lineno);
 location make_location(struct location l);
 void set_lex_location(location l);
+location last_location(void);
 
 enum rid
 {

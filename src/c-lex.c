@@ -88,7 +88,7 @@ void set_lex_location(location loc)
   current.lex.input->l = *loc;
 }
 
-static location last_location(void)
+location last_location(void)
 {
   return make_location(current.lex.input->l);
 }
