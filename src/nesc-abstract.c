@@ -348,9 +348,9 @@ static type unary_type(unary e)
     case kind_unary_plus:
     case kind_unary_minus:
     case kind_bitnot:
-      return type_default_conversion(e->type);
+      return type_default_conversion(e->arg1->type);
     case kind_realpart: case kind_imagpart: {
-      type etype = type_default_conversion(e->type);
+      type etype = type_default_conversion(e->arg1->type);
 
       return type_complex(etype) ? make_base_type(etype) : etype;
     }
