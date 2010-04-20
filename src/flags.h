@@ -303,4 +303,8 @@ extern int flag_default_safe;
 /* True if transforming plain C code */
 extern int flag_c;
 
+/* True if target-specific extensions should be output as gcc
+   attributes rather than in their original syntax. */
+extern int flag_gccize;
+
 #endif

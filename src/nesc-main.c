@@ -267,6 +267,8 @@ int nesc_option(char *p)
     flag_default_safe = 1;
   else if (!strcmp (p, "fnesc-default-unsafe"))
     flag_default_safe = 0;
+  else if (!strcmp (p, "fnesc-gccize"))
+    flag_gccize = 1;
   else if (!strcmp (p, "Wnesc-docstring"))
     warn_unexpected_docstring = 1;
   else if (!strcmp (p, "Wno-nesc-docstring"))

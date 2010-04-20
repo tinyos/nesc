@@ -101,7 +101,9 @@ typedef enum {
   psd_print_ddecl_fdeclarator = 512, /* print innermost fdeclarator from ddecl */
   psd_duplicate = 1024,
   psd_noextern = 2048,
-  psd_skip_command_event = 4096
+  psd_skip_command_event = 4096,
+  psd_no_target_attributes = 8192,
+  psd_only_target_attributes = 16384,
 } psd_options;
 
 void prt_type_elements(type_element elements, psd_options options);

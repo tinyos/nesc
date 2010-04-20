@@ -1781,13 +1781,13 @@ attribute:
 target_attribute:
 	  TARGET_ATTRIBUTE0
 		{ word w = new_word(pr, $1.location, $1.id);
-		  $$ = new_gcc_attribute(pr, $1.location, w, NULL); }
+		  $$ = new_target_attribute(pr, $1.location, w, NULL); }
 	| TARGET_ATTRIBUTE1 restricted_expr
 		{ word w = new_word(pr, $1.location, $1.id);
-		  $$ = new_gcc_attribute(pr, $1.location, w, $2); }
+		  $$ = new_target_attribute(pr, $1.location, w, $2); }
 	| '@' restricted_expr
 		{ word w = new_word(pr, $2->location, str2cstring(pr, "iar_at"));
-		  $$ = new_gcc_attribute(pr, $2->location, w, $2); }
+		  $$ = new_target_attribute(pr, $2->location, w, $2); }
 	;
 
 restricted_expr:

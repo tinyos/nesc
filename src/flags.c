@@ -306,3 +306,7 @@ int flag_default_safe;
 /* True if transforming plain C code */
 int flag_c;
 
+/* True if target-specific extensions should be output as gcc
+   attributes rather than in their original syntax. */
+int flag_gccize;
+

@@ -391,6 +391,7 @@ void prt_typename(typename tname, psd_options options);
 void prt_typeof_expr(typeof_expr texpr);
 void prt_typeof_type(typeof_type ttype);
 void prt_gcc_attribute(gcc_attribute a);
+void prt_target_attribute(target_attribute a);
 void prt_nesc_attribute(nesc_attribute a);
 void prt_rid(rid r, psd_options options);
 void prt_qualifier(qualifier q);
@@ -808,7 +809,8 @@ void prt_function_body(function_decl d)
       prt_diff_info(d->ddecl);
       prt_prefix(d->location, d->ddecl, d->modifiers);
       /* gcc wants the attributes here */
-      prt_type_elements(CAST(type_element, d->attributes), 0);
+      prt_type_elements(CAST(type_element, d->attributes), 
+			flag_gccize ? 0 : psd_no_target_attributes);
 
       if (ret)
 	{
@@ -819,6 +821,9 @@ void prt_function_body(function_decl d)
       else
 	prt_declarator(d->declarator, d->modifiers, NULL, d->ddecl,
 		       psd_print_default);
+
+      if (!flag_gccize)
+	prt_type_elements(CAST(type_element, d->attributes), psd_only_target_attributes);
 
       startline();
       prt_parameter_declarations(d->old_parms);
@@ -1105,6 +1110,14 @@ void prt_interesting_elements(type_element elements, psd_options options)
 
 bool prt_type_element(type_element em, psd_options options)
 {
+  if ((options & psd_only_target_attributes) &&
+      em->kind != kind_target_attribute)
+    return FALSE;
+
+  if ((options & psd_no_target_attributes) &&
+      em->kind == kind_target_attribute)
+    return FALSE;
+
   switch (em->kind)
     {
     case kind_component_typeref: /* fall through to prt_typename */
@@ -1112,6 +1125,12 @@ bool prt_type_element(type_element em, psd_options options)
     case kind_typeof_expr: prt_typeof_expr(CAST(typeof_expr, em)); break;
     case kind_typeof_type: prt_typeof_type(CAST(typeof_type, em)); break;
     case kind_gcc_attribute: prt_gcc_attribute(CAST(gcc_attribute, em)); break;
+    case kind_target_attribute: 
+      if (flag_gccize)
+	prt_gcc_attribute(CAST(gcc_attribute, em)); 
+      else
+	prt_target_attribute(CAST(target_attribute, em)); 
+      break;
     case kind_nesc_attribute: prt_nesc_attribute(CAST(nesc_attribute, em)); break;
     case kind_qualifier: prt_qualifier(CAST(qualifier, em)); break;
     case kind_rid:
@@ -1138,6 +1157,7 @@ bool prt_attribute_element(type_element em)
   switch (em->kind)
     {
     case kind_gcc_attribute: 
+    case kind_target_attribute: 
       prt_gcc_attribute(CAST(gcc_attribute, em)); 
       return TRUE;
     case kind_nesc_attribute:
@@ -1189,6 +1209,20 @@ void prt_gcc_attribute(gcc_attribute a)
 	  output(")");
 	}
       output("))");
+    }
+}
+
+void prt_target_attribute(target_attribute a)
+{
+  set_location(a->location);
+  if (!strcmp(a->word1->cstring.data, "iar_at"))
+    output("@");
+  else
+    prt_word(a->word1);
+  if (a->args)
+    {
+      output(" ");
+      prt_expressions(a->args, TRUE);
     }
 }
 
