@@ -761,7 +761,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 			      "attributes cannot be used as types");
 	  newtype = error_type;
 	  break;
-	case kind_gcc_attribute: case kind_nesc_attribute:
+	case kind_gcc_attribute: case kind_target_attribute: case kind_nesc_attribute:
 	  attributes = push_attribute(attributes, CAST(attribute, spec));
 	  break;
 	default: assert(0); break;
