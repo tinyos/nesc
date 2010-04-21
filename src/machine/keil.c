@@ -57,7 +57,7 @@ declaration keil_special(location loc, cstring keyword, cstring name,
   region r = parse_region;
   /* Build __attribute__((keil_address(address))) */
   word aword = new_word(r, loc, str2cstring(r, "keil_address"));
-  gcc_attribute address_attr = new_gcc_attribute(r, loc, aword, address);
+  target_attribute address_attr = new_target_attribute(r, loc, aword, address);
 
   /* Build a declaration for name */
   declarator d = make_identifier_declarator(loc, name);
@@ -84,7 +84,7 @@ declaration keil_special(location loc, cstring keyword, cstring name,
 
 /* Basic pointer sizes and alignments for the 8051's compiled w/ Keil C51 */
 static machine_spec keil_machine = {
-  "keil", NULL,
+  "keil51", NULL,
   TRUE,				/* big_endian */
   FALSE,			/* pcc_bitfield_type_matters */
   8,				/* empty field boundary - in bits */
@@ -101,6 +101,7 @@ static machine_spec keil_machine = {
   1, 1, 1, 1,			/* int1/2/4/8 align */
   2, 2,				/* wchar_t, size_t size */
   TRUE, TRUE,			/* char, wchar_t signed */
+  "reentrant",			/* attribute for async functions */
 
   NULL,				/* adjust_field_align function */
   NULL, NULL, NULL, NULL, 	/* attribute handling functions */

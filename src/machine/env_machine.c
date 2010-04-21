@@ -49,6 +49,7 @@ static machine_spec env_machine = {
   1, 1, 1, 1,		/* int1248_align */
   2, 2,			/* wchar_size_size */
   TRUE, TRUE,		/* char_wchar_signed */
+  NULL,			/* no attribute for async functions */
 
   NULL,				/* adjust_field_align */
 
@@ -259,6 +260,15 @@ static bool scan_env_machine(machine_spec * machine, const char *envname)
 		     envname, name);
 	      n_errors++;
 	    }
+	}
+      else if (is_literali(name = "async_functions", begin, equal))
+	{
+	  int l = space - value;
+	  char *s = rstralloc(permanent, l + 1);
+
+	  memcpy(s, value, l);
+	  s[l] = '\0';
+	  machine->async_functions_atribute = s;
 	}
       else
 	{

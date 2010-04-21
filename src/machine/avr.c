@@ -37,6 +37,7 @@ static machine_spec avr_machine = {
   1, 1, 1, 1,			/* int1/2/4/8 align */
   2, 2,				/* wchar_t, size_t size */
   TRUE, TRUE,			/* char, wchar_t signed */
+  NULL,				/* no attribute for async functions */
 
   NULL,				/* adjust_field_align */
 

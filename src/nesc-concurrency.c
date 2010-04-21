@@ -19,6 +19,8 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-cg.h"
 #include "nesc-concurrency.h"
 #include "nesc-semantics.h"
+#include "machine.h"
+#include "c-parse.h"
 
 static inline bool is_call_edge(gedge e)
 {
@@ -35,6 +37,19 @@ static void rec_async(gnode n, bool async_caller)
   if (async == fn->actual_async)
     return;
   fn->actual_async = async;
+
+  /* Martin Leopold: add an "async" gcc attribute to any async elements for targets
+     that need to identify functions callable from interrupts. */
+  if (fn->definition && target->async_functions_atribute) 
+    {
+      function_decl fd = CAST(function_decl, fn->definition);
+      location l = fd->modifiers->location;
+      region r = parse_region;
+      word aname = new_word(r, l, str2cstring(r, target->async_functions_atribute));
+      target_attribute attr = new_target_attribute(r, l, aname, NULL);
+
+      fd->attributes = attribute_chain(attr, fd->attributes);
+    }
 
   /* We don't pass async through commands or events that are not
      declared async to avoid reporting errors for the fns called

@@ -53,7 +53,7 @@ static int sdcc_token(const char *token, int len, struct yystype *lvalp)
 }
 
 static machine_spec sdcc_machine = {
-  "sdcc", NULL,
+  "sdcc51", NULL,
   FALSE,			/* big_endian */
   FALSE,			/* pcc_bitfield_type_matters */
   8,				/* empty field boundary - in bits */
@@ -70,6 +70,7 @@ static machine_spec sdcc_machine = {
   1, 1, 1, 1,			/* int1/2/4/8 align */
   2, 2,				/* wchar_t, size_t size */
   TRUE, TRUE,			/* char, wchar_t signed */
+  NULL,				/* no attribute for async functions */
 
   NULL,				/* adjust_field_align function */
   NULL, NULL, NULL, NULL, 	/* attribute handling functions */

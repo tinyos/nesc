@@ -39,6 +39,7 @@ static machine_spec msp430_machine = {
   1, 2, 2, 2,			/* int1/2/4/8 align */
   2, 2,				/* wchar_t, size_t size */
   TRUE, TRUE,			/* char, wchar_t signed */
+  NULL,				/* no attribute for async functions */
 
   NULL,				/* adjust_field_align */
 

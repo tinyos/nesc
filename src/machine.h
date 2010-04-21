@@ -21,6 +21,7 @@ typedef struct {
   size_t int1_align, int2_align, int4_align, int8_align;
   size_t wchar_t_size, size_t_size;
   bool char_signed, wchar_t_signed;
+  char *async_functions_atribute;
 
   cval (*adjust_field_align)(field_declaration fdecl, cval alignment);
 

@@ -1217,6 +1217,8 @@ void prt_target_attribute(target_attribute a)
   set_location(a->location);
   if (!strcmp(a->word1->cstring.data, "iar_at"))
     output("@");
+  else if (!strcmp(a->word1->cstring.data, "keil_address"))
+    output("=");
   else
     prt_word(a->word1);
   if (a->args)
