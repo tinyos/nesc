@@ -5,16 +5,16 @@
 
 #define __DEPUTY_UNUSED__                      __attribute__((unused))
 
-struct @nonnull @deputy_scope() { }; 
+struct @nonnull @deputy_scope() { int dummy; }; 
 struct @bnd @deputy_scope() { void *lo, *hi; }; 
 struct @bnd_nok @deputy_scope() { void *lo, *hi; }; 
 struct @count @deputy_scope() { int n; }; 
 struct @count_nok @deputy_scope() { int n; }; 
-struct @one @deputy_scope() { }; 
-struct @one_nok @deputy_scope() { };
+struct @one @deputy_scope() { int dummy; }; 
+struct @one_nok @deputy_scope() { int dummy; };
 struct @dmemset @deputy_scope() { int a1, a2, a3; };
 struct @dmemcpy @deputy_scope() { int a1, a2, a3; };
-struct @nts @deputy_scope() { }; 
+struct @nts @deputy_scope() { int dummy; }; 
 
 #define NONNULL                                @nonnull()
 #define BND(x,y)                               @bnd(x,y)

@@ -250,7 +250,7 @@ static bool prt_network_lvalue(expression e)
   else
     {
       prt_expression_helper(e, P_CALL);
-      output(".data");
+      output(".nxdata");
     }
 
   return isbf;
@@ -410,7 +410,7 @@ bool prt_network_typedef(data_decl d, variable_decl vd)
       else
 	{
 	  set_location(vd->location);
-	  output("typedef struct { unsigned char data[%d]; } __attribute__((packed)) %s;",
+	  output("typedef struct { unsigned char nxdata[%d]; } __attribute__((packed)) %s;",
 		 (int)type_size_int(basetype), vd->ddecl->name);
 	}
       return TRUE;
@@ -443,7 +443,7 @@ static bool prt_network_parameter_copy(declaration parm, bool copies,
 	  else
 	    {
 	      output_hton(ddecl->type);
-	      outputln("(%s.data, %s%s);", ddecl->name, NXBASE_PREFIX, ddecl->name);
+	      outputln("(%s.nxdata, %s%s);", ddecl->name, NXBASE_PREFIX, ddecl->name);
 	    }
 
 	  return TRUE;

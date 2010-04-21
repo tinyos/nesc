@@ -1,1 +1,1 @@
-$NESC1 -fnesc-target=keil $1 >/dev/null
+$NESC1 -fnesc-target=keil51 $1 >/dev/null
