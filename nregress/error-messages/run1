@@ -1,2 +1,5 @@
 cd $1
-$NESC1 -Dabstract=generic test.nc >/dev/null
+if [ -f FLAGS ]; then
+  FLAGS=`cat FLAGS`
+fi
+$NESC1 -Dabstract=generic $FLAGS test.nc >/dev/null

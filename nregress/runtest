@@ -40,10 +40,11 @@ done
 # except those found in an "exclude" file, or matching obvious-to-be-skipped
 # patterns
 for i in `find . -name run1`; do
-  i=`echo $i | sed -e 's/^\.\///'`
   if [ "$1" ]; then
-    echo $i | egrep -q "^$1" || continue
+    echo $i | egrep -q "$1" || continue
   fi
+
+  i=`echo $i | sed -e 's/^\.\///'`
 
   base=`dirname $i`
   cd $base
@@ -68,7 +69,7 @@ done
 
 
 echo
-diff --recur --exclude=CVS -u ok .output
+diff -N --recur --exclude=CVS -u ok .output
 if [ $? = 0 ]; then
   echo All tests passed
 fi
