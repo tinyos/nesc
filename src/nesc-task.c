@@ -340,7 +340,27 @@ void wire_scheduler(module m)
   struct endp m_end, scheduler_end;
 
   if (!scheduler_interface)
-    return;
+    {
+      declaration task;
+      static int use_module = 0;
+
+      /* If all_tasks is non-null, we have a problem: a task that needs to
+	 be wired, but the scheduler is not yet available. Report as an error.
+      */
+      scan_declaration (task, all_tasks)
+	{
+	  error_with_location(task->location, "scheduler depends on a task");
+	  if (!use_module)
+	    {
+	      use_module = 1;
+	      error_with_location(task->location,
+				  "The -fnesc_scheduler flag should specify a module");
+	      error_with_location(task->location,
+				  "(the module with the scheduling code, even if the scheduler is a configuration)");
+	    }
+	}
+      return;
+    }
 
   m_end.component = NULL;
   m_end.function = NULL;

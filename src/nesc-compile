@@ -140,6 +140,10 @@ if ($nocompile && !$conly) {
 # Check for gcc 4.0.x, which don't tell us about the __STDC__ #define
 unshift @nesc_args, "-D__STDC__" if isgcc40($gcc);
 
+# Get rid of __BLOCKS__ define, if any (prevent use of Apple C extension that
+# nesC doesn't understand)
+unshift @nesc_args, "-U__BLOCKS__";
+
 unshift @nesc_args, "nesc1";
 
 &vsystem(@nesc_args);

@@ -8,9 +8,9 @@ implementation {
   command void i.check() {
     if (nesc_size != sizeof(t))
       fprintf(stderr, "test %d sizeof fails. nesc: %d, gcc: %d\n",
-	      test, nesc_size, sizeof(t));
+	      test, (int)nesc_size, (int)sizeof(t));
     if (nesc_align != __alignof__(t))
       fprintf(stderr, "test %d alignof fails. nesc: %d, gcc: %d\n",
-	      test, nesc_align, __alignof__(t));
+	      test, (int)nesc_align, (int)__alignof__(t));
   }
 }
