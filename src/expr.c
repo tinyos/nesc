@@ -1141,12 +1141,13 @@ expression make_binary(location loc, int binop, expression e1, expression e2)
 	  if (unsafe_comparison(e1) || unsafe_comparison(e2))
 	    warning("suggest parentheses around comparison in operand of &");
 	}
-    }
 
-  /* Similarly, check for cases like 1<=i<=10 that are probably errors.  */
-  if (unsafe_comparison(result) && extra_warnings
-      && (unsafe_comparison(e1) || unsafe_comparison(e2)))
-    warning("comparisons like X<=Y<=Z do not have their mathematical meaning");
+      /* Similarly, check for cases like 1<=i<=10 that are probably errors.  */
+      /* This was under extra_warnings in 3.4.x, but under warn_parentheses in 4.? */
+      if (unsafe_comparison(result) 
+	  && (unsafe_comparison(e1) || unsafe_comparison(e2)))
+	warning("comparisons like X<=Y<=Z do not have their mathematical meaning");
+    }
 
 #if 0
   unsigned_conversion_warning (result, arg1);

@@ -1912,9 +1912,24 @@ void prt_binary(binary e, int context_priority)
 	}
       break;
     case kind_leq: case kind_geq: case kind_lt: case kind_gt:
-      lpri = P_REL; pri = P_REL; rpri = P_SHIFT; break;
+      pri = P_REL;
+      if (CONSERVATIVE_PARENS)
+	lpri = rpri = P_PLUS;
+      else 
+	{
+	  lpri = P_REL; rpri = P_SHIFT; 
+	}
+      break;
     case kind_eq: case kind_ne:
-      lpri = P_EQUALS; pri = P_EQUALS; rpri = P_REL; break;
+      pri = P_EQUALS; 
+      if (CONSERVATIVE_PARENS)
+	lpri = rpri = P_PLUS;
+      else 
+	{
+	  lpri = P_EQUALS; 
+	  rpri = P_REL; 
+	}
+      break;
     case kind_bitand:
       pri = P_BITAND;
       if (CONSERVATIVE_PARENS)
