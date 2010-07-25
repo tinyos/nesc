@@ -1,0 +1,20 @@
+cd $1
+cfile=/tmp/runnable.$$.c
+ofile=/tmp/runnable.$$.o
+FLAGS=
+if [ -f FLAGS ]; then
+  FLAGS=`cat FLAGS`
+fi
+GCC=gcc
+if [ -f GCC ]; then
+  GCC=`cat GCC`
+fi
+GCCFLAGS=
+if [ -f GCCFLAGS ]; then
+  GCCFLAGS=`cat GCCFLAGS`
+fi
+$NESC1 -U__BLOCKS__ -fnesc-separator=__ -fnesc-include=../../../tools/deputy_nodeputy -fnesc-include=../../../tools/nesc_nx -I/usr/lib/ncc test.nc -o $cfile $FLAGS && \
+$GCC $GCCFLAGS -o $ofile -c $cfile
+ok=$?
+rm -f $cfile $ofile
+exit $ok
