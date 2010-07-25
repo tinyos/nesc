@@ -201,6 +201,8 @@ exec_gcc(char *gcc_output_template, bool mkotmp, char **gcc_output_file,
   else
     res = 2;
 #endif
+  if (res != 0) 
+    fprintf(stderr, "could not execute %s\n", target_compiler);
 
   dup_restore(1, tmpfd1);
   dup_restore(2, tmpfd2);
@@ -258,6 +260,7 @@ exec_gcc(char *gcc_output_template, bool mkotmp, char **gcc_output_file,
       close(errorfd);
 
       execvp(target_compiler, (char **)argv);
+      fprintf(stderr, "could not execute %s: %s\n", target_compiler, strerror(errno));
       exit(2);
     }
 
@@ -342,11 +345,38 @@ static void gcc_cpp_cleanup(void)
     unlink(gcc_builtin_macros_file);
 }
 
+static void print_error_file(FILE *to, char *filename)
+{
+  char line[256];
+  FILE *f;
+
+  if (!filename)
+    {
+      fprintf(to, "-- no output\n");
+      return;
+    }
+
+  f = fopen(filename, "r");
+  if (!f) 
+    {
+      fprintf(to, "-- failed to open error message file %s\n", filename);
+      return;
+    }
+
+  while (fgets(line, sizeof line - 1, f))
+    fputs(line, to);
+
+  if (ferror(f))
+    fprintf(to, "-- error reading message file %s\n", filename);
+
+  fclose(f);
+}
+
 const char *gcc_global_cpp_init(void)
 {
   static char tbuiltins[] = "/tmp/nesccppbXXXXXX";
   static char tincludes[] = "/tmp/nesccppiXXXXXX";
-  char *includes;
+  char *includes = NULL;
   FILE *incf;
   char line[LINELEN];
   bool quote_includes = FALSE, bracket_includes = FALSE;
@@ -357,7 +387,13 @@ const char *gcc_global_cpp_init(void)
   if (!exec_gcc(tbuiltins, TRUE, &gcc_builtin_macros_file,
 		tincludes, TRUE, &includes, 
 		7 + extra_options_count, gcc_preprocess_init_setargs, NULL))
-    return NULL;
+    {
+      error("invocation of %s to find builtin macros failed (error message output follows)", 
+	    target_compiler);
+      print_error_file(stderr, includes);
+
+      return NULL;
+    }
 
   /* Read gcc error output to get search path */
   incf = fopen(includes, "r");

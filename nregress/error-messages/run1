@@ -1,4 +1,5 @@
 cd $1
+FLAGS=
 if [ -f FLAGS ]; then
   FLAGS=`cat FLAGS`
 fi
