@@ -859,14 +859,14 @@ void prt_variable_decl(type_element modifiers, variable_decl d,
   else
     prt_declarator(d->declarator, modifiers, NULL, d->ddecl, options);
 
+  if (d->asm_stmt)
+    prt_asm_stmt_plain(d->asm_stmt);
+
   if (d->attributes)
     {
       output(" ");
       prt_type_elements(CAST(type_element, d->attributes), 0);
     }
-
-  if (d->asm_stmt)
-    prt_asm_stmt_plain(d->asm_stmt);
 
   if (d->arg1 && !(use_nido && is_module_variable(d->ddecl)))
     {
