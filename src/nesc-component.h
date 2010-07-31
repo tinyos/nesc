@@ -36,7 +36,8 @@ void component_spec_iterate(nesc_declaration c,
 			    void (*iterator)(data_declaration fndecl,
 					     void *data),
 			    void *data,
-			    bool interfaces);
+			    bool interfaces,
+			    bool otherdecls);
 
 void component_functions_iterate(nesc_declaration c,
 				 void (*iterator)(data_declaration fndecl,

@@ -1,3 +1,8 @@
+keep=
+if [ -z "$NESC1" ]; then
+  NESC1=../../../src/nesc1
+  keep=1
+fi
 cd $1
 cfile=/tmp/runnable.$$.c
 exe=/tmp/runnable.out.$$
@@ -5,5 +10,9 @@ $NESC1 -U__BLOCKS__ -fnesc-separator=__ -fnesc-include=../../../tools/deputy_nod
 gcc -o $exe $cfile && \
 $exe
 ok=$?
-rm -f $cfile $exe
+if [ -z "$keep" ]; then
+  rm -f $cfile $exe
+else
+  echo C file is $cfile, executable is $exe
+fi
 exit $ok

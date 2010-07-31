@@ -730,12 +730,13 @@ static void set_specification_instantiations(nesc_declaration component)
      abstract configurations)...
 */
 {
-  component_spec_iterate(component, set_ddecl_instantiation1, NULL, TRUE);
+  component_spec_iterate(component, set_ddecl_instantiation1, NULL, TRUE, TRUE);
 }
 
 static void set_ddecl_instantiation2(data_declaration fndecl, void *data)
 {
   /* We just make the decl fndecl is a copy of point back to fndecl */
+
   fndecl->instanceof->instantiation = fndecl;
 }
 
@@ -744,14 +745,9 @@ static void set_specification_instantiations_shallow(nesc_declaration component)
      the original abstract component from which component is derived to
      the copies in component (in preparation for cloning component's
      AST and pointing to component's decls)
-
-     The original data_declarations can be found by following the
-     shadowed fields. We may have to follow these one deep (abstract
-     modules in configurations) or two deep (abstract modules in
-     abstract configurations)...
 */
 {
-  component_spec_iterate(component, set_ddecl_instantiation2, NULL, TRUE);
+  component_spec_iterate(component, set_ddecl_instantiation2, NULL, TRUE, TRUE);
 }
 
 static declaration instantiate_parameters(region r, declaration orig_parms)

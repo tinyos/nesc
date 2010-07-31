@@ -47,7 +47,7 @@ void component_spec_iterate(nesc_declaration c,
 			    void (*iterator)(data_declaration fndecl,
 					     void *data),
 			    void *data,
-			    bool interfaces)
+			    bool interfaces, bool otherdecls)
 {
   const char *ifname;
   void *ifentry;
@@ -58,8 +58,8 @@ void component_spec_iterate(nesc_declaration c,
     {
       data_declaration idecl = ifentry;
 
-      if (!(idecl->kind == decl_interface_ref ||
-	    idecl->kind == decl_function))
+      if (!otherdecls && !(idecl->kind == decl_interface_ref ||
+			    idecl->kind == decl_function))
 	continue;
 
       if (idecl->kind != decl_interface_ref || interfaces)
@@ -83,7 +83,7 @@ void component_functions_iterate(nesc_declaration c,
 						  void *data),
 				 void *data)
 {
-  component_spec_iterate(c, iterator, data, FALSE);
+  component_spec_iterate(c, iterator, data, FALSE, FALSE);
 }
 
 static typelist make_gparm_typelist(declaration gparms)
@@ -272,7 +272,7 @@ void build_external_graph(region r, nesc_declaration cdecl)
      of cdecl */
   d.cg = new_cgraph(r);
   d.userg = new_cgraph(r);
-  component_spec_iterate(cdecl, beg_iterator, &d, TRUE);
+  component_spec_iterate(cdecl, beg_iterator, &d, TRUE, FALSE);
 
   cdecl->connections = d.cg;
   cdecl->user_connections = d.userg;
