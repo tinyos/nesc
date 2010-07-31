@@ -12,7 +12,6 @@ EXTRA_DIST =					\
 	COPYING					\
 	COPYRIGHT				\
 	INSTALL					\
-	INTEL-LICENSE				\
 	README					\
 	config-aux/acx.m4			\
 	config-aux/codeset.m4			\

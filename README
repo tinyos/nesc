@@ -1,6 +1,14 @@
-This is version 1.3.1 of the nesC compiler.
+This is version 1.3.2 of the nesC compiler.
 
 Installation instructions are in INSTALL. 
+
+Changes in nesC 1.3.2
+=====================
+- changed Intel Open Source License files to dual BSD/GPL license
+- improved support for non-gcc targets: -fnesc-gccize flag, 
+  optionally identify "async" function in nescc output
+- bug fixes (sourceforge bugs 3013497, 3017203, 3019357 and others)
+- disable use of Apple-specific "blocks" C extension 
 
 Changes in nesC 1.3.1
 =====================
