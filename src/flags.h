@@ -307,4 +307,7 @@ extern int flag_c;
    attributes rather than in their original syntax. */
 extern int flag_gccize;
 
+/* Print included file names (-H) */
+extern int print_include_names;
+
 #endif

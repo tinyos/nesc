@@ -37,7 +37,7 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	    $conly = 1;
 	}
 
-	if (/^-[_WwvpfmD]/ || /^-pedantic$/ || /^-ansi$/) {
+	if (/^-[_WwvpfmDH]/ || /^-pedantic$/ || /^-ansi$/) {
 	    push @nesc_args, $_ unless /^-_?fnesc-.*cfile=/;
 	    $verbose = 1 if /^-v/;
 	}

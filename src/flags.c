@@ -310,3 +310,6 @@ int flag_c;
    attributes rather than in their original syntax. */
 int flag_gccize;
 
+/* Print included file names (-H) */
+int print_include_names;
+

@@ -207,6 +207,7 @@ static void start_lex_common(source_language l)
 
   current.lex.line_map = ralloc(current.fileregion, struct line_maps);
   linemap_init(current.lex.line_map);
+  current.lex.line_map->trace_includes = print_include_names;
   current.lex.finput = cpp_create_reader(CLK_GNUC89, NULL, current.lex.line_map);
   current.lex.pp.outf = NULL;
   cpp_opts = cpp_get_options(current_reader());
@@ -235,6 +236,7 @@ static void start_lex_common(source_language l)
   cpp_opts->warn_traditional = warn_traditional;
   cpp_opts->pedantic_errors = flag_pedantic_errors;
   cpp_opts->pedantic = pedantic;
+  cpp_opts->print_include_names = print_include_names;
 
   cpp_init_iconv(current_reader());
   cpp_init_special_builtins(current_reader());

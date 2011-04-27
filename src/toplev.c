@@ -192,6 +192,10 @@ static bool c_option(char *p)
       warn_trigraphs = 1;
       warn_comments = 1;
     }
+  else if (!strcmp (p, "-H"))
+    {
+      print_include_names = 1;
+    }
   else
     return FALSE;
 
