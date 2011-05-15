@@ -49,36 +49,36 @@
 
 (c-lang-defconst c-class-decl-kwds
   nesc (append '("interface" "implementation" "nx_struct" "nx_union")
-	       (c-lang-const c-class-decl-kwds)))
+	       (c-lang-const c-class-decl-kwds c)))
 
 (c-lang-defconst c-type-prefix-kwds
   nesc (append '("nx_struct" "nx_union")
-	       (c-lang-const c-type-prefix-kwds)))
+	       (c-lang-const c-type-prefix-kwds c)))
 
 (c-lang-defconst c-block-decls-with-vars
   nesc (append '("nx_struct" "nx_union")
-	       (c-lang-const c-block-decls-with-vars)))
+	       (c-lang-const c-block-decls-with-vars c)))
 
 (c-lang-defconst c-brace-list-decl-kwds
   nesc (append '("module" "configuration" "provides" "uses")
-	       (c-lang-const c-brace-list-decl-kwds)))
+	       (c-lang-const c-brace-list-decl-kwds c)))
 
 (c-lang-defconst c-typeless-decl-kwds
   nesc (append '("as" "components" "interface")
-	       (c-lang-const c-typeless-decl-kwds)))
+	       (c-lang-const c-typeless-decl-kwds c)))
 
 (c-lang-defconst c-modifier-kwds
   nesc (append '("command" "event" "task" "norace" "async")
-	       (c-lang-const c-modifier-kwds)))
+	       (c-lang-const c-modifier-kwds c)))
 
 (c-lang-defconst c-other-decl-kwds
-  nesc (append '("includes") (c-lang-const c-other-decl-kwds)))
+  nesc (append '("includes") (c-lang-const c-other-decl-kwds c)))
 
 (c-lang-defconst c-other-kwds
-  nesc (append '("new") (c-lang-const c-other-kwds)))
+  nesc (append '("new") (c-lang-const c-other-kwds c)))
 
 (c-lang-defconst c-block-stmt-1-kwds
-  nesc (append '("atomic") (c-lang-const c-block-stmt-1-kwds)))
+  nesc (append '("atomic") (c-lang-const c-block-stmt-1-kwds c)))
 
 (c-lang-defconst c-recognize-knr-p nesc nil)
 
@@ -91,7 +91,7 @@
 	       (c-lang-const c-operators c)))
 
 (c-lang-defconst c-other-kwds
-  nesc (cons "abstract" (c-lang-const c-other-kwds)))
+  nesc (cons "abstract" (c-lang-const c-other-kwds c)))
 
 
 (defcustom nesc-font-lock-extra-types '("result_t" "bool"
