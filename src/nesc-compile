@@ -42,7 +42,7 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	    $verbose = 1 if /^-v/;
 	}
 
-	if (/^-([ID])/) {
+	if (/^-([IDUA])/) {
 	    $opt = $1;
 	    ($i, $val) = &extractarg($i);
 	    push @nesc_args, "-$opt$val";
