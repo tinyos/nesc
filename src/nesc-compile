@@ -37,14 +37,15 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	    $conly = 1;
 	}
 
-	if (/^-[_WwvpfmDH]/ || /^-pedantic$/ || /^-ansi$/) {
+	if (/^-[_WwvpfmH]/ || /^-pedantic$/ || /^-ansi$/) {
 	    push @nesc_args, $_ unless /^-_?fnesc-.*cfile=/;
 	    $verbose = 1 if /^-v/;
 	}
 
-	if (/^-I/) {
-	    ($i, $idir) = &extractarg($i);
-	    push @nesc_args, "-I$idir";
+	if (/^-([ID])/) {
+	    $opt = $1;
+	    ($i, $val) = &extractarg($i);
+	    push @nesc_args, "-$opt$val";
 	}
 	elsif (/^-o/) {
 	    ($i, $objtarget) = &extractarg($i);
@@ -79,10 +80,8 @@ for ($i = 0; $i <= $#ARGV; $i++) {
                 @deputy_args = split(" ", $1);
             }
 	}
-	elsif (!(/^-D/)) {
-	    if (!(/^-_?W(no-)?nesc/)) {
-		push @gcc_args, $_;
-	    }
+	elsif (!(/^-_?W(no-)?nesc/)) {
+	    push @gcc_args, $_;
 	}
     }
     else {
