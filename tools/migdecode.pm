@@ -53,8 +53,8 @@ sub decode() {
 	s/\r$//;
 
 	/ *(.*)/;
-	split / /, $1;
-	($field, $type, $offset, $bitlength) = @_;
+	@specline = split / /, $1;
+	($field, $type, $offset, $bitlength) = @specline;
 
 	$basetype = &basetype($type);
 	@field_array_max = &arraymax($type);	
