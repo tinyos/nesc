@@ -1,6 +1,12 @@
-This is version 1.3.2 of the nesC compiler.
+This is version 1.3.3 of the nesC compiler.
 
 Installation instructions are in INSTALL. 
+
+Changes in nesC 1.3.3
+=====================
+- fixed mig when used with perl 5.12 (sourceforge bugs 3122329, 3066006)
+- work around potential gcc 4.6 behavior change (sourceforge bug 3153727)
+- support gcc's -H option (print #included file names)
 
 Changes in nesC 1.3.2
 =====================
