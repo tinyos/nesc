@@ -18,6 +18,15 @@
 
 use File::Basename;
 
+# Extract information from enviroment variables set by nescc
+$ctarget = $ENV{NESCC_CFILE};
+$conly = $ENV{NESCC_CONLY} eq "yes";
+$deputy = $ENV{NESCC_DEPUTY} eq "yes";
+@deputy_args = split(" ", $ENV{NESCC_DEPUTY_ARGS});
+$gcc = $ENV{NESCC_GCC};
+
+push @nesc_args, "-fnesc-gcc=$gcc";
+
 for ($i = 0; $i <= $#ARGV; $i++) {
     $_ = $ARGV[$i];
 
@@ -33,12 +42,8 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	    $nocompile = 1;
 	}
 
-	if (/^-_?fnesc-conly$/) {
-	    $conly = 1;
-	}
-
 	if (/^-[_WwvpfmH]/ || /^-pedantic$/ || /^-ansi$/) {
-	    push @nesc_args, $_ unless /^-_?fnesc-.*cfile=/;
+	    push @nesc_args, $_;
 	    $verbose = 1 if /^-v/;
 	}
 
@@ -62,25 +67,13 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	elsif (/^-S$/) {
 	    $asmonly = 1;
 	}
-	elsif (/^-_?fnesc-/) {
-	    if (/^-_?fnesc-cfile=(.*)$/) {
-		$ctarget = $1;
-	    }
-	    if (/^-_?fnesc-tmpcfile=(.*)$/) {
-		$ctarget = $1;
-		$delcfile = 1;
-	    }
-	    if (/^-_?fnesc-gcc=(.*)$/) {
-		$gcc = $1;
-	    }
-            if (/^-_?fnesc-deputy$/) {
-                $deputy = 1;
-            }
-            if (/^-_?fnesc-deputy-args=(.*)$/) {
-                @deputy_args = split(" ", $1);
-            }
+	elsif (/^-fnesc-tmpcfile=(.*)$/) {
+	  if ($ctarget eq "") {
+	    $ctarget = $1;
+	    $delcfile = 1;
+	  }
 	}
-	elsif (!(/^-_?W(no-)?nesc/)) {
+	else {
 	    push @gcc_args, $_;
 	}
     }
@@ -91,6 +84,12 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	}
 	$source = $_;
     }
+}
+
+# Split on spaces not preceded by \, then unquote.
+push @nesc_args, split(/(?<!\\) /, $ENV{NESCC_ARGS});
+foreach (@nesc_args) {
+  s/\\(.)/\1/g;
 }
 
 if ($source eq "") {
@@ -120,7 +119,7 @@ if ($objtarget eq "") {
 }
 
 # Deputy annotations
-if($deputy) {
+if ($deputy) {
     unshift @nesc_args, "-fnesc-include=deputy_stage1";
     unshift @nesc_args, "-fnesc-genprefix=#include \"$ENV{NCDIR}/deputy_stage2.h\"";
 }
@@ -152,7 +151,7 @@ if ($? != 0) {
 }
 exit 0 if $nocompile || $conly;
 
-if($deputy) {
+if ($deputy) {
     push @deputy_args, "--gcc=$gcc";
     push @gcc_args, @deputy_args;
     $gcc = "deputy";

@@ -1,4 +1,4 @@
 .nc: @nesc
 
 @nesc:
-perl -S nesc-compile %{_*} %{m*} %{D*&U*&A*} %{H} %{I*} %{undef} %{trigraphs} %{i*} %{nostdinc} %{a*} %{g*} %{O*} %{W*} %{w} %{S} %{pedantic*} %{std*} %{ansi} %{traditional} %{v} %{p*} %{f*} %{!fsyntax-only:%{!fnesc-cfile=*:%{!_fnesc-cfile=*:-fnesc-tmpcfile=%g.c}} %{S:%W{o*}%{!o*:-o %b.s}}%{!S:%{c:%W{o*}%{!o*:-o %w%b%O}}%{!c:-o %d%w%u%O}}} %{fsyntax-only:-o %j} %{-param*} %i -_ASM %Y
+perl -S nesc-compile %{m*} %{D*&U*&A*} %{H} %{I*} %{undef} %{trigraphs} %{i*} %{nostdinc} %{a*} %{g*} %{O*} %{W*} %{w} %{S} %{pedantic*} %{std*} %{ansi} %{traditional} %{v} %{p*} %{f*} %{!fsyntax-only:-fnesc-tmpcfile=%g.c %{S:%W{o*}%{!o*:-o %b.s}}%{!S:%{c:%W{o*}%{!o*:-o %w%b%O}}%{!c:-o %d%w%u%O}}} %{fsyntax-only:-o %j} %{-param*} %i -_ASM %Y
