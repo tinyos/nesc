@@ -799,7 +799,8 @@ static void instantiate_cg(cgraph copy, cgraph original)
 	  instantiate_endp(&to);
 	  cto = endpoint_lookup(copy, &to);
 
-	  graph_add_edge(cfrom, cto, NULL);
+	  /* User graphs have locations on the edges */
+	  graph_add_edge(cfrom, cto, EDGE_GET(location, connection));
 	}
     }
 }
