@@ -1,6 +1,11 @@
-This is version 1.3.3 of the nesC compiler.
+This is version 1.3.4 of the nesC compiler.
 
 Installation instructions are in INSTALL. 
+
+Changes in nesC 1.3.4
+=====================
+- support gcc 4.7.x (issue 3381025)
+- fix issues 3519555, 3473487, 3468269
 
 Changes in nesC 1.3.3
 =====================
