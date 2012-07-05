@@ -84,7 +84,7 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	} elsif (/^-([IDUAo])/) {
 	    $opt = $1;
 	    ($i, $val) = &extractarg($i);
-	    push @new_args, "-$opt$val";
+	    push @new_args, "-$opt", $val;
 	} elsif (/^(-include|-idirafter|-imacro|-iprefix|-iwithprefix|-iwithprefixbefore|-isystem|-isysroot|-X[a-zA-Z]*|--param)$/) {
 	    $opt = $1;
 	    ($i, $arg) = &nextarg($i);
