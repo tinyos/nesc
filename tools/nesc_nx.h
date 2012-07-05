@@ -126,7 +126,7 @@
     unsigned byte_offset = offset >> 3;					\
     unsigned bit_offset = offset & 7;					\
 									\
-    x = x & ((1 << length) - 1);					\
+    x = x & (((uint ## bits ## _t)1 << length) - 1);					\
 									\
     /* all in one byte case */						\
     if (length + bit_offset <= 8) {					\
@@ -201,7 +201,7 @@
 									\
     while (count + 8 <= length)						\
       {									\
-	x |= (uint ## bits ## _t)(msg[byte_offset++] << count);         \
+	x |= (uint ## bits ## _t)msg[byte_offset++] << count;		\
 	count += 8;                                                     \
       }									\
 									\
@@ -218,7 +218,7 @@
     unsigned bit_offset = offset & 7;					\
     unsigned count = 0;							\
 									\
-    x = x & ((1 << length) - 1);					\
+    x = x & (((uint ## bits ## _t)1 << length) - 1);					\
 									\
     /* all in one byte case */						\
     if (length + bit_offset <= 8) {					\
