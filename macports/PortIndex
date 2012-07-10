@@ -1,0 +1,2 @@
+nesc 461
+variants universal portdir lang/nesc description {Compiler for the nesC language.} homepage http://nescc.sourceforge.net/ epoch 0 platforms darwin name nesc depends_lib {port:automake port:autoconf} long_description {nesC is a compiler for a new language (based on C) designed to support the TinyOS project, an operating system for wireless sensor network platforms.} maintainers cire831@gmail.com license unknown categories {lang wsn} version 1.3.4 revision 0
