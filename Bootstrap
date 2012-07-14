@@ -27,8 +27,22 @@ set -x
     cd ..
 
     cd libiberty
-    $AUTOHEADER
-    $AUTOCONF
+    # 2.67 at least is broken with libiberty (AC_REPLACE_FUNCS not working),
+    # current binutils distributions force the use of 2.64, use that if possible
+    if autoheader2.64 --version >/dev/null 2>/dev/null; then 
+      autoheader2.64
+      autoconf2.64
+    else
+      if autoconf --version | grep -q '2\.67'; then
+	set +x
+	echo "autoconf 2.67 does not work with libiberty"
+	echo "Either install debian/ubuntu's autoconf2.64 package, or"
+	echo "replace the default autoconf version with 2.69 or later, or 2.64"
+	exit 2
+      fi
+      $AUTOHEADER
+      $AUTOCONF
+    fi
     cd ..
 
     cd libcpp
