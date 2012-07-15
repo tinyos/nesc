@@ -39,6 +39,14 @@ set -x
 	echo "Either install debian/ubuntu's autoconf2.64 package, or"
 	echo "replace the default autoconf version with 2.69 or later, or 2.64"
 	exit 2
+      else
+	  if autoconf --version | grep -q '2\.68'; then
+	      set +x
+	      echo "autoconf 2.68 does not work with libiberty"
+	      echo "Either install debian/ubuntu's autoconf2.64 package, or"
+	      echo "replace the default autoconf version with 2.69 or later, or 2.64"
+	      exit 2
+	  fi
       fi
       $AUTOHEADER
       $AUTOCONF
