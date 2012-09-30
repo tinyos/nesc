@@ -1,6 +1,13 @@
-To build nesC from the CVS distribution, you need
+
+The current version of nescc can be obtained via:
+
+	git://github.com/tinyprod/nesc.git, master branch
+
+To build nesC from the git repository, you need
+
 automake 
-autoconf 2.50 or later
+autoconf 2.64 or 2.69 or later
+    2.67 and 2.68 are known not to work (problem with libiberty)
 emacs
 gperf
 
