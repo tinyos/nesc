@@ -565,7 +565,7 @@ parameters:
 parameters1: 
 	  parms ']'
 	  	{
-		  $$ = declaration_reverse($1);
+		  $$ = $1;
 		  check_interface_parameter_types($$); 
 		}
 	| error ']' { $$ = make_error_decl(); }
