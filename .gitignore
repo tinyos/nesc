@@ -1,0 +1,26 @@
+# Object files
+*.o
+
+# Libraries
+*.lib
+*.a
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+
+configure
+config.status*
+config.log
+autom4te.cache
+aclocal.m4
+Makefile.in
+Makefile
+*~
