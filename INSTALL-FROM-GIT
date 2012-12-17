@@ -1,7 +1,7 @@
 
 The current version of nescc can be obtained via:
 
-	git://github.com/tinyprod/nesc.git, master branch
+	git://github.com/tinyos/nesc.git, master branch
 
 To build nesC from the git repository, you need
 
