@@ -103,7 +103,7 @@ static struct { char c; char *string; int *variable; int on_value;} fW_options[]
 /* Options with arguments */
 #define OPTS_WITH_ARGS "DUAIo"
 
-const char *opts_with_args[] = 
+const char *opts_with_args[] =
 {
   "include",
   "imacros",
@@ -243,13 +243,13 @@ int region_main(int argc, char **argv) deletes
    * way.
    */
   waitforgdb = getenv("NCCGDB");
-  if (waitforgdb) 
+  if (waitforgdb)
     {
       fprintf(stderr, "ncc pid %d waiting for gdb attach\n", getpid());
       poll(0, 0, -1); // should return with EINTR
     }
 #endif
-  
+
   signal(SIGABRT, rcc_aborting);
   signal(SIGSEGV, rcc_aborting);
 #ifdef SIGBUS
@@ -371,7 +371,7 @@ int region_main(int argc, char **argv) deletes
       fprintf(stderr, "usage: %s [options] <filename>\n", argv[0]);
       exit(FATAL_EXIT_CODE);
     }
-    
+
   if (errorcount)
     exit (FATAL_EXIT_CODE);
   else
