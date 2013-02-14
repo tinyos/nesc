@@ -14,7 +14,7 @@ nccdoc_DATA = 					\
 	COPYRIGHT				\
 	INDEX					\
 	OVERVIEW				\
-	../README				\
+	../README.md				\
 	mica-debugging.html			\
 	envtarget.html				\
 	nesc-debugging.html			\
