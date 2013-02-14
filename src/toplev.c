@@ -103,7 +103,7 @@ static struct { char c; char *string; int *variable; int on_value;} fW_options[]
 /* Options with arguments */
 #define OPTS_WITH_ARGS "DUAIo"
 
-const char *opts_with_args[] = 
+const char *opts_with_args[] =
 {
   "include",
   "imacros",
@@ -207,7 +207,8 @@ static void rcc_aborting(int s)
   location where;
 
   signal(SIGABRT, 0);
-  fprintf(stderr, "nesC: Internal error. Please send a bug report to the nesC bug mailing list\nat nescc-bugs@lists.sourceforge.net\n");
+  fprintf(stderr, "nesC: Internal error.\n"
+    "Please submit an issue to the GitHub repository at https://github.com/tinyos/nesc\n");
   where = current_location();
   if (where != dummy_location)
     fprintf(stderr, "Current location (guess): %s:%lu\n", where->filename, where->lineno);
@@ -243,13 +244,13 @@ int region_main(int argc, char **argv) deletes
    * way.
    */
   waitforgdb = getenv("NCCGDB");
-  if (waitforgdb) 
+  if (waitforgdb)
     {
       fprintf(stderr, "ncc pid %d waiting for gdb attach\n", getpid());
       poll(0, 0, -1); // should return with EINTR
     }
 #endif
-  
+
   signal(SIGABRT, rcc_aborting);
   signal(SIGSEGV, rcc_aborting);
 #ifdef SIGBUS
@@ -371,7 +372,7 @@ int region_main(int argc, char **argv) deletes
       fprintf(stderr, "usage: %s [options] <filename>\n", argv[0]);
       exit(FATAL_EXIT_CODE);
     }
-    
+
   if (errorcount)
     exit (FATAL_EXIT_CODE);
   else
