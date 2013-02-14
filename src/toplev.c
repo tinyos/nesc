@@ -207,7 +207,8 @@ static void rcc_aborting(int s)
   location where;
 
   signal(SIGABRT, 0);
-  fprintf(stderr, "nesC: Internal error. Please send a bug report to the nesC bug mailing list\nat nescc-bugs@lists.sourceforge.net\n");
+  fprintf(stderr, "nesC: Internal error.\n"
+    "Please submit an issue to the GitHub repository at https://github.com/tinyos/nesc\n");
   where = current_location();
   if (where != dummy_location)
     fprintf(stderr, "Current location (guess): %s:%lu\n", where->filename, where->lineno);
