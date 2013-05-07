@@ -1,5 +1,6 @@
 # Object files
 *.o
+*.class
 
 # Libraries
 *.lib
@@ -24,3 +25,58 @@ aclocal.m4
 Makefile.in
 Makefile
 *~
+
+# Bootstrap
+config-aux
+libcpp/config.in
+libiberty/config.in
+src/autoconf.h.in
+
+# Configure
+libcpp/config.h
+libcpp/stamp-h1
+libiberty/config.h
+libiberty/stamp-h
+libiberty/temp-frag
+src/.deps/
+src/autoconf.h
+src/libcompat/.deps/
+src/stamp-h1
+tools/nescc
+tools/nescc-diff
+tools/nescc-mig
+tools/nescc-ncg
+tools/nescc-wiring
+
+# Make
+libcpp/.deps/
+libcpp/localedir.h
+libcpp/localedir.hs
+libiberty/needed-list
+libiberty/required-list
+libiberty/stamp-picdir
+src/AST_defs.h
+src/AST_list_node.c
+src/AST_list_node.h
+src/AST_parent.c
+src/AST_print.c
+src/AST_types.c
+src/AST_types.h
+src/AST_walk_children.c
+src/ND_defs.h
+src/ND_list_nd_arg.c
+src/ND_list_nd_arg.h
+src/ND_types.c
+src/ND_types.h
+src/c-gperf.h
+src/c-parse.output
+src/c-parse.tab.c
+src/c-parse.tab.h
+src/lex.nd.c
+src/machine/keil-gperf.h
+src/machine/sdcc-gperf.h
+src/nesc-dspec.output
+src/nesc-dspec.tab.c
+src/nesc-dspec.tab.h
+src/nesc1
+tools/nesc.jar
