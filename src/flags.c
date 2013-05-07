@@ -240,6 +240,9 @@ int warn_async;
 /* Warn when no combiner function and multiple fns called */
 int warn_no_combiner;
 
+/* Warn when an implicit connection between components is used */
+int warn_implicit_connection;
+
 /* If true, warn_fnptr, warn_data_race, warn_async and warn_no_combiner
    are treated as errors */
 int nesc_error;
