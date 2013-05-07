@@ -34,9 +34,9 @@ cval cval_top; /* The non-constant value */
 cval cval_unknown_number; /* The unknown number value */
 cval cval_unknown_address; /* The unknown address value */
 cval cval_zero; /* A zero value. Use cval_cast to make the desired kind of
-		   constant */
+                   constant */
 cval cval_one; /* A one value. Use cval_cast to make the desired kind of
-		   constant */
+                   constant */
 cval cval_bitsperbyte; /* BITSPERBYTE, unsigned */
 
 /* We use cval_invalid_address to mark those places where a constant
@@ -140,7 +140,7 @@ cval make_cval_complex(cval r, cval i)
 }
 
 cval make_cval_address(data_declaration ddecl, label_declaration ldecl,
-		       largest_int offset)
+                       largest_int offset)
 {
   cval c = make_cval_signed(offset, ptrdiff_t_type);
 
@@ -354,18 +354,18 @@ cval cval_cast(cval c, type to)
       type base = make_base_type(to);
 
       switch (c.kind)
-	{
-	case cval_unk_address: case cval_address_unk_offset: case cval_address:
-	  return cval_top;
-	case cval_sint: case cval_uint: case cval_float:
-	  return make_cval_complex(cval_cast(c, base),
-				   cval_cast(cval_zero, base));
-	  return c;
-	case cval_sint_complex: case cval_uint_complex: case cval_float_complex:
-	  return make_cval_complex(cval_cast(cval_realpart(c), base),
-				   cval_cast(cval_imagpart(c), base));
-	default:assert(0); return c;
-	}
+        {
+        case cval_unk_address: case cval_address_unk_offset: case cval_address:
+          return cval_top;
+        case cval_sint: case cval_uint: case cval_float:
+          return make_cval_complex(cval_cast(c, base),
+                                   cval_cast(cval_zero, base));
+          return c;
+        case cval_sint_complex: case cval_uint_complex: case cval_float_complex:
+          return make_cval_complex(cval_cast(cval_realpart(c), base),
+                                   cval_cast(cval_imagpart(c), base));
+        default:assert(0); return c;
+        }
     }
 
   if (cval_iscomplex(c))
@@ -374,24 +374,24 @@ cval cval_cast(cval c, type to)
   if (type_floating(to))
     {
       switch (c.kind)
-	{
-	case cval_unk_address: case cval_address_unk_offset: case cval_address:
-	  return cval_top; /* And not cval_invalid_address for some reason */
-	case cval_sint: case cval_uint:
-	  c.kind = cval_float;
-	  /* Note that the cast is necessary otherwise it would cast to the common
-	     type of largest_int/largest_uint (largest_uint), so c.si would be
-	     cast to unsigned. */
-	  c.d = c.kind == cval_sint ? (long double)c.si : (long double)c.ui;
-	  return c;
-	case cval_float:
-	  if (type_float(to))
-	    c.d = (float)c.d;
-	  else if (type_double(to))
-	    c.d = (double)c.d;
-	  return c;
-	default:assert(0); return c;
-	}
+        {
+        case cval_unk_address: case cval_address_unk_offset: case cval_address:
+          return cval_top; /* And not cval_invalid_address for some reason */
+        case cval_sint: case cval_uint:
+          c.kind = cval_float;
+          /* Note that the cast is necessary otherwise it would cast to the common
+             type of largest_int/largest_uint (largest_uint), so c.si would be
+             cast to unsigned. */
+          c.d = c.kind == cval_sint ? (long double)c.si : (long double)c.ui;
+          return c;
+        case cval_float:
+          if (type_float(to))
+            c.d = (float)c.d;
+          else if (type_double(to))
+            c.d = (double)c.d;
+          return c;
+        default:assert(0); return c;
+        }
     }
   else
     {
@@ -400,64 +400,64 @@ cval cval_cast(cval c, type to)
 
       // Cast to int of unknown size produces unknown value
       if (cval_isunknown_number(tosize_cval))
-	switch (c.kind)
-	  {
-	  case cval_unk_address: case cval_address_unk_offset:
-	  case cval_address:
-	    return cval_unknown_address;
-	  default:
-	    return cval_unknown_number;
-	  }
+        switch (c.kind)
+          {
+          case cval_unk_address: case cval_address_unk_offset:
+          case cval_address:
+            return cval_unknown_address;
+          default:
+            return cval_unknown_number;
+          }
 
       tosize = cval_uint_value(tosize_cval);
       switch (c.kind)
-	{
-	case cval_float:
-	  /* If it's floating, make it an integer */
-	  /* Note: can't cast floating point number to a pointer */
-	  assert(!type_pointer(to));
-	  if (type_unsigned(to))
-	    {
-	      c.kind = cval_uint;
-	      c.ui = c.d;
-	      c.isize = tosize;
-	    }
-	  else
-	    {
-	      c.kind = cval_sint;
-	      c.si = c.d;
-	      c.isize = tosize;
-	    }
-	  return c;
+        {
+        case cval_float:
+          /* If it's floating, make it an integer */
+          /* Note: can't cast floating point number to a pointer */
+          assert(!type_pointer(to));
+          if (type_unsigned(to))
+            {
+              c.kind = cval_uint;
+              c.ui = c.d;
+              c.isize = tosize;
+            }
+          else
+            {
+              c.kind = cval_sint;
+              c.si = c.d;
+              c.isize = tosize;
+            }
+          return c;
 
-	case cval_unk_address: case cval_address_unk_offset: case cval_address:
-	  /* Lose value if cast address of symbol to too-narrow a type */
-	  if (!type_array(to) && tosize < type_size_int(intptr_type))
-	    return cval_invalid_address;
-	  /* Otherwise nothing happens (the offset is already restricted to
-	     the range of intptr_type). */
-	  return c;
+        case cval_unk_address: case cval_address_unk_offset: case cval_address:
+          /* Lose value if cast address of symbol to too-narrow a type */
+          if (!type_array(to) && tosize < type_size_int(intptr_type))
+            return cval_invalid_address;
+          /* Otherwise nothing happens (the offset is already restricted to
+             the range of intptr_type). */
+          return c;
 
-	case cval_uint: case cval_sint:
-	  c.isize = tosize;
-	  if (type_unsigned(to) || type_pointer(to))
-	    {
-	      if (c.kind == cval_sint)
-		c.ui = c.si;
-	      c.ui = truncate_unsigned(c.ui, tosize);
-	      c.kind = cval_uint;
-	    }
-	  else
-	    {
-	      if (c.kind == cval_uint)
-		c.si = c.ui;
-	      c.si = truncate_signed(c.si, tosize);
-	      c.kind = cval_sint;
-	    }
-	  return c;
+        case cval_uint: case cval_sint:
+          c.isize = tosize;
+          if (type_unsigned(to) || type_pointer(to))
+            {
+              if (c.kind == cval_sint)
+                c.ui = c.si;
+              c.ui = truncate_unsigned(c.ui, tosize);
+              c.kind = cval_uint;
+            }
+          else
+            {
+              if (c.kind == cval_uint)
+                c.si = c.ui;
+              c.si = truncate_signed(c.si, tosize);
+              c.kind = cval_sint;
+            }
+          return c;
 
-	default: assert(0); return c;
-	}
+        default: assert(0); return c;
+        }
     }
 }
 
@@ -575,7 +575,7 @@ cval cval_add(cval c1, cval c2)
       {
       case cval_unk_number: return make_cval_address_unknown_offset(c1);
       case cval_address: case cval_unk_address: case cval_address_unk_offset:
-	return cval_invalid_address;
+        return cval_invalid_address;
       case cval_sint: c1.si = truncate_signed(c1.si + c2.si, c1.isize); return c1;
       case cval_uint: c1.si = truncate_signed(c1.si + c2.ui, c1.isize); return c1;
       default: assert(0); return c1;
@@ -635,17 +635,17 @@ cval cval_sub(cval c1, cval c2)
   if (cval_isaddress(c2))
     {
       if (cval_isaddress(c1) &&
-	  !cval_isunknown_address(c1) && !cval_isunknown_address(c2) &&
-	  c1.ddecl == c2.ddecl && c1.ldecl == c2.ldecl)
-	{
-	  if (c1.kind == cval_address_unk_offset ||
-	      c2.kind == cval_address_unk_offset)
-	    return cval_unknown_number;
+          !cval_isunknown_address(c1) && !cval_isunknown_address(c2) &&
+          c1.ddecl == c2.ddecl && c1.ldecl == c2.ldecl)
+        {
+          if (c1.kind == cval_address_unk_offset ||
+              c2.kind == cval_address_unk_offset)
+            return cval_unknown_number;
 
-	  c1.kind = cval_sint;
-	  c1.si = truncate_signed(c1.si - c2.si, c1.isize);
-	  return c1;
-	}
+          c1.kind = cval_sint;
+          c1.si = truncate_signed(c1.si - c2.si, c1.isize);
+          return c1;
+        }
       return cval_invalid_address;
     }
   // <address> - <x>
@@ -712,9 +712,9 @@ cval cval_times(cval c1, cval c2)
   if (cval_isaddress(c1) || cval_isaddress(c2))
     {
       if (cval_isone(c1))
-	return c2;
+        return c2;
       if (cval_isone(c2))
-	return c1;
+        return c1;
       return cval_invalid_address;
     }
 
@@ -724,16 +724,16 @@ cval cval_times(cval c1, cval c2)
   if (cval_iscomplex(c1))
     {
       cval c1r = cval_realpart(c1), c1i = cval_imagpart(c1),
-	c2r = cval_realpart(c2), c2i = cval_imagpart(c2);
+        c2r = cval_realpart(c2), c2i = cval_imagpart(c2);
 
       assert(cval_iscomplex(c2));
       /* Note: this is what gcc does. The C99 standard appears to
-	 require something rather more complicated (aka "do the right
-	 thing") */
+         require something rather more complicated (aka "do the right
+         thing") */
       return make_cval_complex(cval_sub(cval_times(c1r, c2r),
-					cval_times(c1i, c2i)),
-			       cval_add(cval_times(c1r, c2i),
-					cval_times(c1i, c2r)));
+                                        cval_times(c1i, c2i)),
+                               cval_add(cval_times(c1r, c2i),
+                                        cval_times(c1i, c2r)));
     }
 
   switch (c1.kind)
@@ -774,19 +774,19 @@ cval cval_divide(cval c1, cval c2)
   if (cval_iscomplex(c1))
     {
       cval c1r = cval_realpart(c1), c1i = cval_imagpart(c1),
-	c2r = cval_realpart(c2), c2i = cval_imagpart(c2);
+        c2r = cval_realpart(c2), c2i = cval_imagpart(c2);
       cval mag = cval_add(cval_times(c1r, c2r), cval_times(c1i, c2i));
 
       assert(cval_iscomplex(c2));
       /* Note: this is what gcc does. The C99 standard appears to
-	 require something rather more complicated (aka "do the right
-	 thing") */
+         require something rather more complicated (aka "do the right
+         thing") */
       return make_cval_complex(cval_divide(cval_add(cval_times(c1r, c2r),
-						    cval_times(c1i, c2i)),
-					   mag),
-			       cval_divide(cval_sub(cval_times(c1i, c2r),
-						    cval_times(c1r, c2i)),
-					   mag));
+                                                    cval_times(c1i, c2i)),
+                                           mag),
+                               cval_divide(cval_sub(cval_times(c1i, c2r),
+                                                    cval_times(c1r, c2i)),
+                                           mag));
     }
 
   switch (c1.kind)
@@ -799,7 +799,7 @@ cval cval_divide(cval c1, cval c2)
     case cval_sint:
       assert(c2.kind == cval_sint && c1.isize == c2.isize);
       if (c2.si == 0)
-	return cval_top;
+        return cval_top;
       /* Note that signed division can overflow (MININT / -1). */
       c1.si = truncate_signed(c1.si / c2.si, c1.isize);
       return c1;
@@ -807,7 +807,7 @@ cval cval_divide(cval c1, cval c2)
     case cval_uint:
       assert(c2.kind == cval_uint && c1.isize == c2.isize);
       if (c2.ui == 0)
-	return cval_top;
+        return cval_top;
       c1.ui /= c2.ui;
       return c1;
       
@@ -841,14 +841,14 @@ cval cval_modulo(cval c1, cval c2)
     case cval_sint:
       assert(c2.kind == cval_sint && c1.isize == c2.isize);
       if (c2.si == 0)
-	return cval_top;
+        return cval_top;
       c1.si = truncate_signed(c1.si % c2.si, c1.isize);
       return c1;
       
     case cval_uint:
       assert(c2.kind == cval_uint && c1.isize == c2.isize);
       if (c2.ui == 0)
-	return cval_top;
+        return cval_top;
       c1.ui %= c2.ui;
       return c1;
       
@@ -1002,34 +1002,34 @@ largest_int cval_intcompare(cval c1, cval c2)
     {
     case cval_sint:
       switch (c2.kind)
-	{
-	case cval_sint:
-	  return c1.si - c2.si;
-	case cval_uint:
-	  /* can't use c1.si < c2.ui because of implicit conversion */
-	  if (c1.si < 0 || c1.si < c2.ui)
-	    return -1;
-	  return c1.si - c2.ui; /* common type is largest_uint */
-	default: abort(); return 0;
-	}
+        {
+        case cval_sint:
+          return c1.si - c2.si;
+        case cval_uint:
+          /* can't use c1.si < c2.ui because of implicit conversion */
+          if (c1.si < 0 || c1.si < c2.ui)
+            return -1;
+          return c1.si - c2.ui; /* common type is largest_uint */
+        default: abort(); return 0;
+        }
     case cval_uint:
       switch (c2.kind)
-	{
-	case cval_sint:
-	  if (c2.si < 0 || c1.ui < c2.si)
-	    return 1;
-	  /* result might overflow so compare with 0 */
-	  return (c1.ui - c2.si) > 0; /* common type is largest_uint */
-	case cval_uint:
-	  /* We do the cases because the result might overflow
-	     largest_int */
-	  if (c1.ui < c2.ui)
-	    return -1;
-	  if (c1.ui > c2.ui)
-	    return 1;
-	  return 0;
-	default: abort(); return 0;
-	}
+        {
+        case cval_sint:
+          if (c2.si < 0 || c1.ui < c2.si)
+            return 1;
+          /* result might overflow so compare with 0 */
+          return (c1.ui - c2.si) > 0; /* common type is largest_uint */
+        case cval_uint:
+          /* We do the cases because the result might overflow
+             largest_int */
+          if (c1.ui < c2.ui)
+            return -1;
+          if (c1.ui > c2.ui)
+            return 1;
+          return 0;
+        default: abort(); return 0;
+        }
     default: abort(); return 0;
     }
 }
@@ -1061,15 +1061,15 @@ void cval_debug(cval c)
     case cval_unk_address: printf("<address>"); break;
     case cval_address: case cval_address_unk_offset:
       if (c.ldecl)
-	printf("<address label=%s(%p)", c.ldecl->name, c.ldecl);
+        printf("<address label=%s(%p)", c.ldecl->name, c.ldecl);
       else
-	printf("<address sym=%s(%p)", c.ddecl->name, c.ddecl);
+        printf("<address sym=%s(%p)", c.ddecl->name, c.ddecl);
       if (c.kind == cval_address_unk_offset)
-	printf(" + <number>");
+        printf(" + <number>");
       else if (c.si > 0)
-	printf(" + %lld", c.si);
+        printf(" + %lld", c.si);
       else
-	printf(" - %lld", -c.si);
+        printf(" - %lld", -c.si);
       printf(">");
     default:
       printf("[size: %u]", (unsigned)c.isize);
@@ -1081,8 +1081,8 @@ void cval_debug(cval c)
 cval cval_align_to(cval n, cval alignment)
 {
   cval count = cval_divide(cval_sub(cval_add(n, alignment),
-				    make_type_cval(1)),
-			   alignment);
+                                    make_type_cval(1)),
+                           alignment);
 
   return cval_times(count, alignment);
 }
@@ -1100,7 +1100,7 @@ cval cval_gcd(cval x, cval y)
   for (;;)
     {
       if (!cval_boolvalue(y)) /* ie 0 */
-	return x;
+        return x;
       
       z = cval_modulo(x, y); x = y; y = z;
     }

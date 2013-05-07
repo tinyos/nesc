@@ -91,7 +91,7 @@ void ddecl_used(data_declaration id, use u)
   if (u->fn)
     {
       if (!u->fn->fn_uses)
-	u->fn->fn_uses = dd_new_list(rr);
+        u->fn->fn_uses = dd_new_list(rr);
       dd_add_last(rr, u->fn->fn_uses, i);
     }
   else
@@ -115,7 +115,7 @@ static void collect_uses_expr(expression expr, data_declaration fn, context c);
 
 
 static void collect_uses_deref(expression expr, expression dereferenced,
-			       data_declaration fn, context c)
+                               data_declaration fn, context c)
 {
   c = use_context(c);
 
@@ -144,14 +144,14 @@ static void collect_uses_expr(expression expr, data_declaration fn, context c)
   if (expr->type && type_array(expr->type))
     {
       /* A dereference of an array type means that the context operation
-	 is being applied to the array.
-	 If not in a dereference, a read of an array returns its address,
-	 so is an address-taking context 
+         is being applied to the array.
+         If not in a dereference, a read of an array returns its address,
+         so is an address-taking context 
       */
       if (c & c_deref)
-	c &= ~c_deref;
+        c &= ~c_deref;
       else if (c & c_read)
-	c = (c & ~c_read) | c_addressed;
+        c = (c & ~c_read) | c_addressed;
     }
   else if (expr->cst)
     c |= c_constant;
@@ -171,10 +171,10 @@ static void collect_uses_expr(expression expr, data_declaration fn, context c)
       expression e;
 
       scan_expression (e, CAST(comma, expr)->arg1)
-	if (e->next)
-	  collect_uses_expr(e, fn, exe_c);
-	else
-	  collect_uses_expr(e, fn, c);
+        if (e->next)
+          collect_uses_expr(e, fn, exe_c);
+        else
+          collect_uses_expr(e, fn, c);
       break;
     }
     case kind_extension_expr:
@@ -186,12 +186,12 @@ static void collect_uses_expr(expression expr, data_declaration fn, context c)
       context true_c = c, false_c = c;
 
       if (ce->condition->cst)
-	{
-	  if (definite_zero(ce->condition))
-	    true_c &= ~c_executable;
-	  else
-	    false_c &= ~c_executable;
-	}
+        {
+          if (definite_zero(ce->condition))
+            true_c &= ~c_executable;
+          else
+            false_c &= ~c_executable;
+        }
 
       collect_uses_expr(ce->condition, fn, exe_c | c_read);
       collect_uses_expr(ce->arg1, fn, true_c);
@@ -208,29 +208,29 @@ static void collect_uses_expr(expression expr, data_declaration fn, context c)
 
       // tasks posts are a "read" of the task
       if (fce->call_kind == post_task)
-	collect_uses_expr(fce->arg1, fn, exe_c | c_read);
+        collect_uses_expr(fce->arg1, fn, exe_c | c_read);
       // C named fn calls, commands and events are c_fncall, 
       // otherwise its c_read (and a warning about fn ptr use)
       else if (!(is_interface_deref(fce->arg1) ||
-	    is_generic_call(fce->arg1) ||
-	    (is_identifier(fce->arg1) &&
-	     (CAST(identifier, fce->arg1)->ddecl->kind == decl_function ||
-	      CAST(identifier, fce->arg1)->ddecl->kind == decl_magic_function)) ||
-	    fce->va_arg_call))
-	{
-	  /* We allow a function pointer calls in C code on the assumption
-	     that this represents runtime implementation stuff (e.g., 
-	     the task scheduler, or tossim stuff) */
-	  if (warn_fnptr && 
-	      (!fn || fn->container))
-	    nesc_warning_with_location(fce->location, "call via function pointer");
-	  collect_uses_expr(fce->arg1, fn, exe_c | c_read);
-	}
+            is_generic_call(fce->arg1) ||
+            (is_identifier(fce->arg1) &&
+             (CAST(identifier, fce->arg1)->ddecl->kind == decl_function ||
+              CAST(identifier, fce->arg1)->ddecl->kind == decl_magic_function)) ||
+            fce->va_arg_call))
+        {
+          /* We allow a function pointer calls in C code on the assumption
+             that this represents runtime implementation stuff (e.g., 
+             the task scheduler, or tossim stuff) */
+          if (warn_fnptr && 
+              (!fn || fn->container))
+            nesc_warning_with_location(fce->location, "call via function pointer");
+          collect_uses_expr(fce->arg1, fn, exe_c | c_read);
+        }
       else
-	collect_uses_expr(fce->arg1, fn, exe_c | c_fncall);
+        collect_uses_expr(fce->arg1, fn, exe_c | c_fncall);
 
       scan_expression (e, fce->args)
-	collect_uses_expr(e, fn, exe_c | c_read);
+        collect_uses_expr(e, fn, exe_c | c_read);
       break;
     }
     case kind_generic_call: {
@@ -239,7 +239,7 @@ static void collect_uses_expr(expression expr, data_declaration fn, context c)
 
       collect_uses_expr(fce->arg1, fn, exe_c | c_fncall);
       scan_expression (e, fce->args)
-	collect_uses_expr(e, fn, exe_c | c_read);
+        collect_uses_expr(e, fn, exe_c | c_read);
       break;
     }
 
@@ -248,11 +248,11 @@ static void collect_uses_expr(expression expr, data_declaration fn, context c)
       expression arg1 = are->arg1, arg2 = are->arg2, arg;
 
       /* When presented with something like 1[a], switch args to ensure that
-	 arg1 is the pointer or array, arg2 the index */
+         arg1 is the pointer or array, arg2 the index */
       if (type_integer(arg1->type)) 
-	{
-	  arg = arg1; arg1 = arg2; arg2 = arg;
-	}
+        {
+          arg = arg1; arg1 = arg2; arg2 = arg;
+        }
 
       collect_uses_deref(expr, arg1, fn, c);
       collect_uses_expr(arg2, fn, exe_c | c_read);
@@ -268,9 +268,9 @@ static void collect_uses_expr(expression expr, data_declaration fn, context c)
       expression arg = CAST(unary, expr)->arg1;
 
       if (c & c_deref) /* *&x is just x */
-	c &= ~c_deref;
+        c &= ~c_deref;
       else
-	c = exe_c | c_addressed;
+        c = exe_c | c_addressed;
 
       collect_uses_expr(arg, fn, c);
       break;
@@ -315,28 +315,28 @@ static void collect_uses_expr(expression expr, data_declaration fn, context c)
     }
     default:
       if (is_unary(expr))
-	collect_uses_expr(CAST(unary,expr)->arg1, fn, c);
+        collect_uses_expr(CAST(unary,expr)->arg1, fn, c);
       else if (is_binary(expr))
-	{
-	  binary be = CAST(binary, expr);
+        {
+          binary be = CAST(binary, expr);
 
-	  collect_uses_expr(be->arg1, fn, exe_c | c_read);
-	  collect_uses_expr(be->arg2, fn, exe_c | c_read);
-	}
+          collect_uses_expr(be->arg1, fn, exe_c | c_read);
+          collect_uses_expr(be->arg2, fn, exe_c | c_read);
+        }
       else
-	/* A default catch-all for
-	     sizeof_type, alignof_type, label_address, cast_list,
-	     init_list, init_index, init_field, lexical_cst,
-	     string_cst, string
-	   Embeddded expressions are compile-time constants or read-only,
-	   so the default collect_uses_ast_expr is valid. */
-	collect_uses_children(expr, fn, c);
+        /* A default catch-all for
+             sizeof_type, alignof_type, label_address, cast_list,
+             init_list, init_index, init_field, lexical_cst,
+             string_cst, string
+           Embeddded expressions are compile-time constants or read-only,
+           so the default collect_uses_ast_expr is valid. */
+        collect_uses_children(expr, fn, c);
       break;
     }
 }
 
 static void collect_uses_asm_operands(asm_operand operands,
-				      data_declaration fn, context exe_c)
+                                      data_declaration fn, context exe_c)
 {
   asm_operand aop;
 
@@ -347,9 +347,9 @@ static void collect_uses_asm_operands(asm_operand operands,
 
       /* = is write, + is r/w, everything else is read */
       if (mode == '=' || mode == '+')
-	c |= c_write;
+        c |= c_write;
       if (mode != '=')
-	c |= c_read;
+        c |= c_read;
 
       collect_uses_expr(aop->arg1, fn, c);
     }
@@ -386,12 +386,12 @@ static void collect_uses_stmt(statement stmt, data_declaration fn, context c)
       context true_c = exe_c, false_c = exe_c;
 
       if (is->condition->cst)
-	{
-	  if (definite_zero(is->condition))
-	    true_c &= ~c_executable;
-	  else
-	    false_c &= ~c_executable;
-	}
+        {
+          if (definite_zero(is->condition))
+            true_c &= ~c_executable;
+          else
+            false_c &= ~c_executable;
+        }
 
       collect_uses_expr(is->condition, fn, exe_c | c_read);
       collect_uses_stmt(is->stmt1, fn, true_c);
@@ -403,8 +403,8 @@ static void collect_uses_stmt(statement stmt, data_declaration fn, context c)
       context body_c = exe_c;
 
       if (cs->condition->cst && stmt->kind == kind_while_stmt &&
-	  definite_zero(cs->condition))
-	body_c &= ~c_executable;
+          definite_zero(cs->condition))
+        body_c &= ~c_executable;
       collect_uses_expr(cs->condition, fn, exe_c | c_read);
       collect_uses_stmt(cs->stmt, fn, body_c);
       break;
@@ -414,7 +414,7 @@ static void collect_uses_stmt(statement stmt, data_declaration fn, context c)
       context body_c = exe_c;
 
       if (fs->arg2 && fs->arg2->cst && definite_zero(fs->arg2))
-	body_c &= ~c_executable;
+        body_c &= ~c_executable;
       collect_uses_expr(fs->arg1, fn, exe_c | c_read);
       collect_uses_expr(fs->arg2, fn, exe_c | c_read);
       collect_uses_expr(fs->arg3, fn, body_c | c_read);
@@ -460,7 +460,7 @@ struct uses_data
 };
 
 static AST_walker_result collect_uses_ast_expr(AST_walker spec, void *data,
-					       expression *e)
+                                               expression *e)
 {
   struct uses_data *ud = data;
   collect_uses_expr(*e, ud->function, exe_context(ud->c) | c_read);
@@ -468,7 +468,7 @@ static AST_walker_result collect_uses_ast_expr(AST_walker spec, void *data,
 }
 
 static AST_walker_result collect_uses_ast_stmt(AST_walker spec, void *data,
-					       statement *s)
+                                               statement *s)
 {
   struct uses_data *ud = data;
   collect_uses_stmt(*s, ud->function, exe_context(ud->c));
@@ -476,7 +476,7 @@ static AST_walker_result collect_uses_ast_stmt(AST_walker spec, void *data,
 }
 
 static AST_walker_result collect_uses_ast_fdecl(AST_walker spec, void *data,
-						function_decl *fd)
+                                                function_decl *fd)
 {
   struct uses_data *ud = data;
   struct uses_data new_ud = *ud;
@@ -491,11 +491,11 @@ static void init_collect_uses_walker(void)
 {
   collect_uses_walker = new_AST_walker(rr);
   AST_walker_handle(collect_uses_walker, kind_expression,
-		    collect_uses_ast_expr);
+                    collect_uses_ast_expr);
   AST_walker_handle(collect_uses_walker, kind_statement,
-		    collect_uses_ast_stmt);
+                    collect_uses_ast_stmt);
   AST_walker_handle(collect_uses_walker, kind_function_decl,
-		    collect_uses_ast_fdecl);
+                    collect_uses_ast_fdecl);
 }
 
 static void collect_uses_ast(void *n, data_declaration fn, context c)

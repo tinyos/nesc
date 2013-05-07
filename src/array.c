@@ -33,7 +33,7 @@ struct array {
 };
 
 struct array *new_array(region r, size_t initialsize,
-			size_t typesize, type_t typeinfo)
+                        size_t typesize, type_t typeinfo)
 {
   struct array *a = ralloc(r, struct array);
 
@@ -59,7 +59,7 @@ void *array_extend(struct array *a, int by)
       void *newdata = typed_rarrayalloc(a->r, newsize, a->elemsize, a->elemtype);
 
       /* XXX: could work harder to support really large array sizes
-	 (this code will fail for a->nalloc >= (max(size_t)-by)/2) */
+         (this code will fail for a->nalloc >= (max(size_t)-by)/2) */
       assert(newsize > a->nalloc); /* die when we get really big */
       typed_rarraycopy(newdata, a->data, a->nelems, a->elemsize, a->elemtype);
       a->data = newdata;

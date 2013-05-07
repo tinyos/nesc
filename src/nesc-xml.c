@@ -259,13 +259,13 @@ void xml_attr_cval(const char *name, cval val)
 
       /* XXX: We don't (yet) support strings with an offset */
       if (ddecl && ddecl->kind == decl_magic_string && cval_knownbool(val))
-	{
-	  /* Wide strings are printed as their byte-by-byte rep. FIXME */
-	  xputs("S:");
-	  xqputcs(ddecl->schars);
-	}
+        {
+          /* Wide strings are printed as their byte-by-byte rep. FIXME */
+          xputs("S:");
+          xqputcs(ddecl->schars);
+        }
       else
-	unknown = TRUE;
+        unknown = TRUE;
     }
   else if (cval_istop(val))
     xputs("V:");
@@ -406,9 +406,9 @@ void nxml_arguments(expression arguments)
   scan_expression (arg, arguments)
     {
       if (is_type_argument(arg))
-	nxml_type(CAST(type_argument, arg)->asttype->type);
+        nxml_type(CAST(type_argument, arg)->asttype->type);
       else 
-	nxml_simple_value(arg->type, arg->cst ? arg->cst->cval : cval_top);
+        nxml_simple_value(arg->type, arg->cst ? arg->cst->cval : cval_top);
     }
   indentedtag_pop();
 }

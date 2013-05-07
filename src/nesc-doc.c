@@ -732,28 +732,28 @@ static void ic_scan_rplist(nesc_declaration cdecl, char *name)
       rp_interface rp = CAST(rp_interface, dlist);
 
       scan_declaration(decl, rp->decls) {
-	if( is_interface_ref(decl) ) {
-	  iref = CAST(interface_ref,decl);
-	  ifname = ic_make_iface_key(iref->word1->cstring.data);
-	} else {
-	  continue;
-	}
+        if( is_interface_ref(decl) ) {
+          iref = CAST(interface_ref,decl);
+          ifname = ic_make_iface_key(iref->word1->cstring.data);
+        } else {
+          continue;
+        }
 
-	entry = ic_get_entry( ifname );
-	if(entry == NULL) {
-	  entry = ralloc(doc_region, ic_entry);
-	  memset(entry, 0, sizeof(ic_entry));
-	  env_add(ic_env, ifname, entry);
-	}
+        entry = ic_get_entry( ifname );
+        if(entry == NULL) {
+          entry = ralloc(doc_region, ic_entry);
+          memset(entry, 0, sizeof(ic_entry));
+          env_add(ic_env, ifname, entry);
+        }
         
-	// pick the list
-	if( rp->required )
-	  list = &(entry->r_list);
-	else 
-	  list = &(entry->p_list);
+        // pick the list
+        if( rp->required )
+          list = &(entry->r_list);
+        else 
+          list = &(entry->p_list);
       
-	// add to the list
-	ilist_add(list, name);
+        // add to the list
+        ilist_add(list, name);
       }
     }
   }
@@ -1482,20 +1482,20 @@ static bool connection_already_printed(dhash_table table,
 
   // sort out which is the "requires" side, and which is the "provides" side
   // For interfaces: ep1 is req, ep2 is prov if connecting a command,
-  // 		     the other way round if connecting an event
+  //                      the other way round if connecting an event
   // For functions: the direction in the graph is always the one we want
   if (ep1->interface)
     {
       if (ep1->function->ftype == function_command)
-	{
-	  *req = ep1;
-	  *prov = ep2;
-	}
+        {
+          *req = ep1;
+          *prov = ep2;
+        }
       else
-	{
-	  *req = ep2;
-	  *prov = ep1;
-	}
+        {
+          *req = ep2;
+          *prov = ep1;
+        }
     }
   else
     {
@@ -1921,7 +1921,7 @@ static void generate_component_html(nesc_declaration cdecl)
     // requires
     scan_declaration(dlist, comp->decls) {
       if(is_rp_interface(dlist) &&
-	 (rp = CAST(rp_interface, dlist))->required ) {
+         (rp = CAST(rp_interface, dlist))->required ) {
 
         scan_declaration(decl,rp->decls) {
           // commands / events
@@ -1958,7 +1958,7 @@ static void generate_component_html(nesc_declaration cdecl)
     header_printed = FALSE;
     scan_declaration(dlist, comp->decls) {
       if(is_rp_interface(dlist) &&
-	 !(rp = CAST(rp_interface, dlist))->required ) {
+         !(rp = CAST(rp_interface, dlist))->required ) {
         scan_declaration(decl,rp->decls) {
           // commands / events
           if( is_data_decl(decl) ) {
@@ -2064,8 +2064,8 @@ static void generate_component_html(nesc_declaration cdecl)
 
 
 static void generate_intf_function_list(const char *heading,
-					nesc_declaration idecl,
-					int kind, int flags)
+                                        nesc_declaration idecl,
+                                        int kind, int flags)
 {
   declaration funcs = CAST(interface, idecl->ast)->decls;
   declaration f;
@@ -2168,15 +2168,15 @@ static void generate_interface_html(nesc_declaration idecl)
   
   // summary
   generate_intf_function_list("<h3>Commands</h3>",
-			      idecl, function_command, short_desc);
+                              idecl, function_command, short_desc);
   generate_intf_function_list("<h3>Events</h3>",
-			      idecl, function_event, short_desc);
+                              idecl, function_event, short_desc);
 
   // detailed descriptions
   generate_intf_function_list("<h3>Commands - Details</h3>",
-			      idecl, function_command, long_desc);
+                              idecl, function_command, long_desc);
   generate_intf_function_list("<h3>Events - Details</h3>",
-			      idecl, function_event, long_desc);
+                              idecl, function_event, long_desc);
 
   close_outfile(outfile);
 }
@@ -2738,7 +2738,7 @@ void generate_docs(const char *ofilename, cgraph cg)
         *pos = '\0';
 
 #ifndef ENOMEDIUM
-	/* Ignore ENOMEDIUM on systems that don't have it */
+        /* Ignore ENOMEDIUM on systems that don't have it */
 #define ENOMEDIUM EEXIST
 #endif
 
@@ -2792,8 +2792,8 @@ void generate_docs(const char *ofilename, cgraph cg)
     env_scan(get_nesc_env(), &scanner);
     while( env_next(&scanner, &name, (void **)&cdecl) ) 
       if (cdecl->kind == l_component) {
-	if (flag_verbose) printf("        %s\n", cdecl->name);
-	generate_component_html(cdecl);
+        if (flag_verbose) printf("        %s\n", cdecl->name);
+        generate_component_html(cdecl);
       }
   }
 
@@ -2807,8 +2807,8 @@ void generate_docs(const char *ofilename, cgraph cg)
     env_scan(get_nesc_env(), &scanner);
     while( env_next(&scanner, &name, (void **)&idecl) )
       if (idecl->kind == l_interface) {
-	if (flag_verbose) printf("        %s\n", idecl->name);
-	generate_interface_html(idecl);
+        if (flag_verbose) printf("        %s\n", idecl->name);
+        generate_interface_html(idecl);
       }
   }
 

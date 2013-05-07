@@ -51,7 +51,7 @@ static int keil_token(const char *token, int len, struct yystype *lvalp)
 }
 
 declaration keil_special(location loc, cstring keyword, cstring name,
-			 expression address)
+                         expression address)
 {
   /* I just love this kind of code. */
   region r = parse_region;
@@ -85,30 +85,30 @@ declaration keil_special(location loc, cstring keyword, cstring name,
 /* Basic pointer sizes and alignments for the 8051's compiled w/ Keil C51 */
 static machine_spec keil_machine = {
   "keil51", NULL,
-  TRUE,				/* big_endian */
-  FALSE,			/* pcc_bitfield_type_matters */
-  8,				/* empty field boundary - in bits */
-  8,				/* structure size boundary - in bits */
-  1,				/* word size */
-  { 2, 1 },			/* pointer type */
-  { 4, 1 },			/* float */
-  { 4, 1 },			/* double */
-  { 4, 1 },			/* long double */
-  { 2, 1 },			/* short */
-  { 2, 1 },			/* int */
-  { 4, 1 },			/* long */
-  { 8, 1 },			/* long long (unsupported in avr-gcc) */
-  1, 1, 1, 1,			/* int1/2/4/8 align */
-  2, 2,				/* wchar_t, size_t size */
-  TRUE, TRUE,			/* char, wchar_t signed */
-  "reentrant",			/* attribute for async functions */
+  TRUE,                                /* big_endian */
+  FALSE,                        /* pcc_bitfield_type_matters */
+  8,                                /* empty field boundary - in bits */
+  8,                                /* structure size boundary - in bits */
+  1,                                /* word size */
+  { 2, 1 },                        /* pointer type */
+  { 4, 1 },                        /* float */
+  { 4, 1 },                        /* double */
+  { 4, 1 },                        /* long double */
+  { 2, 1 },                        /* short */
+  { 2, 1 },                        /* int */
+  { 4, 1 },                        /* long */
+  { 8, 1 },                        /* long long (unsupported in avr-gcc) */
+  1, 1, 1, 1,                        /* int1/2/4/8 align */
+  2, 2,                                /* wchar_t, size_t size */
+  TRUE, TRUE,                        /* char, wchar_t signed */
+  "reentrant",                        /* attribute for async functions */
 
-  NULL,				/* adjust_field_align function */
-  NULL, NULL, NULL, NULL, 	/* attribute handling functions */
+  NULL,                                /* adjust_field_align function */
+  NULL, NULL, NULL, NULL,         /* attribute handling functions */
   NULL, keil_init,
   keil_token,
-  keil_special,			/* Keil C special */
-  gcc_global_cpp_init,		/* global cpp support: this should be tailored to keil
-				   to get correct behaviour */
-  NULL				/* per-file cpp support */
+  keil_special,                        /* Keil C special */
+  gcc_global_cpp_init,                /* global cpp support: this should be tailored to keil
+                                   to get correct behaviour */
+  NULL                                /* per-file cpp support */
 };

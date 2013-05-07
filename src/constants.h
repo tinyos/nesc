@@ -36,20 +36,20 @@ struct known_cst {
 known_cst make_unknown_cst(cval c, type t);
 known_cst make_cst(cval c, type t);
 known_cst make_address_cst(data_declaration ddecl, label_declaration ldecl,
-			   largest_int offset, type t);
+                           largest_int offset, type t);
 known_cst make_signed_cst(largest_int x, type t);
 known_cst make_unsigned_cst(largest_uint x, type t);
 
 known_cst cast_constant(known_cst c, type to);
 
 lexical_cst fold_lexical_int(type itype, location loc, cstring tok,
-			     bool iscomplex, largest_uint intvalue, bool overflow);
+                             bool iscomplex, largest_uint intvalue, bool overflow);
 lexical_cst fold_lexical_real(type realtype, location loc, cstring tok);
 /* XXX: What's the right type for charvalue ? (must hold wchar_t or int) */
 lexical_cst fold_lexical_char(location loc, cstring tok,
-			      bool wide_flag, int charvalue);
+                              bool wide_flag, int charvalue);
 string fold_lexical_string(location loc, string_cst components, cstring value,
-			   bool wide_flag);
+                           bool wide_flag);
 
 known_cst fold_label_address(expression e);
 known_cst fold_sizeof(expression e, type stype);

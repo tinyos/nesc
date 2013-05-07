@@ -44,7 +44,7 @@ unary newkind_unary(region r, AST_kind kind, location location, expression arg1)
 }
 
 binary newkind_binary(region r, AST_kind kind, location location,
-		      expression arg1, expression arg2)
+                      expression arg1, expression arg2)
 {
   binary obj;
 

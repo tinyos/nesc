@@ -35,10 +35,10 @@ const char *element_name(region r, const char *path);
 */
 
 node compile(location loc, nesc_declaration container,
-	     const char *name, bool name_is_path);
+             const char *name, bool name_is_path);
 
 nesc_declaration load(source_language sl, location l,
-		      const char *name, bool name_is_path);
+                      const char *name, bool name_is_path);
 
 type get_actual_function_type(type t);
 /* Returns: The actual function type for a (possibly generic) type t
@@ -98,7 +98,7 @@ void handle_combine_attribute(location loc, const char *combiner, type *t);
  */
 
 void handle_nxbase_attribute(location loc, bool be, bool allow_bf,
-			     const char *fnbasename, data_declaration ddecl);
+                             const char *fnbasename, data_declaration ddecl);
 /* Effects: handle network type attribute specifying functions 
      ntoh_fnbasename and hton_fnbasename as the decoding and encoding
      functions respectively.
@@ -111,9 +111,9 @@ void handle_nxbase_attribute(location loc, bool be, bool allow_bf,
  */
 
 declaration declare_template_parameter(declarator d, type_element elements,
-				       attribute attributes);
+                                       attribute attributes);
 declaration declare_type_parameter(location l, cstring id, attribute attribs,
-				   dd_list extra_attr);
+                                   dd_list extra_attr);
 
 expression make_type_argument(asttype t);
 

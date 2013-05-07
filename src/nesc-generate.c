@@ -34,7 +34,7 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-cpp.h"
 
 static void prt_nesc_function_hdr(data_declaration fn_decl,
-				  psd_options options)
+                                  psd_options options)
 /* Effects: prints the C function declaration for fn_decl
 */
 {
@@ -67,13 +67,13 @@ static void prt_nesc_function_hdr(data_declaration fn_decl,
       prt_attribute_elements(fn_dd->modifiers);
       prt_type_elements(ret->qualifiers, opts);
       prt_declarator(ret->declarator, NULL, ifn_vd->attributes, fn_decl,
-		     options | psd_print_ddecl_fdeclarator);
+                     options | psd_print_ddecl_fdeclarator);
     }
   else
     {
       prt_type_elements(fn_dd->modifiers, opts);
       prt_declarator(ifn_vd->declarator, NULL, ifn_vd->attributes, fn_decl, 
-		     options);
+                     options);
     }
 }
 
@@ -125,7 +125,7 @@ struct connections
 };
 
 static full_connection new_full_connection(region r, endp ep, expression cond,
-				 expression args)
+                                 expression args)
 {
   full_connection c = ralloc(r, struct full_connection);
 
@@ -179,28 +179,28 @@ static bool prt_arguments(declaration parms, bool first, bool rename)
       /* Not supporting ... here for now. Fix requires different approach */
       data_decl dd = CAST(data_decl, parm);
       variable_decl vd = CAST(variable_decl, dd->decls);
-	  
+          
       if (!vd->ddecl) /* empty (void) parameter list */
-	break;
+        break;
 
       if (!first)
-	output(", ");
+        output(", ");
       first = FALSE;
 
       if (rename || !vd->ddecl->name)
-	output("arg_%p", vd->ddecl);
+        output("arg_%p", vd->ddecl);
       else
-	output((char *)vd->ddecl->name);
+        output((char *)vd->ddecl->name);
     }
   return first;
 }
 
 void prt_ncf_direct_call(struct connections *c,
-			 full_connection ccall,
-			 bool first_call,
-			 psd_options options,
-			 type return_type,
-			 function_declarator called_fd)
+                         full_connection ccall,
+                         bool first_call,
+                         psd_options options,
+                         type return_type,
+                         function_declarator called_fd)
 /* Effects: prints call to 'calls' in a connection function.
      Assigns result if last_call is TRUE.
 */
@@ -215,10 +215,10 @@ void prt_ncf_direct_call(struct connections *c,
 
       /* Combine w/ the combiner on subsequent calls */
       if (!first_call && combiner)
-	{
-	  output("%s(__nesc_result, ", combiner->name);
-	  calling_combiner = TRUE;
-	}
+        {
+          output("%s(__nesc_result, ", combiner->name);
+          calling_combiner = TRUE;
+        }
     }
 
   prt_ddecl_full_name(ccall->ep->function, options);
@@ -226,16 +226,16 @@ void prt_ncf_direct_call(struct connections *c,
   if (ccall->ep->function->gparms)
     {
       if (ccall->args)
-	{
-	  /* Non-generic calling generic, add arguments */
-	  prt_expressions(ccall->args, first_arg);
-	  first_arg = FALSE;
-	}
+        {
+          /* Non-generic calling generic, add arguments */
+          prt_expressions(ccall->args, first_arg);
+          first_arg = FALSE;
+        }
       else
-	{
-	  /* Generic calling generic, pass arguments through */
-	  first_arg = prt_arguments(ddecl_get_gparms(c->called), first_arg, TRUE);
-	}
+        {
+          /* Generic calling generic, pass arguments through */
+          first_arg = prt_arguments(ddecl_get_gparms(c->called), first_arg, TRUE);
+        }
     }
   else
     assert(!ccall->args);
@@ -249,8 +249,8 @@ void prt_ncf_direct_call(struct connections *c,
 }
 
 void prt_ncf_default_call(struct connections *c,
-			  type return_type,
-			  function_declarator called_fd)
+                          type return_type,
+                          function_declarator called_fd)
 {
   struct full_connection default_target;
   struct endp default_ep;
@@ -260,12 +260,12 @@ void prt_ncf_default_call(struct connections *c,
   default_ep.function = c->called;
 
   prt_ncf_direct_call(c, &default_target, TRUE, psd_print_default,
-		      return_type, called_fd);
+                      return_type, called_fd);
 }
 
 bool prt_ncf_direct_calls(struct connections *c,
-			  dd_list/*<full_connection>*/ calls,
-			  type return_type)
+                          dd_list/*<full_connection>*/ calls,
+                          type return_type)
 /* Effects: prints calls to 'calls' in a connection function.
 */
 {
@@ -297,9 +297,9 @@ static int constant_expression_list_compare(expression arg1, expression arg2)
 
       /* Can't use - as might overflow and mod down to 0 */
       if (uval1 < uval2)
-	return -1;
+        return -1;
       else if (uval1 > uval2)
-	return 1;
+        return 1;
 
       arg1 = CAST(expression, arg1->next);
       arg2 = CAST(expression, arg2->next);
@@ -325,11 +325,11 @@ static void prt_ncf_condition(struct connections *c, expression cond)
     {
       data_decl dd = CAST(data_decl, gparm);
       variable_decl vd = CAST(variable_decl, dd->decls);
-	  
+          
       if (first)
-	output("if (");
+        output("if (");
       else
-	output(" && ");
+        output(" && ");
       first = FALSE;
 
       output("arg_%p == ", vd->ddecl);
@@ -378,59 +378,59 @@ static void prt_ncf_conditional_calls(struct connections *c, bool first_call, ty
 
       /* output latest condition */
       if (one_arg)
-	{
-	  output("case ");
-	  prt_expression(cond, P_ASSIGN);
-	  outputln(":");
-	}
+        {
+          output("case ");
+          prt_expression(cond, P_ASSIGN);
+          outputln(":");
+        }
       else
-	{
-	  if (i != 0)
-	    output("else ");
-	  prt_ncf_condition(c, cond);
-	  outputln("{");
-	}
+        {
+          if (i != 0)
+            output("else ");
+          prt_ncf_condition(c, cond);
+          outputln("{");
+        }
       indent();
 
       /* find last target with same condition */
       j = i;
       while (++j < ncalls && condition_compare(&cond_eps[i], &cond_eps[j]) == 0)
-	;
+        ;
 
       /* print them, setting result for the last one */
       while (i < j)
-	{
-	  prt_ncf_direct_call(c, cond_eps[i], first_cond_call, 0,
-			      return_type, called_fd);
-	  first_cond_call = FALSE;
-	  i++;
-	}
-	
+        {
+          prt_ncf_direct_call(c, cond_eps[i], first_cond_call, 0,
+                              return_type, called_fd);
+          first_cond_call = FALSE;
+          i++;
+        }
+        
       if (one_arg)
-	outputln("break;");
+        outputln("break;");
       unindent();
       if (!one_arg)
-	outputln("}");
+        outputln("}");
     }
   /* output call to default if there are no non-conditional calls */
   if (first_call)
     {
       if (ncalls > 0)
-	{
-	  if (one_arg)
-	    outputln("default:");
-	  else
-	    outputln("else");
-	}
+        {
+          if (one_arg)
+            outputln("default:");
+          else
+            outputln("else");
+        }
       indent();
       prt_ncf_default_call(c, return_type, called_fd);
       unindent();
       if (ncalls > 0 && one_arg)
-	{
-	  outputln("  break;");
-	  outputln("}");
-	  unindent();
-	}
+        {
+          outputln("  break;");
+          outputln("}");
+          unindent();
+        }
     }
   else if (one_arg)
     {
@@ -460,10 +460,10 @@ static void prt_nesc_connection_function(struct connections *c)
   else
     {
       if (dd_is_empty(c->normal_calls))
-	prt_ncf_default_call(c, return_type,
-			     ddecl_get_fdeclarator(c->called));
+        prt_ncf_default_call(c, return_type,
+                             ddecl_get_fdeclarator(c->called));
       else
-	prt_ncf_direct_calls(c, c->normal_calls, return_type);
+        prt_ncf_direct_calls(c, c->normal_calls, return_type);
     }
 
   prt_ncf_trailer(return_type);
@@ -483,10 +483,10 @@ void prt_nesc_called_function_hdr(data_declaration fndecl, void *data)
   if (!fndecl->defined && fndecl->uncallable &&
       is_binary_component(fndecl->container->impl))
     error("binary entry point %s%s%s.%s is not fully wired",
-	  fndecl->container->instance_name, 
-	  fndecl->interface ? "." : "",
-	  fndecl->interface ? fndecl->interface->name : "",
-	  fndecl->name);
+          fndecl->container->instance_name, 
+          fndecl->interface ? "." : "",
+          fndecl->interface ? fndecl->interface->name : "",
+          fndecl->name);
 }
 
 void prt_nesc_called_function_headers(cgraph cg, nesc_declaration mod)
@@ -520,28 +520,28 @@ void prt_nesc_module(cgraph cg, nesc_declaration mod)
       dd_list_pos scan;
 
       dd_scan (scan, mod->local_statics)
-	{
-	  data_declaration localsvar = DD_GET(data_declaration, scan);
-	  variable_decl localsvd;
-	  data_decl localsdd;
+        {
+          data_declaration localsvar = DD_GET(data_declaration, scan);
+          variable_decl localsvd;
+          data_decl localsdd;
 
-	  if (!localsvar->isused)
-	    continue;
+          if (!localsvar->isused)
+            continue;
 
-	  localsvd = CAST(variable_decl, localsvar->ast);
-	  localsdd = CAST(data_decl, localsvd->parent);
-	  /* Note: we don't print the elements with pte_duplicate as we
-	     don't (easily) know here if the elements will be printed
-	     several times. If the type elements define a new type we most
-	     likely have a problem anyway (see discussion above) */
-	  prt_variable_decl(localsdd->modifiers, localsvd, 0);
-	  outputln(";");
-	}
+          localsvd = CAST(variable_decl, localsvar->ast);
+          localsdd = CAST(data_decl, localsvd->parent);
+          /* Note: we don't print the elements with pte_duplicate as we
+             don't (easily) know here if the elements will be printed
+             several times. If the type elements define a new type we most
+             likely have a problem anyway (see discussion above) */
+          prt_variable_decl(localsdd->modifiers, localsvd, 0);
+          outputln(";");
+        }
     }
 }
 
 static bool find_reachable_functions(struct connections *c, gnode n,
-				     expression gcond, expression gargs)
+                                     expression gcond, expression gargs)
 {
   endp ep = NODE_GET(endp, n);
 
@@ -549,36 +549,36 @@ static bool find_reachable_functions(struct connections *c, gnode n,
     {
       /* First set of arguments is a condition if 'called' is generic */
       if (c->called->gparms && !gcond)
-	gcond = ep->args_node;
+        gcond = ep->args_node;
       else if (gargs)
-	{
-	  /* We already have some arguments, so this is a condition again.
-	     If the condition doesn't match gargs, then the call is
-	     filtered out. If they do match, we set gargs to null (we're
-	     back to a non-parameterised call) */
-	  if (constant_expression_list_compare(gargs, ep->args_node) != 0)
-	    return FALSE;
-	  gargs = NULL;
-	}
+        {
+          /* We already have some arguments, so this is a condition again.
+             If the condition doesn't match gargs, then the call is
+             filtered out. If they do match, we set gargs to null (we're
+             back to a non-parameterised call) */
+          if (constant_expression_list_compare(gargs, ep->args_node) != 0)
+            return FALSE;
+          gargs = NULL;
+        }
       else
-	{
-	  assert(!gargs);
-	  gargs = ep->args_node;
-	}
+        {
+          assert(!gargs);
+          gargs = ep->args_node;
+        }
     }
   if (graph_node_markedp(n))
     return TRUE;
   else if (!ep->args_node && ep->function->defined &&
-	   !ep->function->container->configuration)
+           !ep->function->container->configuration)
     {
       full_connection target = new_full_connection(c->r, ep, gcond, gargs);
 
       assert(!graph_first_edge_out(n));
 
       dd_add_last(c->r, 
-		  c->called->gparms && !gcond ?
-		    c->generic_calls : c->normal_calls, 
-		  target);
+                  c->called->gparms && !gcond ?
+                    c->generic_calls : c->normal_calls, 
+                  target);
     }
   else
     {
@@ -586,8 +586,8 @@ static bool find_reachable_functions(struct connections *c, gnode n,
 
       graph_mark_node(n);
       graph_scan_out (out, n)
-	if (find_reachable_functions(c, graph_edge_to(out), gcond, gargs))
-	  return TRUE;
+        if (find_reachable_functions(c, graph_edge_to(out), gcond, gargs))
+          return TRUE;
       graph_unmark_node(n);
     }
   return FALSE;
@@ -602,11 +602,11 @@ static void find_connected_functions(struct connections *c)
   assert(!graph_first_edge_in(called_fn_node));
   if (find_reachable_functions(c, called_fn_node, NULL, NULL))
     error_with_location(c->called->ast->location,
-			"cycle in configuration (for %s%s%s.%s)",
-			c->called->container->name,
-			c->called->interface ? "." : "",
-			c->called->interface ? c->called->interface->name : "",
-			c->called->name);
+                        "cycle in configuration (for %s%s%s.%s)",
+                        c->called->container->name,
+                        c->called->interface ? "." : "",
+                        c->called->interface ? c->called->interface->name : "",
+                        c->called->name);
 }
 
 static void combine_warning(struct connections *c)
@@ -615,13 +615,13 @@ static void combine_warning(struct connections *c)
     {
       /* Warnings to be enabled when result_t gets defined correctly */
       if (c->called->interface)
-	nesc_warning("calls to %s.%s in %s fan out, but there is no combine function specified for the return type",
-		     c->called->interface->name,
-		     c->called->name,
-		     c->called->container->name);
+        nesc_warning("calls to %s.%s in %s fan out, but there is no combine function specified for the return type",
+                     c->called->interface->name,
+                     c->called->name,
+                     c->called->container->name);
       else
-	nesc_warning("calls to %s in %s fan out, but there is no combine function specified for the return type" ,
-		     c->called->name, c->called->container->name);
+        nesc_warning("calls to %s in %s fan out, but there is no combine function specified for the return type" ,
+                     c->called->name, c->called->container->name);
     }
 }
 
@@ -660,10 +660,10 @@ static void cicn_conditional_calls(struct connections *c, bool first_call)
       /* find last target with same condition */
       j = i;
       while (++j < ncalls && condition_compare(&cond_eps[i], &cond_eps[j]) == 0)
-	;
+        ;
 
       if (i + first_call < j)
-	combiner_used = TRUE;
+        combiner_used = TRUE;
       i = j;
     }
 }
@@ -694,7 +694,7 @@ static void check_if_combiner_needed(struct connections *c)
     {
       c->combiner = type_combiner(return_type);
       if (!c->combiner)
-	combine_warning(c);
+        combine_warning(c);
     }
 }
 
@@ -718,17 +718,17 @@ void find_function_connections(data_declaration fndecl, void *data)
       find_connected_functions(connections);
 
       /* a function is uncallable if it has no default definition and
-	   non-generic: no connections
-	   generic: no generic connections
+           non-generic: no connections
+           generic: no generic connections
       */
       if (!(fndecl->definition ||
-	    !dd_is_empty(connections->generic_calls) ||
-	    (!fndecl->gparms && !dd_is_empty(connections->normal_calls))))
-	fndecl->uncallable = TRUE;
+            !dd_is_empty(connections->generic_calls) ||
+            (!fndecl->gparms && !dd_is_empty(connections->normal_calls))))
+        fndecl->uncallable = TRUE;
       else
-	fndecl->suppress_definition =
-	  !dd_is_empty(fndecl->gparms ? connections->generic_calls :
-		       connections->normal_calls);
+        fndecl->suppress_definition =
+          !dd_is_empty(fndecl->gparms ? connections->generic_calls :
+                       connections->normal_calls);
 
       check_if_combiner_needed(connections);
     }
@@ -740,13 +740,13 @@ void find_connections(cgraph cg, nesc_declaration mod)
 }
 
 static void mark_reachable_function(cgraph cg,
-				    data_declaration caller,
-				    data_declaration ddecl,
-				    use caller_use);
+                                    data_declaration caller,
+                                    data_declaration ddecl,
+                                    use caller_use);
 
 static void mark_connected_function_list(cgraph cg,
-					 data_declaration caller,
-					 dd_list/*full_connection*/ calls)
+                                         data_declaration caller,
+                                         dd_list/*full_connection*/ calls)
 {
   dd_list_pos connected;
 
@@ -755,14 +755,14 @@ static void mark_connected_function_list(cgraph cg,
       full_connection conn = DD_GET(full_connection, connected);
 
       mark_reachable_function(cg, caller, conn->ep->function,
-			      new_use(dummy_location, caller, c_executable | c_fncall));
+                              new_use(dummy_location, caller, c_executable | c_fncall));
     }
 }
 
 static void mark_reachable_function(cgraph cg,
-				    data_declaration caller,
-				    data_declaration ddecl,
-				    use caller_use)
+                                    data_declaration caller,
+                                    data_declaration ddecl,
+                                    use caller_use)
 {
   dd_list_pos use;
 
@@ -780,7 +780,7 @@ static void mark_reachable_function(cgraph cg,
   if (ddecl->kind != decl_function ||
       (ddecl->container && 
        !(ddecl->container->kind == l_component &&
-	 !ddecl->container->configuration)))
+         !ddecl->container->configuration)))
     return;
 
   if ((ddecl->ftype == function_command || ddecl->ftype == function_event) &&
@@ -789,16 +789,16 @@ static void mark_reachable_function(cgraph cg,
       struct connections *conn = ddecl->connections;
 
       /* Call to a command or event not defined in this module.
-	 Mark all connected functions */
+         Mark all connected functions */
       mark_connected_function_list(cg, ddecl, conn->generic_calls);
       mark_connected_function_list(cg, ddecl, conn->normal_calls);
       if (conn->combiner)
-	mark_reachable_function(cg, ddecl, conn->combiner,
-				new_use(dummy_location, caller, c_executable | c_fncall));
+        mark_reachable_function(cg, ddecl, conn->combiner,
+                                new_use(dummy_location, caller, c_executable | c_fncall));
 
       /* Don't process body of suppressed default defs */
       if (ddecl->suppress_definition)
-	return;
+        return;
     }
 
   /* Make sure ddecl gets a node in the graph even if it doesn't call
@@ -808,9 +808,9 @@ static void mark_reachable_function(cgraph cg,
   if (ddecl->fn_uses)
     dd_scan (use, ddecl->fn_uses)
       {
-	iduse i = DD_GET(iduse, use);
+        iduse i = DD_GET(iduse, use);
 
-	mark_reachable_function(cg, ddecl, i->id, i->u);
+        mark_reachable_function(cg, ddecl, i->id, i->u);
       }
 }
 
@@ -819,7 +819,7 @@ static declaration dummy_function(data_declaration ddecl)
   empty_stmt body = new_empty_stmt(parse_region, dummy_location);
   function_decl fd = 
     new_function_decl(parse_region, dummy_location, NULL, NULL, NULL, NULL,
-		      CAST(statement, body), NULL, NULL);
+                      CAST(statement, body), NULL, NULL);
 
   fd->ddecl = ddecl;
 
@@ -855,7 +855,7 @@ static cgraph mark_reachable_code(dd_list modules)
       nesc_declaration m = DD_GET(nesc_declaration, mod);
 
       if (is_binary_component(m->impl))
-	component_functions_iterate(m, mark_binary_reachable, cg);
+        component_functions_iterate(m, mark_binary_reachable, cg);
     }
 
   return cg;
@@ -889,12 +889,12 @@ static void topological_prt(gnode gep, bool force)
   if (isinlined(fn) || force)
     {
       if (graph_node_markedp(gep))
-	return;
+        return;
 
       graph_mark_node(gep);
 
       graph_scan_out (out, gep)
-	topological_prt(graph_edge_to(out), FALSE);
+        topological_prt(graph_edge_to(out), FALSE);
 
       prt_nesc_function(fn);
     }
@@ -908,25 +908,25 @@ static void prt_inline_functions(cgraph callgraph)
     {
       data_declaration fn = NODE_GET(endp, fns)->function;
       if (isinlined(fn))
-	{
-	  gedge callers;
-	  bool inlinecallers = FALSE;
+        {
+          gedge callers;
+          bool inlinecallers = FALSE;
 
-	  graph_scan_in (callers, fns)
-	    {
-	      data_declaration caller =
-		NODE_GET(endp, graph_edge_from(callers))->function;
+          graph_scan_in (callers, fns)
+            {
+              data_declaration caller =
+                NODE_GET(endp, graph_edge_from(callers))->function;
 
-	      if (isinlined(caller))
-		{
-		  inlinecallers = TRUE;
-		  break;
-		}
-	    }
+              if (isinlined(caller))
+                {
+                  inlinecallers = TRUE;
+                  break;
+                }
+            }
 
-	  if (!inlinecallers)
-	    topological_prt(fns, FALSE);
-	}
+          if (!inlinecallers)
+            topological_prt(fns, FALSE);
+        }
     }
 }
 
@@ -938,17 +938,17 @@ static void prt_noninline_functions(cgraph callgraph)
       data_declaration fn = NODE_GET(endp, fns)->function;
 
       if (!isinlined(fn))
-	{
-	  /* There may be some inlined functions which were not printed
-	     earlier, because they were:
-	     a) recursive (possibly indirectly), with explicit inline
-	        keywords
-	     b) not called from another inline function
-	     So we use topological_prt here to ensure they are printed
-	     before any calls to them from non-inlined functions
-	  */
-	  topological_prt(fns, TRUE);
-	}
+        {
+          /* There may be some inlined functions which were not printed
+             earlier, because they were:
+             a) recursive (possibly indirectly), with explicit inline
+                keywords
+             b) not called from another inline function
+             So we use topological_prt here to ensure they are printed
+             before any calls to them from non-inlined functions
+          */
+          topological_prt(fns, TRUE);
+        }
     }
 }
 
@@ -974,7 +974,7 @@ static void prt_ddecl_for_init(region r, data_declaration ddecl)
       output("*(");
       nonconst = make_qualified_type(ddecl->type, dquals & ~const_qualifier);
       type2ast(r, dummy_location, make_pointer_type(nonconst), NULL,
-	       &nc_decl, &nc_mods);
+               &nc_decl, &nc_mods);
       nc_type = new_asttype(r, dummy_location, nc_decl, nc_mods);
       prt_asttype(nc_type);
       output(")&");
@@ -1011,7 +1011,7 @@ static void prt_nido_initializer(region r, variable_decl vd)
 
       output(", (void *)&");
       type2ast(parse_region, dummy_location, ddecl->type, NULL,
-	       &vtype, &vmods);
+               &vtype, &vmods);
       output("(");
       prt_declarator(vtype, vmods, NULL, NULL, 0);
       output(")");
@@ -1052,10 +1052,10 @@ static void prt_nido_initializations(nesc_declaration mod)
       variable_decl vd;
 
       if (reald->kind != kind_data_decl)
-	continue;
+        continue;
 
       scan_variable_decl (vd, CAST(variable_decl, CAST(data_decl, d)->decls))
-	prt_nido_initializer(r, vd);
+        prt_nido_initializer(r, vd);
     }
 
   /* Local static variables */
@@ -1093,13 +1093,13 @@ static void prt_typedefs(nesc_declaration comp)
   scan_declaration (parm, comp->parameters)
     if (is_type_parm_decl(parm))
       {
-	type_parm_decl td = CAST(type_parm_decl, parm);
-	asttype arg = CAST(type_argument, td->ddecl->initialiser)->asttype;
+        type_parm_decl td = CAST(type_parm_decl, parm);
+        asttype arg = CAST(type_argument, td->ddecl->initialiser)->asttype;
 
-	output("typedef ");
-	prt_declarator(arg->declarator, arg->qualifiers, NULL, td->ddecl,
-		       psd_print_ddecl);
-	outputln(";");
+        output("typedef ");
+        prt_declarator(arg->declarator, arg->qualifiers, NULL, td->ddecl,
+                       psd_print_ddecl);
+        outputln(";");
       }
 }
 
@@ -1115,7 +1115,7 @@ void prt_nesc_interface_typedefs(nesc_declaration comp)
       data_declaration idecl = ifentry;
 
       if (idecl->kind == decl_interface_ref)
-	prt_typedefs(idecl->itype);
+        prt_typedefs(idecl->itype);
     }
 }
 
@@ -1199,10 +1199,10 @@ static void prt_nido_resolvers(nesc_declaration mod)
       variable_decl vd;
 
       if (reald->kind != kind_data_decl)
-	continue;
+        continue;
       
       scan_variable_decl (vd, CAST(variable_decl, CAST(data_decl, d)->decls))
-	prt_nido_resolver(r, vd);
+        prt_nido_resolver(r, vd);
     }
   deleteregion(r);
 
@@ -1246,14 +1246,14 @@ static void include_support_functions(void)
       data_declaration fndecl = lookup_global_id(fns[i]);
 
       /* Adding the function to spontaneous_calls w/o setting the
-	 spontaneous field makes the function stay static */
+         spontaneous field makes the function stay static */
       if (fndecl && fndecl->kind == decl_function && !fndecl->spontaneous)
-	dd_add_last(parse_region, spontaneous_calls, fndecl);
+        dd_add_last(parse_region, spontaneous_calls, fndecl);
     }
 }
 
 void generate_c_code(const char *target_name, nesc_declaration program,
-		     cgraph cg, dd_list modules, dd_list components)
+                     cgraph cg, dd_list modules, dd_list components)
 {
   dd_list_pos mod;
   cgraph callgraph;
@@ -1263,10 +1263,10 @@ void generate_c_code(const char *target_name, nesc_declaration program,
     {
       output = fopen(target_name, "w");
       if (!output)
-	{
-	  perror("couldn't create output file");
-	  exit(2);
-	}
+        {
+          perror("couldn't create output file");
+          exit(2);
+        }
     }
 
   if (diff_output)
@@ -1274,20 +1274,20 @@ void generate_c_code(const char *target_name, nesc_declaration program,
       char *diffname = rstralloc(permanent, strlen(diff_output) + 9);
 
       if (use_nido)
-	{
-	  /* There's no use for nido+diffs, and it would complicate
-	     things somewhat (nido changes rules for symbols, etc) */
-	  error("diff output is not supported with simulation");
-	  exit(1);
-	}
+        {
+          /* There's no use for nido+diffs, and it would complicate
+             things somewhat (nido changes rules for symbols, etc) */
+          error("diff output is not supported with simulation");
+          exit(1);
+        }
       sprintf(diffname, "%s/symbols", diff_output);
       diff_file = fopen(diffname, "w");
       if (!diff_file)
-	{
-	  fprintf(stderr, "couldn't create diff output file %s: ", diffname);
-	  perror(NULL);
-	  exit(2);
-	}
+        {
+          fprintf(stderr, "couldn't create diff output file %s: ", diffname);
+          perror(NULL);
+          exit(2);
+        }
     }
 
   include_support_functions();
@@ -1320,12 +1320,12 @@ void generate_c_code(const char *target_name, nesc_declaration program,
       nesc_declaration m = DD_GET(nesc_declaration, mod);
 
       if (is_module(m->impl))
-	{
-	  declaration body = CAST(module, m->impl)->decls;
+        {
+          declaration body = CAST(module, m->impl)->decls;
 
-	  collect_uses(body);
-	  handle_network_types(body);
-	}
+          collect_uses(body);
+          handle_network_types(body);
+        }
       
       find_connections(cg, m);
     }

@@ -38,8 +38,8 @@
 typedef struct dhash_table *dhash_table;
 
 dhash_table new_dhash_table(region r, unsigned long initial_size,
-			    int (*compare)(void *entry1, void *entry2),
-			    unsigned long (*hash)(void *entry));
+                            int (*compare)(void *entry1, void *entry2),
+                            unsigned long (*hash)(void *entry));
 /* Returns: new hash table created in region r, with specified initial size,
      comparison and hashing functions
 */

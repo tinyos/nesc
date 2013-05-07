@@ -176,7 +176,7 @@ bool type_unknown_number(type t);
 bool type_unknown(type t); /* unknown_int or unknown_number */
 
 bool type_tagged(type t);
-bool type_integral(type t);	/* Does not include enum's */
+bool type_integral(type t);        /* Does not include enum's */
 bool type_floating(type t);
 bool type_complex(type t);
 bool type_float(type t);
@@ -188,15 +188,15 @@ bool type_array(type t);
 bool type_pointer(type t);
 bool type_enum(type t);
 bool type_struct(type t);
-bool type_attribute(type t); 	/* For internal use for @attributes */
+bool type_attribute(type t);         /* For internal use for @attributes */
 bool type_union(type t);
-bool type_integer(type t);	/* Does include enum's */
+bool type_integer(type t);        /* Does include enum's */
 bool type_unsigned(type t);
 bool type_smallerthanint(type t);
 bool type_real(type t);
 bool type_arithmetic(type t);
 bool type_scalar(type t);
-bool type_aggregate(type t);	/* struct or union */
+bool type_aggregate(type t);        /* struct or union */
 
 type make_unsigned_type(type t);
 
@@ -221,7 +221,7 @@ type type_base(type t);
 /* Build AST nodes such that "MODIFIERS D" represents the declaration of
    "T INSIDE", at location loc, allocating in region r */
 void type2ast(region r, location loc, type t, declarator inside,
-	      declarator *d, type_element *modifiers);
+              declarator *d, type_element *modifiers);
 
 bool type_contains_pointers(type t);
 bool type_contains_cross_pointers(type t);

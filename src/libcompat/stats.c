@@ -15,7 +15,7 @@
 register unsigned long long tscr asm("%o0");
 #define tsc() ({ \
     __asm__ __volatile__("rd %%tick,%%o1; srlx %%o1,32,%%o0" \
-			  : : : "%o0", "%o1"); \
+                          : : : "%o0", "%o1"); \
     tscr; })
 #else
 #define tsc() 0
@@ -36,8 +36,8 @@ static double proc_frequency(void)
 #define tsc() ({unsigned long long x; rdtscll(x); x; })
 #define rdpmcll(counter,x) \
      __asm__ __volatile__("rdpmc" \
-			  : "=A" (x) \
-			  : "c" (counter))
+                          : "=A" (x) \
+                          : "c" (counter))
 #define pmc0() ({unsigned long long x; rdpmcll(0, x); x; })
 #define pmc1() ({unsigned long long x; rdpmcll(1, x); x; })
 
@@ -57,13 +57,13 @@ static void print_memory_usage(void)
 {
 #if 0
   fprintf(stderr, "blocks alloced: %lu, %.1f%% 8K\n",
-	  (unsigned long)(total_8kblocks + total_otherblocks),
-	  (100.0 * total_8kblocks) / (total_8kblocks + total_otherblocks));
+          (unsigned long)(total_8kblocks + total_otherblocks),
+          (100.0 * total_8kblocks) / (total_8kblocks + total_otherblocks));
 
   fprintf(stderr, "system bytes(kB): %lu\n",
-	  ((unsigned long)total_system_bytes + 512) / 1024);
+          ((unsigned long)total_system_bytes + 512) / 1024);
   fprintf(stderr, "overhead: %.1f%%\n",
-	  total_system_bytes * 100.0 / bytes.max - 100);
+          total_system_bytes * 100.0 / bytes.max - 100);
 
 #endif
   { extern void malloc_stats(void); malloc_stats(); }

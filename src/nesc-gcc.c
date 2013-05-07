@@ -62,11 +62,11 @@ static char *mktempfile(region r, const char *name)
       char *tmpenv = getenv("TMP");
 
       if (!tmpenv)
-	{
-	  fprintf(stderr, "You must define the TMP environment variable to point to a directory\n");
-	  fprintf(stderr, "for temporary files.\n");
-	  exit(2);
-	}
+        {
+          fprintf(stderr, "You must define the TMP environment variable to point to a directory\n");
+          fprintf(stderr, "for temporary files.\n");
+          exit(2);
+        }
       newname = rstralloc(r, strlen(tmpenv) + strlen(name));
       sprintf(newname, "%s/%s", tmpenv, name + 5);
     }
@@ -121,8 +121,8 @@ static void dup_restore(int to, int save)
 
 static bool 
 exec_gcc(char *gcc_output_template, bool mkotmp, char **gcc_output_file,
-	 char *gcc_error_template, bool mketmp, char **gcc_error_file, 
-	 int nargs, void (*setargs)(void *data, const char **argv), void *data)
+         char *gcc_error_template, bool mketmp, char **gcc_error_file, 
+         int nargs, void (*setargs)(void *data, const char **argv), void *data)
 {
   int gcc_stat, res, outputfd, errorfd;
   const char **argv;
@@ -139,7 +139,7 @@ exec_gcc(char *gcc_output_template, bool mkotmp, char **gcc_output_file,
       int i;
 
       for (i = 0; argv[i]; i++)
-	fprintf(stderr, "%s ", argv[i]);
+        fprintf(stderr, "%s ", argv[i]);
       fprintf(stderr, "\n");
     }
 
@@ -149,10 +149,10 @@ exec_gcc(char *gcc_output_template, bool mkotmp, char **gcc_output_file,
       tmpfd2 = open(DEVNULL, O_RDONLY);
 
       if (tmpfd1 < 0 || tmpfd2 < 0)
-	{
-	  fprintf(stderr, "Internal error (can't open " DEVNULL "!?)\n");
-	  exit(2);
-	}
+        {
+          fprintf(stderr, "Internal error (can't open " DEVNULL "!?)\n");
+          exit(2);
+        }
     }
 
   if (mkotmp)
@@ -173,9 +173,9 @@ exec_gcc(char *gcc_output_template, bool mkotmp, char **gcc_output_file,
   if (outputfd < 0 || errorfd < 0)
     {
       if (outputfd >= 0)
-	close(outputfd);
+        close(outputfd);
       if (errorfd >= 0)
-	close(errorfd);
+        close(errorfd);
 
       return FALSE;
     }
@@ -214,8 +214,8 @@ exec_gcc(char *gcc_output_template, bool mkotmp, char **gcc_output_file,
 
 static bool 
 exec_gcc(char *gcc_output_template, bool mkotmp, char **gcc_output_file,
-	 char *gcc_error_template, bool mketmp, char **gcc_error_file, 
-	 int nargs, void (*setargs)(void *data, const char **argv), void *data)
+         char *gcc_error_template, bool mketmp, char **gcc_error_file, 
+         int nargs, void (*setargs)(void *data, const char **argv), void *data)
 {
   int gcc_pid, gcc_stat, res;
   char *outputf, *errorf;
@@ -244,17 +244,17 @@ exec_gcc(char *gcc_output_template, bool mkotmp, char **gcc_output_file,
 
       /* It's really spammy with this on */
       if (flag_verbose >= 2)
-	{
-	  int i;
+        {
+          int i;
 
-	  for (i = 0; argv[i]; i++)
-	    fprintf(stderr, "%s ", argv[i]);
-	  fprintf(stderr, "\n");
-	}
+          for (i = 0; argv[i]; i++)
+            fprintf(stderr, "%s ", argv[i]);
+          fprintf(stderr, "\n");
+        }
 
       if (outputfd < 0 || dup2(outputfd, 1) < 0 ||
-	  errorfd < 0 || dup2(errorfd, 2) < 0)
-	exit(2);
+          errorfd < 0 || dup2(errorfd, 2) < 0)
+        exit(2);
 
       close(outputfd);
       close(errorfd);
@@ -269,24 +269,24 @@ exec_gcc(char *gcc_output_template, bool mkotmp, char **gcc_output_file,
       int pid = wait(&gcc_stat);
 
       if (pid == -1)
-	{
-	  if (errno == EINTR)
-	    continue;
-	  else
-	    {
-	      res = 2;
-	      break;
-	    }
-	}
+        {
+          if (errno == EINTR)
+            continue;
+          else
+            {
+              res = 2;
+              break;
+            }
+        }
 
       if (pid == gcc_pid)
-	{
-	  if (WIFEXITED(gcc_stat))
-	    res = WEXITSTATUS(gcc_stat);
-	  else
-	    res = 2;
-	  break;
-	}
+        {
+          if (WIFEXITED(gcc_stat))
+            res = WEXITSTATUS(gcc_stat);
+          else
+            res = 2;
+          break;
+        }
     }
 
   return res == 0;
@@ -385,11 +385,11 @@ const char *gcc_global_cpp_init(void)
 
   /* Execute gcc to get builtin macros and include search path */
   if (!exec_gcc(tbuiltins, TRUE, &gcc_builtin_macros_file,
-		tincludes, TRUE, &includes, 
-		7 + extra_options_count, gcc_preprocess_init_setargs, NULL))
+                tincludes, TRUE, &includes, 
+                7 + extra_options_count, gcc_preprocess_init_setargs, NULL))
     {
       error("invocation of %s to find builtin macros failed (error message output follows)", 
-	    target_compiler);
+            target_compiler);
       print_error_file(stderr, includes);
 
       return NULL;
@@ -406,15 +406,15 @@ const char *gcc_global_cpp_init(void)
   while (fgets(line, LINELEN - 1, incf))
     {
       if (!strncmp(line, "#include \"...\"", 14))
-	quote_includes = TRUE;
+        quote_includes = TRUE;
       else if (!strncmp(line, "#include <...>", 14))
-	bracket_includes = TRUE;
+        bracket_includes = TRUE;
       else if (!strncmp(line, "End of search list.", 19))
-	break;
+        break;
       else if (bracket_includes)
-	add_nesc_dir(sanitize_path(permanent, line), CHAIN_SYSTEM);
+        add_nesc_dir(sanitize_path(permanent, line), CHAIN_SYSTEM);
       else if (quote_includes)
-	add_nesc_dir(sanitize_path(permanent, line), CHAIN_QUOTE);
+        add_nesc_dir(sanitize_path(permanent, line), CHAIN_QUOTE);
     }
   fclose(incf);
   unlink(includes);

@@ -32,7 +32,7 @@ Boston, MA 02111-1307, USA. */
  */
 
 typedef struct dd_list *dd_list; /* A list */
-typedef struct dd_list_pos	 /* A position in a list */
+typedef struct dd_list_pos         /* A position in a list */
 {
   /* PRIVATE! Do not use the fields directly */
   struct dd_list_pos *next;

@@ -39,7 +39,7 @@ Boston, MA 02111-1307, USA.  */
          component (i.e., shows up in the generated C code)"
        abstract() && instance(): "a partially instantiated generic component,
          i.e., a generic component instantiated within a 
-	 generic configuration"
+         generic configuration"
 
   Filters can be combined with and, or, not.
 */
@@ -79,12 +79,12 @@ static bool filter_attribute(ndf_op filter, dd_list/*nesc_attribute*/ attrs)
       const char *reqname = nd_tokenval(reqattr);
 
       dd_scan (actualattr, attrs)
-	{
-	  nesc_attribute a = DD_GET(nesc_attribute, actualattr);
+        {
+          nesc_attribute a = DD_GET(nesc_attribute, actualattr);
 
-	  if (!strcmp(a->word1->cstring.data, reqname))
-	    return TRUE;
-	}
+          if (!strcmp(a->word1->cstring.data, reqname))
+            return TRUE;
+        }
     }
   return FALSE;
 }
@@ -274,33 +274,33 @@ nd_filter make_ndf_op(region r, const char *name, nd_arg args)
   for (i = 0; i < sizeof ops / sizeof *ops; i++)
     if (!strcmp(name, ops[i].name))
       {
-	const char *argspec = ops[i].args;
-	nd_arg arg;
-	int old_ec = errorcount;
+        const char *argspec = ops[i].args;
+        nd_arg arg;
+        int old_ec = errorcount;
 
-	op->filter_index = i;
+        op->filter_index = i;
 
-	/* Check arguments */
-	if (argspec[0] == '*')
-	  scan_nd_arg (arg, args)
-	    check_arg(arg, argspec[1]);
-	else
-	  {
-	    scan_nd_arg (arg, args)
-	      {
-		if (!*argspec)
-		  nderror("too many arguments");
-		else
-		  check_arg(arg, *argspec++);
-	      }
-	    if (*argspec)
-	      nderror("not enough arguments");
-	  }
+        /* Check arguments */
+        if (argspec[0] == '*')
+          scan_nd_arg (arg, args)
+            check_arg(arg, argspec[1]);
+        else
+          {
+            scan_nd_arg (arg, args)
+              {
+                if (!*argspec)
+                  nderror("too many arguments");
+                else
+                  check_arg(arg, *argspec++);
+              }
+            if (*argspec)
+              nderror("not enough arguments");
+          }
 
-	if (errorcount == old_ec && ops[i].compile)
-	  ops[i].compile(op);
+        if (errorcount == old_ec && ops[i].compile)
+          ops[i].compile(op);
 
-	return CAST(nd_filter, op);
+        return CAST(nd_filter, op);
       }
   nderror("unknown filter operator");
 
@@ -333,12 +333,12 @@ static bool dofilter(int op, nd_filter f, void *decl)
       struct filter_op *fop = &ops[f1->filter_index];
 
       switch (op)
-	{
-	case filter_ddecl: return fop->execute_ddecl(f1, decl);
-	case filter_ndecl: return fop->execute_ndecl(f1, decl);
-	case filter_tdecl: return fop->execute_tdecl(f1, decl);
-	default: assert(0); return FALSE;
-	}
+        {
+        case filter_ddecl: return fop->execute_ddecl(f1, decl);
+        case filter_ndecl: return fop->execute_ndecl(f1, decl);
+        case filter_tdecl: return fop->execute_tdecl(f1, decl);
+        default: assert(0); return FALSE;
+        }
     }
     default: 
       assert(0); return FALSE;
@@ -372,16 +372,16 @@ void dump_set_filter(nd_option opt)
       optargs = &(*optargs)->next;
     else
       {
-	nd_filter f = CAST(nd_filter, *optargs);
-	*optargs = (*optargs)->next;
+        nd_filter f = CAST(nd_filter, *optargs);
+        *optargs = (*optargs)->next;
 
-	if (extracted)
-	  {
-	    ndf_and x = new_ndf_and(dump_region, extracted, f);
-	    extracted = CAST(nd_filter, x);
-	  }
-	else
-	  extracted = f;
+        if (extracted)
+          {
+            ndf_and x = new_ndf_and(dump_region, extracted, f);
+            extracted = CAST(nd_filter, x);
+          }
+        else
+          extracted = f;
       }
 
   current_filter = extracted;

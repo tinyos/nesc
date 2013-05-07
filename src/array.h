@@ -29,7 +29,7 @@ Boston, MA 02111-1307, USA. */
 struct array;
 
 struct array *new_array(region r, size_t initialsize,
-			size_t typesize, type_t typeinfo);
+                        size_t typesize, type_t typeinfo);
 void *array_extend(struct array *a, int by);
 void array_reset(struct array *a);
 size_t array_length(struct array *a);

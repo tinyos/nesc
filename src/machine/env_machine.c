@@ -33,32 +33,32 @@ static machine_spec env_machine = {
   "env", 
   gcc_save_machine_options,
   /* [default] */       /* [keyname] */
-  FALSE,		/* big_endian */
-  FALSE,		/* pcc_bitfield_type_matters */
-  8,			/* empty_field_boundary */
-  8,			/* structure_size_boundary */
-  1,			/* word size */
-  {2, 1},		/* pointer */
-  {4, 1},		/* float */
-  {4, 1},		/* double */
-  {4, 1},		/* long_double */
-  {2, 1},		/* short */
-  {2, 1},		/* int */
-  {4, 1},		/* long */
-  {8, 1},		/* long_long */
-  1, 1, 1, 1,		/* int1248_align */
-  2, 2,			/* wchar_size_size */
-  TRUE, TRUE,		/* char_wchar_signed */
-  NULL,			/* no attribute for async functions */
+  FALSE,                /* big_endian */
+  FALSE,                /* pcc_bitfield_type_matters */
+  8,                        /* empty_field_boundary */
+  8,                        /* structure_size_boundary */
+  1,                        /* word size */
+  {2, 1},                /* pointer */
+  {4, 1},                /* float */
+  {4, 1},                /* double */
+  {4, 1},                /* long_double */
+  {2, 1},                /* short */
+  {2, 1},                /* int */
+  {4, 1},                /* long */
+  {8, 1},                /* long_long */
+  1, 1, 1, 1,                /* int1248_align */
+  2, 2,                        /* wchar_size_size */
+  TRUE, TRUE,                /* char_wchar_signed */
+  NULL,                        /* no attribute for async functions */
 
-  NULL,				/* adjust_field_align */
+  NULL,                                /* adjust_field_align */
 
-  NULL, NULL, NULL, NULL,	/* Attributes: need some way to specify this */
-  NULL, NULL,			/* preinit, init */
-  NULL,				/* token */
-  NULL,				/* keil special */
-  gcc_global_cpp_init,		/* global cpp support */
-  NULL				/* per-file cpp support */
+  NULL, NULL, NULL, NULL,        /* Attributes: need some way to specify this */
+  NULL, NULL,                        /* preinit, init */
+  NULL,                                /* token */
+  NULL,                                /* keil special */
+  gcc_global_cpp_init,                /* global cpp support */
+  NULL                                /* per-file cpp support */
 };
 
 static const char *find_char(const char *str, const char *strend, char ch)
@@ -93,12 +93,12 @@ static int scan_boolean(const char *str, const char *strend)
 }
 
 static bool scan_intlist(const char *str, const char *strend, int *intlist,
-			 int count)
+                         int count)
 {
   while (count-- > 0)
     {
       if (str == strend)
-	return FALSE;
+        return FALSE;
       *intlist++ = atoi(str);
       str = find_not_char(find_char(str, strend, ','), strend, ',');
     }
@@ -144,160 +144,160 @@ static bool scan_env_machine(machine_spec * machine, const char *envname)
       int intlist[4] = { 0, 0, 0, 0 };
 
       if (is_literali(name = "pcc_bitfield_type_matters", begin, equal))
-	{
-	  int b = scan_boolean(value, space);
-	  if (b != -1)
-	    {
-	      machine->pcc_bitfield_type_matters = b ? TRUE : FALSE;
-	    }
-	  else
-	    {
-	      error("%s.%s, expected 'false' or 'true'", envname, name);
-	      n_errors++;
-	    }
-	}
+        {
+          int b = scan_boolean(value, space);
+          if (b != -1)
+            {
+              machine->pcc_bitfield_type_matters = b ? TRUE : FALSE;
+            }
+          else
+            {
+              error("%s.%s, expected 'false' or 'true'", envname, name);
+              n_errors++;
+            }
+        }
       else if (is_literali(name = "big_endian", begin, equal))
-	{
-	  int b = scan_boolean(value, space);
-	  if (b != -1)
-	    {
-	      machine->big_endian = b ? TRUE : FALSE;
-	    }
-	  else
-	    {
-	      error("%s.%s, expected 'false' or 'true'", envname, name);
-	      n_errors++;
-	    }
-	}
+        {
+          int b = scan_boolean(value, space);
+          if (b != -1)
+            {
+              machine->big_endian = b ? TRUE : FALSE;
+            }
+          else
+            {
+              error("%s.%s, expected 'false' or 'true'", envname, name);
+              n_errors++;
+            }
+        }
       else if (is_literali(name = "empty_field_boundary", begin, equal))
-	{
-	  if (scan_intlist(value, space, intlist, 1) == TRUE)
-	    {
-	      machine->empty_field_boundary = intlist[0];
-	    }
-	  else
-	    {
-	      error("%s.%s, expected one int", envname, name);
-	      n_errors++;
-	    }
-	}
+        {
+          if (scan_intlist(value, space, intlist, 1) == TRUE)
+            {
+              machine->empty_field_boundary = intlist[0];
+            }
+          else
+            {
+              error("%s.%s, expected one int", envname, name);
+              n_errors++;
+            }
+        }
       else if (is_literali(name = "structure_size_boundary", begin, equal))
-	{
-	  if (scan_intlist(value, space, intlist, 1) == TRUE)
-	    {
-	      machine->structure_size_boundary = intlist[0];
-	    }
-	  else
-	    {
-	      error("%s.%s, expected one int", envname, name);
-	      n_errors++;
-	    }
-	}
+        {
+          if (scan_intlist(value, space, intlist, 1) == TRUE)
+            {
+              machine->structure_size_boundary = intlist[0];
+            }
+          else
+            {
+              error("%s.%s, expected one int", envname, name);
+              n_errors++;
+            }
+        }
       else if (is_literali(name = "word_size", begin, equal))
-	{
-	  if (scan_intlist(value, space, intlist, 1) == TRUE)
-	    {
-	      machine->word_size = intlist[0];
-	    }
-	  else
-	    {
-	      error("%s.%s, expected one int", envname, name);
-	      n_errors++;
-	    }
-	}
+        {
+          if (scan_intlist(value, space, intlist, 1) == TRUE)
+            {
+              machine->word_size = intlist[0];
+            }
+          else
+            {
+              error("%s.%s, expected one int", envname, name);
+              n_errors++;
+            }
+        }
       else if (is_literali(name = "int1248_align", begin, equal))
-	{
-	  if (scan_intlist(value, space, intlist, 4) == TRUE)
-	    {
-	      machine->int1_align = intlist[0];
-	      machine->int2_align = intlist[1];
-	      machine->int4_align = intlist[2];
-	      machine->int8_align = intlist[3];
-	    }
-	  else
-	    {
-	      error("%s.%s, expected 4 ints", envname, name);
-	      n_errors++;
-	    }
-	}
+        {
+          if (scan_intlist(value, space, intlist, 4) == TRUE)
+            {
+              machine->int1_align = intlist[0];
+              machine->int2_align = intlist[1];
+              machine->int4_align = intlist[2];
+              machine->int8_align = intlist[3];
+            }
+          else
+            {
+              error("%s.%s, expected 4 ints", envname, name);
+              n_errors++;
+            }
+        }
       else if (is_literali(name = "wchar_size_size", begin, equal))
-	{
-	  if (scan_intlist(value, space, intlist, 2) == TRUE)
-	    {
-	      machine->wchar_t_size = intlist[0];
-	      machine->size_t_size = intlist[1];
-	    }
-	  else
-	    {
-	      error("%s.%s, expected 2 ints, wchar_t size and size_t size",
-		     envname, name);
-	      n_errors++;
-	    }
-	}
+        {
+          if (scan_intlist(value, space, intlist, 2) == TRUE)
+            {
+              machine->wchar_t_size = intlist[0];
+              machine->size_t_size = intlist[1];
+            }
+          else
+            {
+              error("%s.%s, expected 2 ints, wchar_t size and size_t size",
+                     envname, name);
+              n_errors++;
+            }
+        }
       else if (is_literali(name = "char_wchar_signed", begin, equal))
-	{
-	  const char *comma = find_char(value, space, ',');
-	  if (comma != space)
-	    {
-	      int b1 = scan_boolean(value, comma);
-	      int b2 =
-		scan_boolean(find_not_char(comma, space, ','), space);
-	      if (b1 != -1 && b2 != -1)
-		{
-		  machine->char_signed = b1 ? TRUE : FALSE;
-		  machine->wchar_t_signed = b2 ? TRUE : FALSE;
-		}
-	      else
-		{
-		  error("%s.%s, bools must be 'false' or 'true'", envname,
-			 name);
-		  n_errors++;
-		}
-	    }
-	  else
-	    {
-	      error("%s.%s, expected 2 bools, char and wchar signed",
-		     envname, name);
-	      n_errors++;
-	    }
-	}
+        {
+          const char *comma = find_char(value, space, ',');
+          if (comma != space)
+            {
+              int b1 = scan_boolean(value, comma);
+              int b2 =
+                scan_boolean(find_not_char(comma, space, ','), space);
+              if (b1 != -1 && b2 != -1)
+                {
+                  machine->char_signed = b1 ? TRUE : FALSE;
+                  machine->wchar_t_signed = b2 ? TRUE : FALSE;
+                }
+              else
+                {
+                  error("%s.%s, bools must be 'false' or 'true'", envname,
+                         name);
+                  n_errors++;
+                }
+            }
+          else
+            {
+              error("%s.%s, expected 2 bools, char and wchar signed",
+                     envname, name);
+              n_errors++;
+            }
+        }
       else if (is_literali(name = "async_functions", begin, equal))
-	{
-	  int l = space - value;
-	  char *s = rstralloc(permanent, l + 1);
+        {
+          int l = space - value;
+          char *s = rstralloc(permanent, l + 1);
 
-	  memcpy(s, value, l);
-	  s[l] = '\0';
-	  machine->async_functions_atribute = s;
-	}
+          memcpy(s, value, l);
+          s[l] = '\0';
+          machine->async_functions_atribute = s;
+        }
       else
-	{
-	  int i = 0;
-	  for (i = 0; typespecs[i].name != NULL; i++)
-	    {
-	      if (is_literali(name = typespecs[i].name, begin, equal))
-		{
-		  if (scan_intlist(value, space, intlist, 2) == TRUE)
-		    {
-		      typespecs[i].spec->size = intlist[0];
-		      typespecs[i].spec->align = intlist[1];
-		      break;
-		    }
-		  else
-		    {
-		      error("%s.%s, expected 2 ints, size and align",
-			     envname, name);
-		      n_errors++;
-		    }
-		}
-	    }
+        {
+          int i = 0;
+          for (i = 0; typespecs[i].name != NULL; i++)
+            {
+              if (is_literali(name = typespecs[i].name, begin, equal))
+                {
+                  if (scan_intlist(value, space, intlist, 2) == TRUE)
+                    {
+                      typespecs[i].spec->size = intlist[0];
+                      typespecs[i].spec->align = intlist[1];
+                      break;
+                    }
+                  else
+                    {
+                      error("%s.%s, expected 2 ints, size and align",
+                             envname, name);
+                      n_errors++;
+                    }
+                }
+            }
 
-	  if (typespecs[i].name == NULL)
-	    {
-	      error("%s, unknown field name starting at %s", envname, begin);
-	      n_errors++;
-	    }
-	}
+          if (typespecs[i].name == NULL)
+            {
+              error("%s, unknown field name starting at %s", envname, begin);
+              n_errors++;
+            }
+        }
 
       begin = find_not_char(space, end, ' ');
     }

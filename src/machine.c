@@ -51,14 +51,14 @@ bool select_target(const char *targetname)
   for (scan = machines; *scan; scan++)
     if (!strcmp(targetname, (*scan)->machine_name))
       {
-	if (*scan == &env_machine &&
-	    scan_env_machine(&env_machine, "NESC_MACHINE") == FALSE)
-	  {
-	    error("invalid target described in env NESC_MACHINE");
-	    return FALSE;
-	  }
-	target = *scan;
-	return TRUE;
+        if (*scan == &env_machine &&
+            scan_env_machine(&env_machine, "NESC_MACHINE") == FALSE)
+          {
+            error("invalid target described in env NESC_MACHINE");
+            return FALSE;
+          }
+        target = *scan;
+        return TRUE;
       }
 
   error("unknown target %s", targetname);

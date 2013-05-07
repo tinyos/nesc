@@ -111,11 +111,11 @@ void prt_attribute_elements(type_element elements);
 void prt_interesting_elements(type_element elements, psd_options options);
 
 void prt_variable_decl(type_element modifiers, variable_decl d, 
-		       psd_options dopts);
+                       psd_options dopts);
 void prt_declarator(declarator d, type_element elements, attribute attributes,
-		    data_declaration ddecl, psd_options options);
+                    data_declaration ddecl, psd_options options);
 bool prt_simple_declarator(declarator d, data_declaration ddecl,
-			   psd_options options);
+                           psd_options options);
 void prt_parameters(declaration gparms, declaration parms, psd_options options);
 bool prt_parameter(declaration parm, bool first, bool lastforward, psd_options options);
 void prt_ddecl_full_name(data_declaration ddecl, psd_options options);

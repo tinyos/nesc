@@ -123,25 +123,25 @@ static void clone_ddecl(data_declaration ddecl)
       (!hack_interface || ddecl->instantiation->interface == hack_interface))
     {
       /* If the instantiation's context matches the current one, the
-	 instantiation was already done. */
+         instantiation was already done. */
       if (ddecl->container &&
-	  ddecl->instantiation->container == current.container)
-	return;
+          ddecl->instantiation->container == current.container)
+        return;
       if (ddecl->container_function && 
-	  ddecl->instantiation->container_function == current.function_decl->ddecl)
-	return;
+          ddecl->instantiation->container_function == current.function_decl->ddecl)
+        return;
     }
 
   /* Copy module functions (incl. tasks) and variables */
 
   if (!(ddecl->kind == decl_variable || ddecl->kind == decl_function ||
-	ddecl->kind == decl_constant || ddecl->kind == decl_typedef ||
-	ddecl->kind == decl_interface_ref))
+        ddecl->kind == decl_constant || ddecl->kind == decl_typedef ||
+        ddecl->kind == decl_interface_ref))
     return;
 
   /* Instantiate decls in modules */
   if (!(ddecl->container ||
-	(ddecl->container_function && ddecl->container_function->container)))
+        (ddecl->container_function && ddecl->container_function->container)))
     return;
 
   copy = declare(current.env, ddecl, TRUE);
@@ -187,7 +187,7 @@ static void copy_fields(region r, tag_declaration copy, tag_declaration orig)
       ofield->instantiation = cfield;
       cfield->instantiation = NULL;
       if (cfield->name)
-	env_add(copy->fields, cfield->name, cfield);
+        env_add(copy->fields, cfield->name, cfield);
       *nextfield = cfield;
       nextfield = &cfield->next;
     }
@@ -199,21 +199,21 @@ static void forward_tdecl(region r, tag_ref tref)
 
   /* Ignore non-module tags */
   if (!(tdecl->container ||
-	(tdecl->container_function && tdecl->container_function->container)))
+        (tdecl->container_function && tdecl->container_function->container)))
     return;
 
   /* If already cloned, use instance & return */
   if (tdecl->instantiation)
     {
       /* If the instantiation's context matches the current one, the
-	 instantiation was already done. */
+         instantiation was already done. */
       tref->tdecl = tdecl->instantiation;
       if (tdecl->container &&
-	  tdecl->instantiation->container == current.container)
-	return;
+          tdecl->instantiation->container == current.container)
+        return;
       if (tdecl->container_function && 
-	  tdecl->instantiation->container_function == current.function_decl->ddecl)
-	return;
+          tdecl->instantiation->container_function == current.function_decl->ddecl)
+        return;
     }
 
   copy = declare_tag(tref);
@@ -277,9 +277,9 @@ static void instantiate_ivalue_structured(region r, ivalue copy, ivalue value)
       new_fields = &copy_field->next;
 
       if (field->field->instantiation)
-	copy_field->field = field->field->instantiation;
+        copy_field->field = field->field->instantiation;
       else
-	copy_field->field = field->field;
+        copy_field->field = field->field;
       copy_field->value = instantiate_ivalue(r, field->value);
     }
 }
@@ -355,7 +355,7 @@ static type unary_type(unary e)
       return type_complex(etype) ? make_base_type(etype) : etype;
     }
     default: /* ++, --, cast, address of, dereference, field ref, 
-		component deref, not, sizeof expr, alignof expr */
+                component deref, not, sizeof expr, alignof expr */
       return instantiate_type(e->type);
     }
 }
@@ -375,11 +375,11 @@ static type binary_type(binary e)
       type t2 = type_default_conversion(e->arg2->type);
 
       /* Detect the various pointer arithmetic cases. These cannot lead to
-	 an unknown type, and don't want to be passed to common type */
+         an unknown type, and don't want to be passed to common type */
       if (type_pointer(t1) || type_pointer(t2))
-	return instantiate_type(e->type);
+        return instantiate_type(e->type);
       else
-	return common_type(t1, t2);
+        return common_type(t1, t2);
     }
     case kind_leq: case kind_geq: case kind_lt: case kind_gt:
     case kind_eq: case kind_ne:
@@ -411,19 +411,19 @@ static type conditional_type(conditional e)
       type tpointsto = type_points_to(ttype), fpointsto = type_points_to(ftype);
 
       if (type_compatible_unqualified(tpointsto, fpointsto))
-	rtype = common_type(tpointsto, fpointsto);
+        rtype = common_type(tpointsto, fpointsto);
       else if (definite_null(e->arg1) && type_void(tpointsto))
-	rtype = fpointsto;
+        rtype = fpointsto;
       else if (definite_null(e->arg2) && type_void(fpointsto))
-	rtype = tpointsto;
+        rtype = tpointsto;
       else if (type_void(tpointsto))
-	rtype = tpointsto; /* void * result */
+        rtype = tpointsto; /* void * result */
       else if (type_void(fpointsto))
-	rtype = fpointsto; /* void * result */
+        rtype = fpointsto; /* void * result */
       else
-	/* Slight difference from GCC: I qualify the result type with
-	   the appropriate qualifiers */
-	rtype = void_type;
+        /* Slight difference from GCC: I qualify the result type with
+           the appropriate qualifiers */
+        rtype = void_type;
 
       /* Qualifiers depend on both types */
       rtype = make_pointer_type(qualify_type2(rtype, tpointsto, fpointsto));
@@ -447,11 +447,11 @@ static type expression_type(expression e)
     {
     default:
       if (is_binary(e))
-	return binary_type(CAST(binary, e));
+        return binary_type(CAST(binary, e));
       if (is_unary(e))
-	return unary_type(CAST(unary, e));
+        return unary_type(CAST(unary, e));
       /* constants, label address, sizeof type, alignof type, identifier,
-	 function call: these cannot be unknown type */
+         function call: these cannot be unknown type */
       return instantiate_type(e->type); 
 
     case kind_comma:
@@ -465,7 +465,7 @@ static type expression_type(expression e)
 }
 
 static AST_walker_result clone_expression(AST_walker spec, void *data,
-					  expression *n)
+                                          expression *n)
 {
   expression new = clone(data, n);
   ivalue old_ivalue = NULL;
@@ -477,7 +477,7 @@ static AST_walker_result clone_expression(AST_walker spec, void *data,
       old_ivalue = new->ivalue;
       new->ivalue = copy;
       if (copy->kind == iv_base)
-	copy->u.base.expr = new;
+        copy->u.base.expr = new;
     }
 
   AST_walk_children(spec, data, CAST(node, new));
@@ -518,7 +518,7 @@ static AST_walker_result clone_asttype(AST_walker spec, void *data, asttype *n)
 }
 
 static AST_walker_result clone_function_decl(AST_walker spec, void *data,
-					     function_decl *n)
+                                             function_decl *n)
 {
   declaration old = CAST(declaration, *n);
   function_decl new = clone(data, n);
@@ -530,13 +530,13 @@ static AST_walker_result clone_function_decl(AST_walker spec, void *data,
       data_declaration instance = new->ddecl->instantiation;
 
       /* We need to forward the ddecl *and* update the definition field in
-	 the instantiated data_declaration. */
+         the instantiated data_declaration. */
       instance->definition = CAST(declaration, new);
       /* We update the ast field if it pointed to this function_decl
-	 (note that command and event data_declarations assume that the
-	 ast field points to the original variable_decl) */
+         (note that command and event data_declarations assume that the
+         ast field points to the original variable_decl) */
       if (instance->ast == old)
-	instance->ast = CAST(declaration, new);
+        instance->ast = CAST(declaration, new);
       new->ddecl = instance;
     }
 
@@ -550,7 +550,7 @@ static AST_walker_result clone_function_decl(AST_walker spec, void *data,
 }
 
 static AST_walker_result clone_identifier(AST_walker spec, void *data,
-					  identifier *n)
+                                          identifier *n)
 {
   clone_expression(spec, data, CASTPTR(expression, n));
   forward(&(*n)->ddecl);
@@ -559,7 +559,7 @@ static AST_walker_result clone_identifier(AST_walker spec, void *data,
 }
 
 static AST_walker_result clone_interface_deref(AST_walker spec, void *data,
-					       interface_deref *n)
+                                               interface_deref *n)
 {
   clone_expression(spec, data, CASTPTR(expression, n));
   forward(&(*n)->ddecl);
@@ -568,7 +568,7 @@ static AST_walker_result clone_interface_deref(AST_walker spec, void *data,
 }
 
 static AST_walker_result clone_component_deref(AST_walker spec, void *data,
-					       component_deref *n)
+                                               component_deref *n)
 {
   component_deref new = clone(data, n);
 
@@ -579,7 +579,7 @@ static AST_walker_result clone_component_deref(AST_walker spec, void *data,
 }
 
 static AST_walker_result clone_variable_decl(AST_walker spec, void *data,
-					     variable_decl *n)
+                                             variable_decl *n)
 {
   declaration old = CAST(declaration, *n);
   variable_decl new = clone(data, n);
@@ -589,23 +589,23 @@ static AST_walker_result clone_variable_decl(AST_walker spec, void *data,
       clone_ddecl(new->ddecl);
 
       if (new->ddecl->instantiation)
-	{
-	  data_declaration instance = new->ddecl->instantiation;
+        {
+          data_declaration instance = new->ddecl->instantiation;
 
-	  /* Forward the ddecl and update the ast and definition fields */
-	  if (instance->definition == old)
-	    instance->definition = CAST(declaration, new);
-	  if (instance->ast == old)
-	    instance->ast = CAST(declaration, new);
-	  new->ddecl = instance;
-	}
+          /* Forward the ddecl and update the ast and definition fields */
+          if (instance->definition == old)
+            instance->definition = CAST(declaration, new);
+          if (instance->ast == old)
+            instance->ast = CAST(declaration, new);
+          new->ddecl = instance;
+        }
     }
 
   return aw_walk;
 }
 
 static AST_walker_result clone_type_parm_decl(AST_walker spec, void *data,
-					     type_parm_decl *n)
+                                             type_parm_decl *n)
 {
   type_parm_decl new = clone(data, n);
   data_declaration instance;
@@ -620,7 +620,7 @@ static AST_walker_result clone_type_parm_decl(AST_walker spec, void *data,
 }
 
 static AST_walker_result clone_typename(AST_walker spec, void *data,
-					typename *n)
+                                        typename *n)
 {
   typename new = clone(data, n);
 
@@ -630,7 +630,7 @@ static AST_walker_result clone_typename(AST_walker spec, void *data,
 }
 
 static AST_walker_result clone_enumerator(AST_walker spec, void *data,
-					  enumerator *n)
+                                          enumerator *n)
 {
   enumerator new = clone(data, n);
 
@@ -650,7 +650,7 @@ static AST_walker_result clone_enumerator(AST_walker spec, void *data,
 }
 
 static AST_walker_result clone_tag_ref(AST_walker spec, void *data,
-				       tag_ref *n)
+                                       tag_ref *n)
 {
   tag_ref new = clone(data, n);
 
@@ -663,7 +663,7 @@ static AST_walker_result clone_tag_ref(AST_walker spec, void *data,
 }
 
 static AST_walker_result clone_field_decl(AST_walker spec, void *data,
-				       field_decl *n)
+                                       field_decl *n)
 {
   field_decl new = clone(data, n);
 
@@ -676,7 +676,7 @@ static AST_walker_result clone_field_decl(AST_walker spec, void *data,
 }
 
 static AST_walker_result clone_field_ref(AST_walker spec, void *data,
-					 field_ref *n)
+                                         field_ref *n)
 {
   field_ref new;
 
@@ -792,21 +792,21 @@ static void instantiate_cg(cgraph copy, cgraph original)
       cfrom = endpoint_lookup(copy, &from);
 
       graph_scan_out (connection, n)
-	{
-	  struct endp to = *NODE_GET(endp, graph_edge_to(connection));
-	  gnode cto;
+        {
+          struct endp to = *NODE_GET(endp, graph_edge_to(connection));
+          gnode cto;
 
-	  instantiate_endp(&to);
-	  cto = endpoint_lookup(copy, &to);
+          instantiate_endp(&to);
+          cto = endpoint_lookup(copy, &to);
 
-	  /* User graphs have locations on the edges */
-	  graph_add_edge(cfrom, cto, EDGE_GET(location, connection));
-	}
+          /* User graphs have locations on the edges */
+          graph_add_edge(cfrom, cto, EDGE_GET(location, connection));
+        }
     }
 }
 
 static AST_walker_result clone_component_ref(AST_walker spec, void *data,
-					     component_ref *n)
+                                             component_ref *n)
 {
   component_ref new = clone(data, n);
 
@@ -822,7 +822,7 @@ static AST_walker_result clone_component_ref(AST_walker spec, void *data,
 }
 
 static AST_walker_result clone_interface_ref(AST_walker spec, void *data,
-					     interface_ref *n)
+                                             interface_ref *n)
 {
   interface_ref new = clone(data, n);
 
@@ -838,13 +838,13 @@ static AST_walker_result clone_interface_ref(AST_walker spec, void *data,
     }
   else
     copy_interface_functions(data, current.container, 
-			     new->ddecl, new->ddecl->functions);
+                             new->ddecl, new->ddecl->functions);
 
   return aw_done;
 }
 
 static AST_walker_result clone_implementation(AST_walker spec, void *data,
-					      implementation *n)
+                                              implementation *n)
 {
   implementation new = clone(data, n);
   nesc_declaration comp = current.container, orig = original_component(comp);
@@ -861,11 +861,11 @@ static AST_walker_result clone_implementation(AST_walker spec, void *data,
       region r = regionof(comp->local_statics);
 
       dd_scan (scan, orig->local_statics)
-	{
-	  data_declaration localsd = DD_GET(data_declaration, scan);
+        {
+          data_declaration localsd = DD_GET(data_declaration, scan);
 
-	  dd_add_last(r, comp->local_statics, localsd->instantiation);
-	}
+          dd_add_last(r, comp->local_statics, localsd->instantiation);
+        }
     }
 
   /* Copy the connection graph
@@ -916,78 +916,78 @@ void set_parameter_values(nesc_declaration cdecl, expression args)
   scan_declaration (parm, cdecl->parameters)
     {
       if (is_data_decl(parm))
-	{
-	  variable_decl vd = CAST(variable_decl, CAST(data_decl, parm)->decls);
-	  cst_kind k = type_real(vd->ddecl->type) ?
-	    cst_numerical : cst_address;
+        {
+          variable_decl vd = CAST(variable_decl, CAST(data_decl, parm)->decls);
+          cst_kind k = type_real(vd->ddecl->type) ?
+            cst_numerical : cst_address;
 
-	  if (!args)
-	    {
-	      vd->ddecl->value = make_unknown_cst(k == cst_numerical ?
-						  cval_unknown_number :
-						  cval_unknown_address,
-						  vd->ddecl->type);
-	      continue;
-	    }
+          if (!args)
+            {
+              vd->ddecl->value = make_unknown_cst(k == cst_numerical ?
+                                                  cval_unknown_number :
+                                                  cval_unknown_address,
+                                                  vd->ddecl->type);
+              continue;
+            }
 
-	  if (!is_type_argument(args) && check_constant_once(args, k))
-	    {
-	      location l = args->location;
+          if (!is_type_argument(args) && check_constant_once(args, k))
+            {
+              location l = args->location;
 
-	      /* We can assume the type is arithmetic (for now at least)
-		 (see declare_template_parameter) */
-	      if (!args->cst)
-		{
-		  /* avoid duplicate error messages */
-		  if (args->type != error_type)
-		    error_with_location(l, "component arguments must be constants");
-		}
-	      else if (type_integer(vd->ddecl->type))
-		{
-		  if (!constant_integral(args->cst))
-		    error_with_location(l, "integer constant expected");
-		  else if (!cval_inrange(args->cst->cval, vd->ddecl->type))
-		    error_with_location(l, "constant out of range for argument type");
-		}
-	      else if (type_floating(vd->ddecl->type))
-		{
-		  if (!constant_float(args->cst))
-		    error_with_location(l, "floating-point constant expected");
-		}
-	      else if (type_charstar(vd->ddecl->type))
-		{
-		  /* Check that it's an actual string */
-		  data_declaration sym;
-		  bool ok = FALSE;
+              /* We can assume the type is arithmetic (for now at least)
+                 (see declare_template_parameter) */
+              if (!args->cst)
+                {
+                  /* avoid duplicate error messages */
+                  if (args->type != error_type)
+                    error_with_location(l, "component arguments must be constants");
+                }
+              else if (type_integer(vd->ddecl->type))
+                {
+                  if (!constant_integral(args->cst))
+                    error_with_location(l, "integer constant expected");
+                  else if (!cval_inrange(args->cst->cval, vd->ddecl->type))
+                    error_with_location(l, "constant out of range for argument type");
+                }
+              else if (type_floating(vd->ddecl->type))
+                {
+                  if (!constant_float(args->cst))
+                    error_with_location(l, "floating-point constant expected");
+                }
+              else if (type_charstar(vd->ddecl->type))
+                {
+                  /* Check that it's an actual string */
+                  data_declaration sym;
+                  bool ok = FALSE;
 
-		  if (constant_address(args->cst))
-		    {
-		      sym = cval_ddecl(args->cst->cval);
-		      /* We don't want any offset to the string either
-			 (could lift this restriction) */
-		      ok = sym && sym->kind == decl_magic_string &&
-			cval_knownbool(args->cst->cval);
-		    }
-		  if (!ok)
-		    error_with_location(l, "string argument expected");
-		}
-	    }
+                  if (constant_address(args->cst))
+                    {
+                      sym = cval_ddecl(args->cst->cval);
+                      /* We don't want any offset to the string either
+                         (could lift this restriction) */
+                      ok = sym && sym->kind == decl_magic_string &&
+                        cval_knownbool(args->cst->cval);
+                    }
+                  if (!ok)
+                    error_with_location(l, "string argument expected");
+                }
+            }
 
-	  vd->ddecl->value = args->cst;
-	}
+          vd->ddecl->value = args->cst;
+        }
       else /* type */
-	{
-	  type_parm_decl td = CAST(type_parm_decl, parm);
+        {
+          type_parm_decl td = CAST(type_parm_decl, parm);
 
-	  if (!args)
-	    {
-	      td->ddecl->type = error_type;
-	      continue;
-	    }
+          if (!args)
+            {
+              td->ddecl->type = error_type;
+              continue;
+            }
 
-	  td->ddecl->type = args->type;
-	  td->ddecl->initialiser = args;
-	}
+          td->ddecl->type = args->type;
+          td->ddecl->initialiser = args;
+        }
 
       args = CAST(expression, args->next);
     }
@@ -1096,7 +1096,7 @@ void push_instance(nesc_declaration component)
   if (component->original)
     {
       /* Instantiated component names is parent name (currently at the top
-	 of the stack) . name-in-configuration (currently in instance_name) */
+         of the stack) . name-in-configuration (currently in instance_name) */
       const char *oldname = component->instance_name;
       const char *parentname = stack->component->instance_name;
       int namelen = strlen(parentname) + strlen(oldname) + 2;
@@ -1133,10 +1133,10 @@ nesc_declaration abstract_recursion(void)
     {
       /* If we hit a non-instance component there isn't a loop */
       if (!i->component->original)
-	return NULL;
+        return NULL;
 
       if (original_component(i->component) == component)
-	return i->component;
+        return i->component;
     }
   return NULL;
 }
@@ -1166,7 +1166,7 @@ static void check_cg(cgraph connections)
       endp ep = NODE_GET(endp, n);
 
       if (ep->args_node)
-	check_generic_arguments(ep->args_node, endpoint_args(ep));
+        check_generic_arguments(ep->args_node, endpoint_args(ep));
     }
 }
 
@@ -1195,13 +1195,13 @@ static bool fold_components(nesc_declaration cdecl, int pass)
       check_cg(cdecl->connections);
 
       scan_declaration (d, c->decls)
-	if (is_component_ref(d))
-	  {
-	    component_ref comp = CAST(component_ref, d);
+        if (is_component_ref(d))
+          {
+            component_ref comp = CAST(component_ref, d);
 
-	    set_parameter_values(comp->cdecl, comp->args);
-	    done = fold_components(comp->cdecl, pass) && done;
-	  }
+            set_parameter_values(comp->cdecl, comp->args);
+            done = fold_components(comp->cdecl, pass) && done;
+          }
     }
   return done;
 }
@@ -1215,9 +1215,9 @@ void fold_program(nesc_declaration program, nesc_declaration scheduler)
     {
       done = fold_constants_list(CAST(node, all_cdecls), pass);
       if (program)
-	done = fold_components(program, pass) && done;
+        done = fold_components(program, pass) && done;
       if (scheduler)
-	done = fold_components(scheduler, pass) && done;
+        done = fold_components(scheduler, pass) && done;
       pass++;
     }
   while (!done);
@@ -1226,7 +1226,7 @@ void fold_program(nesc_declaration program, nesc_declaration scheduler)
 }
 
 void check_abstract_arguments(const char *kind, data_declaration ddecl,
-			      declaration parms, expression arglist)
+                              declaration parms, expression arglist)
 {
   location loc = ddecl->ast->location;
   int parmnum = 1;
@@ -1236,54 +1236,54 @@ void check_abstract_arguments(const char *kind, data_declaration ddecl,
       const char *errmsg = NULL;
 
       if (arglist->type == error_type)
-	;
+        ;
       else if (is_data_decl(parms))
-	{
-	  variable_decl vparm = CAST(variable_decl, CAST(data_decl, parms)->decls);
-	  type parmtype = vparm->ddecl->type;
+        {
+          variable_decl vparm = CAST(variable_decl, CAST(data_decl, parms)->decls);
+          type parmtype = vparm->ddecl->type;
 
-	  if (type_incomplete(parmtype))
-	    errmsg = "type of formal parameter %d is incomplete";
-	  else if (is_type_argument(arglist))
-	    errmsg = "formal parameter %d must be a value";
-	  else 
-	    {
-	      set_error_location(arglist->location);
-	      check_assignment(parmtype, arglist->type, arglist, NULL,
-			       ddecl, parmnum);
-	    }
-	}
+          if (type_incomplete(parmtype))
+            errmsg = "type of formal parameter %d is incomplete";
+          else if (is_type_argument(arglist))
+            errmsg = "formal parameter %d must be a value";
+          else 
+            {
+              set_error_location(arglist->location);
+              check_assignment(parmtype, arglist->type, arglist, NULL,
+                               ddecl, parmnum);
+            }
+        }
       else /* type argument */
-	{
-	  type_parm_decl tparm = CAST(type_parm_decl, parms);
+        {
+          type_parm_decl tparm = CAST(type_parm_decl, parms);
 
-	  if (!is_type_argument(arglist))
-	    errmsg = "formal parameter %d must be a type";
-	  else switch (tparm->ddecl->typevar_kind)
-	    {
-	    case typevar_normal: 
-	      /* These tests ensure the type can be used in assignments 
-	         and as a function argument. */
-	      if (type_array(arglist->type))
-		errmsg = "type parameter cannot be an array type (parameter %d)";
-	      else if (type_function(arglist->type))
-		errmsg = "type parameter cannot be a function type (parameter %d)";
-	      else if (type_incomplete(arglist->type))
-		errmsg = "type parameter %d is an incomplete type";
-	      break;
-	    case typevar_integer:
-	      if (!type_integer(arglist->type))
-		errmsg = "parameter %d must be an integer type";
-	      break;
-	    case typevar_number:
-	      if (!type_real(arglist->type))
-		errmsg = "parameter %d must be a numerical type";
-	      break;
-	    default: assert(0); break;
-	    }
-	}
+          if (!is_type_argument(arglist))
+            errmsg = "formal parameter %d must be a type";
+          else switch (tparm->ddecl->typevar_kind)
+            {
+            case typevar_normal: 
+              /* These tests ensure the type can be used in assignments 
+                 and as a function argument. */
+              if (type_array(arglist->type))
+                errmsg = "type parameter cannot be an array type (parameter %d)";
+              else if (type_function(arglist->type))
+                errmsg = "type parameter cannot be a function type (parameter %d)";
+              else if (type_incomplete(arglist->type))
+                errmsg = "type parameter %d is an incomplete type";
+              break;
+            case typevar_integer:
+              if (!type_integer(arglist->type))
+                errmsg = "parameter %d must be an integer type";
+              break;
+            case typevar_number:
+              if (!type_real(arglist->type))
+                errmsg = "parameter %d must be a numerical type";
+              break;
+            default: assert(0); break;
+            }
+        }
       if (errmsg)
-	error_with_location(loc, errmsg, parmnum);
+        error_with_location(loc, errmsg, parmnum);
       parmnum++;
       arglist = CAST(expression, arglist->next);
       parms = CAST(declaration, parms->next);
@@ -1292,15 +1292,15 @@ void check_abstract_arguments(const char *kind, data_declaration ddecl,
 
   if (parms)
     error_with_location(loc, "too few arguments to %s `%s'",
-			kind, ddecl->name);
+                        kind, ddecl->name);
   else if (arglist)
     error_with_location(loc, "too many arguments to %s `%s'",
-			kind, ddecl->name);
+                        kind, ddecl->name);
 }
 
 static nesc_declaration 
 nesc_declaration_copy(region r, nesc_declaration old, expression args,
-		      bool copy_is_abstract, data_declaration ddecl)
+                      bool copy_is_abstract, data_declaration ddecl)
 {
   nesc_declaration copy;
 
@@ -1327,7 +1327,7 @@ nesc_declaration_copy(region r, nesc_declaration old, expression args,
 }
 
 nesc_declaration interface_copy(region r, interface_ref iref,
-				bool copy_is_abstract)
+                                bool copy_is_abstract)
 /* Returns: A copy of abstract interface intf, instantiated with arguments
      in arglist.
 */
@@ -1338,7 +1338,7 @@ nesc_declaration interface_copy(region r, interface_ref iref,
   assert(intf->kind == l_interface);
 
   copy = nesc_declaration_copy(r, intf, iref->args, copy_is_abstract,
-			       iref->ddecl);
+                               iref->ddecl);
   hack_required = 1 + iref->ddecl->required;
   copy->ast = CAST(nesc_decl, instantiate_ast_list(r, CAST(node, intf->ast)));
   hack_required = 0;
@@ -1349,7 +1349,7 @@ nesc_declaration interface_copy(region r, interface_ref iref,
 }
 
 nesc_declaration specification_copy(region r, component_ref cref,
-				    bool copy_is_abstract)
+                                    bool copy_is_abstract)
 /* Returns: A copy of the parameters and specification of the
      component specified by cref, with arguments specified by cref
 */
@@ -1366,13 +1366,13 @@ nesc_declaration specification_copy(region r, component_ref cref,
     {
       /* Give it a new name */
       /* component may itself be a copy of the real original abstract
-	 component */
+         component */
       nesc_declaration abs_comp = comp->original ? comp->original : comp;
       char *newname = rstralloc(r, strlen(copy->name) + 20);
 
       copy->instance_number = abs_comp->instance_count++;
       sprintf(newname, "%s%s%d", copy->name, get_function_separator(),
-	      copy->instance_number);
+              copy->instance_number);
       copy->name = newname;
     }
 
@@ -1382,7 +1382,7 @@ nesc_declaration specification_copy(region r, component_ref cref,
   /* Copy the specification into the copy's env */
   spec = CAST(component, copy->ast);
   spec->decls = CAST(declaration,
-		     instantiate_ast_list(r, CAST(node, spec->decls)));
+                     instantiate_ast_list(r, CAST(node, spec->decls)));
   current = old;
 
   /* Give the copy an "empty" specification graph */
@@ -1392,7 +1392,7 @@ nesc_declaration specification_copy(region r, component_ref cref,
 }
 
 static void typevar_attr(nesc_attribute attr, data_declaration ddecl,
-			 int kind)
+                         int kind)
 {
   if (ddecl->typevar_kind != typevar_normal)
     ignored_nesc_attribute(attr);
@@ -1414,7 +1414,7 @@ void init_abstract(void)
 {
   init_clone();
   define_internal_attribute("integer", NULL, handle_integer_decl, NULL, NULL,
-			    NULL, NULL);
+                            NULL, NULL);
   define_internal_attribute("number", NULL, handle_number_decl, NULL, NULL,
-			    NULL, NULL);
+                            NULL, NULL);
 }

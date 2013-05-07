@@ -230,14 +230,14 @@ char *rstrdup(region r, const char *s)
 
 inline static 
 char *internal_rstrextend(region r, const char *old, size_t newsize,
-			  int needsclear)
+                          int needsclear)
 {
   /* For now we don't attempt to extend the old storage area */
   void *newmem, *hdr;
   unsigned long *oldhdr, oldsize;
 
   qalloc(r, &r->normal, &hdr, sizeof(unsigned long), ALIGNMENT_LONG,
-	 &newmem, newsize, RALIGNMENT, 0);
+         &newmem, newsize, RALIGNMENT, 0);
 
   /* If we don't do this we can't find the header: */
   hdr = (char *)newmem - sizeof(unsigned long);
@@ -250,9 +250,9 @@ char *internal_rstrextend(region r, const char *old, size_t newsize,
       oldsize = *oldhdr;
 
       if (oldsize > newsize)
-	oldsize = newsize;
+        oldsize = newsize;
       else if (needsclear)
-	clear((char *)newmem + oldsize, newsize - oldsize);
+        clear((char *)newmem + oldsize, newsize - oldsize);
       memcpy(newmem, old, oldsize);
     }
   else if (needsclear)

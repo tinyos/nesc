@@ -65,7 +65,7 @@ declarator finish_array_or_fn_declarator(declarator nested, nested_declarator d)
    Returns false in case of error.
    Sets current.function_decl to the declaration for this function */
 bool start_function(type_element elements, declarator d, attribute attribs,
-		    bool nested);
+                    bool nested);
 
 /* Add old-style parameter declarations old_parms to the current function */
 void store_parm_decls(declaration old_parms);
@@ -90,7 +90,7 @@ enum { var_typedef, var_register, var_normal, var_static, var_extern };
    Returns the declaration for the variable.
 */
 declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
-		       bool initialised, attribute attributes);
+                       bool initialised, attribute attributes);
 
 /* Finish definition of decl, furnishing the optional initialiser init.
    Returns decl */
@@ -101,7 +101,7 @@ declaration finish_decl(declaration decl, expression init);
    Returns the declaration for the parameter.
 */
 declaration declare_parameter(declarator d, type_element elements,
-			      attribute attributes);
+                              attribute attributes);
 
 /* Allow parameters to be redeclared. mark_forward should be TRUE
    if these are "forward" parameter declarations (gcc extension) */
@@ -116,7 +116,7 @@ type_element start_struct(location l, AST_kind skind, word tag);
 /* Finish definition of struct/union furnishing the fields and attribs.
    Returns t */
 type_element finish_struct(type_element t, declaration fields,
-			   attribute attribs);
+                           attribute attribs);
 
 /* Return a reference to struct/union/enum (indicated by skind) type tag */
 type_element xref_tag(location l, AST_kind skind, word tag);
@@ -127,7 +127,7 @@ type_element start_enum(location l, word tag);
 /* Finish definition of enum furnishing the names and attribs.
    Returns t */
 type_element finish_enum(type_element t, declaration names,
-			 attribute attribs);
+                         attribute attribs);
 
 /* Create declaration of field 'elements d : bitfield' with attributes
    extra_attributes and attributes.
@@ -135,7 +135,7 @@ type_element finish_enum(type_element t, declaration names,
    Returns the declaration for the field.
 */
 declaration make_field(declarator d, expression bitfield,
-		       type_element elements, attribute attributes);
+                       type_element elements, attribute attributes);
 
 declaration make_enumerator(location loc, cstring id, expression value);
 
@@ -164,15 +164,15 @@ void push_label_level(void);
 void pop_label_level(void);
 
 void init_data_declaration(data_declaration dd, declaration ast,
-			   const char *name, type t);
+                           const char *name, type t);
 data_declaration declare(environment env, data_declaration from,
-			 bool ignore_shadow);
+                         bool ignore_shadow);
 
 /* Build a declaration object for a string */
 data_declaration declare_string(const char *name, cstring value, bool wide);
 
 environment new_environment(region r, environment parent,
-			    bool global_level, bool parm_level);
+                            bool global_level, bool parm_level);
 
 tag_declaration declare_tag(tag_ref t);
 tag_declaration lookup_tag(tag_ref t, bool this_level_only);
@@ -181,31 +181,31 @@ tag_declaration lookup_global_tag(tag_ref t);
 
 void init_semantics(void);
 void start_semantics(source_language l, nesc_declaration container,
-		     environment parent_env);
+                     environment parent_env);
 
 struct semantic_state
 {
-  region fileregion;		/* A per-file region.
-				   "Renewed" at the start of each file and
-				   of each implementation section */
-  source_language language;	/* The current language */
-  environment env;		/* The current environment */
-  nesc_declaration file;	/* The nesC entity of the file being compiled
-				   (different from container while dealing
-				   with C declarations at the beginning of
-				   the file) */
-  nesc_declaration container;	/* The nesC entity being compiled (NULL for C) */
-  function_decl function_decl;	/* The function currently being defined */
-  tag_ref pending_invalid_xref;	/* Internal use */
-  enum {			/* Within a component specification, are we: */
-    spec_normal,		/*   - neither in provides or in uses */
-    spec_provides,		/*   - in a provides section */
-    spec_uses			/*   - in a uses section */
-  } spec_section;	
+  region fileregion;                /* A per-file region.
+                                   "Renewed" at the start of each file and
+                                   of each implementation section */
+  source_language language;        /* The current language */
+  environment env;                /* The current environment */
+  nesc_declaration file;        /* The nesC entity of the file being compiled
+                                   (different from container while dealing
+                                   with C declarations at the beginning of
+                                   the file) */
+  nesc_declaration container;        /* The nesC entity being compiled (NULL for C) */
+  function_decl function_decl;        /* The function currently being defined */
+  tag_ref pending_invalid_xref;        /* Internal use */
+  enum {                        /* Within a component specification, are we: */
+    spec_normal,                /*   - neither in provides or in uses */
+    spec_provides,                /*   - in a provides section */
+    spec_uses                        /*   - in a uses section */
+  } spec_section;        
 
-  atomic_stmt in_atomic;		/* The lexically containing atomic statement
-				   (NULL for none) */
-  char *preprocessed_file;	/* Temp file holding preprocessor output */
+  atomic_stmt in_atomic;                /* The lexically containing atomic statement
+                                   (NULL for none) */
+  char *preprocessed_file;        /* Temp file holding preprocessor output */
   struct lex_state lex;
 };
 
@@ -215,18 +215,18 @@ extern dd_list spontaneous_calls;
 /* List of spontaneously-called functions */
 
 void check_variable_scflags(scflags scf,
-			    location l, const char *kind, const char *name);
+                            location l, const char *kind, const char *name);
 
 void parse_declarator(type_element modifiers, declarator d, bool bitfield, 
-		      bool require_parm_names,
-		      int *oclass, scflags *oscf,
-		      const char **ointf, const char **oname,
-		      type *ot, bool *owarn_defaulted_int,
-		      function_declarator *ofunction_declarator,
-		      dd_list *oattributes);
+                      bool require_parm_names,
+                      int *oclass, scflags *oscf,
+                      const char **ointf, const char **oname,
+                      type *ot, bool *owarn_defaulted_int,
+                      function_declarator *ofunction_declarator,
+                      dd_list *oattributes);
 
 int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
-		    bool different_binding_level, bool newinitialised);
+                    bool different_binding_level, bool newinitialised);
 
 void check_array_size(expression size, const char *printname);
 

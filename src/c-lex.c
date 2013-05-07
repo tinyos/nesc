@@ -84,7 +84,7 @@ void set_lex_location(location loc)
   const struct line_map *new_line;
 
   new_line = linemap_add(current.lex.line_map, LC_RENAME, 0,
-			 loc->filename, loc->lineno);
+                         loc->filename, loc->lineno);
   current.lex.input->l = *loc;
 }
 
@@ -123,10 +123,10 @@ static void cb_file_change(cpp_reader *reader, const struct line_map *new_map)
   if (new_map->reason == LC_ENTER)
     {
       if (!MAIN_FILE_P(new_map))
-	{
-	  int included_at = LAST_SOURCE_LINE(new_map - 1);
-	  current.lex.input->l.lineno = included_at;
-	}
+        {
+          int included_at = LAST_SOURCE_LINE(new_map - 1);
+          current.lex.input->l.lineno = included_at;
+        }
       push_input();
     }
   else if (new_map->reason == LC_LEAVE)
@@ -139,7 +139,7 @@ static void cb_file_change(cpp_reader *reader, const struct line_map *new_map)
 }
 
 static void cb_line_change(cpp_reader *reader, const cpp_token *token,
-			   int parsing_args)
+                           int parsing_args)
 {
   if (token->type != CPP_EOF && !parsing_args)
     {
@@ -251,11 +251,11 @@ static void start_lex_common(source_language l)
 static void setup_macros(void)
 {
   cb_file_change(current_reader(),
-		 linemap_add(current.lex.line_map, LC_ENTER, 0, "<built-in>", 0));
+                 linemap_add(current.lex.line_map, LC_ENTER, 0, "<built-in>", 0));
 
   start_macro_saving();
   cb_file_change(current_reader(),
-		 linemap_add(current.lex.line_map, LC_LEAVE, 0, NULL, 0));
+                 linemap_add(current.lex.line_map, LC_LEAVE, 0, NULL, 0));
 }
 
 bool start_lex(source_language l, const char *path)
@@ -297,7 +297,7 @@ static cstring make_token_cstring(const cpp_token *token)
   unsigned char *end;
 
   end = cpp_spell_token(current_reader(), token,
-			(unsigned char *)tokcs.data, FALSE);
+                        (unsigned char *)tokcs.data, FALSE);
   end[0] = '\0';
   tokcs.length = (char *)end - tokcs.data;
 
@@ -314,21 +314,21 @@ static void handle_comment(const cpp_token *token)
   else if (!strncmp((char *)comment->text, "///", 3))
     {
       if (doc_location && last_location()->filename == doc_location->filename &&
-	  last_location()->lineno + 1 == doc_location->lineno)
-	memcpy(char_array_extend(doc_string, comment->len), comment->text,
-	       comment->len);
+          last_location()->lineno + 1 == doc_location->lineno)
+        memcpy(char_array_extend(doc_string, comment->len), comment->text,
+               comment->len);
       else
-	new_docstring = TRUE;
+        new_docstring = TRUE;
     }
 
   if (new_docstring)
     {
       if (warn_unexpected_docstring && char_array_length(doc_string))
-	warning_with_location(doc_location, "discarding unexpected docstring");
+        warning_with_location(doc_location, "discarding unexpected docstring");
 
       char_array_reset(doc_string);
       memcpy(char_array_extend(doc_string, comment->len), comment->text,
-	     comment->len);
+             comment->len);
       doc_location = last_location();
     }
 }
@@ -375,7 +375,7 @@ static void lex_string(const cpp_token *tok, struct yystype *lvalp)
   do
     {
       string_cst one_string =
-	new_string_cst(parse_region, last_location(), make_token_cstring(tok));
+        new_string_cst(parse_region, last_location(), make_token_cstring(tok));
 
       *next_sc = one_string;
       next_sc = CASTPTR(string_cst, &one_string->next);
@@ -383,19 +383,19 @@ static void lex_string(const cpp_token *tok, struct yystype *lvalp)
       *string_array_extend(string_sequence, 1) = tok->val.str;
 
       if (tok->type == CPP_WSTRING)
-	wide = true;
+        wide = true;
 
     retry:
       if (tok != first)
-	save_pp_token(tok);
+        save_pp_token(tok);
       tok = cpp_get_token(current_reader());
       if (tok->type == CPP_PADDING)
-	goto retry;
+        goto retry;
       if (tok->type == CPP_COMMENT)
-	{
-	  handle_comment(tok);
-	  goto retry;
-	}
+        {
+          handle_comment(tok);
+          goto retry;
+        }
     }
   while (tok->type == CPP_STRING || tok->type == CPP_WSTRING);
 
@@ -403,9 +403,9 @@ static void lex_string(const cpp_token *tok, struct yystype *lvalp)
   _cpp_backup_tokens(current_reader(), 1);
 
   if (cpp_interpret_string(current_reader(),
-			   string_array_data(string_sequence),
-			   string_array_length(string_sequence),
-			   &istr, wide))
+                           string_array_data(string_sequence),
+                           string_array_length(string_sequence),
+                           &istr, wide))
     {
       cstr = make_cstring(parse_region, (char *)istr.text, istr.len - 1);
       free((char *)istr.text);
@@ -413,9 +413,9 @@ static void lex_string(const cpp_token *tok, struct yystype *lvalp)
   else
     {
       /* Use empty string as the value in case of error. Assumes the
-	 widest supported wchar_t is 32 bits */
+         widest supported wchar_t is 32 bits */
       cstr = make_cstring(parse_region, "\0\0\0",
-			  wide ? type_size_int(wchar_type) : 1);
+                          wide ? type_size_int(wchar_type) : 1);
     }
 
   lvalp->u.string = fold_lexical_string(first_loc, string_components, cstr, wide);
@@ -428,9 +428,9 @@ static void lex_charconst(const cpp_token *token, struct yystype *lvalp)
   int unsignedp;
 
   result = cpp_interpret_charconst(current_reader(), token,
-				   &chars_seen, &unsignedp);
+                                   &chars_seen, &unsignedp);
   lvalp->u.constant = fold_lexical_char(last_location(), make_token_cstring(token),
-					token->type == CPP_WCHAR, result);
+                                        token->type == CPP_WCHAR, result);
 }
 
 /* Interpret TOKEN, an integer with FLAGS as classified by cpplib.  */
@@ -445,8 +445,8 @@ static lexical_cst interpret_integer(const cpp_token *token, unsigned int flags)
 
   if (flags & CPP_N_UNSIGNED ||
       /* what earlier nesC versions did, not correct as per C89/C99:
-	 In both C89 and C99, octal and hex constants may be signed or
-	 unsigned, whichever fits tighter.  */
+         In both C89 and C99, octal and hex constants may be signed or
+         unsigned, whichever fits tighter.  */
       (flags & CPP_N_RADIX) != CPP_N_DECIMAL) 
     if ((flags & CPP_N_WIDTH) == CPP_N_SMALL)
       t = unsigned_int_type;
@@ -467,9 +467,9 @@ static lexical_cst interpret_integer(const cpp_token *token, unsigned int flags)
      values that fit in largest_uint anyway */
   assert(sizeof(HOST_WIDE_INT) == sizeof(largest_uint));
   return fold_lexical_int(t, last_location(), make_token_cstring(token),
-			  (flags & CPP_N_IMAGINARY) != 0,
-			  integer.low,
-			  integer.overflow);
+                          (flags & CPP_N_IMAGINARY) != 0,
+                          integer.low,
+                          integer.overflow);
 }
 
 /* Interpret TOKEN, a floating point number with FLAGS as classified
@@ -516,16 +516,16 @@ static int interpret_name(const cpp_token *token, struct yystype *lvalp)
       !(is_nesc_keyword(ptr) && current.language == l_c))
     {
       if (ptr->token == TYPE_QUAL)
-	lvalp->u.itoken.i = ptr->rid;
+        lvalp->u.itoken.i = ptr->rid;
       else
-	lvalp->u.itoken.i = ptr->rid & ~RID_NESC;
+        lvalp->u.itoken.i = ptr->rid & ~RID_NESC;
 
       /* Even if we decided to recognize asm, still perhaps warn.  */
       if (pedantic &&
-	  (ptr->token == ASM_KEYWORD || ptr->token == TYPEOF ||
-	   ptr->rid == RID_INLINE) &&
-	  id->str[0] != '_')
-	pedwarn ("ANSI does not permit the keyword `%s'", id->str);
+          (ptr->token == ASM_KEYWORD || ptr->token == TYPEOF ||
+           ptr->rid == RID_INLINE) &&
+          id->str[0] != '_')
+        pedwarn ("ANSI does not permit the keyword `%s'", id->str);
 
       return ptr->token;
     }
@@ -542,13 +542,13 @@ static int interpret_name(const cpp_token *token, struct yystype *lvalp)
       lvalp->idtoken.decl = decl;
 
       if (decl)
-	switch (decl->kind)
-	  {
-	  case decl_typedef: kind = TYPENAME; break;
-	  case decl_magic_string: kind = MAGIC_STRING; break;
-	  case decl_component_ref: kind = COMPONENTREF; break;
-	  default: break;
-	  }
+        switch (decl->kind)
+          {
+          case decl_typedef: kind = TYPENAME; break;
+          case decl_magic_string: kind = MAGIC_STRING; break;
+          case decl_component_ref: kind = COMPONENTREF; break;
+          default: break;
+          }
     }
   return kind;
 }
@@ -582,27 +582,27 @@ static int lex_token(struct yystype *lvalp)
 
     case CPP_NUMBER:
       {
-	unsigned int flags = cpp_classify_number(current_reader(), tok);
-	lexical_cst num = NULL;
+        unsigned int flags = cpp_classify_number(current_reader(), tok);
+        lexical_cst num = NULL;
 
-	switch (flags & CPP_N_CATEGORY)
-	  {
-	  case CPP_N_INTEGER:
-	    num = interpret_integer(tok, flags);
-	    break;
-	  case CPP_N_FLOATING:
-	    num = interpret_float (tok, flags);
-	    break;
-	  }
-	/* cpplib has issued an error or we ran into something we don't
-	   support (e.g. fixed point), pretend the constant was 0  */
-	if (num == NULL)
-	    num = fold_lexical_int(int_type, last_location(),
-				   make_token_cstring(tok),
-				   FALSE, 0, FALSE);
+        switch (flags & CPP_N_CATEGORY)
+          {
+          case CPP_N_INTEGER:
+            num = interpret_integer(tok, flags);
+            break;
+          case CPP_N_FLOATING:
+            num = interpret_float (tok, flags);
+            break;
+          }
+        /* cpplib has issued an error or we ran into something we don't
+           support (e.g. fixed point), pretend the constant was 0  */
+        if (num == NULL)
+            num = fold_lexical_int(int_type, last_location(),
+                                   make_token_cstring(tok),
+                                   FALSE, 0, FALSE);
 
-	lvalp->u.constant = num;
-	return CONSTANT;
+        lvalp->u.constant = num;
+        return CONSTANT;
       }
 
     case CPP_HASH:
@@ -611,24 +611,24 @@ static int lex_token(struct yystype *lvalp)
     case CPP_DEREF_STAR:
     case CPP_DOT_STAR:
       {
-	unsigned char name[4];
+        unsigned char name[4];
 
-	*cpp_spell_token(current_reader(), tok, name, true) = 0;
+        *cpp_spell_token(current_reader(), tok, name, true) = 0;
 
-	error("stray %qs in program", name);
+        error("stray %qs in program", name);
       }
       goto retry;
 
     case CPP_OTHER:
       {
-	cppchar_t c = tok->val.str.text[0];
+        cppchar_t c = tok->val.str.text[0];
 
-	if (c == '"' || c == '\'')
-	  error("missing terminating %c character", (int) c);
-	else if (ISGRAPH (c))
-	  error("stray %qc in program", (int) c);
-	else
-	  error("stray %<\\%o%> in program", (int) c);
+        if (c == '"' || c == '\'')
+          error("missing terminating %c character", (int) c);
+        else if (ISGRAPH (c))
+          error("stray %qc in program", (int) c);
+        else
+          error("stray %<\\%o%> in program", (int) c);
       }
       goto retry;
 
@@ -646,7 +646,7 @@ static int lex_token(struct yystype *lvalp)
       goto retry;
 
       /* Translate to the parser's symbols - somewhat of a legacy effect,
-	 but having the characters does make the parser more readable... */
+         but having the characters does make the parser more readable... */
     case CPP_EQ: return '=';
     case CPP_NOT: return '!';
     case CPP_GREATER: return '>';
@@ -770,29 +770,29 @@ yylex(struct yystype *lvalp)
 
       token = IDENTIFIER; /* default to regular identifier */
       if (token1 == '.')
-	{
-	  struct yystype val2;
-	  int token2 = poptoken(&val2);
+        {
+          struct yystype val2;
+          int token2 = poptoken(&val2);
 
-	  if (token2 == IDENTIFIER || token2 == TYPENAME ||
-	      token2 == MAGIC_STRING)
-	    {
-	      data_declaration cref = lvalp->idtoken.decl;
-	      data_declaration fdecl = env_lookup(cref->ctype->env->id_env, val2.idtoken.id.data, TRUE);
+          if (token2 == IDENTIFIER || token2 == TYPENAME ||
+              token2 == MAGIC_STRING)
+            {
+              data_declaration cref = lvalp->idtoken.decl;
+              data_declaration fdecl = env_lookup(cref->ctype->env->id_env, val2.idtoken.id.data, TRUE);
 
-	      if (fdecl && fdecl->kind == decl_typedef)
-		{
-		  /* The special typedef reference case. Fix the tokens */
-		  token = COMPONENTREF;
-		  token2 = IDENTIFIER;
-		  val2.idtoken.decl = fdecl;
-		}
-	    }
-	  pushtoken(token1, &val1);
-	  pushtoken(token2, &val2);
-	}
+              if (fdecl && fdecl->kind == decl_typedef)
+                {
+                  /* The special typedef reference case. Fix the tokens */
+                  token = COMPONENTREF;
+                  token2 = IDENTIFIER;
+                  val2.idtoken.decl = fdecl;
+                }
+            }
+          pushtoken(token1, &val1);
+          pushtoken(token2, &val2);
+        }
       else
-	pushtoken(token1, &val1);
+        pushtoken(token1, &val1);
     }
 
   return token;

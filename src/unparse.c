@@ -15,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with nesC; see the file COPYING.	If not, write to
+along with nesC; see the file COPYING.        If not, write to
 the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA. */
 
@@ -144,13 +144,13 @@ void output_quoted(const char *s)
   while (*s)
     {
       if (*s == '\n') /* don't confuse the line numbers */
-	fputs("\\n", of);
+        fputs("\\n", of);
       else 
-	{
-	  if (*s == '\\' || *s == '"')
-	    putc('\\', of);
-	  putc(*s, of);
-	}
+        {
+          if (*s == '\\' || *s == '"')
+            putc('\\', of);
+          putc(*s, of);
+        }
       s++;
     }
 }
@@ -166,17 +166,17 @@ void output_quoted_cs(cstring s)
       char c = s.data[i];
 
       if (c == '\n') /* don't confuse the line numbers */
-	fputs("\\n", of);
+        fputs("\\n", of);
       else if ((unsigned char)c == c && isprint(c))
-	{
-	  if (c == '\\' || c == '"')
-	    putc('\\', of);
-	  putc(c, of);
-	}
+        {
+          if (c == '\\' || c == '"')
+            putc('\\', of);
+          putc(c, of);
+        }
       else 
-	/* The "" at the end avoids confusion if the next character
-	   is '0'-'9', 'a'-'f' or 'A'-'F' */
-	output("\\x%lx\"\"", (unsigned long)c);
+        /* The "" at the end avoids confusion if the next character
+           is '0'-'9', 'a'-'f' or 'A'-'F' */
+        output("\\x%lx\"\"", (unsigned long)c);
     }
 }
 
@@ -281,13 +281,13 @@ void set_location(location l)
     {
       /* Just send some newlines for small changes */
       if (!fixed_location &&
-	  output_loc.lineno < l->lineno && output_loc.lineno + 10 >= l->lineno)
-	{
-	  while (output_loc.lineno != l->lineno)
-	    newline();
-	}
+          output_loc.lineno < l->lineno && output_loc.lineno + 10 >= l->lineno)
+        {
+          while (output_loc.lineno != l->lineno)
+            newline();
+        }
       else
-	output_line_directive(l, FALSE);
+        output_line_directive(l, FALSE);
     }
 }
 
@@ -316,8 +316,8 @@ static void output_complex(known_cst c)
 
 void output_constant(known_cst c)
 /* Requires: (constant_integral(c) || constant_float(c)) &&
-	     type_arithmetic(c->type)
-	     or c denotes a string constant && type_chararray(c->type, FALSE)
+             type_arithmetic(c->type)
+             or c denotes a string constant && type_chararray(c->type, FALSE)
    Effects: prints a parsable representable of c to f
  */
 {
@@ -341,8 +341,8 @@ void output_constant(known_cst c)
       assert(ddecl && ddecl->kind == decl_magic_string);
       output("\"");
       /* FIXME we ignore wide char issues, just outputting the raw bytes - 
-	 this should be ok for now as we don't actually allow wide-char
-	 strings as arguments to generics anyway */
+         this should be ok for now as we don't actually allow wide-char
+         strings as arguments to generics anyway */
       output_quoted_cs(ddecl->schars);
       output("\"");
     }
@@ -351,25 +351,25 @@ void output_constant(known_cst c)
       assert(type_integral(t));
 
       if (type_unsigned(t))
-	output("%llu", constant_uint_value(c));
+        output("%llu", constant_uint_value(c));
       else
-	output("%lld", constant_sint_value(c));
+        output("%lld", constant_sint_value(c));
 
       if (type_size_int(t) <= type_size_int(int_type))
-	{
-	  if (type_unsigned(t))
-	    output("U");
-	}
+        {
+          if (type_unsigned(t))
+            output("U");
+        }
       else if (type_long(t))
-	output("L");
+        output("L");
       else if (type_unsigned_long(t))
-	output("UL");
+        output("UL");
       else if (type_long_long(t))
-	output("LL");
+        output("LL");
       else if (type_unsigned_long_long(t))
-	output("ULL");
+        output("ULL");
       else
-	assert(0);
+        assert(0);
     }
 }
 
@@ -381,7 +381,7 @@ void prt_data_decl(data_decl d);
 void prt_ellipsis_decl(ellipsis_decl d);
 void prt_function_decl(function_decl d);
 void prt_variable_decl(type_element modifier, variable_decl d,
-		       psd_options options);
+                       psd_options options);
 void prt_interesting_elements(type_element elements, psd_options options);
 void prt_type_elements(type_element elements, psd_options options);
 bool prt_type_element(type_element em, psd_options options);
@@ -479,8 +479,8 @@ void unparse_start(FILE *to, FILE *symbols)
   if (unparse_header)
     dd_scan (header_line, unparse_header)
       {
-	output_string(DD_GET(const char *, header_line));
-	newline();
+        output_string(DD_GET(const char *, header_line));
+        newline();
       }
 }
 
@@ -594,7 +594,7 @@ void prt_ellipsis_decl(ellipsis_decl d)
 }
 
 static void prt_prefix(location loc, data_declaration ddecl,
-		       type_element modifiers)
+                       type_element modifiers)
 {
   bool pinline = FALSE, pstatic = FALSE;
   type_element em;
@@ -605,60 +605,60 @@ static void prt_prefix(location loc, data_declaration ddecl,
       !ddecl->spontaneous && ddecl->definition)
     {
       if (ddecl->ftype != function_static)
-	{
-	  output("static ");
-	  pstatic = TRUE;
-	}
+        {
+          output("static ");
+          pstatic = TRUE;
+        }
       if (ddecl->makeinline && flag_no_inline < 2)
-	{
-	  output("inline ");
-	  pinline = TRUE;
-	}
+        {
+          output("inline ");
+          pinline = TRUE;
+        }
     }
 
   scan_type_element (em, modifiers)
     if (is_rid(em))
       {
-	rid r = CAST(rid, em);
+        rid r = CAST(rid, em);
 
-	/* Filter-out rids that should not be printed by calling continue */
-	switch (r->id)
-	  {
-	  default:
-	    continue;
-	  case RID_EXTERN: case RID_STATIC:
-	    if (pstatic)
-	      continue;
-	    break;
-	  case RID_INLINE:
-	    if (pinline)
-	      continue;
-	    break;
-	  case RID_REGISTER: case RID_TYPEDEF:
-	    break;
-	  }
-	set_location(r->location);
-	output("%s ", rid_name(r));
+        /* Filter-out rids that should not be printed by calling continue */
+        switch (r->id)
+          {
+          default:
+            continue;
+          case RID_EXTERN: case RID_STATIC:
+            if (pstatic)
+              continue;
+            break;
+          case RID_INLINE:
+            if (pinline)
+              continue;
+            break;
+          case RID_REGISTER: case RID_TYPEDEF:
+            break;
+          }
+        set_location(r->location);
+        output("%s ", rid_name(r));
       }
 }
-		       
+                       
 
 void prt_symbol_name(FILE *f, data_declaration ddecl)
 {
   if (!ddecl->Cname)
     {
       if (ddecl->container)
-	{
-	  print_stripped_string(f, ddecl->container->name);
-	  fputs(function_separator, f);
-	}
+        {
+          print_stripped_string(f, ddecl->container->name);
+          fputs(function_separator, f);
+        }
       if (ddecl->kind == decl_function && ddecl->interface)
-	{
-	  print_stripped_string(f, ddecl->interface->name);
-	  fputs(function_separator, f);
-	}
+        {
+          print_stripped_string(f, ddecl->interface->name);
+          fputs(function_separator, f);
+        }
       if (!ddecl->defined && ddecl_is_command_or_event(ddecl))
-	fprintf(f, "default%s", function_separator);
+        fprintf(f, "default%s", function_separator);
     }
 
   print_stripped_string(f, ddecl->name);
@@ -679,20 +679,20 @@ void prt_symbol_info(data_declaration ddecl)
       prt_symbol_name(symf, ddecl);
 
       if (ddecl->kind == decl_function)
-	{
-	  if (ddecl->makeinline || ddecl->isinline || ddecl->isexterninline)
-	    fprintf(symf, " FNINLINE\n");
-	  else
-	    fprintf(symf, " FN\n");
-	}
+        {
+          if (ddecl->makeinline || ddecl->isinline || ddecl->isexterninline)
+            fprintf(symf, " FNINLINE\n");
+          else
+            fprintf(symf, " FN\n");
+        }
       else
-	{
-	  assert(ddecl->kind == decl_variable);
-	  if (ddecl->initialiser)
-	    fprintf(symf, " DATA\n");
-	  else
-	    fprintf(symf, " BSS\n");
-	}
+        {
+          assert(ddecl->kind == decl_variable);
+          if (ddecl->initialiser)
+            fprintf(symf, " DATA\n");
+          else
+            fprintf(symf, " BSS\n");
+        }
     }
 }
 
@@ -717,23 +717,23 @@ void prt_data_decl(data_decl d)
       psd_options vopts = opts;
 
       if (vdecl) /* because build_declaration does not make a
-		    data_declaration */
-	{
-	  /* Ignore unused non-local declarations 
-	     (local ones might have an initialiser which must still be
-	     executed) */
-	  if (((vdecl->kind == decl_function || vdecl->kind == decl_variable)
-	       && !vdecl->isused && !vdecl->islocal))
-	    continue;
-	  if (use_nido && is_module_local_static(vdecl))
-	    continue;
+                    data_declaration */
+        {
+          /* Ignore unused non-local declarations 
+             (local ones might have an initialiser which must still be
+             executed) */
+          if (((vdecl->kind == decl_function || vdecl->kind == decl_variable)
+               && !vdecl->isused && !vdecl->islocal))
+            continue;
+          if (use_nido && is_module_local_static(vdecl))
+            continue;
 
-	  if (prt_network_typedef(d, vdd))
-	    vopts |= psd_prefix_nxbase;
+          if (prt_network_typedef(d, vdd))
+            vopts |= psd_prefix_nxbase;
 
-	  if (type_task(vdecl->type) && vdecl->interface)
-	    continue;
-	}
+          if (type_task(vdecl->type) && vdecl->interface)
+            continue;
+        }
 
       prt_diff_info(vdecl);
 
@@ -776,19 +776,19 @@ void prt_function_decl(function_decl d)
       prt_diff_info(d->ddecl);
       prt_prefix(d->location, d->ddecl, d->modifiers);
       if (ret)
-	{
-	  prt_attribute_elements(d->modifiers);
-	  prt_declarator(ret->declarator, ret->qualifiers, NULL, d->ddecl,
-			 psd_print_default | psd_print_ddecl_fdeclarator);
-	}
+        {
+          prt_attribute_elements(d->modifiers);
+          prt_declarator(ret->declarator, ret->qualifiers, NULL, d->ddecl,
+                         psd_print_default | psd_print_ddecl_fdeclarator);
+        }
       else
-	prt_declarator(d->declarator, d->modifiers, NULL, d->ddecl,
-		       psd_print_default);
+        prt_declarator(d->declarator, d->modifiers, NULL, d->ddecl,
+                       psd_print_default);
       if (d->attributes)
-	{
-	  output(" ");
-	  prt_type_elements(CAST(type_element, d->attributes), 0);
-	}
+        {
+          output(" ");
+          prt_type_elements(CAST(type_element, d->attributes), 0);
+        }
       outputln(";");
     }
 }
@@ -802,7 +802,7 @@ void prt_function_body(function_decl d)
       bool extrablock;
 
       /* We set current.function_decl because unparsing may produce error
-	 messages */
+         messages */
       current.function_decl = d;
       current.container = d->ddecl->container;
 
@@ -810,20 +810,20 @@ void prt_function_body(function_decl d)
       prt_prefix(d->location, d->ddecl, d->modifiers);
       /* gcc wants the attributes here */
       prt_type_elements(CAST(type_element, d->attributes), 
-			flag_gccize ? 0 : psd_no_target_attributes);
+                        flag_gccize ? 0 : psd_no_target_attributes);
 
       if (ret)
-	{
-	  prt_attribute_elements(d->modifiers);
-	  prt_declarator(ret->declarator, ret->qualifiers, NULL, d->ddecl,
-			 psd_print_default | psd_print_ddecl_fdeclarator);
-	}
+        {
+          prt_attribute_elements(d->modifiers);
+          prt_declarator(ret->declarator, ret->qualifiers, NULL, d->ddecl,
+                         psd_print_default | psd_print_ddecl_fdeclarator);
+        }
       else
-	prt_declarator(d->declarator, d->modifiers, NULL, d->ddecl,
-		       psd_print_default);
+        prt_declarator(d->declarator, d->modifiers, NULL, d->ddecl,
+                       psd_print_default);
 
       if (!flag_gccize)
-	prt_type_elements(CAST(type_element, d->attributes), psd_only_target_attributes);
+        prt_type_elements(CAST(type_element, d->attributes), psd_only_target_attributes);
 
       startline();
       prt_parameter_declarations(d->old_parms);
@@ -832,17 +832,17 @@ void prt_function_body(function_decl d)
       prt_compound_stmt(CAST(compound_stmt, d->stmt), !d->ddecl->safe);
       newline();
       if (extrablock)
-	{
-	  unindent();
-	  outputln("}");
-	}
+        {
+          unindent();
+          outputln("}");
+        }
 
       current.function_decl = d->parent_function;
     }
 }
 
 void prt_variable_decl(type_element modifiers, variable_decl d,
-		       psd_options options)
+                       psd_options options)
 {
   function_declarator fd = get_fdeclarator(d->declarator);
   asttype ret;
@@ -854,7 +854,7 @@ void prt_variable_decl(type_element modifiers, variable_decl d,
     {
       prt_attribute_elements(modifiers);
       prt_declarator(ret->declarator, ret->qualifiers, NULL, d->ddecl,
-		     options | psd_print_ddecl_fdeclarator);
+                     options | psd_print_ddecl_fdeclarator);
     }
   else
     prt_declarator(d->declarator, modifiers, NULL, d->ddecl, options);
@@ -876,7 +876,7 @@ void prt_variable_decl(type_element modifiers, variable_decl d,
 }
 
 void prt_declarator(declarator d, type_element elements, attribute attributes,
-		    data_declaration ddecl, psd_options options)
+                    data_declaration ddecl, psd_options options)
 {
   psd_options te_opts = options & (psd_duplicate | psd_rewrite_nxbase);
 
@@ -907,14 +907,14 @@ void prt_plain_ddecl(data_declaration ddecl, psd_options options)
   if (!ddecl->Cname)
     {
       if (ddecl->container && !(options & psd_skip_container))
-	prt_container(ddecl->container);
+        prt_container(ddecl->container);
       if (/*ddecl->kind == decl_function &&*/ ddecl->interface)
-	output_stripped_string_dollar(ddecl->interface->name);
+        output_stripped_string_dollar(ddecl->interface->name);
       if ((options & psd_print_default) &&
-	  !ddecl->defined && ddecl_is_command_or_event(ddecl))
+          !ddecl->defined && ddecl_is_command_or_event(ddecl))
       {
-	output("default");
-	output_string(function_separator);
+        output("default");
+        output_string(function_separator);
       }
     }
 
@@ -941,133 +941,133 @@ void prt_ddecl_full_name(data_declaration ddecl, psd_options options)
 /* The return value is TRUE iff d is an identifier_declarator possibly
    prefixed with qualified_declarators */
 bool prt_simple_declarator(declarator d, data_declaration ddecl,
-			   psd_options options)
+                           psd_options options)
 {
   if (!d)
     {
       if (options & psd_print_ddecl_fdeclarator)
-	{
-	  if (is_function_decl(ddecl->ast))
-	    d = CAST(function_decl, ddecl->ast)->declarator;
-	  else
-	    d = CAST(variable_decl, ddecl->ast)->declarator;
-	  d = CAST(declarator, get_fdeclarator(d));
-	  options &= ~psd_print_ddecl_fdeclarator;
-	}
+        {
+          if (is_function_decl(ddecl->ast))
+            d = CAST(function_decl, ddecl->ast)->declarator;
+          else
+            d = CAST(variable_decl, ddecl->ast)->declarator;
+          d = CAST(declarator, get_fdeclarator(d));
+          options &= ~psd_print_ddecl_fdeclarator;
+        }
       else
-	{
-	  if (options & psd_print_ddecl)
-	    prt_ddecl_full_name(ddecl, options);
-	  else if (options & psd_rename_identifier)
-	    output("arg_%p", ddecl);
+        {
+          if (options & psd_print_ddecl)
+            prt_ddecl_full_name(ddecl, options);
+          else if (options & psd_rename_identifier)
+            output("arg_%p", ddecl);
 
-	  return FALSE;
-	}
+          return FALSE;
+        }
     }
 
   switch (d->kind)
     {
     case kind_function_declarator:
       {
-	function_declarator fd = CAST(function_declarator, d);
+        function_declarator fd = CAST(function_declarator, d);
 
-	prt_simple_declarator(fd->declarator, ddecl,
-			      options | psd_need_paren_for_star |
-			      psd_need_paren_for_qual);
-	prt_parameters(fd->gparms ? fd->gparms :
-		       ddecl ? ddecl_get_gparms(ddecl) : NULL,
-		       fd->parms, options & psd_rename_parameters);
-	break;
+        prt_simple_declarator(fd->declarator, ddecl,
+                              options | psd_need_paren_for_star |
+                              psd_need_paren_for_qual);
+        prt_parameters(fd->gparms ? fd->gparms :
+                       ddecl ? ddecl_get_gparms(ddecl) : NULL,
+                       fd->parms, options & psd_rename_parameters);
+        break;
       }
     case kind_array_declarator:
       {
-	array_declarator ad = CAST(array_declarator, d);
-	bool is_id;
+        array_declarator ad = CAST(array_declarator, d);
+        bool is_id;
 
-	is_id = prt_simple_declarator(ad->declarator, ddecl,
-				      options | psd_need_paren_for_star |
-				      psd_need_paren_for_qual);
-	if (!ad->arg1)
-	  {
-	    /* The array-type test is necessary because char x[] in a
-	       parameter declaration is really a pointer declaration */
-	    if (ddecl && is_id && type_array(ddecl->type))
-	      {
-		/* This is a declaration of an incomplete array type.
-		   The type of ddecl contains the size of the array if
-		   it is known. 
-		   We need to print the size because of tossim
-		   (a declaration like 'char foo[TOSNODES][]' would
-		   be illegal)
-		*/
-		expression dsize = type_array_size(ddecl->type);
+        is_id = prt_simple_declarator(ad->declarator, ddecl,
+                                      options | psd_need_paren_for_star |
+                                      psd_need_paren_for_qual);
+        if (!ad->arg1)
+          {
+            /* The array-type test is necessary because char x[] in a
+               parameter declaration is really a pointer declaration */
+            if (ddecl && is_id && type_array(ddecl->type))
+              {
+                /* This is a declaration of an incomplete array type.
+                   The type of ddecl contains the size of the array if
+                   it is known. 
+                   We need to print the size because of tossim
+                   (a declaration like 'char foo[TOSNODES][]' would
+                   be illegal)
+                */
+                expression dsize = type_array_size(ddecl->type);
 
-		if (dsize)
-		  output("[%lu]",
-			 (unsigned long)constant_uint_value(dsize->cst));
-		else /* we never found the size */
-		  output("[]");
-	      }
-	    else
-	      output("[]");
-	  }
-	else
-	  {
-	    set_location(ad->arg1->location);
-	    output("[");
-	    prt_expression(ad->arg1, P_TOP);
-	    output("]");
-	  }
-	break;
+                if (dsize)
+                  output("[%lu]",
+                         (unsigned long)constant_uint_value(dsize->cst));
+                else /* we never found the size */
+                  output("[]");
+              }
+            else
+              output("[]");
+          }
+        else
+          {
+            set_location(ad->arg1->location);
+            output("[");
+            prt_expression(ad->arg1, P_TOP);
+            output("]");
+          }
+        break;
       }
     case kind_qualified_declarator:
       {
-	qualified_declarator qd = CAST(qualified_declarator, d);
-	bool is_id;
+        qualified_declarator qd = CAST(qualified_declarator, d);
+        bool is_id;
 
-	set_location(qd->modifiers->location);
-	if (options & psd_need_paren_for_qual)
-	  output("(");
-	prt_type_elements(qd->modifiers, 0);
-	is_id = prt_simple_declarator(qd->declarator, ddecl,
-				      options & ~psd_need_paren_for_qual);
-	if (options & psd_need_paren_for_qual)
-	  output(")");
-	return is_id;
+        set_location(qd->modifiers->location);
+        if (options & psd_need_paren_for_qual)
+          output("(");
+        prt_type_elements(qd->modifiers, 0);
+        is_id = prt_simple_declarator(qd->declarator, ddecl,
+                                      options & ~psd_need_paren_for_qual);
+        if (options & psd_need_paren_for_qual)
+          output(")");
+        return is_id;
       }
     case kind_pointer_declarator:
       {
-	pointer_declarator pd = CAST(pointer_declarator, d);
+        pointer_declarator pd = CAST(pointer_declarator, d);
 
-	if (options & psd_need_paren_for_star)
-	  output("(");
-	output("*");
-	prt_simple_declarator(pd->declarator, ddecl,
-			      options & ~(psd_need_paren_for_star |
-					  psd_need_paren_for_qual));
-	if (options & psd_need_paren_for_star)
-	  output(")");
-	break;
+        if (options & psd_need_paren_for_star)
+          output("(");
+        output("*");
+        prt_simple_declarator(pd->declarator, ddecl,
+                              options & ~(psd_need_paren_for_star |
+                                          psd_need_paren_for_qual));
+        if (options & psd_need_paren_for_star)
+          output(")");
+        break;
       }
     case kind_identifier_declarator:
       set_location(d->location);
       if (options & psd_rename_identifier)
-	output("arg_%p", ddecl);
+        output("arg_%p", ddecl);
       else if (ddecl)
-	{
-	  prt_ddecl_full_name(ddecl, options);
-	  /* check that we printed the symbol info (too late if we get
-	     here) */
-	  assert(!(symf && ddecl->needsmemory && !ddecl->printed));
-	}
+        {
+          prt_ddecl_full_name(ddecl, options);
+          /* check that we printed the symbol info (too late if we get
+             here) */
+          assert(!(symf && ddecl->needsmemory && !ddecl->printed));
+        }
       else
-	output_stripped_cstring(CAST(identifier_declarator, d)->cstring);
+        output_stripped_cstring(CAST(identifier_declarator, d)->cstring);
       return TRUE;
 
     case kind_interface_ref_declarator:
       prt_simple_declarator(CAST(interface_ref_declarator, d)->declarator,
-			    ddecl, options | psd_need_paren_for_star |
-			    psd_need_paren_for_qual);
+                            ddecl, options | psd_need_paren_for_star |
+                            psd_need_paren_for_qual);
       break;
 
     default: assert(0); break;
@@ -1082,7 +1082,7 @@ void prt_type_elements(type_element elements, psd_options options)
   scan_type_element (em, elements)
     {
       if (prt_type_element(em, options))
-	output(" ");
+        output(" ");
     }
 }
 
@@ -1093,7 +1093,7 @@ void prt_attribute_elements(type_element elements)
   scan_type_element (em, elements)
     {
       if (prt_attribute_element(em))
-	output(" ");
+        output(" ");
     }
 }
 
@@ -1127,26 +1127,26 @@ bool prt_type_element(type_element em, psd_options options)
     case kind_gcc_attribute: prt_gcc_attribute(CAST(gcc_attribute, em)); break;
     case kind_target_attribute: 
       if (flag_gccize)
-	prt_gcc_attribute(CAST(gcc_attribute, em)); 
+        prt_gcc_attribute(CAST(gcc_attribute, em)); 
       else
-	prt_target_attribute(CAST(target_attribute, em)); 
+        prt_target_attribute(CAST(target_attribute, em)); 
       break;
     case kind_nesc_attribute: prt_nesc_attribute(CAST(nesc_attribute, em)); break;
     case kind_qualifier: prt_qualifier(CAST(qualifier, em)); break;
     case kind_rid:
       {
-	rid r = CAST(rid, em);
+        rid r = CAST(rid, em);
 
-	if (!documentation_mode && r->id >= RID_LASTTYPE)
-	  return FALSE;
-	prt_rid(r, options);
-	break;
+        if (!documentation_mode && r->id >= RID_LASTTYPE)
+          return FALSE;
+        prt_rid(r, options);
+        break;
       }    
     default:
       if (is_tag_ref(em))
-	prt_tag_ref(CAST(tag_ref, em), options);
+        prt_tag_ref(CAST(tag_ref, em), options);
       else
-	assert(0);
+        assert(0);
       break;
     }
   return TRUE;
@@ -1203,11 +1203,11 @@ void prt_gcc_attribute(gcc_attribute a)
       output("__attribute((");
       prt_word(a->word1);
       if (a->args)
-	{
-	  output("(");
-	  prt_expressions(a->args, TRUE);
-	  output(")");
-	}
+        {
+          output("(");
+          prt_expressions(a->args, TRUE);
+          output(")");
+        }
       output("))");
     }
 }
@@ -1240,35 +1240,35 @@ void prt_nesc_attribute(nesc_attribute a)
       field_declaration field;
 
       /* This code checks that the attribute can be printed as a
-	 macro call, i.e., that complex initializers are not used
-	 and that all fields have an initializer - this is done here
-	 because it seems easier than enforcing these rules elsewhere
+         macro call, i.e., that complex initializers are not used
+         and that all fields have an initializer - this is done here
+         because it seems easier than enforcing these rules elsewhere
       */
       set_location(a->location);
       output("%s(", a->tdecl->macro_name);
 
       /* Like prt_expressions, but check that we can rewrite what was
-	 a structure initializer as arguments to a macro */
+         a structure initializer as arguments to a macro */
       scan_expression (e, args->args)
-	{
-	  if (count > 0) output(", ");
-	  count++;
-	  if (is_init_list(e) || is_init_specific(e))
-	    error_with_location(e->location, "complex initializers not allowed with @macro() attributes");
-	  prt_expression(e, P_ASSIGN); /* priority is that of assignment */
-	}
+        {
+          if (count > 0) output(", ");
+          count++;
+          if (is_init_list(e) || is_init_specific(e))
+            error_with_location(e->location, "complex initializers not allowed with @macro() attributes");
+          prt_expression(e, P_ASSIGN); /* priority is that of assignment */
+        }
 
       output(")");
 
       /* Check that all arguments are specified, so that the macro
-	 gets the same argument count on all uses. Could extend to
-	 "at least enough" arguments to allow the case of a variably-sized
-	 array at the end of the attribute, and a variable-argument macro
+         gets the same argument count on all uses. Could extend to
+         "at least enough" arguments to allow the case of a variably-sized
+         array at the end of the attribute, and a variable-argument macro
       */
       for (field = a->tdecl->fieldlist; field; field = field->next)
-	field_count++;
+        field_count++;
       if (field_count != count)
-	error_with_location(a->location, "incorrect argument count to @macro() attribute");
+        error_with_location(a->location, "incorrect argument count to @macro() attribute");
     }
 }
 
@@ -1280,13 +1280,13 @@ void prt_rid(rid r, psd_options options)
     case RID_NORACE:
       // show these in documenation mode, but not otherwise
       if (documentation_mode && !(options & psd_skip_command_event)) 
-	output("%s", rid_name(r));
+        output("%s", rid_name(r));
       break;
     case RID_DEFAULT:
       break;
     case RID_EXTERN:
       if (options & psd_noextern)
-	return;
+        return;
       /* FALLTHROUGH */
     default:
       set_location(r->location);
@@ -1322,9 +1322,9 @@ void prt_tag_ref(tag_ref tr, psd_options options)
   if (tr->word1)
     {
       if (tr->tdecl && tr->tdecl->container && !tr->tdecl->Cname)
-	prt_container(tr->tdecl->container);
+        prt_container(tr->tdecl->container);
       if (tr->kind == kind_attribute_ref)
-	output("__nesc_attr_");
+        output("__nesc_attr_");
       prt_word(tr->word1);
     }
   if (!(options & psd_duplicate) && tr->defined)
@@ -1332,9 +1332,9 @@ void prt_tag_ref(tag_ref tr, psd_options options)
       if (tr->kind == kind_enum_ref)
         prt_enumerators(tr->fields, tr->tdecl);
       else if (type_network(make_tagged_type(tr->tdecl)))
-	prt_network_fields(tr);
+        prt_network_fields(tr);
       else
-	prt_fields(tr->fields);
+        prt_fields(tr->fields);
     }
   if (tr->attributes)
     {
@@ -1354,7 +1354,7 @@ void prt_enumerators(declaration elist, tag_declaration tdecl)
     {
       prt_enumerator(CAST(enumerator, d), tdecl);
       if (d->next)
-	output(", ");
+        output(", ");
     }
   unindent();
   startline();
@@ -1400,7 +1400,7 @@ void prt_field_data_decl(data_decl d)
     {
       prt_field_decl(CAST(field_decl, fd));
       if (fd->next)
-	output(", ");
+        output(", ");
     }
   outputln(";");
 }
@@ -1452,54 +1452,54 @@ void prt_parameters(declaration gparms, declaration parms, psd_options options)
   if (!(gparms && is_void_parms(parms)))
     scan_declaration (d, parms)
       {
-	forward = prt_parameter(d, first, forward, 0);
-	first = FALSE;
+        forward = prt_parameter(d, first, forward, 0);
+        first = FALSE;
       }
   output(")");
 }
 
 bool prt_parameter(declaration parm, bool first, bool lastforward,
-		   psd_options options)
+                   psd_options options)
 {
   switch (parm->kind)
     {
     case kind_oldidentifier_decl:
       if (!first)
-	output(", ");
+        output(", ");
       set_location(parm->location);
       output_stripped_cstring(CAST(oldidentifier_decl, parm)->cstring);
       return FALSE;
     case kind_ellipsis_decl:
       if (!first)
-	output(", ");
+        output(", ");
       set_location(parm->location);
       output("...");
       return FALSE;
     case kind_data_decl:
       {
-	data_decl dd = CAST(data_decl, parm);
-	variable_decl vd = CAST(variable_decl, dd->decls);
+        data_decl dd = CAST(data_decl, parm);
+        variable_decl vd = CAST(variable_decl, dd->decls);
 
-	if (lastforward && !vd->forward)
-	  output("; ");
-	else if (!first)
-	  output(", ");
-	if (vd->ddecl && type_network_base_type(vd->ddecl->type))
-	  {
-	    options |= psd_rewrite_nxbase;
-	    /* If addressed, we need a real network type copy. This is
-	       added by prt_network_parameter_copies, so we rename
-	       the actual parameter */
-	    if (vd->ddecl->use_summary & c_addressed)
-	      options |= psd_prefix_nxbase;
-	  }
-	/* Force a name for the parameter when none is given */
-	if (vd->ddecl && !vd->ddecl->name)
-	  options |= psd_rename_identifier;
-	prt_declarator(vd->declarator, dd->modifiers, vd->attributes,
-		       vd->ddecl, options);
+        if (lastforward && !vd->forward)
+          output("; ");
+        else if (!first)
+          output(", ");
+        if (vd->ddecl && type_network_base_type(vd->ddecl->type))
+          {
+            options |= psd_rewrite_nxbase;
+            /* If addressed, we need a real network type copy. This is
+               added by prt_network_parameter_copies, so we rename
+               the actual parameter */
+            if (vd->ddecl->use_summary & c_addressed)
+              options |= psd_prefix_nxbase;
+          }
+        /* Force a name for the parameter when none is given */
+        if (vd->ddecl && !vd->ddecl->name)
+          options |= psd_rename_identifier;
+        prt_declarator(vd->declarator, dd->modifiers, vd->attributes,
+                       vd->ddecl, options);
 
-	return vd->forward;
+        return vd->forward;
       }
     default: assert(0); return FALSE;
     }
@@ -1567,10 +1567,10 @@ void prt_expression_helper(expression e, int context_priority)
       PRTEXPR(string, e);
     default: 
       if (is_unary(e))
-	{
-	  prt_unary(CAST(unary, e), context_priority);
-	  return;
-	}
+        {
+          prt_unary(CAST(unary, e), context_priority);
+          return;
+        }
       assert(is_binary(e));
       prt_binary(CAST(binary, e), context_priority);
       return;
@@ -1630,8 +1630,8 @@ void prt_asttype_cast(asttype t)
       declarator d;
       type_element qualifiers;
       type2ast(unparse_region, t->location, 
-	       qualify_type1(type_network_platform_type(t->type), t->type),
-	       NULL, &d, &qualifiers);
+               qualify_type1(type_network_platform_type(t->type), t->type),
+               NULL, &d, &qualifiers);
 
       t = new_asttype(unparse_region, t->location, d, qualifiers);
     }
@@ -1711,31 +1711,31 @@ void prt_function_call(function_call e, int context_priority)
       break;
     default:
       if (e->va_arg_call)
-	{
-	  /* The extra parentheses are added because gcc 2.96 (aka redhat 7's
-	     gcc) has a broken syntax for __builtin_va_arg */
-	  output("(__builtin_va_arg(");
-	  prt_expression(e->args, P_ASSIGN);
-	  output(", ");
-	  prt_asttype(e->va_arg_call);
-	  output("))");
-	}
+        {
+          /* The extra parentheses are added because gcc 2.96 (aka redhat 7's
+             gcc) has a broken syntax for __builtin_va_arg */
+          output("(__builtin_va_arg(");
+          prt_expression(e->args, P_ASSIGN);
+          output(", ");
+          prt_asttype(e->va_arg_call);
+          output("))");
+        }
       else if (get_magic(e))
-	output_constant(e->cst);
+        output_constant(e->cst);
       else
-	{
-	  prt_expression(e->arg1, P_CALL);
-	  /* Generic calls have already started the argument list.
-	     See prt_generic_call */
-	  if (is_generic_call(e->arg1))
-	    prt_expressions(e->args, FALSE);
-	  else
-	    {
-	      output("(");
-	      prt_expressions(e->args, TRUE);
-	    }
-	  output(")");
-	}
+        {
+          prt_expression(e->arg1, P_CALL);
+          /* Generic calls have already started the argument list.
+             See prt_generic_call */
+          if (is_generic_call(e->arg1))
+            prt_expressions(e->args, FALSE);
+          else
+            {
+              output("(");
+              prt_expressions(e->args, TRUE);
+            }
+          output(")");
+        }
       break;
     }
 }
@@ -1783,8 +1783,8 @@ void prt_interface_deref(interface_deref e, int context_priority)
 
   if (decl->kind == decl_function && decl->uncallable)
     error_with_location(e->location, "%s.%s not connected",
-			CAST(identifier, e->arg1)->cstring.data,
-			e->cstring.data);
+                        CAST(identifier, e->arg1)->cstring.data,
+                        e->cstring.data);
 
   prt_expression(e->arg1, P_CALL);
   output_string(function_separator);
@@ -1805,10 +1805,10 @@ void prt_unary(unary e, int context_priority)
       plus derefed = CAST(plus, e->arg1);
 
       if (type_array(derefed->arg1->type))
-	{
-	  prt_array_ref(derefed, context_priority);
-	  return;
-	}
+        {
+          prt_array_ref(derefed, context_priority);
+          return;
+        }
     }
 
   set_location(e->location);
@@ -1818,8 +1818,8 @@ void prt_unary(unary e, int context_priority)
     case kind_dereference: op = "*"; break;
     case kind_extension_expr: op = "__extension__ "; break;
       /* Higher priority for sizeof/alignof expr because we must
-	 add parens around sizeof cast_expr (e.g. sizeof((char)x), not
-	 sizeof (char)x */
+         add parens around sizeof cast_expr (e.g. sizeof((char)x), not
+         sizeof (char)x */
     case kind_sizeof_expr: op = "sizeof "; pri = P_CALL; break;
     case kind_alignof_expr: op = "__alignof__ "; pri = P_CALL; break;
     case kind_realpart: op = "__real__ "; break;
@@ -1844,9 +1844,9 @@ void prt_unary(unary e, int context_priority)
     {
       output_string(op);
       if (is_unary(e->arg1))
-	output(" "); /* Catch weirdness such as - - x */
+        output(" "); /* Catch weirdness such as - - x */
       if (!pri)
-	pri = P_CAST;
+        pri = P_CAST;
     }
   prt_expression(e->arg1, pri ? pri : P_CALL);
   if (postop)
@@ -1905,68 +1905,68 @@ void prt_binary(binary e, int context_priority)
     case kind_lshift: case kind_rshift:
       pri = P_SHIFT;
       if (CONSERVATIVE_PARENS)
-	lpri = rpri = P_TIMES;
+        lpri = rpri = P_TIMES;
       else
-	{
-	  lpri = P_SHIFT; rpri = P_PLUS; 
-	}
+        {
+          lpri = P_SHIFT; rpri = P_PLUS; 
+        }
       break;
     case kind_leq: case kind_geq: case kind_lt: case kind_gt:
       pri = P_REL;
       if (CONSERVATIVE_PARENS)
-	lpri = rpri = P_PLUS;
+        lpri = rpri = P_PLUS;
       else 
-	{
-	  lpri = P_REL; rpri = P_SHIFT; 
-	}
+        {
+          lpri = P_REL; rpri = P_SHIFT; 
+        }
       break;
     case kind_eq: case kind_ne:
       pri = P_EQUALS; 
       if (CONSERVATIVE_PARENS)
-	lpri = rpri = P_PLUS;
+        lpri = rpri = P_PLUS;
       else 
-	{
-	  lpri = P_EQUALS; 
-	  rpri = P_REL; 
-	}
+        {
+          lpri = P_EQUALS; 
+          rpri = P_REL; 
+        }
       break;
     case kind_bitand:
       pri = P_BITAND;
       if (CONSERVATIVE_PARENS)
-	lpri = rpri = P_TIMES;
+        lpri = rpri = P_TIMES;
       else
-	{
-	  lpri = P_BITAND; rpri = P_EQUALS; 
-	}
+        {
+          lpri = P_BITAND; rpri = P_EQUALS; 
+        }
       break;
     case kind_bitxor:
       pri = P_BITXOR;
       if (CONSERVATIVE_PARENS)
-	lpri = rpri = P_TIMES;
+        lpri = rpri = P_TIMES;
       else
-	{
-	  lpri = P_BITXOR; rpri = P_BITAND;
-	}
+        {
+          lpri = P_BITXOR; rpri = P_BITAND;
+        }
       break;
     case kind_bitor:
       pri = P_BITOR;
       if (CONSERVATIVE_PARENS)
-	lpri = rpri = P_TIMES;
+        lpri = rpri = P_TIMES;
       else
-	{
-	  lpri = P_BITOR; rpri = P_BITXOR;
-	}
+        {
+          lpri = P_BITOR; rpri = P_BITXOR;
+        }
       break;
     case kind_andand:
       lpri = P_AND; pri = P_AND; rpri = P_BITOR; break;
     case kind_oror:
       pri = P_OR;
       if (CONSERVATIVE_PARENS)
-	lpri = rpri = P_BITOR;
+        lpri = rpri = P_BITOR;
       else
-	{
-	  lpri = P_OR; rpri = P_AND; 
-	}
+        {
+          lpri = P_OR; rpri = P_AND; 
+        }
       break;
     case kind_assign: case kind_plus_assign: case kind_minus_assign: 
     case kind_times_assign: case kind_divide_assign: case kind_modulo_assign:
@@ -2014,24 +2014,24 @@ void prt_designator(designator dl)
     switch (d->kind)
       {
       case kind_designate_field: {
-	designate_field df = CAST(designate_field, d);
+        designate_field df = CAST(designate_field, d);
 
-	output(".");
-	output_cstring(df->cstring);
-	break;
+        output(".");
+        output_cstring(df->cstring);
+        break;
       }
       case kind_designate_index: {
-	designate_index di = CAST(designate_index, d);
+        designate_index di = CAST(designate_index, d);
 
-	output("[");
-	prt_expression(di->arg1, P_ASSIGN);
-	if (di->arg2)
-	  {
-	    output(" ... ");
-	    prt_expression(di->arg2, P_ASSIGN);
-	  }
-	output("] ");
-	break;
+        output("[");
+        prt_expression(di->arg1, P_ASSIGN);
+        if (di->arg2)
+          {
+            output(" ... ");
+            prt_expression(di->arg2, P_ASSIGN);
+          }
+        output("] ");
+        break;
       }
       default: assert(0);
       }
@@ -2100,11 +2100,11 @@ void prt_compound_stmt(compound_stmt s, bool trusted)
 
       output("__label__ ");
       scan_id_label (l, s->id_labels)
-	{
-	  prt_id_label(l);
-	  if (l->next) 
-	    output(", ");
-	}
+        {
+          prt_id_label(l);
+          if (l->next) 
+            output(", ");
+        }
       outputln(";");
     }
   if (s->decls)
@@ -2160,16 +2160,16 @@ void prt_asm_stmt_plain(asm_stmt s)
       prt_asm_operands(s->asm_operands1);
 
       if (s->asm_operands2 || s->asm_clobbers)
-	{
-	  output(" : ");
-	  prt_asm_operands(s->asm_operands2);
+        {
+          output(" : ");
+          prt_asm_operands(s->asm_operands2);
 
-	  if (s->asm_clobbers)
-	    {
-	      output(" : ");
-	      prt_expressions(CAST(expression, s->asm_clobbers), TRUE);
-	    }
-	}
+          if (s->asm_clobbers)
+            {
+              output(" : ");
+              prt_expressions(CAST(expression, s->asm_clobbers), TRUE);
+            }
+        }
     }
   output(")");
 }
@@ -2182,7 +2182,7 @@ void prt_asm_operands(asm_operand olist)
     {
       prt_asm_operand(o);
       if (o->next)
-	output(", ");
+        output(", ");
     }
 }
 
@@ -2208,11 +2208,11 @@ void prt_if_stmt(if_stmt s)
   if (s->condition->cst && constant_knownbool(s->condition->cst))
     {
       if (constant_boolvalue(s->condition->cst))
-	prt_statement(s->stmt1);
+        prt_statement(s->stmt1);
       else if (s->stmt2)
-	prt_statement(s->stmt2);
+        prt_statement(s->stmt2);
       else
-	outputln(";");
+        outputln(";");
       return;
     }
 #endif
@@ -2338,15 +2338,15 @@ void prt_return_stmt(return_stmt s)
       current.function_decl->ddecl->call_contexts != c_call_atomic)
     {
       /* We rewrote return statemnts within atomic to return a local
-	 variable in stmt.c. So we can just end the atomic section now. */
+         variable in stmt.c. So we can just end the atomic section now. */
       outputln("{");
       indent();
       set_location(s->location);
       if (current.function_decl->ddecl->call_contexts == c_call_nonatomic &&
-	  nesc_optimise_atomic)
-	outputln("__nesc_enable_interrupt(); ");
+          nesc_optimise_atomic)
+        outputln("__nesc_enable_interrupt(); ");
       else
-	outputln("__nesc_atomic_end(__nesc_atomic); ");
+        outputln("__nesc_atomic_end(__nesc_atomic); ");
       inatomic = TRUE;
     }
 
@@ -2405,8 +2405,8 @@ void prt_atomic_stmt(atomic_stmt s)
   if (s->isatomic != NOT_ATOMIC)
     {
       outputln("/* atomic removed: %s */",
-	       s->isatomic == ATOMIC_ANY ? "no shared variable access" :
-	       "single single-byte shared variable access");
+               s->isatomic == ATOMIC_ANY ? "no shared variable access" :
+               "single single-byte shared variable access");
       prt_statement(s->stmt);
       return;
     }

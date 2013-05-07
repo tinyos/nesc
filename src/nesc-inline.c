@@ -107,18 +107,18 @@ static size_t expression_size(expression expr, bool inatomic)
       conditional ce = CAST(conditional, expr);
 
       if (ce->condition->cst)
-	{
-	  if (definite_zero(ce->condition))
-	    sum += expression_size(ce->arg2, inatomic);
-	  else
-	    sum += expression_size(ce->arg1, inatomic);
-	}
+        {
+          if (definite_zero(ce->condition))
+            sum += expression_size(ce->arg2, inatomic);
+          else
+            sum += expression_size(ce->arg1, inatomic);
+        }
       else
-	{
-	  sum += 2 + expression_size(ce->condition, inatomic);
-	  sum += expression_size(ce->arg1, inatomic);
-	  sum += expression_size(ce->arg2, inatomic);
-	}
+        {
+          sum += 2 + expression_size(ce->condition, inatomic);
+          sum += expression_size(ce->arg1, inatomic);
+          sum += expression_size(ce->arg2, inatomic);
+        }
       break;
     }
     case kind_compound_expr:
@@ -145,16 +145,16 @@ static size_t expression_size(expression expr, bool inatomic)
 
     default:
       if (is_unary(expr))
-	sum += 1 + expression_size(CAST(unary, expr)->arg1, inatomic);
+        sum += 1 + expression_size(CAST(unary, expr)->arg1, inatomic);
       else if (is_binary(expr))
-	{
-	  binary be = CAST(binary, expr);
+        {
+          binary be = CAST(binary, expr);
 
-	  sum += 1 + expression_size(be->arg1, inatomic);
-	  sum += expression_size(be->arg2, inatomic);
-	}
+          sum += 1 + expression_size(be->arg1, inatomic);
+          sum += expression_size(be->arg2, inatomic);
+        }
       else 
-	assert(0);
+        assert(0);
       break;
     }
 
@@ -180,38 +180,38 @@ static size_t statement_size(statement stmt, bool inatomic)
       declaration d;
 
       scan_declaration (d, cs->decls)
-	if (is_data_decl(d))
-	  {
-	    variable_decl vd;
+        if (is_data_decl(d))
+          {
+            variable_decl vd;
 
-	    /* Include size of initialisers of non-static variables */
-	    scan_variable_decl (vd, CAST(variable_decl,
-					 CAST(data_decl, d)->decls))
-	      if (vd->ddecl->kind == decl_variable &&
-		  vd->ddecl->vtype != variable_static)
-		sum += 1 + expression_size(vd->arg1, inatomic);
-	  }
+            /* Include size of initialisers of non-static variables */
+            scan_variable_decl (vd, CAST(variable_decl,
+                                         CAST(data_decl, d)->decls))
+              if (vd->ddecl->kind == decl_variable &&
+                  vd->ddecl->vtype != variable_static)
+                sum += 1 + expression_size(vd->arg1, inatomic);
+          }
 
       scan_statement (s, cs->stmts)
-	sum += statement_size(s, inatomic);
+        sum += statement_size(s, inatomic);
       break;
     }
     case kind_if_stmt: {
       if_stmt is = CAST(if_stmt, stmt);
 
       if (is->condition->cst)
-	{
-	  if (definite_zero(is->condition))
-	    sum += statement_size(is->stmt2, inatomic);
-	  else
-	    sum += statement_size(is->stmt1, inatomic);
-	}
+        {
+          if (definite_zero(is->condition))
+            sum += statement_size(is->stmt2, inatomic);
+          else
+            sum += statement_size(is->stmt1, inatomic);
+        }
       else
-	{
-	  sum += 2 + expression_size(is->condition, inatomic);
-	  sum += statement_size(is->stmt1, inatomic);
-	  sum += statement_size(is->stmt2, inatomic);
-	}
+        {
+          sum += 2 + expression_size(is->condition, inatomic);
+          sum += statement_size(is->stmt1, inatomic);
+          sum += statement_size(is->stmt2, inatomic);
+        }
       break;
     }
     case kind_labeled_stmt: {
@@ -225,7 +225,7 @@ static size_t statement_size(statement stmt, bool inatomic)
 
       sum += statement_size(ls->stmt, inatomic);
       if (!inatomic)
-	sum += 6;
+        sum += 6;
       break;
     }
     case kind_expression_stmt: {
@@ -238,14 +238,14 @@ static size_t statement_size(statement stmt, bool inatomic)
       conditional_stmt cs = CAST(conditional_stmt, stmt);
 
       if (cs->condition->cst && stmt->kind != kind_switch_stmt &&
-	  definite_zero(cs->condition))
-	{
-	  /* do s while (0): just include size of s
-	     while (0) s: size is 0 */
-	  if (stmt->kind == kind_dowhile_stmt)
-	    sum += statement_size(cs->stmt, inatomic);
-	  break;
-	}
+          definite_zero(cs->condition))
+        {
+          /* do s while (0): just include size of s
+             while (0) s: size is 0 */
+          if (stmt->kind == kind_dowhile_stmt)
+            sum += statement_size(cs->stmt, inatomic);
+          break;
+        }
       sum += 2 + expression_size(cs->condition, inatomic);
       sum += statement_size(cs->stmt, inatomic);
       break;
@@ -327,22 +327,22 @@ static ggraph make_ig(region r, cgraph callgraph)
       size_t fnsize = 1;
 
       if (fn->definition)
-	fnsize = function_size(CAST(function_decl, fn->definition));
+        fnsize = function_size(CAST(function_decl, fn->definition));
 
       if (fn->interface && !fn->defined)
-	{
-	  /* stub function. size is based on number of outgoing edges and
-	     number of parameters (first outgoing edge counted as "free") */
-	  gedge e;
-	  int edgecount = 0;
+        {
+          /* stub function. size is based on number of outgoing edges and
+             number of parameters (first outgoing edge counted as "free") */
+          gedge e;
+          int edgecount = 0;
 
-	  graph_scan_out (e, n)
-	    edgecount++;
-	  /* use size of default definition (already computed above) if no
-	     outgoing edges */
-	  if (edgecount > 0)
-	    fnsize = (edgecount - 1) * (2 + function_argcount(fn)) + 1;
-	}
+          graph_scan_out (e, n)
+            edgecount++;
+          /* use size of default definition (already computed above) if no
+             outgoing edges */
+          if (edgecount > 0)
+            fnsize = (edgecount - 1) * (2 + function_argcount(fn)) + 1;
+        }
 
       ig_add_fn(r, ig, fn, fnsize);
     }
@@ -352,7 +352,7 @@ static ggraph make_ig(region r, cgraph callgraph)
       gedge e;
 
       graph_scan_out (e, n)
-	ig_add_edge(fn, NODE_GET(endp, graph_edge_to(e))->function);
+        ig_add_edge(fn, NODE_GET(endp, graph_edge_to(e))->function);
     }
   return ig;
 }
@@ -375,12 +375,12 @@ static void inline_function(gnode n, struct inline_node *in)
       caller_in->size += in->size - 1;
 
       graph_scan_out (called_edge, n)
-	{
-	  gnode called = graph_edge_to(called_edge);
+        {
+          gnode called = graph_edge_to(called_edge);
 
-	  ig_add_edge(caller_in->fn,
-		      NODE_GET(struct inline_node *, called)->fn);
-	}
+          ig_add_edge(caller_in->fn,
+                      NODE_GET(struct inline_node *, called)->fn);
+        }
     }
 
   /* Remove edges leaving inlined function 
@@ -416,17 +416,17 @@ void inline_functions(cgraph callgraph)
       struct inline_node *in = NODE_GET(struct inline_node *, n);
       
       if (!in->fn->isinline && !in->fn->makeinline)
-	{
-	  gedge e;
-	  size_t edgecount = 0;
+        {
+          gedge e;
+          size_t edgecount = 0;
 
-	  graph_scan_in (e, n)
-	    edgecount++;
+          graph_scan_in (e, n)
+            edgecount++;
       
-	  if (edgecount == 1 ||
-	      (bis >=0 && in->size <= bis + function_argcount(in->fn) * ipa))
-	    inline_function(n, in);
-	}
+          if (edgecount == 1 ||
+              (bis >=0 && in->size <= bis + function_argcount(in->fn) * ipa))
+            inline_function(n, in);
+        }
     }
   deleteregion(igr);
 }

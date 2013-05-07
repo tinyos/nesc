@@ -178,23 +178,23 @@ void dump_ddecl(data_declaration ddecl)
     case decl_constant:
       indentedtag_start("constant");
       if (ddecl->value) /* generic components args are constants, but have
-			   no value */
-	xml_attr_cval("cst", ddecl->value->cval);
+                           no value */
+        xml_attr_cval("cst", ddecl->value->cval);
       break;
     case decl_function:
       indentedtag_start("function");
       switch (ddecl->ftype)
-	{
-	case function_event:
-	  xml_attr_noval("event");
-	  xml_attr_int("provided", ddecl->defined);
-	  break;
-	case function_command:
-	  xml_attr_noval("command");
-	  xml_attr_int("provided", ddecl->defined);
-	  break;
-	default: break;
-	}
+        {
+        case function_event:
+          xml_attr_noval("event");
+          xml_attr_int("provided", ddecl->defined);
+          break;
+        case function_command:
+          xml_attr_noval("command");
+          xml_attr_int("provided", ddecl->defined);
+          break;
+        default: break;
+        }
       xml_attr_bool("safe", ddecl->safe);
       break;
     case decl_typedef: indentedtag_start("typedef"); break;
@@ -228,39 +228,39 @@ void dump_ddecl(data_declaration ddecl)
     {
     case decl_interface_ref: 
       {
-	env_scanner fns;
-	const char *fnname;
-	void *fnentry;
-	
-	nxml_instance(ddecl->itype);
-	if (ddecl->gparms)
-	  nxml_typelist("interface-parameters", ddecl->gparms);
+        env_scanner fns;
+        const char *fnname;
+        void *fnentry;
+        
+        nxml_instance(ddecl->itype);
+        if (ddecl->gparms)
+          nxml_typelist("interface-parameters", ddecl->gparms);
 
-	indentedtag("interface-functions");
-	interface_scan(ddecl, &fns);
-	while (env_next(&fns, &fnname, &fnentry))
-	  {
-	    xstartline();
-	    nxml_ddecl_ref(fnentry);
-	  }
-	indentedtag_pop();
-	break;
+        indentedtag("interface-functions");
+        interface_scan(ddecl, &fns);
+        while (env_next(&fns, &fnname, &fnentry))
+          {
+            xstartline();
+            nxml_ddecl_ref(fnentry);
+          }
+        indentedtag_pop();
+        break;
       }
     case decl_function:
       {
-	if (ddecl->interface)
-	  nxml_ddecl_ref(ddecl->interface);
-	/* Builtin functions have no real AST */
-	if (!is_error_decl(ddecl->ast))
-	  {
-	    function_declarator fdecl = ddecl_get_fdeclarator(ddecl);
+        if (ddecl->interface)
+          nxml_ddecl_ref(ddecl->interface);
+        /* Builtin functions have no real AST */
+        if (!is_error_decl(ddecl->ast))
+          {
+            function_declarator fdecl = ddecl_get_fdeclarator(ddecl);
 
-	    if (fdecl->parms) /* absent in old-style functions */
-	      dump_parameters("parameters", fdecl->parms);
-	    if (fdecl->gparms)
-	      dump_parameters("instance-parameters", fdecl->gparms);
-	  }
-	break;
+            if (fdecl->parms) /* absent in old-style functions */
+              dump_parameters("parameters", fdecl->parms);
+            if (fdecl->gparms)
+              dump_parameters("instance-parameters", fdecl->gparms);
+          }
+        break;
       }
     default: break;
     }
@@ -338,7 +338,7 @@ static void dump_wiring(cgraph cg)
   graph_scan_nodes (from, cgraph_graph(cg))
     {
       graph_scan_out (wire, from)
-	dump_wire(EDGE_GET(location, wire), from, graph_edge_to(wire));
+        dump_wire(EDGE_GET(location, wire), from, graph_edge_to(wire));
     }
   indentedtag_pop();
 }
@@ -419,7 +419,7 @@ static void dump_interfacedef(void *entry)
       data_declaration fndecl = fnentry;
 
       if (fndecl->kind != decl_magic_string)
-	dump_ddecl(fnentry);
+        dump_ddecl(fnentry);
     }
 
   indentedtag_pop();
@@ -430,12 +430,12 @@ static void dump_field(field_declaration field)
   indentedtag_start("field");
   xml_attr("name", field->name);
   xml_attr_ptr("ref", field); /* collapsing structs into their parent can 
-				 cause duplicate names */
+                                 cause duplicate names */
   xml_attr_bool("packed", field->packed);
   xml_attr_cval("bit-offset", field->offset);
   if (cval_istop(field->bitwidth))
     xml_attr_cval("size", type_size_cc(field->type) ?
-		  type_size(field->type) : cval_top);
+                  type_size(field->type) : cval_top);
   else
     xml_attr_cval("bit-size", field->bitwidth);
   xml_tag_end();
@@ -483,15 +483,15 @@ static void dump_tag(void *entry)
       field_declaration fields;
 
       for (fields = tdecl->fieldlist; fields; fields = fields->next)
-	if (fields->name) /* skip unnamed fields */
-	  dump_field(fields);
+        if (fields->name) /* skip unnamed fields */
+          dump_field(fields);
     }
 
   indentedtag_pop();
 }
 
 static void dump_list(const char *name, xml_list l,
-		      void (*dump)(void *entry))
+                      void (*dump)(void *entry))
 {
   dd_list latest = xml_list_latest(l);
   dd_list_pos elem;
@@ -517,7 +517,7 @@ static void source_ndecl_iterate(int kind, int processkind, xml_list l, void (*p
       nesc_declaration ndecl = val;
 
       if (ndecl->kind == kind)
-	process(processkind, l, ndecl);
+        process(processkind, l, ndecl);
     }
 }
 
@@ -533,7 +533,7 @@ static void add_ddecls_from_env(int kind, xml_list l, struct environment *env)
       data_declaration ddecl = decl;
 
       if (ddecl->kind == kind && dump_filter_ddecl(ddecl))
-	xml_list_add(l, ddecl);
+        xml_list_add(l, ddecl);
     }
 }
 
@@ -574,12 +574,12 @@ static void select_components(xml_list l, nd_option opt, dd_list comps)
   scan_nd_arg (arg, opt->args)
     if (is_nd_token(arg))
       {
-	const char *req = nd_tokenval(arg);
+        const char *req = nd_tokenval(arg);
 
-	if (!strcmp(req, "wiring"))
-	  configuration_wiring = TRUE;
-	else
-	  error("unknown components option `%s'", req);
+        if (!strcmp(req, "wiring"))
+          configuration_wiring = TRUE;
+        else
+          error("unknown components option `%s'", req);
       }
     else
       error("bad components option");
@@ -639,7 +639,7 @@ static void add_tags_from_env(xml_list l, struct environment *env)
       tag_declaration tdecl = decl;
 
       if (dump_filter_tdecl(tdecl))
-	xml_list_add(l, tdecl);
+        xml_list_add(l, tdecl);
     }
 }
 
@@ -676,12 +676,12 @@ static void select_wiring(nd_option opt, dd_list comps)
   scan_nd_arg (arg, opt->args)
     if (is_nd_token(arg))
       {
-	const char *req = nd_tokenval(arg);
+        const char *req = nd_tokenval(arg);
 
-	if (!strcmp(req, "functions"))
-	  wiring = wiring_functions;
-	else
-	  error("unknown wiring request for `%s'", req);
+        if (!strcmp(req, "functions"))
+          wiring = wiring_functions;
+        else
+          error("unknown wiring request for `%s'", req);
       }
     else
       error("bad argument to wiring");
@@ -694,17 +694,17 @@ static void select_referenced(nd_option opt)
   scan_nd_arg (arg, opt->args)
     if (is_nd_token(arg))
       {
-	const char *req = nd_tokenval(arg);
-	int i;
+        const char *req = nd_tokenval(arg);
+        int i;
 
-	for (i = 0; i < NLISTS; i++)
-	  if (!strcmp(req, lists[i].name))
-	    {
-	      *lists[i].referenced = lists[i].l;
-	      break;
-	    }
-	if (i == NLISTS)
-	  error("unknown referenced request for `%s'", req);
+        for (i = 0; i < NLISTS; i++)
+          if (!strcmp(req, lists[i].name))
+            {
+              *lists[i].referenced = lists[i].l;
+              break;
+            }
+        if (i == NLISTS)
+          error("unknown referenced request for `%s'", req);
       }
     else
       error("bad argument to referenced");
@@ -727,16 +727,16 @@ void select_dump(char *what)
 
       fprintf(stderr, "opt %s, %d args\n", opt->name, opt->count);
       scan_nd_arg (arg, opt->args)
-	if (is_nd_int(arg))
-	  fprintf(stderr, "  arg %d int %ld\n", ++i,
-		  (long)ND_CAST(nd_int, arg)->val);
-	else
-	  fprintf(stderr, "  arg %d token %s\n", ++i,
-		  ND_CAST(nd_token, arg)->str);
+        if (is_nd_int(arg))
+          fprintf(stderr, "  arg %d int %ld\n", ++i,
+                  (long)ND_CAST(nd_int, arg)->val);
+        else
+          fprintf(stderr, "  arg %d token %s\n", ++i,
+                  ND_CAST(nd_token, arg)->str);
 #endif
 
       if (!opts)
-	opts = dd_new_list(dump_region);
+        opts = dd_new_list(dump_region);
       dd_add_last(dump_region, opts, opt);
     }
 }
@@ -760,7 +760,7 @@ static void do_lists(void)
 }
 
 void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
-	       dd_list modules, dd_list comps)
+               dd_list modules, dd_list comps)
 {
   dd_list_pos scan_opts;
   bool list_change = FALSE;
@@ -779,20 +779,20 @@ void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
       dump_set_filter(opt);
 
       for (i = 0; i < NLISTS; i++)
-	if (!strcmp(opt->name, lists[i].name))
-	  {
-	    lists[i].select(lists[i].l, opt, comps);
-	    break;
-	  }
+        if (!strcmp(opt->name, lists[i].name))
+          {
+            lists[i].select(lists[i].l, opt, comps);
+            break;
+          }
 
       if (i < NLISTS)
-	;
+        ;
       else if (!strcmp(opt->name, "wiring"))
-	select_wiring(opt, comps);
+        select_wiring(opt, comps);
       else if (!strcmp(opt->name, "referenced"))
-	select_referenced(opt);
+        select_referenced(opt);
       else
-	error("unknown dump request `%s'", opt->name);
+        error("unknown dump request `%s'", opt->name);
     }
 
   /* Repeatedly dump selected information (w/o performing any actual I/O).
@@ -805,7 +805,7 @@ void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
     {
       do_lists();
       if (!list_change)
-	break;
+        break;
       list_change = FALSE;
     }
 
@@ -820,10 +820,10 @@ void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
     {
       dumpf = fopen(dumpfile, "w");
       if (!dumpf)
-	{
-	  perror("couldn't create dump file");
-	  return;
-	}
+        {
+          perror("couldn't create dump file");
+          return;
+        }
       xml_start(dumpf);
     }
   indentedtag_start("nesc");

@@ -53,13 +53,13 @@ function_declarator get_fdeclarator(declarator d)
     switch (d->kind)
       {
       case kind_identifier_declarator:
-	return fd;
+        return fd;
       case kind_function_declarator:
-	fd = CAST(function_declarator, d);
-	/* fallthrough */
+        fd = CAST(function_declarator, d);
+        /* fallthrough */
       default:
-	d = CAST(nested_declarator, d)->declarator;
-	break;
+        d = CAST(nested_declarator, d)->declarator;
+        break;
       }
 
   return fd;
@@ -165,11 +165,11 @@ bool expression_used(expression e)
   for (;;)
     {
       if (is_expression_stmt(p1))
-	return FALSE;
+        return FALSE;
       if (!is_comma(p1))
-	return TRUE;
+        return TRUE;
       if (n1)
-	return FALSE; /* Not last in a comma */
+        return FALSE; /* Not last in a comma */
       n1 = p1->next;
       p1 = p1->parent;
     }
@@ -182,20 +182,20 @@ bool zero_expression(expression e)
   for (;;)
     {
       if (is_assign(e))
-	{
-	  e = CAST(assign, e)->arg2;
-	  continue;
-	}
+        {
+          e = CAST(assign, e)->arg2;
+          continue;
+        }
       if (is_cast(e))
-	{
-	  e = CAST(cast, e)->arg1;
-	  continue;
-	}
+        {
+          e = CAST(cast, e)->arg1;
+          continue;
+        }
       if (is_comma(e))
-	{
-	  e = CAST(expression, last_node(CAST(node, CAST(comma, e)->arg1)));
-	  continue;
-	}
+        {
+          e = CAST(expression, last_node(CAST(node, CAST(comma, e)->arg1)));
+          continue;
+        }
       break;
     }
 
@@ -244,7 +244,7 @@ expression build_identifier(region r, location loc, data_declaration id)
   identifier e = new_identifier(r, loc, str2cstring(r, id->name), id);
 
   assert(id->kind == decl_variable || id->kind == decl_function ||
-	 id->kind == decl_constant || id->kind == decl_magic_function);
+         id->kind == decl_constant || id->kind == decl_magic_function);
   e->type = id->type;
   e->cst = fold_identifier(CAST(expression, e), id, 0);
 
@@ -311,15 +311,15 @@ conditional conditional_lvalue(expression e)
   for (;;)
     {
       if (is_cast(e))
-	{
-	  e = CAST(cast, e)->arg1;
-	  continue;
-	}
+        {
+          e = CAST(cast, e)->arg1;
+          continue;
+        }
       if (is_comma(e))
-	{
-	  e = CAST(expression, last_node(CAST(node, CAST(comma, e)->arg1)));
-	  continue;
-	}
+        {
+          e = CAST(expression, last_node(CAST(node, CAST(comma, e)->arg1)));
+          continue;
+        }
       break;
     }
 
@@ -337,8 +337,8 @@ data_declaration string_ddecl(expression s)
 
       /* Must be an offsetless string */
       if (sdecl && sdecl->kind == decl_magic_string &&
-	  cval_knownbool(s->cst->cval))
-	return sdecl;
+          cval_knownbool(s->cst->cval))
+        return sdecl;
     }
   return NULL;
 }

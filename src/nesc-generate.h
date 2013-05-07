@@ -21,6 +21,6 @@ Boston, MA 02111-1307, USA.  */
 #include "nesc-cg.h"
 
 void generate_c_code(const char *target_name, nesc_declaration program,
-		     cgraph cg, dd_list modules, dd_list components);
+                     cgraph cg, dd_list modules, dd_list components);
 
 #endif

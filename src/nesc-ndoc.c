@@ -18,9 +18,9 @@ static char *rmakestr(region r, char *s, char *e)
 }
 
 static void save_doctag(location loc, region entries_r, dd_list *entries,
-			char *tag_s, char *tag_e,
-			char *arg_s, char *arg_e,
-			int lineno)
+                        char *tag_s, char *tag_e,
+                        char *arg_s, char *arg_e,
+                        int lineno)
 {
   if (entries)
     {
@@ -34,12 +34,12 @@ static void save_doctag(location loc, region entries_r, dd_list *entries,
   else
     {
       /* warn about ignored quoted arguments that normally have
-	 semantic significance */
+         semantic significance */
       struct location here = *loc;
 
       here.lineno += lineno;
       warning_with_location(&here, "@%s argument ignored",
-			    rmakestr(current.fileregion, tag_s, tag_e));
+                            rmakestr(current.fileregion, tag_s, tag_e));
     }
 }
 
@@ -81,118 +81,118 @@ bool get_latest_docstring(struct docstring *doc, region tags_r, dd_list *tags)
   while ((c = *r++))
     {
       if (state == s_linestart)
-	{
-	  if (isspace(c) || (cpp_comment && c == '/'))
-	    continue;
-	  state = s_normal;
-	  /* Skip one * in C-style comments (we've cleared line_start, so
-	     won't do this twice) */
-	  if (!cpp_comment && c == '*')
-	    continue;
-	}
+        {
+          if (isspace(c) || (cpp_comment && c == '/'))
+            continue;
+          state = s_normal;
+          /* Skip one * in C-style comments (we've cleared line_start, so
+             won't do this twice) */
+          if (!cpp_comment && c == '*')
+            continue;
+        }
 
       if (c == '\r' || c == '\n')
-	{
-	  if (state == s_docarg)
-	    {
-	      /* warn about broken quoted arguments, as they have semantic
-		 significance */
-	      struct location here = *loc;
+        {
+          if (state == s_docarg)
+            {
+              /* warn about broken quoted arguments, as they have semantic
+                 significance */
+              struct location here = *loc;
 
-	      here.lineno += lineno;
-	      warning_with_location(&here, "unterminated @%s argument ignored",
-				    rmakestr(current.fileregion, doctag, doctag_end));
-	    }
+              here.lineno += lineno;
+              warning_with_location(&here, "unterminated @%s argument ignored",
+                                    rmakestr(current.fileregion, doctag, doctag_end));
+            }
 
-	  *p++ = '\n';
-	  lineno++;
-	  state = s_linestart;
-	  continue;
-	}
+          *p++ = '\n';
+          lineno++;
+          state = s_linestart;
+          continue;
+        }
 
       /* Skip trailing / in C-style comments */
       if (!cpp_comment && c == '/' && !*r)
-	break;
+        break;
 
       *p++ = c;
 
       /* Space after . or space before @ indicates end of short doc string */
       if (!short_end)
-	{
-	  if (c == '.' && isspace(*r))
-	    short_end = p;
-	  else if (c == '@' && p - 2 >= parsed && isspace(p[-2]))
-	    short_end = p - 1;
+        {
+          if (c == '.' && isspace(*r))
+            short_end = p;
+          else if (c == '@' && p - 2 >= parsed && isspace(p[-2]))
+            short_end = p - 1;
 
-	  if (short_end)
-	    doc->short_s = rmakestr(parse_region, parsed, short_end);
-	}
+          if (short_end)
+            doc->short_s = rmakestr(parse_region, parsed, short_end);
+        }
 
       /* Extract tags with a fun state machine */
     redo:
       switch (state)
-	{
-	case s_normal:
-	  if (c == '@' && p - 2 >= parsed && isspace(p[-2]))
-	    {
-	      doctag = p;
-	      state = s_doctag;
-	    }
-	  break;
-	case s_doctag:
-	  if (!isalpha(c)) /* doctag keyword done, decide if we like it */
-	    {
-	      /* Currently we like all non-empty doctags and assume
-		 they might have up to one quoted argument - filtering
-		 is left to our caller. This might want to change if
-		 we get into fancier syntax for doctag arguments with
-		 semantic significance */
-	      if (p - 1 > doctag) /* not empty */
-		{
-		  doctag_end = p - 1;
-		  state = s_docarg_start;
-		}
-	      else
-		state = s_normal;
-	      goto redo;
-	    }
-	  break;
-	case s_docarg_start:
-	  if (isspace(c))
-	    ;
-	  else if (c == '\'')
-	    {
-	      docarg = p;
-	      state = s_docarg;
-	    }
-	  else
-	    {
-	      state = s_normal;
-	      goto redo;
-	    }
-	  break;
-	case s_docarg:
-	  if (c == '\'')
-	    {
-	      save_doctag(loc, tags_r, tags,
-			  doctag, doctag_end, docarg, p - 1, lineno);
-	      state = s_normal;
-	    }
-	  break;
-	default:
-	  assert(0);
-	  break;
-	}
+        {
+        case s_normal:
+          if (c == '@' && p - 2 >= parsed && isspace(p[-2]))
+            {
+              doctag = p;
+              state = s_doctag;
+            }
+          break;
+        case s_doctag:
+          if (!isalpha(c)) /* doctag keyword done, decide if we like it */
+            {
+              /* Currently we like all non-empty doctags and assume
+                 they might have up to one quoted argument - filtering
+                 is left to our caller. This might want to change if
+                 we get into fancier syntax for doctag arguments with
+                 semantic significance */
+              if (p - 1 > doctag) /* not empty */
+                {
+                  doctag_end = p - 1;
+                  state = s_docarg_start;
+                }
+              else
+                state = s_normal;
+              goto redo;
+            }
+          break;
+        case s_docarg_start:
+          if (isspace(c))
+            ;
+          else if (c == '\'')
+            {
+              docarg = p;
+              state = s_docarg;
+            }
+          else
+            {
+              state = s_normal;
+              goto redo;
+            }
+          break;
+        case s_docarg:
+          if (c == '\'')
+            {
+              save_doctag(loc, tags_r, tags,
+                          doctag, doctag_end, docarg, p - 1, lineno);
+              state = s_normal;
+            }
+          break;
+        default:
+          assert(0);
+          break;
+        }
     }
 
   if (short_end)
     {
       /* if there's only whitespace after short_end, then there's no long
-	 string */
+         string */
       while (*short_end && isspace(*short_end))
-	short_end++;
+        short_end++;
       if (*short_end)
-	doc->long_s = rmakestr(parse_region, parsed, p);
+        doc->long_s = rmakestr(parse_region, parsed, p);
     }
   else /* only a short string */
     doc->short_s = rmakestr(parse_region, parsed, p);
@@ -207,27 +207,27 @@ static void update_parameters(function_declarator fd)
   while (*parm)
     {
       if (is_data_decl(*parm)) /* skip errors */
-	{
-	  /* The ddecl points to the variable_decl of the new
-	     definition.  New variable_decls have a parent field
-	     pointing to their containing data_decl (from the call to
-	     AST_set_parents below). Use this to update the
-	     declaration list. */
-	  data_decl pd = CAST(data_decl, *parm);
-	  variable_decl vd = CAST(variable_decl, pd->decls);
+        {
+          /* The ddecl points to the variable_decl of the new
+             definition.  New variable_decls have a parent field
+             pointing to their containing data_decl (from the call to
+             AST_set_parents below). Use this to update the
+             declaration list. */
+          data_decl pd = CAST(data_decl, *parm);
+          variable_decl vd = CAST(variable_decl, pd->decls);
 
-	  if (vd->ddecl)
-	    {
-	      node newdecl = vd->ddecl->ast->parent;
+          if (vd->ddecl)
+            {
+              node newdecl = vd->ddecl->ast->parent;
 
-	      /* We also ignore forward parameter declarations (gcc ext) */
-	      if (!vd->forward && newdecl)
-		{
-		  newdecl->next = (*parm)->next;
-		  *parm = CAST(node, newdecl);
-		}
-	    }
-	}
+              /* We also ignore forward parameter declarations (gcc ext) */
+              if (!vd->forward && newdecl)
+                {
+                  newdecl->next = (*parm)->next;
+                  *parm = CAST(node, newdecl);
+                }
+            }
+        }
       parm = &(*parm)->next;
     }
 }
@@ -239,7 +239,7 @@ static void enforce_redeclaration(node newdecl)
       variable_decl vd = CAST(variable_decl, CAST(data_decl, newdecl)->decls);
 
       if (vd->ddecl->definition == vd->ddecl->ast)
-	error("%s is not a function parameter", vd->ddecl->name);
+        error("%s is not a function parameter", vd->ddecl->name);
     }
 }
 
@@ -260,7 +260,7 @@ void ignored_doctags(location docloc, dd_list tags)
 }
 
 void handle_ddecl_doc_tags(location docloc, data_declaration ddecl,
-			   dd_list tags)
+                           dd_list tags)
 {
   declarator d;
   declaration ast;
@@ -284,7 +284,7 @@ void handle_ddecl_doc_tags(location docloc, data_declaration ddecl,
 }
 
 void handle_fdecl_doc_tags(location docloc, data_declaration ddecl,
-			   function_declarator fd, dd_list tags)
+                           function_declarator fd, dd_list tags)
 {
   struct semantic_state old;
   struct location cloc;
@@ -306,40 +306,40 @@ void handle_fdecl_doc_tags(location docloc, data_declaration ddecl,
 
       tagloc.lineno += tag->lineno;
       if (!strcmp(tag->tag, "param"))
-	{
-	  int old_errorcount = errorcount;
+        {
+          int old_errorcount = errorcount;
 
-	  start_lex_string(l_parameter, tag->args[0]);
-	  set_lex_location(&tagloc);
-	  parsed = parse();
-	  AST_set_parents(parsed);
-	  /* Type errors in redeclaration confuse the redeclaration check,
-	     and we've already failed compilation anyway */
-	  if (errorcount == old_errorcount)
-	    enforce_redeclaration(parsed);
-	  end_lex();
-	}
+          start_lex_string(l_parameter, tag->args[0]);
+          set_lex_location(&tagloc);
+          parsed = parse();
+          AST_set_parents(parsed);
+          /* Type errors in redeclaration confuse the redeclaration check,
+             and we've already failed compilation anyway */
+          if (errorcount == old_errorcount)
+            enforce_redeclaration(parsed);
+          end_lex();
+        }
       else if (!strcmp(tag->tag, "return"))
-	{
-	  if (fd->return_type)
-	    warning_with_location(&tagloc, "duplicate @return tag ignored");
-	  else
-	    {
-	      start_lex_string(l_type, tag->args[0]);
-	      set_lex_location(&tagloc);
-	      parsed = parse();
-	      end_lex();
-	      if (parsed)
-		{
-		  fd->return_type = CAST(asttype, parsed);
-		  if (!type_equal(type_function_return_type(ddecl->type),
-				  fd->return_type->type))
-		    error("inconsistent return type in @return tag");
-		}
-	    }
-	}
+        {
+          if (fd->return_type)
+            warning_with_location(&tagloc, "duplicate @return tag ignored");
+          else
+            {
+              start_lex_string(l_type, tag->args[0]);
+              set_lex_location(&tagloc);
+              parsed = parse();
+              end_lex();
+              if (parsed)
+                {
+                  fd->return_type = CAST(asttype, parsed);
+                  if (!type_equal(type_function_return_type(ddecl->type),
+                                  fd->return_type->type))
+                    error("inconsistent return type in @return tag");
+                }
+            }
+        }
       else
-	ignored_doctag(docloc, tag);
+        ignored_doctag(docloc, tag);
     }
   update_parameters(fd);
 

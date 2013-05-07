@@ -22,7 +22,7 @@
 
 /* Enable GNU extensions in fnmatch.h.  */
 #ifndef _GNU_SOURCE
-# define _GNU_SOURCE	1
+# define _GNU_SOURCE        1
 #endif
 
 #include <assert.h>
@@ -120,25 +120,25 @@
 #  endif
 
 #  ifdef _LIBC
-#   define ISWCTYPE(WC, WT)	__iswctype (WC, WT)
+#   define ISWCTYPE(WC, WT)        __iswctype (WC, WT)
 #  else
-#   define ISWCTYPE(WC, WT)	iswctype (WC, WT)
+#   define ISWCTYPE(WC, WT)        iswctype (WC, WT)
 #  endif
 
 #  if (HAVE_MBSTATE_T && HAVE_MBSRTOWCS) || _LIBC
 /* In this case we are implementing the multibyte character handling.  */
-#   define HANDLE_MULTIBYTE	1
+#   define HANDLE_MULTIBYTE        1
 #  endif
 
 # else
 #  define CHAR_CLASS_MAX_LENGTH  6 /* Namely, `xdigit'.  */
 
-#  define IS_CHAR_CLASS(string)						      \
-   (STREQ (string, "alpha") || STREQ (string, "upper")			      \
-    || STREQ (string, "lower") || STREQ (string, "digit")		      \
-    || STREQ (string, "alnum") || STREQ (string, "xdigit")		      \
-    || STREQ (string, "space") || STREQ (string, "print")		      \
-    || STREQ (string, "punct") || STREQ (string, "graph")		      \
+#  define IS_CHAR_CLASS(string)                                                      \
+   (STREQ (string, "alpha") || STREQ (string, "upper")                              \
+    || STREQ (string, "lower") || STREQ (string, "digit")                      \
+    || STREQ (string, "alnum") || STREQ (string, "xdigit")                      \
+    || STREQ (string, "space") || STREQ (string, "print")                      \
+    || STREQ (string, "punct") || STREQ (string, "graph")                      \
     || STREQ (string, "cntrl") || STREQ (string, "blank"))
 # endif
 
@@ -193,16 +193,16 @@ __wcschrnul (s, c)
 # else
 #  define FOLD(c) ((flags & FNM_CASEFOLD) && ISUPPER (c) ? tolower (c) : (c))
 # endif
-# define CHAR	char
-# define UCHAR	unsigned char
-# define FCT	internal_fnmatch
-# define L(CS)	CS
+# define CHAR        char
+# define UCHAR        unsigned char
+# define FCT        internal_fnmatch
+# define L(CS)        CS
 # ifdef _LIBC
-#  define BTOWC(C)	__btowc (C)
+#  define BTOWC(C)        __btowc (C)
 # else
-#  define BTOWC(C)	btowc (C)
+#  define BTOWC(C)        btowc (C)
 # endif
-# define STRCHR(S, C)	strchr (S, C)
+# define STRCHR(S, C)        strchr (S, C)
 # define STRCHRNUL(S, C) __strchrnul (S, C)
 # define STRCOLL(S1, S2) strcoll (S1, S2)
 # include "fnmatch_loop.c"
@@ -215,12 +215,12 @@ __wcschrnul (s, c)
 #  else
 #   define FOLD(c) ((flags & FNM_CASEFOLD) && ISUPPER (c) ? towlower (c) : (c))
 #  endif
-#  define CHAR	wchar_t
-#  define UCHAR	wint_t
-#  define FCT	internal_fnwmatch
-#  define L(CS)	L##CS
-#  define BTOWC(C)	(C)
-#  define STRCHR(S, C)	wcschr (S, C)
+#  define CHAR        wchar_t
+#  define UCHAR        wint_t
+#  define FCT        internal_fnwmatch
+#  define L(CS)        L##CS
+#  define BTOWC(C)        (C)
+#  define STRCHR(S, C)        wcschr (S, C)
 #  define STRCHRNUL(S, C) __wcschrnul (S, C)
 #  define STRCOLL(S1, S2) wcscoll (S1, S2)
 #  define WIDE_CHAR_VERSION 1
@@ -243,40 +243,40 @@ is_char_class (const wchar_t *wcs)
       /* Test for a printable character from the portable character set.  */
 #  ifdef _LIBC
       if (*wcs < 0x20 || *wcs > 0x7e
-	  || *wcs == 0x24 || *wcs == 0x40 || *wcs == 0x60)
-	return (wctype_t) 0;
+          || *wcs == 0x24 || *wcs == 0x40 || *wcs == 0x60)
+        return (wctype_t) 0;
 #  else
       switch (*wcs)
-	{
-	case L' ': case L'!': case L'"': case L'#': case L'%':
-	case L'&': case L'\'': case L'(': case L')': case L'*':
-	case L'+': case L',': case L'-': case L'.': case L'/':
-	case L'0': case L'1': case L'2': case L'3': case L'4':
-	case L'5': case L'6': case L'7': case L'8': case L'9':
-	case L':': case L';': case L'<': case L'=': case L'>':
-	case L'?':
-	case L'A': case L'B': case L'C': case L'D': case L'E':
-	case L'F': case L'G': case L'H': case L'I': case L'J':
-	case L'K': case L'L': case L'M': case L'N': case L'O':
-	case L'P': case L'Q': case L'R': case L'S': case L'T':
-	case L'U': case L'V': case L'W': case L'X': case L'Y':
-	case L'Z':
-	case L'[': case L'\\': case L']': case L'^': case L'_':
-	case L'a': case L'b': case L'c': case L'd': case L'e':
-	case L'f': case L'g': case L'h': case L'i': case L'j':
-	case L'k': case L'l': case L'm': case L'n': case L'o':
-	case L'p': case L'q': case L'r': case L's': case L't':
-	case L'u': case L'v': case L'w': case L'x': case L'y':
-	case L'z': case L'{': case L'|': case L'}': case L'~':
-	  break;
-	default:
-	  return (wctype_t) 0;
-	}
+        {
+        case L' ': case L'!': case L'"': case L'#': case L'%':
+        case L'&': case L'\'': case L'(': case L')': case L'*':
+        case L'+': case L',': case L'-': case L'.': case L'/':
+        case L'0': case L'1': case L'2': case L'3': case L'4':
+        case L'5': case L'6': case L'7': case L'8': case L'9':
+        case L':': case L';': case L'<': case L'=': case L'>':
+        case L'?':
+        case L'A': case L'B': case L'C': case L'D': case L'E':
+        case L'F': case L'G': case L'H': case L'I': case L'J':
+        case L'K': case L'L': case L'M': case L'N': case L'O':
+        case L'P': case L'Q': case L'R': case L'S': case L'T':
+        case L'U': case L'V': case L'W': case L'X': case L'Y':
+        case L'Z':
+        case L'[': case L'\\': case L']': case L'^': case L'_':
+        case L'a': case L'b': case L'c': case L'd': case L'e':
+        case L'f': case L'g': case L'h': case L'i': case L'j':
+        case L'k': case L'l': case L'm': case L'n': case L'o':
+        case L'p': case L'q': case L'r': case L's': case L't':
+        case L'u': case L'v': case L'w': case L'x': case L'y':
+        case L'z': case L'{': case L'|': case L'}': case L'~':
+          break;
+        default:
+          return (wctype_t) 0;
+        }
 #  endif
 
       /* Avoid overrunning the buffer.  */
       if (cp == s + CHAR_CLASS_MAX_LENGTH)
-	return (wctype_t) 0;
+        return (wctype_t) 0;
 
       *cp++ = (char) *wcs++;
     }
@@ -341,4 +341,4 @@ fnmatch (pattern, string, flags)
 # endif  /* mbstate_t and mbsrtowcs or _LIBC.  */
 }
 
-#endif	/* _LIBC or not __GNU_LIBRARY__.  */
+#endif        /* _LIBC or not __GNU_LIBRARY__.  */

@@ -35,7 +35,7 @@ struct folder_data {
 };
 
 static AST_walker_result folder_expression(AST_walker spec, void *data,
-					   expression *n)
+                                           expression *n)
 {
   struct folder_data *d = data;
   expression e = *n;
@@ -51,11 +51,11 @@ static AST_walker_result folder_expression(AST_walker spec, void *data,
     case kind_lexical_cst: case kind_string: case kind_extension_expr:
       /* We preserve the constants in lexical_cst's and strings */
       /* XXX: should we allow string arguments to components to 
-	 be merged into strings (e.g. "aa" foo "bb", where foo
-	 is a `char *' component arg)? 
-	 (If so: the ddecl for the args should be classified as
+         be merged into strings (e.g. "aa" foo "bb", where foo
+         is a `char *' component arg)? 
+         (If so: the ddecl for the args should be classified as
          a decl_magic_string, and make_string and this function must be
-	 modified accordingly) */
+         modified accordingly) */
       c = e->cst;
       sa = e->static_address;
       break;
@@ -103,9 +103,9 @@ static AST_walker_result folder_expression(AST_walker spec, void *data,
 
       /* Find the array type */
       if (type_integer(aref->arg1->type))
-	atype = aref->arg2->type;
+        atype = aref->arg2->type;
       else
-	atype = aref->arg1->type;
+        atype = aref->arg1->type;
 
       sa = fold_binary(type_default_conversion(atype), e);
       break;
@@ -114,14 +114,14 @@ static AST_walker_result folder_expression(AST_walker spec, void *data,
       expression sub;;
 
       scan_expression (sub, CAST(comma, e)->arg1)
-	if (!sub->cst)
-	  break;
-	else if (!sub->next)
-	  {
-	    /* (e1, ..., en) is a constant expression if all ei are constant
-	       expressions. Weird? (see cst10.c) */
-	    c = sub->cst;
-	  }
+        if (!sub->cst)
+          break;
+        else if (!sub->next)
+          {
+            /* (e1, ..., en) is a constant expression if all ei are constant
+               expressions. Weird? (see cst10.c) */
+            c = sub->cst;
+          }
       break;
     }
     case kind_component_deref:
@@ -129,9 +129,9 @@ static AST_walker_result folder_expression(AST_walker spec, void *data,
       break;
     default:
       if (is_binary(e))
-	c = fold_binary(e->type, e);
+        c = fold_binary(e->type, e);
       else if (is_unary(e))
-	c = fold_unary(e);
+        c = fold_unary(e);
       break;
     }
   e->cst = c;
@@ -170,7 +170,7 @@ bool fold_constants_list(node n, int pass)
 }
 
 static AST_walker_result folder_array_declarator(AST_walker spec, void *data,
-						 array_declarator *n)
+                                                 array_declarator *n)
 {
   expression size = (*n)->arg1;
 
@@ -183,7 +183,7 @@ static AST_walker_result folder_array_declarator(AST_walker spec, void *data,
 }
 
 static AST_walker_result folder_enum_ref(AST_walker spec, void *data,
-					 enum_ref *n)
+                                         enum_ref *n)
 {
   if (!(*n)->defined)
     return aw_walk;
@@ -196,7 +196,7 @@ static AST_walker_result folder_enum_ref(AST_walker spec, void *data,
 }
 
 static AST_walker_result folder_enumerator(AST_walker spec, void *data,
-					   enumerator *n)
+                                           enumerator *n)
 {
   enumerator e = *n;
 
@@ -207,7 +207,7 @@ static AST_walker_result folder_enumerator(AST_walker spec, void *data,
 }
 
 static AST_walker_result folder_tag_ref(AST_walker spec, void *data,
-					tag_ref *n)
+                                        tag_ref *n)
 {
   if (!(*n)->defined)
     return aw_walk;
@@ -219,7 +219,7 @@ static AST_walker_result folder_tag_ref(AST_walker spec, void *data,
 }
 
 static AST_walker_result folder_case_label(AST_walker spec, void *data,
-					   case_label *n)
+                                           case_label *n)
 {
   case_label label = *n;
 
@@ -232,7 +232,7 @@ static AST_walker_result folder_case_label(AST_walker spec, void *data,
 }
 
 static AST_walker_result folder_function_decl(AST_walker spec, void *data,
-					      function_decl *n)
+                                              function_decl *n)
 {
   function_decl fd = *n, old = current.function_decl;
 

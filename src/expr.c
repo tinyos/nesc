@@ -50,7 +50,7 @@ static bool compatible_pointer_targets(type ttl, type ttr, bool pedantic)
 static bool compatible_pointer_types(type tl, type tr)
 {
   return compatible_pointer_targets(type_points_to(tl), type_points_to(tr),
-				    pedantic);
+                                    pedantic);
 }
 
 /* Function arguments are positive, interface parameters are negative.
@@ -66,7 +66,7 @@ static const char *argtype(int *parmnum)
 }
 
 static void warn_for_assignment(const char *msg, const char *opname,
-				data_declaration fdecl, int argnum)
+                                data_declaration fdecl, int argnum)
 {
   static char argstring[] = "passing %s %d of `%s'";
   static char argnofun[] =  "passing %s %d";
@@ -77,19 +77,19 @@ static void warn_for_assignment(const char *msg, const char *opname,
       const char *argname = argtype(&argnum);
 
       if (fdecl)
-	{
-	  const char *function = decl_printname(fdecl);
+        {
+          const char *function = decl_printname(fdecl);
 
-	  /* Function name is known; supply it.  */
-	  tmpname = (char *)alloca(strlen(function) + sizeof(argstring) + 25 /*%d*/ + 1);
-	  sprintf(tmpname, argstring, argname, argnum, function);
-	}
+          /* Function name is known; supply it.  */
+          tmpname = (char *)alloca(strlen(function) + sizeof(argstring) + 25 /*%d*/ + 1);
+          sprintf(tmpname, argstring, argname, argnum, function);
+        }
       else
-	{
-	  /* Function name unknown (call through ptr); just give arg number.  */
-	  tmpname = (char *)alloca(sizeof(argnofun) + 25 /*%d*/ + 1);
-	  sprintf(tmpname, argnofun, argname, argnum);
-	}
+        {
+          /* Function name unknown (call through ptr); just give arg number.  */
+          tmpname = (char *)alloca(sizeof(argnofun) + 25 /*%d*/ + 1);
+          sprintf(tmpname, argnofun, argname, argnum);
+        }
       opname = tmpname;
     }
   pedwarn(msg, opname);
@@ -106,21 +106,21 @@ static void incomplete_type_error(expression e, type t)
   else
     {
       while (type_array(t) && type_array_size(t))
-	t = type_array_of(t);
+        t = type_array_of(t);
 
       if (type_tagged(t))
-	{
-	  tag_declaration tag = type_tag(t);
+        {
+          tag_declaration tag = type_tag(t);
 
-	  error("invalid use of undefined type `%s %s'",
-		tagkind_name(tag->kind), tag->name);
-	}
+          error("invalid use of undefined type `%s %s'",
+                tagkind_name(tag->kind), tag->name);
+        }
       else if (type_void(t))
-	error("invalid use of void expression");
+        error("invalid use of void expression");
       else if (type_array(t))
-	error("invalid use of array with unspecified bounds");
+        error("invalid use of array with unspecified bounds");
       else
-	assert(0);
+        assert(0);
       /* XXX: Missing special message for typedef's */
     }
 }
@@ -146,9 +146,9 @@ type default_conversion(expression e)
     {
       /* Traditionally, unsignedness is preserved in default promotions. */
       if (flag_traditional && type_unsigned(from))
-	return unsigned_int_type;
+        return unsigned_int_type;
       else
-	return int_type;
+        return int_type;
     }
 
   if (flag_traditional && !flag_allow_single_precision && type_float(from))
@@ -175,10 +175,10 @@ type default_conversion(expression e)
   if (type_array(from))
     {
       if (!e->lvalue)
-	{
-	  error("invalid use of non-lvalue array");
-	  return error_type;
-	}
+        {
+          error("invalid use of non-lvalue array");
+          return error_type;
+        }
       assert(!e->cst);
       e->cst = e->static_address;
       e->converted_to_pointer = TRUE;
@@ -192,11 +192,11 @@ type default_conversion(expression e)
       data_declaration vdecl = type_variable_decl(from);
 
       switch (vdecl->typevar_kind)
-	{
-	case typevar_integer: return unknown_int_type;
-	case typevar_number: return unknown_number_type;
-	default: break;
-	}
+        {
+        case typevar_integer: return unknown_int_type;
+        case typevar_number: return unknown_number_type;
+        default: break;
+        }
     }
 
   return from;
@@ -222,12 +222,12 @@ static void readonly_warning(expression e, char *context)
       field_ref field = CAST(field_ref, e);
 
       if (type_readonly(field->arg1->type))
-	readonly_warning(field->arg1, context);
+        readonly_warning(field->arg1, context);
       else
-	{
-	  strcat(buf, " of read-only member `%s'");
-	  pedwarn(buf, field->cstring.data);
-	}
+        {
+          strcat(buf, " of read-only member `%s'");
+          pedwarn(buf, field->cstring.data);
+        }
     }
   else if (is_identifier(e))
     {
@@ -270,44 +270,44 @@ bool check_conversion(type to, type from)
   if (type_integer(to))
     {
       if (!type_scalar(from))
-	{
-	  error("aggregate value used where an integer was expected");
-	  return FALSE;
-	}
+        {
+          error("aggregate value used where an integer was expected");
+          return FALSE;
+        }
     }
   else if (type_pointer(to))
     {
       if (!(type_integer(from) || type_pointer(from)))
-	{
-	  error("cannot convert to a pointer type");
-	  return FALSE;
-	}
+        {
+          error("cannot convert to a pointer type");
+          return FALSE;
+        }
     }
   else if (type_floating(to))
     {
       if (type_pointer(from))
-	{
-	  error("pointer value used where a floating point value was expected");
-	  return FALSE;
-	}
+        {
+          error("pointer value used where a floating point value was expected");
+          return FALSE;
+        }
       else if (!type_arithmetic(from))
-	{
-	  error("aggregate value used where a float was expected");
-	  return FALSE;
-	}
+        {
+          error("aggregate value used where a float was expected");
+          return FALSE;
+        }
     }
   else if (type_complex(to))
     {
       if (type_pointer(from))
-	{
-	  error("pointer value used where a complex was expected");
-	  return FALSE;
-	}
+        {
+          error("pointer value used where a complex was expected");
+          return FALSE;
+        }
       else if (!type_arithmetic(from))
-	{
-	  error("aggregate value used where a complex was expected");
-	  return FALSE;
-	}
+        {
+          error("aggregate value used where a complex was expected");
+          return FALSE;
+        }
     }
   else
     {
@@ -324,54 +324,54 @@ static bool assignable_pointer_targets(type tt1, type tt2, bool pedantic)
 }
 
 static void ptrconversion_warnings(type ttl, type ttr, expression rhs,
-				   const char *context,
-				   data_declaration fdecl, int parmnum,
-				   bool pedantic)
+                                   const char *context,
+                                   data_declaration fdecl, int parmnum,
+                                   bool pedantic)
 {
   if (pedantic
       && ((type_void(ttl) && type_function(ttr)) ||
-	  (type_function(ttl) && type_void(ttr) &&
-	   !(rhs && definite_null(rhs)))))
+          (type_function(ttl) && type_void(ttr) &&
+           !(rhs && definite_null(rhs)))))
     warn_for_assignment("ANSI forbids %s between function pointer and `void *'",
-			context, fdecl, parmnum);
+                        context, fdecl, parmnum);
 
   /* Const and volatile mean something different for function
      types, so the usual warnings are not appropriate.  */
   else if (type_function(ttl) && type_function(ttr))
     {
       /* Because const and volatile on functions are
-	 restrictions that say the function will not do
-	 certain things, it is okay to use a const or volatile
-	 function where an ordinary one is wanted, but not
-	 vice-versa.  */
+         restrictions that say the function will not do
+         certain things, it is okay to use a const or volatile
+         function where an ordinary one is wanted, but not
+         vice-versa.  */
       if (type_const(ttl) && !type_const(ttr))
-	warn_for_assignment("%s makes `const *' function pointer from non-const",
-			    context, fdecl, parmnum);
+        warn_for_assignment("%s makes `const *' function pointer from non-const",
+                            context, fdecl, parmnum);
       if (type_volatile(ttl) && !type_volatile(ttr))
-	warn_for_assignment("%s makes `volatile *' function pointer from non-volatile",
-			    context, fdecl, parmnum);
+        warn_for_assignment("%s makes `volatile *' function pointer from non-volatile",
+                            context, fdecl, parmnum);
     }
   else if (!type_function(ttl) && !type_function(ttr))
     {
       if (!type_const(ttl) && type_const(ttr))
-	warn_for_assignment("%s discards `const' from pointer target type",
-			    context, fdecl, parmnum);
+        warn_for_assignment("%s discards `const' from pointer target type",
+                            context, fdecl, parmnum);
       if (!type_volatile(ttl) && type_volatile(ttr))
-	warn_for_assignment("%s discards `volatile' from pointer target type",
-			    context, fdecl, parmnum);
+        warn_for_assignment("%s discards `volatile' from pointer target type",
+                            context, fdecl, parmnum);
 
       /* If this is not a case of ignoring a mismatch in signedness,
-	 no warning.  */
+         no warning.  */
       if (!assignable_pointer_targets(ttl, ttr, FALSE) && pedantic)
-	warn_for_assignment("pointer targets in %s differ in signedness",
-			    context, fdecl, parmnum);
+        warn_for_assignment("pointer targets in %s differ in signedness",
+                            context, fdecl, parmnum);
     }
 }
 
 /* Return TRUE if no error and lhstype and rhstype are not error_type */
 bool check_assignment(type lhstype, type rhstype, expression rhs,
-		      const char *context, data_declaration fundecl,
-		      int parmnum)
+                      const char *context, data_declaration fundecl,
+                      int parmnum)
 {
   bool zerorhs = rhs && definite_zero(rhs);
 
@@ -390,7 +390,7 @@ bool check_assignment(type lhstype, type rhstype, expression rhs,
   if (type_arithmetic(lhstype) && type_arithmetic(rhstype))
     {
       if (rhs)
-	constant_overflow_warning(rhs->cst);
+        constant_overflow_warning(rhs->cst);
       return check_conversion(lhstype, rhstype);
     }
   if (parmnum && (type_qualifiers(lhstype) & transparent_qualifier))
@@ -400,68 +400,68 @@ bool check_assignment(type lhstype, type rhstype, expression rhs,
       field_declaration fields, marginal_field = NULL;
 
       /* I blame gcc for this horrible mess (and it's minor inconsistencies
-	 with the regular rules) */
+         with the regular rules) */
       /* pedantic warnings are skipped in here because we're already
-	 issuing a warning for the use of this construct */
+         issuing a warning for the use of this construct */
       for (fields = tag->fieldlist; fields; fields = fields->next)
-	{
-	  type ft = fields->type;
+        {
+          type ft = fields->type;
 
-	  if (type_compatible(ft, rhstype))
-	    break;
+          if (type_compatible(ft, rhstype))
+            break;
 
-	  if (!type_pointer(ft))
-	    continue;
+          if (!type_pointer(ft))
+            continue;
 
-	  if (type_pointer(rhstype))
-	    {
-	      type ttl = type_points_to(ft), ttr = type_points_to(rhstype);
-	      bool goodmatch = assignable_pointer_targets(ttl, ttr, FALSE);
+          if (type_pointer(rhstype))
+            {
+              type ttl = type_points_to(ft), ttr = type_points_to(rhstype);
+              bool goodmatch = assignable_pointer_targets(ttl, ttr, FALSE);
 
-	      /* Any non-function converts to a [const][volatile] void *
-		 and vice versa; otherwise, targets must be the same.
-		 Meanwhile, the lhs target must have all the qualifiers of
-		 the rhs.  */
-	      if (goodmatch)
-		{
-		  /* If this type won't generate any warnings, use it.  */
-		  if ((type_function(ttr) && type_function(ttl))
-		      ? ((!type_const(ttl) | type_const(ttr))
-			 & (!type_volatile(ttl) | type_volatile(ttr)))
-		      : ((type_const(ttl) | !type_const(ttr))
-			 & (type_volatile(ttl) | !type_volatile(ttr))))
-		    break;
+              /* Any non-function converts to a [const][volatile] void *
+                 and vice versa; otherwise, targets must be the same.
+                 Meanwhile, the lhs target must have all the qualifiers of
+                 the rhs.  */
+              if (goodmatch)
+                {
+                  /* If this type won't generate any warnings, use it.  */
+                  if ((type_function(ttr) && type_function(ttl))
+                      ? ((!type_const(ttl) | type_const(ttr))
+                         & (!type_volatile(ttl) | type_volatile(ttr)))
+                      : ((type_const(ttl) | !type_const(ttr))
+                         & (type_volatile(ttl) | !type_volatile(ttr))))
+                    break;
 
-		  /* Keep looking for a better type, but remember this one.  */
-		  if (!marginal_field)
-		    marginal_field = fields;
-		}
-	    }
+                  /* Keep looking for a better type, but remember this one.  */
+                  if (!marginal_field)
+                    marginal_field = fields;
+                }
+            }
 
-	  /* Can convert integer zero to any pointer type.  */
-	  /* Note that this allows passing *any* null pointer (gcc bug?) */
-	  if (zerorhs)
-	    break;
-	}
+          /* Can convert integer zero to any pointer type.  */
+          /* Note that this allows passing *any* null pointer (gcc bug?) */
+          if (zerorhs)
+            break;
+        }
 
       if (fields || marginal_field)
-	{
-	  if (!fields)
-	    {
-	      /* We have only a marginally acceptable member type;
-		 it needs a warning.  */
-	      type ttl = type_points_to(marginal_field->type),
-		ttr = type_points_to(rhstype);
+        {
+          if (!fields)
+            {
+              /* We have only a marginally acceptable member type;
+                 it needs a warning.  */
+              type ttl = type_points_to(marginal_field->type),
+                ttr = type_points_to(rhstype);
 
-	      ptrconversion_warnings(ttl, ttr, rhs, context, fundecl, parmnum,
-				     FALSE);
-	    }
-	  
-	  if (pedantic && !(fundecl && fundecl->in_system_header))
-	    pedwarn("ANSI C prohibits argument conversion to union type");
+              ptrconversion_warnings(ttl, ttr, rhs, context, fundecl, parmnum,
+                                     FALSE);
+            }
+          
+          if (pedantic && !(fundecl && fundecl->in_system_header))
+            pedwarn("ANSI C prohibits argument conversion to union type");
 
-	  return TRUE;
-	}
+          return TRUE;
+        }
     }
 
   if (type_pointer(lhstype) && type_pointer(rhstype))
@@ -470,15 +470,15 @@ bool check_assignment(type lhstype, type rhstype, expression rhs,
       bool goodmatch = assignable_pointer_targets(ttl, ttr, pedantic);
 
       /* Any non-function converts to a [const][volatile] void *
-	 and vice versa; otherwise, targets must be the same.
-	 Meanwhile, the lhs target must have all the qualifiers of the rhs.  */
+         and vice versa; otherwise, targets must be the same.
+         Meanwhile, the lhs target must have all the qualifiers of the rhs.  */
       if (goodmatch || (type_equal_unqualified(make_unsigned_type(ttl),
-					       make_unsigned_type(ttr))))
-	ptrconversion_warnings(ttl, ttr, rhs, context, fundecl, parmnum,
-			       pedantic);
+                                               make_unsigned_type(ttr))))
+        ptrconversion_warnings(ttl, ttr, rhs, context, fundecl, parmnum,
+                               pedantic);
       else
-	warn_for_assignment("%s from incompatible pointer type",
-			    context, fundecl, parmnum);
+        warn_for_assignment("%s from incompatible pointer type",
+                            context, fundecl, parmnum);
 
       return check_conversion(lhstype, rhstype);
     }
@@ -486,14 +486,14 @@ bool check_assignment(type lhstype, type rhstype, expression rhs,
   else if (type_pointer(lhstype) && type_integral(rhstype))
     {
       if (!zerorhs)
-	warn_for_assignment("%s makes pointer from integer without a cast",
-			    context, fundecl, parmnum);
+        warn_for_assignment("%s makes pointer from integer without a cast",
+                            context, fundecl, parmnum);
       return check_conversion(lhstype, rhstype);
     }
   else if (type_integral(lhstype) && type_pointer(rhstype))
     {
       warn_for_assignment("%s makes integer from pointer without a cast",
-			  context, fundecl, parmnum);
+                          context, fundecl, parmnum);
       return check_conversion(lhstype, rhstype);
     }
 
@@ -502,11 +502,11 @@ bool check_assignment(type lhstype, type rhstype, expression rhs,
       const char *argname = argtype(&parmnum);
 
       if (fundecl)
-	error("incompatible type for %s %d of `%s'", argname, parmnum,
-	      decl_printname(fundecl));
+        error("incompatible type for %s %d of `%s'", argname, parmnum,
+              decl_printname(fundecl));
       else
-	error("incompatible type for %s %d of indirect function call",
-	      argname, parmnum);
+        error("incompatible type for %s %d of indirect function call",
+              argname, parmnum);
     }
   else
     error("incompatible types in %s", context);
@@ -532,47 +532,47 @@ expression make_comma(location loc, expression elist)
   scan_expression (e, elist)
     if (e->next) /* Not last */
       {
-	if (!e->cst)
-	  all_cst = FALSE;
+        if (!e->cst)
+          all_cst = FALSE;
 #if 0
-	if (!e->side_effects)
-	  {
-	    /* The left-hand operand of a comma expression is like an expression
-	       statement: with -W or -Wunused, we should warn if it doesn't have
-	       any side-effects, unless it was explicitly cast to (void).  */
-	    if ((extra_warnings || warn_unused)
-		&& !(TREE_CODE (TREE_VALUE (list)) == CONVERT_EXPR
-		      && TREE_TYPE (TREE_VALUE (list)) == void_type_node))
-	      warning ("left-hand operand of comma expression has no effect");
-	  }
-	else if (warn_unused)
-	  warn_if_unused_value(e);
+        if (!e->side_effects)
+          {
+            /* The left-hand operand of a comma expression is like an expression
+               statement: with -W or -Wunused, we should warn if it doesn't have
+               any side-effects, unless it was explicitly cast to (void).  */
+            if ((extra_warnings || warn_unused)
+                && !(TREE_CODE (TREE_VALUE (list)) == CONVERT_EXPR
+                      && TREE_TYPE (TREE_VALUE (list)) == void_type_node))
+              warning ("left-hand operand of comma expression has no effect");
+          }
+        else if (warn_unused)
+          warn_if_unused_value(e);
 #endif
       }
     else
       {
-	if (type_array(e->type))
-	  result->type = default_conversion(e);
-	else
-	  result->type = e->type;
+        if (type_array(e->type))
+          result->type = default_conversion(e);
+        else
+          result->type = e->type;
 
-	if (!pedantic)
-	  {
-	    /* (e1, ..., en) is a constant expression if all ei are constant
-	       expressions. Weird? (see cst10.c) */
-	    if (all_cst)
-	      result->cst = e->cst;
-	    result->lvalue = e->lvalue;
-	    result->isregister = e->isregister;
-	    result->bitfield = e->bitfield;
-	  }
+        if (!pedantic)
+          {
+            /* (e1, ..., en) is a constant expression if all ei are constant
+               expressions. Weird? (see cst10.c) */
+            if (all_cst)
+              result->cst = e->cst;
+            result->lvalue = e->lvalue;
+            result->isregister = e->isregister;
+            result->bitfield = e->bitfield;
+          }
       }
 
   return result;
 }
 
 static void check_dereference(expression result, type dereferenced,
-			      const char *errorstring)
+                              const char *errorstring)
 {
   if (type_pointer(dereferenced))
     {
@@ -581,20 +581,20 @@ static void check_dereference(expression result, type dereferenced,
       result->type = t;
 #if 0
       if (TYPE_SIZE (t) == 0 && TREE_CODE (t) != ARRAY_TYPE)
-	{
-	  error ("dereferencing pointer to incomplete type");
-	  return error_mark_node;
-	}
+        {
+          error ("dereferencing pointer to incomplete type");
+          return error_mark_node;
+        }
 #endif
       if (type_void(t) && !unevaluated_expression())
-	warning("dereferencing `void *' pointer");
+        warning("dereferencing `void *' pointer");
       result->side_effects |= type_volatile(t) /*|| flag_volatile*/;
     }
   else
     {
       result->type = error_type;
       if (dereferenced != error_type)
-	error("invalid type argument of `%s'", errorstring);
+        error("invalid type argument of `%s'", errorstring);
     }
   result->lvalue = TRUE;
 }
@@ -638,10 +638,10 @@ expression make_address_of(location loc, expression e)
   else
     {
       if (e->isregister)
-	pedwarn("address of a register variable requested");
+        pedwarn("address of a register variable requested");
 
       if (!(type_function(e->type) || e->lvalue))
-	error("invalid lvalue in unary `&'");
+        error("invalid lvalue in unary `&'");
 
       result->type = make_pointer_type(e->type);
       result->cst = e->static_address;
@@ -661,60 +661,60 @@ expression make_unary(location loc, int unop, expression e)
       return make_predecrement(loc, e);
     default:
       {
-	expression result = CAST(expression, newkind_unary(parse_region, unop, loc, e));
-	type etype = default_conversion(e);
-	const char *errstring = NULL;
+        expression result = CAST(expression, newkind_unary(parse_region, unop, loc, e));
+        type etype = default_conversion(e);
+        const char *errstring = NULL;
 
-	if (etype == error_type)
-	  result->type = error_type;
-	else
-	  {
-	    switch (unop)
-	      {
-	      case kind_unary_plus:
-		if (!type_arithmetic(etype))
-		  errstring = "wrong type argument to unary plus";
-		break;
-	      case kind_unary_minus:
-		if (!type_arithmetic(etype))
-		  errstring = "wrong type argument to unary minus";
-		break;
-	      case kind_bitnot:
-		if (type_complex(etype))
-		  result->kind = kind_conjugate;
-		else if (!type_integer(etype))
-		  errstring = "wrong type argument to bit-complement";
-		break;
-	      case kind_not:
-		if (!type_scalar(etype))
-		  errstring = "wrong type argument to unary exclamation mark";
-		else
-		  etype = int_type;
-		break;
-	      case kind_realpart: case kind_imagpart:
-		if (!type_arithmetic(etype))
-		  if (unop == kind_realpart)
-		    errstring = "wrong type argument to __real__";
-		  else
-		    errstring = "wrong type argument to __imag__";
-		else
-		  etype = type_complex(etype) ? make_base_type(etype) : etype;
-		break;
-	      default:
-		assert(0);
-	      }
-	    if (errstring)
-	      {
-		error(errstring);
-		result->type = error_type;
-	      }
-	    else
-	      {
-		result->type = etype;
-		result->cst = fold_unary(result);
-	      }
-	  }
-	return result;
+        if (etype == error_type)
+          result->type = error_type;
+        else
+          {
+            switch (unop)
+              {
+              case kind_unary_plus:
+                if (!type_arithmetic(etype))
+                  errstring = "wrong type argument to unary plus";
+                break;
+              case kind_unary_minus:
+                if (!type_arithmetic(etype))
+                  errstring = "wrong type argument to unary minus";
+                break;
+              case kind_bitnot:
+                if (type_complex(etype))
+                  result->kind = kind_conjugate;
+                else if (!type_integer(etype))
+                  errstring = "wrong type argument to bit-complement";
+                break;
+              case kind_not:
+                if (!type_scalar(etype))
+                  errstring = "wrong type argument to unary exclamation mark";
+                else
+                  etype = int_type;
+                break;
+              case kind_realpart: case kind_imagpart:
+                if (!type_arithmetic(etype))
+                  if (unop == kind_realpart)
+                    errstring = "wrong type argument to __real__";
+                  else
+                    errstring = "wrong type argument to __imag__";
+                else
+                  etype = type_complex(etype) ? make_base_type(etype) : etype;
+                break;
+              default:
+                assert(0);
+              }
+            if (errstring)
+              {
+                error(errstring);
+                result->type = error_type;
+              }
+            else
+              {
+                result->type = etype;
+                result->cst = fold_unary(result);
+              }
+          }
+        return result;
       }
     }
 }
@@ -748,12 +748,12 @@ void check_sizeof(expression result, type stype)
   if (type_function(stype))
     {
       if (pedantic || warn_pointer_arith)
-	pedwarn("sizeof applied to a function type");
+        pedwarn("sizeof applied to a function type");
     }
   else if (type_void(stype))
     {
       if (pedantic || warn_pointer_arith)
-	pedwarn("sizeof applied to a void type");
+        pedwarn("sizeof applied to a void type");
     }
   else
     check_sizealign("sizeof", stype);
@@ -818,89 +818,89 @@ expression make_cast(location loc, asttype t, expression e)
   else if (type_equal_unqualified(castto, e->type))
     {
       if (pedantic && type_aggregate(castto))
-	pedwarn("ANSI C forbids casting nonscalar to the same type");
+        pedwarn("ANSI C forbids casting nonscalar to the same type");
     }
   else
     {
       type etype = e->type;
 
       /* Convert functions and arrays to pointers,
-	 but don't convert any other types.  */
+         but don't convert any other types.  */
       if (type_function(etype) || type_array(etype))
-	etype = default_conversion(e);
+        etype = default_conversion(e);
 
       if (type_union(castto))
-	{
-	  tag_declaration utag = type_tag(castto);
-	  field_declaration ufield;
+        {
+          tag_declaration utag = type_tag(castto);
+          field_declaration ufield;
 
-	  /* Look for etype as a field of the union */
-	  for (ufield = utag->fieldlist; ufield; ufield = ufield->next)
-	    if (ufield->name && type_equal_unqualified(ufield->type, etype))
-	      {
-		if (pedantic)
-		  pedwarn("ANSI C forbids casts to union type");
-		break;
-	      }
-	  if (!ufield)
-	    error("cast to union type from type not present in union");
-	}
+          /* Look for etype as a field of the union */
+          for (ufield = utag->fieldlist; ufield; ufield = ufield->next)
+            if (ufield->name && type_equal_unqualified(ufield->type, etype))
+              {
+                if (pedantic)
+                  pedwarn("ANSI C forbids casts to union type");
+                break;
+              }
+          if (!ufield)
+            error("cast to union type from type not present in union");
+        }
       else 
-	{
-	  /* Optionally warn about potentially worrisome casts.  */
+        {
+          /* Optionally warn about potentially worrisome casts.  */
 
-	  if (warn_cast_qual && type_pointer(etype) && type_pointer(castto))
-	    {
-	      type ep = type_points_to(etype), cp = type_points_to(castto);
+          if (warn_cast_qual && type_pointer(etype) && type_pointer(castto))
+            {
+              type ep = type_points_to(etype), cp = type_points_to(castto);
 
-	      if (type_volatile(ep) && !type_volatile(cp))
-		pedwarn("cast discards `volatile' from pointer target type");
-	      if (type_const(ep) && !type_const(cp))
-		pedwarn("cast discards `const' from pointer target type");
-	    }
+              if (type_volatile(ep) && !type_volatile(cp))
+                pedwarn("cast discards `volatile' from pointer target type");
+              if (type_const(ep) && !type_const(cp))
+                pedwarn("cast discards `const' from pointer target type");
+            }
 
-	  /* This warning is weird */
-	  if (warn_bad_function_cast && is_function_call(e) &&
-	      !type_equal_unqualified(castto, etype))
-	    warning ("cast does not match function type");
+          /* This warning is weird */
+          if (warn_bad_function_cast && is_function_call(e) &&
+              !type_equal_unqualified(castto, etype))
+            warning ("cast does not match function type");
 
 #if 0
-	  /* Warn about possible alignment problems.  */
-	  if (STRICT_ALIGNMENT && warn_cast_align
-	      && TREE_CODE (type) == POINTER_TYPE
-	      && TREE_CODE (otype) == POINTER_TYPE
-	      && TREE_CODE (TREE_TYPE (otype)) != VOID_TYPE
-	      && TREE_CODE (TREE_TYPE (otype)) != FUNCTION_TYPE
-	      /* Don't warn about opaque types, where the actual alignment
-		 restriction is unknown.  */
-	      && !((TREE_CODE (TREE_TYPE (otype)) == UNION_TYPE
-		    || TREE_CODE (TREE_TYPE (otype)) == RECORD_TYPE)
-		   && TYPE_MODE (TREE_TYPE (otype)) == VOIDmode)
-	      && TYPE_ALIGN (TREE_TYPE (type)) > TYPE_ALIGN (TREE_TYPE (otype)))
-	    warning ("cast increases required alignment of target type");
+          /* Warn about possible alignment problems.  */
+          if (STRICT_ALIGNMENT && warn_cast_align
+              && TREE_CODE (type) == POINTER_TYPE
+              && TREE_CODE (otype) == POINTER_TYPE
+              && TREE_CODE (TREE_TYPE (otype)) != VOID_TYPE
+              && TREE_CODE (TREE_TYPE (otype)) != FUNCTION_TYPE
+              /* Don't warn about opaque types, where the actual alignment
+                 restriction is unknown.  */
+              && !((TREE_CODE (TREE_TYPE (otype)) == UNION_TYPE
+                    || TREE_CODE (TREE_TYPE (otype)) == RECORD_TYPE)
+                   && TYPE_MODE (TREE_TYPE (otype)) == VOIDmode)
+              && TYPE_ALIGN (TREE_TYPE (type)) > TYPE_ALIGN (TREE_TYPE (otype)))
+            warning ("cast increases required alignment of target type");
 
-	  if (TREE_CODE (type) == INTEGER_TYPE
-	      && TREE_CODE (otype) == POINTER_TYPE
-	      && TYPE_PRECISION (type) != TYPE_PRECISION (otype)
-	      && !TREE_CONSTANT (value))
-	    warning ("cast from pointer to integer of different size");
+          if (TREE_CODE (type) == INTEGER_TYPE
+              && TREE_CODE (otype) == POINTER_TYPE
+              && TYPE_PRECISION (type) != TYPE_PRECISION (otype)
+              && !TREE_CONSTANT (value))
+            warning ("cast from pointer to integer of different size");
 
-	  if (TREE_CODE (type) == POINTER_TYPE
-	      && TREE_CODE (otype) == INTEGER_TYPE
-	      && TYPE_PRECISION (type) != TYPE_PRECISION (otype)
+          if (TREE_CODE (type) == POINTER_TYPE
+              && TREE_CODE (otype) == INTEGER_TYPE
+              && TYPE_PRECISION (type) != TYPE_PRECISION (otype)
 #if 0
-	      /* Don't warn about converting 0 to pointer,
-		 provided the 0 was explicit--not cast or made by folding.  */
-	      && !(TREE_CODE (value) == INTEGER_CST && integer_zerop (value))
+              /* Don't warn about converting 0 to pointer,
+                 provided the 0 was explicit--not cast or made by folding.  */
+              && !(TREE_CODE (value) == INTEGER_CST && integer_zerop (value))
 #endif
-	      /* Don't warn about converting any constant.  */
-	      && !TREE_CONSTANT (value))
-	    warning ("cast to pointer from integer of different size");
+              /* Don't warn about converting any constant.  */
+              && !TREE_CONSTANT (value))
+            warning ("cast to pointer from integer of different size");
 #endif
 
-	  if (!check_conversion(castto, etype))
-	    castto = error_type;
-	}
+          if (!check_conversion(castto, etype))
+            castto = error_type;
+        }
     }
 
   result->lvalue = !pedantic && e->lvalue;
@@ -921,12 +921,12 @@ type pointer_int_sum(type ptype, type itype)
   if (type_void(pointed))
     {
       if (pedantic || warn_pointer_arith)
-	pedwarn("pointer of type `void *' used in arithmetic");
+        pedwarn("pointer of type `void *' used in arithmetic");
     }
   else if (type_function(pointed))
     {
       if (pedantic || warn_pointer_arith)
-	pedwarn("pointer to a function used in arithmetic");
+        pedwarn("pointer to a function used in arithmetic");
     }
   else if (type_incomplete(pointed))
     error("arithmetic on pointer to an incomplete type");
@@ -939,7 +939,7 @@ bool valid_compare(type t1, type t2, expression e1)
   if (type_void(type_points_to(t1)))
     {
       if (pedantic && type_function(type_points_to(t2)) && !definite_null(e1))
-	pedwarn("ANSI C forbids comparison of `void *' with function pointer");
+        pedwarn("ANSI C forbids comparison of `void *' with function pointer");
       return TRUE;
     }
   return FALSE;
@@ -958,28 +958,28 @@ type check_binary(int binop, expression e1, expression e2)
     {
     case kind_plus:
       if (type_pointer(t1) && type_integer(t2))
-	rtype = pointer_int_sum(t1, t2);
+        rtype = pointer_int_sum(t1, t2);
       else if (type_pointer(t2) && type_integer(t1))
-	rtype = pointer_int_sum(t2, t1);
+        rtype = pointer_int_sum(t2, t1);
       else
-	common = TRUE;
+        common = TRUE;
       break;
 
     case kind_minus: 
       if (type_pointer(t1) && type_integer(t2))
-	rtype = pointer_int_sum(t1, t2);
+        rtype = pointer_int_sum(t1, t2);
       else if (type_pointer(t1) && type_pointer(t2) &&
-	       compatible_pointer_types(t1, t2))
-	rtype = ptrdiff_t_type;
+               compatible_pointer_types(t1, t2))
+        rtype = ptrdiff_t_type;
       else
-	common = TRUE;
+        common = TRUE;
       break;
 
     case kind_plus_assign: case kind_minus_assign:
       if (type_pointer(t1) && type_integer(t2))
-	rtype = pointer_int_sum(t1, t2);
+        rtype = pointer_int_sum(t1, t2);
       else
-	common = TRUE;
+        common = TRUE;
       break;
 
     case kind_times: case kind_divide:
@@ -992,70 +992,70 @@ type check_binary(int binop, expression e1, expression e2)
     case kind_modulo_assign: case kind_bitand_assign: case kind_bitor_assign:
     case kind_bitxor_assign: case kind_lshift_assign: case kind_rshift_assign:
       if (type_integer(t1) && type_integer(t2))
-	rtype = common_type(t1, t2);
+        rtype = common_type(t1, t2);
       break;
 
     case kind_leq: case kind_geq: case kind_lt: case kind_gt:
       rtype = int_type; /* Default to assuming success */
       if (type_real(t1) && type_real(t2))
-	;
+        ;
       else if (type_pointer(t1) && type_pointer(t2))
-	{
-	  if (compatible_pointer_types(t1, t2))
-	    {
-	      /* XXX: how can this happen ? */
-	      if (type_incomplete(t1) != type_incomplete(t2))
-		pedwarn("comparison of complete and incomplete pointers");
-	      else if (pedantic && type_function(type_points_to(t1)))
-		pedwarn("ANSI C forbids ordered comparisons of pointers to functions");
-	    }
-	  else
-	    pedwarn("comparison of distinct pointer types lacks a cast");
-	}
+        {
+          if (compatible_pointer_types(t1, t2))
+            {
+              /* XXX: how can this happen ? */
+              if (type_incomplete(t1) != type_incomplete(t2))
+                pedwarn("comparison of complete and incomplete pointers");
+              else if (pedantic && type_function(type_points_to(t1)))
+                pedwarn("ANSI C forbids ordered comparisons of pointers to functions");
+            }
+          else
+            pedwarn("comparison of distinct pointer types lacks a cast");
+        }
       /* XXX: Use of definite_zero may lead to extra warnings when !extra_warnings */
       else if ((type_pointer(t1) && definite_zero(e2)) ||
-	       (type_pointer(t2) && definite_zero(e1)))
-	{
-	  if (pedantic || extra_warnings)
-	    pedwarn("ordered comparison of pointer with integer zero");
-	}
+               (type_pointer(t2) && definite_zero(e1)))
+        {
+          if (pedantic || extra_warnings)
+            pedwarn("ordered comparison of pointer with integer zero");
+        }
       else if ((type_pointer(t1) && type_integer(t2)) ||
-	       (type_pointer(t2) && type_integer(t1)))
-	{
-	  if (!flag_traditional)
-	    pedwarn("comparison between pointer and integer");
-	}
+               (type_pointer(t2) && type_integer(t1)))
+        {
+          if (!flag_traditional)
+            pedwarn("comparison between pointer and integer");
+        }
       else
-	rtype = NULL; /* Force error */
+        rtype = NULL; /* Force error */
       break;
 
     case kind_eq: case kind_ne:
       rtype = int_type; /* Default to assuming success */
       if (type_arithmetic(t1) && type_arithmetic(t2))
-	;
+        ;
       else if (type_pointer(t1) && type_pointer(t2))
-	{
-	  if (!compatible_pointer_types(t1, t2) &&
-	      !valid_compare(t1, t2, e1) &&
-	      !valid_compare(t2, t1, e2))
-	    pedwarn("comparison of distinct pointer types lacks a cast");
-	}
+        {
+          if (!compatible_pointer_types(t1, t2) &&
+              !valid_compare(t1, t2, e1) &&
+              !valid_compare(t2, t1, e2))
+            pedwarn("comparison of distinct pointer types lacks a cast");
+        }
       else if ((type_pointer(t1) && definite_null(e2)) ||
-	       (type_pointer(t2) && definite_null(e1)))
-	;
+               (type_pointer(t2) && definite_null(e1)))
+        ;
       else if ((type_pointer(t1) && type_integer(t2)) ||
-	       (type_pointer(t2) && type_integer(t1)))
-	{
-	  if (!flag_traditional)
-	    pedwarn("comparison between pointer and integer");
-	}
+               (type_pointer(t2) && type_integer(t1)))
+        {
+          if (!flag_traditional)
+            pedwarn("comparison between pointer and integer");
+        }
       else
-	rtype = NULL; /* Force error */
+        rtype = NULL; /* Force error */
       break;
 
     case kind_andand: case kind_oror:
       if (type_scalar(t1) && type_scalar(t2))
-	rtype = int_type;
+        rtype = int_type;
       break;
 
     default: assert(0); break;
@@ -1096,57 +1096,57 @@ expression make_binary(location loc, int binop, expression e1, expression e2)
       int code1 = e1->parens ? 0 : e1->kind, code2 = e2->parens ? 0 : e2->kind;
 
       if (binop == kind_lshift || binop == kind_rshift)
-	{
-	  if (code1 == kind_plus || code1 == kind_minus
-	      || code2 == kind_plus || code2 == kind_minus)
-	    warning("suggest parentheses around + or - inside shift");
-	}
+        {
+          if (code1 == kind_plus || code1 == kind_minus
+              || code2 == kind_plus || code2 == kind_minus)
+            warning("suggest parentheses around + or - inside shift");
+        }
 
       if (binop == kind_oror)
-	{
-	  if (code1 == kind_andand || code2 == kind_andand)
-	    warning("suggest parentheses around && within ||");
-	}
+        {
+          if (code1 == kind_andand || code2 == kind_andand)
+            warning("suggest parentheses around && within ||");
+        }
 
       if (binop == kind_bitor)
-	{
-	  if (code1 == kind_bitand || code1 == kind_bitxor
-	      || code1 == kind_plus || code1 == kind_minus
-	      || code2 == kind_bitand || code2 == kind_bitxor
-	      || code2 == kind_plus || code2 == kind_minus)
-	    warning("suggest parentheses around arithmetic in operand of |");
-	  /* Check cases like x|y==z */
-	  if (unsafe_comparison(e1) || unsafe_comparison(e2))
-	    warning("suggest parentheses around comparison in operand of |");
-	}
+        {
+          if (code1 == kind_bitand || code1 == kind_bitxor
+              || code1 == kind_plus || code1 == kind_minus
+              || code2 == kind_bitand || code2 == kind_bitxor
+              || code2 == kind_plus || code2 == kind_minus)
+            warning("suggest parentheses around arithmetic in operand of |");
+          /* Check cases like x|y==z */
+          if (unsafe_comparison(e1) || unsafe_comparison(e2))
+            warning("suggest parentheses around comparison in operand of |");
+        }
 
       if (binop == kind_bitxor)
-	{
-	  if (code1 == kind_bitand
-	      || code1 == kind_plus || code1 == kind_minus
-	      || code2 == kind_bitand
-	      || code2 == kind_plus || code2 == kind_minus)
-	    warning ("suggest parentheses around arithmetic in operand of ^");
-	  /* Check cases like x^y==z */
-	  if (unsafe_comparison(e1) || unsafe_comparison(e2))
-	    warning("suggest parentheses around comparison in operand of ^");
-	}
+        {
+          if (code1 == kind_bitand
+              || code1 == kind_plus || code1 == kind_minus
+              || code2 == kind_bitand
+              || code2 == kind_plus || code2 == kind_minus)
+            warning ("suggest parentheses around arithmetic in operand of ^");
+          /* Check cases like x^y==z */
+          if (unsafe_comparison(e1) || unsafe_comparison(e2))
+            warning("suggest parentheses around comparison in operand of ^");
+        }
 
       if (binop == kind_bitand)
-	{
-	  if (code1 == kind_plus || code1 == kind_minus
-	      || code2 == kind_plus || code2 == kind_minus)
-	    warning ("suggest parentheses around + or - in operand of &");
-	  /* Check cases like x&y==z */
-	  if (unsafe_comparison(e1) || unsafe_comparison(e2))
-	    warning("suggest parentheses around comparison in operand of &");
-	}
+        {
+          if (code1 == kind_plus || code1 == kind_minus
+              || code2 == kind_plus || code2 == kind_minus)
+            warning ("suggest parentheses around + or - in operand of &");
+          /* Check cases like x&y==z */
+          if (unsafe_comparison(e1) || unsafe_comparison(e2))
+            warning("suggest parentheses around comparison in operand of &");
+        }
 
       /* Similarly, check for cases like 1<=i<=10 that are probably errors.  */
       /* This was under extra_warnings in 3.4.x, but under warn_parentheses in 4.? */
       if (unsafe_comparison(result) 
-	  && (unsafe_comparison(e1) || unsafe_comparison(e2)))
-	warning("comparisons like X<=Y<=Z do not have their mathematical meaning");
+          && (unsafe_comparison(e1) || unsafe_comparison(e2)))
+        warning("comparisons like X<=Y<=Z do not have their mathematical meaning");
     }
 
 #if 0
@@ -1163,7 +1163,7 @@ static bool voidstar_conditional(type t1, type t2)
   if (type_void(t1))
     {
       if (pedantic && type_function(t2))
-	pedwarn("ANSI C forbids conditional expr between `void *' and function pointer");
+        pedwarn("ANSI C forbids conditional expr between `void *' and function pointer");
       return TRUE;
     }
   return FALSE;
@@ -1174,14 +1174,14 @@ static bool pointerint_conditional(type t1, type t2, expression e2)
   if (type_pointer(t1) && type_integer(t2))
     {
       if (!definite_zero(e2))
-	pedwarn("pointer/integer type mismatch in conditional expression");
+        pedwarn("pointer/integer type mismatch in conditional expression");
       return TRUE;
     }
   return FALSE;
 }
 
 expression make_conditional(location loc, expression cond,
-			    expression true, expression false)
+                            expression true, expression false)
 {
   expression result =
     CAST(expression, new_conditional(parse_region, loc, cond, true, false));
@@ -1218,7 +1218,7 @@ expression make_conditional(location loc, expression cond,
   else if (type_void(ttype) || type_void(ftype))
     {
       if (pedantic && (!type_void(ttype) || !type_void(ftype)))
-	pedwarn("ANSI C forbids conditional expr with only one void side");
+        pedwarn("ANSI C forbids conditional expr with only one void side");
       rtype = void_type;
     }
   else if (type_pointer(ttype) && type_pointer(ftype))
@@ -1226,22 +1226,22 @@ expression make_conditional(location loc, expression cond,
       type tpointsto = type_points_to(ttype), fpointsto = type_points_to(ftype);
 
       if (compatible_pointer_types(ttype, ftype))
-	rtype = common_type(tpointsto, fpointsto);
+        rtype = common_type(tpointsto, fpointsto);
       else if (definite_null(true) && type_void(tpointsto))
-	rtype = fpointsto;
+        rtype = fpointsto;
       else if (definite_null(false) && type_void(fpointsto))
-	rtype = tpointsto;
+        rtype = tpointsto;
       else if (voidstar_conditional(tpointsto, fpointsto))
-	rtype = tpointsto; /* void * result */
+        rtype = tpointsto; /* void * result */
       else if (voidstar_conditional(fpointsto, tpointsto))
-	rtype = fpointsto; /* void * result */
+        rtype = fpointsto; /* void * result */
       else
-	{
-	  pedwarn("pointer type mismatch in conditional expression");
-	  /* Slight difference from GCC: I qualify the result type with
-	     the appropriate qualifiers */
-	  rtype = void_type;
-	}
+        {
+          pedwarn("pointer type mismatch in conditional expression");
+          /* Slight difference from GCC: I qualify the result type with
+             the appropriate qualifiers */
+          rtype = void_type;
+        }
 
       /* Qualifiers depend on both types */
       rtype = make_pointer_type(qualify_type2(rtype, tpointsto, fpointsto));
@@ -1274,7 +1274,7 @@ expression make_conditional(location loc, expression cond,
 expression make_assign(location loc, int binop, expression e1, expression e2)
 {
   expression result = CAST(expression, newkind_binary(parse_region, binop,
-						      loc, e1, e2));
+                                                      loc, e1, e2));
   type t1 = require_complete_type(e1, e1->type), t2;
 
   result->type = error_type;
@@ -1283,19 +1283,19 @@ expression make_assign(location loc, int binop, expression e1, expression e2)
       expression rhs;
 
       if (binop == kind_assign)
-	{
-	  t2 = default_conversion_for_assignment(e2);
-	  rhs = e2;
-	}
+        {
+          t2 = default_conversion_for_assignment(e2);
+          rhs = e2;
+        }
       else
-	{
-	  t2 = check_binary(binop, e1, e2);
-	  rhs = NULL;
-	}
+        {
+          t2 = check_binary(binop, e1, e2);
+          rhs = NULL;
+        }
 
       if (check_writable_lvalue(e1, "assignment") &&
-	  check_assignment(e1->type, t2, rhs, "assignment", NULL, 0))
-	result->type = make_qualified_type(e1->type, no_qualifiers);
+          check_assignment(e1->type, t2, rhs, "assignment", NULL, 0))
+        result->type = make_qualified_type(e1->type, no_qualifiers);
     }
 
   return result;
@@ -1316,26 +1316,26 @@ expression make_identifier(location loc, cstring id, bool maybe_implicit)
   if (!decl)
     {
       /* Suppress undeclare identifier errors in deputy scopes - they
-	 will be reprocessed later under deputy scoping rules (see
-	 nesc-deputy.c) */
+         will be reprocessed later under deputy scoping rules (see
+         nesc-deputy.c) */
       if (!current.env->deputy_scope)
-	{
-	  if (!current.function_decl)
-	    error("`%s' undeclared here (not in a function)", id.data);
-	  else if (!env_lookup(current.function_decl->undeclared_variables, id.data, FALSE))
-	    {
-	      static bool undeclared_variable_notice;
+        {
+          if (!current.function_decl)
+            error("`%s' undeclared here (not in a function)", id.data);
+          else if (!env_lookup(current.function_decl->undeclared_variables, id.data, FALSE))
+            {
+              static bool undeclared_variable_notice;
 
-	      error("`%s' undeclared (first use in this function)", id.data);
-	      env_add(current.function_decl->undeclared_variables, id.data, (void *)1);
-	      if (!undeclared_variable_notice)
-		{
-		  error("(Each undeclared identifier is reported only once");
-		  error("for each function it appears in.)");
-		  undeclared_variable_notice = TRUE;
-		}
-	    }
-	}
+              error("`%s' undeclared (first use in this function)", id.data);
+              env_add(current.function_decl->undeclared_variables, id.data, (void *)1);
+              if (!undeclared_variable_notice)
+                {
+                  error("(Each undeclared identifier is reported only once");
+                  error("for each function it appears in.)");
+                  undeclared_variable_notice = TRUE;
+                }
+            }
+        }
       decl = bad_decl;
     }
 
@@ -1363,16 +1363,16 @@ expression make_compound_expr(location loc, statement block)
       statement last_stmt = last_statement(bs->stmts);
 
       if (last_stmt && is_expression_stmt(last_stmt))
-	result->type = CAST(expression_stmt, last_stmt)->arg1->type;
+        result->type = CAST(expression_stmt, last_stmt)->arg1->type;
       else
-	result->type = void_type;
+        result->type = void_type;
 
       return result;
     }
 }
 
 bool check_arguments(type fntype, expression arglist,
-		     data_declaration fundecl, bool generic_call)
+                     data_declaration fundecl, bool generic_call)
 {
   typelist_scanner parmtypes;
   int parmstep = generic_call ? -1 : 1, parmnum = parmstep;
@@ -1385,70 +1385,70 @@ bool check_arguments(type fntype, expression arglist,
       typelist_scan(type_function_arguments(fntype), &parmtypes);
 
       while ((parmtype = typelist_next(&parmtypes)) && arglist)
-	{
-	  type argtype = arglist->type;
+        {
+          type argtype = arglist->type;
 
-	  if (type_incomplete(parmtype))
-	    error("type of formal parameter %d is incomplete", parmnum);
-	  else
-	    {
-	      if (warn_conversion)
-		{
-		  if (type_integer(parmtype) && type_floating(argtype))
-		    warn_for_assignment("%s as integer rather than floating due to prototype",
-					NULL, fundecl, parmnum);
-		  else if (type_floating(parmtype) && type_integer(argtype))
-		    warn_for_assignment ("%s as floating rather than integer due to prototype",
-					 NULL, fundecl, parmnum);
-		  else if (type_complex(parmtype) && type_floating(argtype))
-		    warn_for_assignment ("%s as complex rather than floating due to prototype",
-					NULL, fundecl, parmnum);
-		  else if (type_floating(parmtype) && type_complex(argtype))
-		    warn_for_assignment ("%s as floating rather than complex due to prototype",
-					NULL, fundecl, parmnum);
-		  /* Warn if any argument is passed as `float',
-		     since without a prototype it would be `double'.  */
-		  else if (type_float(parmtype) && type_floating(argtype))
-		    warn_for_assignment ("%s as `float' rather than `double' due to prototype",
-					NULL, fundecl, parmnum);
+          if (type_incomplete(parmtype))
+            error("type of formal parameter %d is incomplete", parmnum);
+          else
+            {
+              if (warn_conversion)
+                {
+                  if (type_integer(parmtype) && type_floating(argtype))
+                    warn_for_assignment("%s as integer rather than floating due to prototype",
+                                        NULL, fundecl, parmnum);
+                  else if (type_floating(parmtype) && type_integer(argtype))
+                    warn_for_assignment ("%s as floating rather than integer due to prototype",
+                                         NULL, fundecl, parmnum);
+                  else if (type_complex(parmtype) && type_floating(argtype))
+                    warn_for_assignment ("%s as complex rather than floating due to prototype",
+                                        NULL, fundecl, parmnum);
+                  else if (type_floating(parmtype) && type_complex(argtype))
+                    warn_for_assignment ("%s as floating rather than complex due to prototype",
+                                        NULL, fundecl, parmnum);
+                  /* Warn if any argument is passed as `float',
+                     since without a prototype it would be `double'.  */
+                  else if (type_float(parmtype) && type_floating(argtype))
+                    warn_for_assignment ("%s as `float' rather than `double' due to prototype",
+                                        NULL, fundecl, parmnum);
 #if 0
-		  else
-		    {
-		      /* Type that would have been passed w/o proto */
-		      type type1 = default_conversion(arglist);
+                  else
+                    {
+                      /* Type that would have been passed w/o proto */
+                      type type1 = default_conversion(arglist);
 
-		      /* No warning if function asks for enum
-			 and the actual arg is that enum type.  */
-		      if (type_enum(parmtype) && type_equal_unqualified(parmtype, argtype))
-			;
-		      /* XXX: else messy stuff that cannot easily be done w/o constant
-			 folding and type size info */
-		    }
+                      /* No warning if function asks for enum
+                         and the actual arg is that enum type.  */
+                      if (type_enum(parmtype) && type_equal_unqualified(parmtype, argtype))
+                        ;
+                      /* XXX: else messy stuff that cannot easily be done w/o constant
+                         folding and type size info */
+                    }
 #endif
-		}
-	      check_assignment(parmtype, default_conversion_for_assignment(arglist),
-			       arglist, NULL, fundecl, parmnum);
-	    }
-	  parmnum += parmstep;
-	  arglist = CAST(expression, arglist->next);
-	}
+                }
+              check_assignment(parmtype, default_conversion_for_assignment(arglist),
+                               arglist, NULL, fundecl, parmnum);
+            }
+          parmnum += parmstep;
+          arglist = CAST(expression, arglist->next);
+        }
       argname = argtype(&parmstep);
       if (parmtype)
-	{
-	  if (fundecl)
-	    error("too few %ss to function `%s'", argname, 
-		  decl_printname(fundecl));
-	  else
-	    error("too few %ss to function", argname);
-	}
+        {
+          if (fundecl)
+            error("too few %ss to function `%s'", argname, 
+                  decl_printname(fundecl));
+          else
+            error("too few %ss to function", argname);
+        }
       else if (arglist && !type_function_varargs(fntype))
-	{
-	  if (fundecl)
-	    error("too many %ss to function `%s'", argname,
-		  decl_printname(fundecl));
-	  else
-	    error("too many %ss to function", argname);
-	}
+        {
+          if (fundecl)
+            error("too many %ss to function `%s'", argname,
+                  decl_printname(fundecl));
+          else
+            error("too many %ss to function", argname);
+        }
     }
 
   /* Checks for arguments with no corresponding argument type */
@@ -1476,7 +1476,7 @@ expression make_function_call(location loc, expression fn, expression arglist)
     {
       current.function_decl->ddecl->extra_contexts |= c_call_nonatomic;
       if (current.in_atomic)
-	warning("call to __nesc_enable_interrupt within an atomic statement");
+        warning("call to __nesc_enable_interrupt within an atomic statement");
     }
 
   if (type_pointer(fntype))
@@ -1487,9 +1487,9 @@ expression make_function_call(location loc, expression fn, expression arglist)
   if (!type_functional(fntype))
     {
       if (type_generic(fntype))
-	error("parameters missing in call to parameterised command or event");
+        error("parameters missing in call to parameterised command or event");
       else
-	error("called object is not a function, command, event or task");
+        error("called object is not a function, command, event or task");
       return result;
     }
 
@@ -1520,10 +1520,10 @@ expression make_va_arg(location loc, expression arg, asttype type)
 
       error("char, short and float are automatically promoted when passed through `...'");
       if (!gave_help)
-	{
-	  gave_help = TRUE;
-	  error("(so you should pass `int', `unsigned' or `double' to `va_arg')");
-	}
+        {
+          gave_help = TRUE;
+          error("(so you should pass `int', `unsigned' or `double' to `va_arg')");
+        }
     }
   result->type = type->type;
 
@@ -1553,18 +1553,18 @@ expression make_offsetof(location loc, asttype t, dd_list fields)
 
       /* Build ((size_t)&((t *)0)->fields) */
       ptr_to_t_d = CAST(declarator,
-	new_pointer_declarator(parse_region, loc, t->declarator));
+        new_pointer_declarator(parse_region, loc, t->declarator));
       t = make_type(t->qualifiers, ptr_to_t_d);
       cast = make_cast(loc, t, zero);
       fieldref = make_dereference(loc, cast);
       dd_scan (field, fields)
-	{
-	  cstring f;
+        {
+          cstring f;
 
-	  f.data = DD_GET(char *, field);
-	  f.length = strlen(f.data);
-	  fieldref = make_field_ref(loc, fieldref, f);
-	}
+          f.data = DD_GET(char *, field);
+          f.length = strlen(f.data);
+          fieldref = make_field_ref(loc, fieldref, f);
+        }
       addrof = make_unary(loc, kind_address_of, fieldref);
 
       type2ast(parse_region, loc, size_t_type, NULL, &size_t_d, &size_t_m);
@@ -1593,13 +1593,13 @@ expression make_array_ref(location loc, expression array, expression index)
     {
       /* Some special GCC extensions */
       /* XXX: Ignoring the weird register stuff, going for a simple version
-	 which seems essentially identical for our purposes */
+         which seems essentially identical for our purposes */
       if (pedantic)
-	pedwarn("ANSI C forbids subscripting non-lvalue array");
+        pedwarn("ANSI C forbids subscripting non-lvalue array");
       atype = make_pointer_type(type_array_of(array->type));
 
        /* this should not be possible (non-lvalue arrays come from
-	  array fields of non-lvalue struct expressions) */
+          array fields of non-lvalue struct expressions) */
       assert(!array->static_address);
     }
   else
@@ -1649,26 +1649,26 @@ expression make_field_ref(location loc, expression object, cstring field)
       tag_declaration tag = type_tag(otype);
 
       if (!tag->defined)
-	incomplete_type_error(NULL, otype);
+        incomplete_type_error(NULL, otype);
       else
-	{
-	  field_declaration fdecl = env_lookup(tag->fields, field.data, FALSE);
+        {
+          field_declaration fdecl = env_lookup(tag->fields, field.data, FALSE);
 
-	  if (!fdecl)
-	    error("%s has no member named `%s'", tagkind_name(tag->kind),
-		  field.data);
-	  else
-	    {
-	      result->fdecl = fdecl;
-	      result->type = qualify_type2(fdecl->type, fdecl->type, object->type);
-	      result->bitfield = !cval_istop(fdecl->bitwidth);
-	      result->static_address = foldaddress_field_ref(CAST(expression, result));
-	    }
-	}
+          if (!fdecl)
+            error("%s has no member named `%s'", tagkind_name(tag->kind),
+                  field.data);
+          else
+            {
+              result->fdecl = fdecl;
+              result->type = qualify_type2(fdecl->type, fdecl->type, object->type);
+              result->bitfield = !cval_istop(fdecl->bitwidth);
+              result->static_address = foldaddress_field_ref(CAST(expression, result));
+            }
+        }
     }
   else if (otype != error_type)
     error("request for member `%s' in something not a structure or union",
-	  field.data);
+          field.data);
 
   result->lvalue = object->lvalue;
 
@@ -1687,14 +1687,14 @@ static expression finish_increment(unary result, char *name)
   else 
     {
       if (type_incomplete(etype))
-	error("%s of pointer to unknown structure or union", name);
+        error("%s of pointer to unknown structure or union", name);
       else if (type_pointer(etype) && (pedantic || warn_pointer_arith) &&
-	       (type_void(type_points_to(etype)) ||
-		type_function(type_points_to(etype))))
-	pedwarn("wrong type argument to %s", name);
+               (type_void(type_points_to(etype)) ||
+                type_function(type_points_to(etype))))
+        pedwarn("wrong type argument to %s", name);
 
       if (check_writable_lvalue(e, name))
-	result->type = etype;
+        result->type = etype;
     }
   return CAST(expression, result);
 }
@@ -1702,23 +1702,23 @@ static expression finish_increment(unary result, char *name)
 expression make_postincrement(location loc, expression e)
 {
   return finish_increment(CAST(unary, new_postincrement(parse_region, loc, e)),
-			  "increment");
+                          "increment");
 }
 
 expression make_preincrement(location loc, expression e)
 {
   return finish_increment(CAST(unary, new_preincrement(parse_region, loc, e)),
-			  "increment");
+                          "increment");
 }
 
 expression make_postdecrement(location loc, expression e)
 {
   return finish_increment(CAST(unary, new_postdecrement(parse_region, loc, e)),
-			  "decrement");
+                          "decrement");
 }
 
 expression make_predecrement(location loc, expression e)
 {
   return finish_increment(CAST(unary, new_predecrement(parse_region, loc, e)),
-			  "decrement");
+                          "decrement");
 }

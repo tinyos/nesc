@@ -84,7 +84,7 @@ static void add_dir(region r, const char *path, int len, int chain)
   np->name = canonicalise(r, path, len);;
   np->sysp = chain == CHAIN_SYSTEM || chain == CHAIN_AFTER;
   np->construct = 0;
-  np->user_supplied_p = 1;	/* appears unused */
+  np->user_supplied_p = 1;        /* appears unused */
 
   if (tails[chain])
     tails[chain]->next = np;
@@ -122,7 +122,7 @@ static const char *find_file(char *filename)
     {
       sprintf(fullname, "%s%s", p->name, filename);
       if (file_exists(fullname))
-	return p->name;
+        return p->name;
     }
   return NULL;
 }
@@ -134,11 +134,11 @@ static void build_search_path(region r, const char *pathlist, int chain)
       char *colon;
 
       while ((colon = strchr(pathlist, ':')))
-	{
-	  *colon = '\0';
-	  add_dir(r, pathlist, colon - pathlist, chain);
-	  pathlist = colon + 1;
-	}
+        {
+          *colon = '\0';
+          add_dir(r, pathlist, colon - pathlist, chain);
+          pathlist = colon + 1;
+        }
       add_dir(r, pathlist, strlen(pathlist), chain);
     }
 }
@@ -178,13 +178,13 @@ void init_nesc_paths_end(void)
 
       fprintf (stderr, "#include \"...\" and component search starts here:\n");
       for (p = heads[CHAIN_QUOTE];; p = p->next)
-	{
-	  if (p == heads[CHAIN_BRACKET])
-	    fprintf (stderr, "#include <...> search starts here:\n");
-	  if (!p)
-	    break;
-	  fprintf (stderr, " %s\n", p->name);
-	}
+        {
+          if (p == heads[CHAIN_BRACKET])
+            fprintf (stderr, "#include <...> search starts here:\n");
+          if (!p)
+            break;
+          fprintf (stderr, " %s\n", p->name);
+        }
       fprintf (stderr, "End of search list.\n");
     }
 }
@@ -194,7 +194,7 @@ void set_cpp_include_path(void)
   cpp_reader *reader = current.lex.finput;
 
   cpp_set_include_chains(reader, heads[CHAIN_QUOTE], heads[CHAIN_BRACKET],
-			 !include_current_dir);
+                         !include_current_dir);
 }
 
 #define MAX_EXT_LEN 2

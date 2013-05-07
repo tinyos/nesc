@@ -48,23 +48,23 @@ struct ggraph
 {
   region sameregion r;
   sd_list sameregion nodes;
-  long mark_count;		/* Value used to mark nodes/edges */
+  long mark_count;                /* Value used to mark nodes/edges */
 };
 
 struct gnode
 {
   struct sd_list_pos node;
   ggraph sameregion graph;
-  gedge sameregion in;		/* Ingoing edges */
-  gedge sameregion out;		/* Outgoing edges */
+  gedge sameregion in;                /* Ingoing edges */
+  gedge sameregion out;                /* Outgoing edges */
   void *data;
-  long mark;			/* Mark count for this node */
+  long mark;                        /* Mark count for this node */
 };
 
 struct gedge
 {
-  gnode sameregion in_node, out_node;	/* Extremities */
-  gedge sameregion next_in, next_out;	/* Edge in in/outgoing lists */
+  gnode sameregion in_node, out_node;        /* Extremities */
+  gedge sameregion next_in, next_out;        /* Edge in in/outgoing lists */
   void *data;
   long mark;
 };
@@ -86,8 +86,8 @@ ggraph new_graph(region r)
 }
 
 void delete_graph(ggraph g,
-		  void (*delete_node)(gnode n),
-		  void (*delete_edge)(gedge e))
+                  void (*delete_node)(gnode n),
+                  void (*delete_edge)(gedge e))
 /* Effects: Deletes graph g. Calls functions delete_node & delete_edge
      on nodes and edges before deleting them. All edges of a node
      are deleted before it is.
@@ -105,10 +105,10 @@ void delete_graph(ggraph g,
       gedge e, next;
       
       for (e = n->in; e; e = next)
-	{
-	  next = e->next_in;
-	  if (delete_edge) delete_edge(e);
-	}
+        {
+          next = e->next_in;
+          if (delete_edge) delete_edge(e);
+        }
     }
   for (node = sd_first(g->nodes); !sd_is_end(node); node = next)
     {
@@ -142,10 +142,10 @@ ggraph copy_graph(region r, ggraph g)
       nnode = onode->data;
 
       graph_scan_in (oedge, onode)
-	{
-	  nedge = graph_add_edge(graph_edge_from(oedge)->data, nnode, oedge->data);
-	  nedge->mark = oedge->mark;
-	}
+        {
+          nedge = graph_add_edge(graph_edge_from(oedge)->data, nnode, oedge->data);
+          nedge->mark = oedge->mark;
+        }
     }
 
   /* Finally restore original graph */
@@ -452,23 +452,23 @@ void dbg_graph(ggraph g, void (*pnode)(gnode g)) deletes
       fprintf(stderr, "%d(0x%p):", i++, node);
 
       graph_scan_out (out, node)
-	{
-	  gnode to = graph_edge_to(out);
-	  int j = 0;
-	  dd_list_pos anode2;
+        {
+          gnode to = graph_edge_to(out);
+          int j = 0;
+          dd_list_pos anode2;
 
-	  dd_scan (anode2, allnodes)
-	    {
-	      if (DD_GET(gnode, anode2) == to)
-		{
-		  fprintf(stderr, " %d", j);
-		  break;
-		}
-	      j++;
-	    }
-	}
+          dd_scan (anode2, allnodes)
+            {
+              if (DD_GET(gnode, anode2) == to)
+                {
+                  fprintf(stderr, " %d", j);
+                  break;
+                }
+              j++;
+            }
+        }
       if (pnode)
-	pnode(node);
+        pnode(node);
       fprintf(stderr, "\n");
     }
   deleteregion(temp);

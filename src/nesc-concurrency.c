@@ -70,12 +70,12 @@ void async_violation(gnode n)
   graph_scan_in (edge, n)
     if (is_call_edge(edge))
       {
-	use u = EDGE_GET(use, edge);
-	data_declaration caller = NODE_GET(endp, graph_edge_from(edge))->function;
+        use u = EDGE_GET(use, edge);
+        data_declaration caller = NODE_GET(endp, graph_edge_from(edge))->function;
 
-	if (caller->actual_async)
-	  nesc_warning_with_location(u->l, "`%s' called asynchronously from `%s'",
-				     decl_printname(fn), decl_printname(caller));
+        if (caller->actual_async)
+          nesc_warning_with_location(u->l, "`%s' called asynchronously from `%s'",
+                                     decl_printname(fn), decl_printname(caller));
       }
 }
 
@@ -94,10 +94,10 @@ void check_async(cgraph callgraph)
   if (warn_async || warn_data_race)
     graph_scan_nodes (n, cg)
       {
-	data_declaration fn = NODE_GET(endp, n)->function;
+        data_declaration fn = NODE_GET(endp, n)->function;
 
-	if (ddecl_is_command_or_event(fn) && fn->actual_async && !fn->async)
-	  async_violation(n);
+        if (ddecl_is_command_or_event(fn) && fn->actual_async && !fn->async)
+          async_violation(n);
       }
 }
 
@@ -118,24 +118,24 @@ static dd_list find_async_variables(region r, cgraph callgraph)
       dd_list_pos use;
       
       if (fn->actual_async && fn->fn_uses)
-	dd_scan (use, fn->fn_uses)
-	  {
-	    iduse i = DD_GET(iduse, use);
-	    data_declaration id = i->id;
-	    context c = i->u->c;
+        dd_scan (use, fn->fn_uses)
+          {
+            iduse i = DD_GET(iduse, use);
+            data_declaration id = i->id;
+            context c = i->u->c;
 
-	    if (id->kind == decl_variable && !id->islocal &&
-		c & (c_read | c_write))
-	      {
-		if (!id->async_access)
-		  {
-		    id->async_access = TRUE;
-		    dd_add_last(r, avars, id);
-		  }
-		if (c & c_write)
-		  id->async_write = TRUE;
-	      }
-	  }
+            if (id->kind == decl_variable && !id->islocal &&
+                c & (c_read | c_write))
+              {
+                if (!id->async_access)
+                  {
+                    id->async_access = TRUE;
+                    dd_add_last(r, avars, id);
+                  }
+                if (c & c_write)
+                  id->async_write = TRUE;
+              }
+          }
     }
   return avars;
 }
@@ -157,14 +157,14 @@ static void rec_contexts(gnode n, int call_contexts)
       int cc = new_context;
 
       if (u->c & c_fncall)
-	{
-	  if (u->c & c_atomic)
-	    cc = c_call_atomic;
-	}
+        {
+          if (u->c & c_atomic)
+            cc = c_call_atomic;
+        }
       else /* Non-call use. Conservatively assume that there may be
-	      atomic and non-atomic calls if this value ends up used as
-	      a function pointer */
-	cc = c_call_atomic | c_call_nonatomic;
+              atomic and non-atomic calls if this value ends up used as
+              a function pointer */
+        cc = c_call_atomic | c_call_nonatomic;
       rec_contexts(graph_edge_to(edge), cc);
     }
 }
@@ -190,50 +190,50 @@ static void check_async_vars(dd_list avars)
       bool first = TRUE;
 
       if (!v->norace)
-	dd_scan (ause, v->nuses)
-	  {
-	    use u = DD_GET(use, ause);
-	    context bad_contexts = c_write;
+        dd_scan (ause, v->nuses)
+          {
+            use u = DD_GET(use, ause);
+            context bad_contexts = c_write;
 
-	    /* If there are no writes in async contexts, then reads
-	       need not be protected */
-	    if (v->async_write)
-	      bad_contexts |= c_read;
+            /* If there are no writes in async contexts, then reads
+               need not be protected */
+            if (v->async_write)
+              bad_contexts |= c_read;
 
-	    /* Bad uses are uses that are both:
-	       - outside atomic statements (and fns only called from atomic
-	         statements)
-	       - uses specified by bad_contexts
-	       u->fn can be NULL in weird cases which don't correspond to
-	       executable code.
-	    */
-	    if (u->fn &&
-		!(u->c & c_atomic ||
-		  !(u->fn->call_contexts & c_call_nonatomic))
-		&& u->c & bad_contexts)
-	      {
-		const char *cname;
+            /* Bad uses are uses that are both:
+               - outside atomic statements (and fns only called from atomic
+                 statements)
+               - uses specified by bad_contexts
+               u->fn can be NULL in weird cases which don't correspond to
+               executable code.
+            */
+            if (u->fn &&
+                !(u->c & c_atomic ||
+                  !(u->fn->call_contexts & c_call_nonatomic))
+                && u->c & bad_contexts)
+              {
+                const char *cname;
 
-		if (first)
-		  {
-		    location vloc =
-		      v->definition ? v->definition->location : v->ast->location;
-		    first = FALSE;
-		    nesc_warning_with_location
-		      (vloc, "non-atomic accesses to shared variable `%s':",
-		       v->name);
-		  }
+                if (first)
+                  {
+                    location vloc =
+                      v->definition ? v->definition->location : v->ast->location;
+                    first = FALSE;
+                    nesc_warning_with_location
+                      (vloc, "non-atomic accesses to shared variable `%s':",
+                       v->name);
+                  }
 
-		if ((u->c & (c_read | c_write)) == (c_read | c_write) &&
-		    v->async_write)
-		  cname = "r/w";
-		else if (u->c & c_read)
-		  cname = "read";
-		else
-		  cname = "write";
-		nesc_warning_with_location(u->l, "  non-atomic %s", cname);
-	      }
-	  }
+                if ((u->c & (c_read | c_write)) == (c_read | c_write) &&
+                    v->async_write)
+                  cname = "r/w";
+                else if (u->c & c_read)
+                  cname = "read";
+                else
+                  cname = "write";
+                nesc_warning_with_location(u->l, "  non-atomic %s", cname);
+              }
+          }
     }
 }
 
