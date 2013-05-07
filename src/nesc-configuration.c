@@ -486,7 +486,11 @@ static void process_connection(cgraph cg, cgraph userg, connection conn,
       else if (p2.interface) /* f X i */
 	matches = match_function_interface(eqconnection, p1, p2, &p2);
       else /* f X c */
+        {
+          if (warn_implicit_connection)
+            warning_with_location(conn->location, "Implicit connection used.");
 	matches = match_function_component(eqconnection, p1, p2, &p2);
+    }
     }
   else if (p1.interface) /* i X ... */
     {
@@ -495,10 +499,16 @@ static void process_connection(cgraph cg, cgraph userg, connection conn,
       else if (p2.interface) /* i X i */
 	matches = match_endpoints(&p1, &p2, NULL);
       else /* i X c */
+        {
+          if (warn_implicit_connection)
+            warning_with_location(conn->location, "Implicit connection used with external interface.");
 	matches = match_interface_component(eqconnection, p1, p2, &p2);
+    }
     }
   else /* c X ... */
     {
+      if (warn_implicit_connection)
+        warning_with_location(conn->location, "Implicit connection between two components.");
       if (p2.function) /* c X f */
 	matches = match_function_component(eqconnection, p2, p1, &p1);
       else /* c X i */

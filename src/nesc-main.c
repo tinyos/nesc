@@ -289,6 +289,10 @@ int nesc_option(char *p)
     warn_no_combiner = 1;
   else if (!strcmp (p, "Wno-nesc-combine"))
     warn_no_combiner = 0;
+  else if (!strcmp (p, "Wnesc-implicit-conn"))
+    warn_implicit_connection = 1;
+  else if (!strcmp (p, "Wno-nesc-implicit-conn"))
+    warn_implicit_connection = 0;
   else if (!strcmp (p, "Wnesc-all"))
     warn_data_race = warn_fnptr = warn_async = warn_no_combiner = 1;
   else if (!strcmp (p, "Wnesc-error"))
