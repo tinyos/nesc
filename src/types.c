@@ -35,8 +35,8 @@ Boston, MA 02111-1307, USA. */
 struct type
 {
   enum { tk_primitive, tk_complex, tk_tagged, tk_error, tk_void,
-	 tk_pointer, tk_function, tk_array, tk_iref, tk_variable,
-	 tk_cref } kind;
+         tk_pointer, tk_function, tk_array, tk_iref, tk_variable,
+         tk_cref } kind;
   type_quals qualifiers;
   enum { nx_no, nx_base, nx_derived } network;
   data_declaration combiner, basedecl, typedefdecl;
@@ -56,43 +56,43 @@ struct type
        The order reflects promotion order (for an arbitrary machine,
        see common_primitive_type) */
     enum { /* The elements of this enum must be ordered as follows:
-	      - all integral types before tp_first_floating
-	      - do not change the floating type order
-	      - the integral types are ordered by "rank" (see c9x std) and
-	        unsignedness (unsigned > signed) (common_primitive_type
-		relies on this order)
-	      - The tp_[u]int<n> types must be before tp_char (for the 
-	        assert in common_primitive_type). These types are only
-		used when the corresponding size is not available amongst
-		short/int/long/long long
-	        If this frontend followed c9x, these types would always exist
-	        and be special integer types distinct from the regular ones
-	        (see the rank stuff), but we're following gcc so they
-	        aren't. If this changes, common_primitive_type, 
-		default_conversion and type_default_conversion need revising.
-	   */
+              - all integral types before tp_first_floating
+              - do not change the floating type order
+              - the integral types are ordered by "rank" (see c9x std) and
+                unsignedness (unsigned > signed) (common_primitive_type
+                relies on this order)
+              - The tp_[u]int<n> types must be before tp_char (for the 
+                assert in common_primitive_type). These types are only
+                used when the corresponding size is not available amongst
+                short/int/long/long long
+                If this frontend followed c9x, these types would always exist
+                and be special integer types distinct from the regular ones
+                (see the rank stuff), but we're following gcc so they
+                aren't. If this changes, common_primitive_type, 
+                default_conversion and type_default_conversion need revising.
+           */
            tp_error,
 
-	   tp_int2, tp_uint2, tp_int4, tp_uint4, tp_int8, tp_uint8,
+           tp_int2, tp_uint2, tp_int4, tp_uint4, tp_int8, tp_uint8,
 
            tp_char, 
-	   tp_signed_char, tp_unsigned_char,
-	   tp_short, tp_unsigned_short,
-	   tp_int, tp_unsigned_int,
-	   tp_long, tp_unsigned_long,
-	   tp_long_long, tp_unsigned_long_long,
-	   /* Used as the rep type of enums whose constants are derived
-	      from template arguments and whose size is hence unknown.
-	      The unknown int type has the highest rank (its unsignedness
-	      is unknown, we assume its signed). */
-	   tp_unknown_int,
+           tp_signed_char, tp_unsigned_char,
+           tp_short, tp_unsigned_short,
+           tp_int, tp_unsigned_int,
+           tp_long, tp_unsigned_long,
+           tp_long_long, tp_unsigned_long_long,
+           /* Used as the rep type of enums whose constants are derived
+              from template arguments and whose size is hence unknown.
+              The unknown int type has the highest rank (its unsignedness
+              is unknown, we assume its signed). */
+           tp_unknown_int,
 
-	   tp_first_floating,
-	   tp_float = tp_first_floating, tp_double, tp_long_double,
+           tp_first_floating,
+           tp_float = tp_first_floating, tp_double, tp_long_double,
 
-	   /* Like tp_unknown_int, but might be a real or integer */
-	   tp_unknown_number,
-	   tp_last
+           /* Like tp_unknown_int, but might be a real or integer */
+           tp_unknown_number,
+           tp_last
     } primitive;
 
     /* tk_tagged */
@@ -244,7 +244,7 @@ type make_qualified_type(type t, type_quals qualifiers)
   /* Push const or volatile down to base type */
   if (t->kind == tk_array)
     return make_array_type(make_qualified_type(t->u.array.arrayof, qualifiers),
-			   t->u.array.size);
+                           t->u.array.size);
   else
     {
       type nt = copy_type(t);
@@ -284,7 +284,7 @@ type make_array_type(type t, expression size)
    If oldstyle is true, this is an oldstyle function type and
    argtypes is NULL */
 type make_function_type(type t, typelist argtypes, bool varargs,
-			bool oldstyle)
+                        bool oldstyle)
 {
   type nt = new_type(tk_function);
   nt->u.fn.fkind = tkf_c;
@@ -309,7 +309,7 @@ type build_function_type(region r, type returns, ...)
       type onearg = va_arg(args, type);
 
       if (!onearg)
-	break;
+        break;
       typelist_append(argtypes, onearg);
     }
 
@@ -340,7 +340,7 @@ bool type_network(type t)
 */
 
 static type make_primitive0(int pk, cval size, cval alignment,
-			    cval complex_size)
+                            cval complex_size)
 {
   type nt = new_type(tk_primitive), ct;
 
@@ -361,23 +361,23 @@ static type make_primitive0(int pk, cval size, cval alignment,
 static type make_primitive(int pk, int size, int alignment)
 {
   return make_primitive0(pk, make_type_cval(size), make_type_cval(alignment),
-			 make_type_cval(size * 2));
+                         make_type_cval(size * 2));
 }
 
 static type make_unknown_primitive(int pk)
 {
   return make_primitive0(pk, cval_unknown_number, cval_unknown_number,
-			 cval_unknown_number);
+                         cval_unknown_number);
 }
 
 static type lookup_primitive(int default_kind, int size, int alignment,
-			     bool isunsigned)
+                             bool isunsigned)
 {
   int i;
 
   for (i = tp_signed_char; i < tp_unknown_int; i++)
     if (cval_uint_value(primitive_types[i]->size) == size &&
-	type_unsigned(primitive_types[i]) == isunsigned)
+        type_unsigned(primitive_types[i]) == isunsigned)
       return primitive_types[i];
 
   return make_primitive(default_kind, size, alignment);
@@ -423,7 +423,7 @@ type type_for_cval(cval c, bool isunsigned)
 
   for (i = tp_signed_char; i < tp_unknown_int; i++)
     if (type_unsigned(primitive_types[i]) == isunsigned &&
-	cval_inrange(c, primitive_types[i]))
+        cval_inrange(c, primitive_types[i]))
       return primitive_types[i];
 
   return NULL;
@@ -592,7 +592,7 @@ bool type_unsigned(type t)
       case tp_unsigned_long:
       case tp_unsigned_long_long:
       case tp_uint2: case tp_uint4: case tp_uint8:
-	return TRUE;
+        return TRUE;
       default: break;
       }
   return FALSE;
@@ -832,14 +832,14 @@ static bool type_lists_equal(typelist al1, typelist al2)
   for (;;)
     {
       if (args1 == 0 && args2 == 0)
-	return TRUE;
+        return TRUE;
       /* If one list is shorter than the other,
-	 they fail to match.  */
+         they fail to match.  */
       if (args1 == 0 || args2 == 0)
-	return FALSE;
+        return FALSE;
 
       if (!type_equal(args1->t, args2->t))
-	return FALSE;
+        return FALSE;
 
       args1 = args1->next;
       args2 = args2->next;
@@ -851,7 +851,7 @@ bool function_equal(type t1, type t2)
 {
   /* Function kinds and return types must match */
   if (!(t1->u.fn.fkind == t2->u.fn.fkind &&
-	type_equal(t1->u.fn.returns, t2->u.fn.returns)))
+        type_equal(t1->u.fn.returns, t2->u.fn.returns)))
     return FALSE;
 
   if (!t1->u.fn.oldstyle && !t2->u.fn.oldstyle)
@@ -928,7 +928,7 @@ bool type_equal_unqualified(type t1, type t2)
 
     case tk_array:
       return type_equal(t1->u.array.arrayof, t2->u.array.arrayof) &&
-	array_sizes_match(t1, t2);
+        array_sizes_match(t1, t2);
 
     case tk_variable:
       return t1->u.tdecl == t2->u.tdecl;
@@ -988,14 +988,14 @@ static bool weird_parameter_match(type t1, type t2)
 
       /* We don't do this for types of unknown size */
       if (cval_isinteger(s1) && cval_isinteger(s2) &&
-	  cval_intcompare(s1, s2) == 0)
-	{
-	  field_declaration field;
+          cval_intcompare(s1, s2) == 0)
+        {
+          field_declaration field;
 
-	  for (field = t1decl->fieldlist; field; field = field->next)
-	    if (type_compatible(field->type, t2))
-	      return TRUE;
-	}
+          for (field = t1decl->fieldlist; field; field = field->next)
+            if (type_compatible(field->type, t2))
+              return TRUE;
+        }
     }
   return FALSE;
 }
@@ -1008,7 +1008,7 @@ static type weird_common_parameter(type t1, type t2)
   if (weird_parameter_match(t1, t2))
     {
       if (pedantic)
-	pedwarn("function types not truly compatible in ANSI C");
+        pedwarn("function types not truly compatible in ANSI C");
       return t2;
     }
   return NULL;
@@ -1027,22 +1027,22 @@ static int type_lists_compatible(typelist al1, typelist al2)
   while (1)
     {
       if (args1 == 0 && args2 == 0)
-	return val;
+        return val;
       /* If one list is shorter than the other,
-	 they fail to match.  */
+         they fail to match.  */
       if (args1 == 0 || args2 == 0)
-	return 0;
+        return 0;
 
       if (!(newval = type_compatible_unqualified(args1->t, args2->t)))
-	{
-	  if (!weird_parameter_match(args1->t, args2->t) &&
-	      !weird_parameter_match(args2->t, args1->t))
-	    return 0;
-	}
+        {
+          if (!weird_parameter_match(args1->t, args2->t) &&
+              !weird_parameter_match(args2->t, args1->t))
+            return 0;
+        }
 
       /* type_compatible said ok, but record if it said to warn.  */
       if (newval > val)
-	val = newval;
+        val = newval;
 
       args1 = args1->next;
       args2 = args2->next;
@@ -1064,7 +1064,7 @@ int function_compatible(type t1, type t2)
 
   /* Kinds and return types must match */
   if (!(t1->u.fn.fkind == t2->u.fn.fkind &&
-	type_compatible(t1->u.fn.returns, t2->u.fn.returns)))
+        type_compatible(t1->u.fn.returns, t2->u.fn.returns)))
     return 0;
 
   args1 = t1->u.fn.argtypes;
@@ -1076,25 +1076,25 @@ int function_compatible(type t1, type t2)
   if (t1->u.fn.oldstyle)
     {
       if (args2 && !self_promoting_args(t2))
-	return 0;
+        return 0;
 #if 0
       /* If one of these types comes from a non-prototype fn definition,
-	 compare that with the other type's arglist.
-	 If they don't match, ask for a warning (but no error).  */
+         compare that with the other type's arglist.
+         If they don't match, ask for a warning (but no error).  */
       if (TYPE_ACTUAL_ARG_TYPES (f1)
-	  && 1 != type_lists_compatible(args2, TYPE_ACTUAL_ARG_TYPES (f1)))
-	val = 2;
+          && 1 != type_lists_compatible(args2, TYPE_ACTUAL_ARG_TYPES (f1)))
+        val = 2;
 #endif
       return val;
     }
   if (t2->u.fn.oldstyle)
     {
       if (args1 && !self_promoting_args(t1))
-	return 0;
+        return 0;
 #if 0
       if (TYPE_ACTUAL_ARG_TYPES (f2)
-	  && 1 != type_lists_compatible(args1, TYPE_ACTUAL_ARG_TYPES (f2)))
-	val = 2;
+          && 1 != type_lists_compatible(args1, TYPE_ACTUAL_ARG_TYPES (f2)))
+        val = 2;
 #endif
       return val;
     }
@@ -1120,7 +1120,7 @@ static bool interface_equal(nesc_declaration i1, nesc_declaration i2)
   while (p1 && p2)
     {
       if (!type_equal(p1->ddecl->type, p2->ddecl->type))
-	return FALSE;
+        return FALSE;
       
       p1 = CAST(type_parm_decl, p1->next);
       p2 = CAST(type_parm_decl, p2->next);
@@ -1180,7 +1180,7 @@ bool type_compatible_unqualified(type t1, type t2)
 
     case tk_array:
       return type_compatible(t1->u.array.arrayof, t2->u.array.arrayof) &&
-	array_sizes_match(t1, t2);
+        array_sizes_match(t1, t2);
 
     case tk_iref:
       return interface_equal(t1->u.iref->itype, t2->u.iref->itype);
@@ -1248,29 +1248,29 @@ static int common_primitive_type(type t1, type t2)
 
       /* The simple cases */
       if (pk1 == tp_unknown_int || pk2 == tp_unknown_int)
-	return tp_unknown_int;
+        return tp_unknown_int;
 
       s1 = cval_uint_value(t1->size);
       s2 = cval_uint_value(t2->size);
       if (s1 < s2)
-	return pk2;
+        return pk2;
       else if (s1 > s2)
-	return pk1;
+        return pk1;
 
       /* The pain starts, see 6.3.1.8 of c9x */
       /* If the sizes are the same, then we can't have a tp_[u]int<n> or a 
-	 tp_char/short/int/long/etc pair (as we only have tp_[u]int<n> if there
-	 is no corresponding integer type of the same size. So we can compare rank
-	 by comparing pk1 and pk2 */
+         tp_char/short/int/long/etc pair (as we only have tp_[u]int<n> if there
+         is no corresponding integer type of the same size. So we can compare rank
+         by comparing pk1 and pk2 */
       assert(!((pk1 < tp_char && pk2 >= tp_char) ||
-	       (pk1 >= tp_char && pk2 < tp_char)));
+               (pk1 >= tp_char && pk2 < tp_char)));
 
       /* the higher rank wins, and if either of the types is unsigned, the
-	 result is unsigned (thus unsigned short + int == unsigned int if
-	 sizeof(short) == sizeof(int) */
+         result is unsigned (thus unsigned short + int == unsigned int if
+         sizeof(short) == sizeof(int) */
       if ((type_unsigned(t1) || type_unsigned(t2)) && !type_unsigned(primitive_types[pk]))
-	/* A bit inefficient, admittedly */
-	pk = make_unsigned_type(primitive_types[pk])->u.primitive;
+        /* A bit inefficient, admittedly */
+        pk = make_unsigned_type(primitive_types[pk])->u.primitive;
 
       return pk;
     }
@@ -1315,7 +1315,7 @@ type common_type(type t1, type t2)
   if (type_enum(t1))
     {
       if (type_equal_unqualified(t1, t2))
-	return make_combiner_type(qualify_type2(t1, t1, t2), combiner);
+        return make_combiner_type(qualify_type2(t1, t1, t2), combiner);
       t1 = qualify_type1(type_for_size(type_size(t1), TRUE), t1);
     }
   if (type_enum(t2))
@@ -1327,104 +1327,104 @@ type common_type(type t1, type t2)
     {
       int pk = common_primitive_type(t1, t2);
       assert((t1->kind == tk_primitive || t1->kind == tk_complex) && 
-	     (t2->kind == tk_primitive || t2->kind == tk_complex));
+             (t2->kind == tk_primitive || t2->kind == tk_complex));
       rtype = complex_types[pk];
     }
   else
     switch (t1->kind)
       {
       case tk_primitive:
-	/* We need to preserve equivalent network base types because
-	   common_type is used for redeclarations */
-	if (type_network_base_type(t1) && type_network_base_type(t2) &&
-	    t1->basedecl == t2->basedecl)
-	  rtype = make_qualified_type(t1, 0);
-	else
-	  {
-	    int pk = common_primitive_type(t1, t2);
-	    assert(t2->kind == tk_primitive);
-	    rtype = primitive_types[pk];
-	  
-	    break;
-	  }
+        /* We need to preserve equivalent network base types because
+           common_type is used for redeclarations */
+        if (type_network_base_type(t1) && type_network_base_type(t2) &&
+            t1->basedecl == t2->basedecl)
+          rtype = make_qualified_type(t1, 0);
+        else
+          {
+            int pk = common_primitive_type(t1, t2);
+            assert(t2->kind == tk_primitive);
+            rtype = primitive_types[pk];
+          
+            break;
+          }
 
       case tk_void: case tk_tagged: case tk_variable:
-	rtype = t1;
-	break;
+        rtype = t1;
+        break;
 
       case tk_pointer:
-	rtype = make_pointer_type(common_type(t1->u.pointsto, t2->u.pointsto));
-	break;
+        rtype = make_pointer_type(common_type(t1->u.pointsto, t2->u.pointsto));
+        break;
 
       case tk_array:
-	{
-	  /* Merge the element types, and have a size if either arg has one.  */
-	  type element_type =
-	    common_type(t1->u.array.arrayof, t2->u.array.arrayof);
-	  expression size1 = t1->u.array.size, size2 = t2->u.array.size;
+        {
+          /* Merge the element types, and have a size if either arg has one.  */
+          type element_type =
+            common_type(t1->u.array.arrayof, t2->u.array.arrayof);
+          expression size1 = t1->u.array.size, size2 = t2->u.array.size;
 
-	  rtype = make_array_type(element_type, size1 ? size1 : size2);
-	  break;
-	}
+          rtype = make_array_type(element_type, size1 ? size1 : size2);
+          break;
+        }
 
       case tk_function:
-	/* Function types: prefer the one that specified arg types.
-	   If both do, merge the arg types.  Also merge the return types.  */
-	{
-	  type valtype = common_type(t1->u.fn.returns, t2->u.fn.returns);
-	  typelist args;
-	  bool oldstyle, varargs;
+        /* Function types: prefer the one that specified arg types.
+           If both do, merge the arg types.  Also merge the return types.  */
+        {
+          type valtype = common_type(t1->u.fn.returns, t2->u.fn.returns);
+          typelist args;
+          bool oldstyle, varargs;
 
-	  if (t1->u.fn.oldstyle && t2->u.fn.oldstyle)
-	    {
-	      args = NULL;
-	      oldstyle = TRUE;
-	      varargs = FALSE;
-	    }
-	  else if (t1->u.fn.oldstyle)
-	    {
-	      args = t2->u.fn.argtypes;
-	      oldstyle = FALSE;
-	      varargs = t2->u.fn.varargs;
-	    }
-	  else if (t2->u.fn.oldstyle)
-	    {
-	      args = t1->u.fn.argtypes;
-	      oldstyle = FALSE;
-	      varargs = t1->u.fn.varargs;
-	    }
-	  else
-	    {
-	      /* If both args specify argument types, we must merge the two
-		 lists, argument by argument.  */
-	      struct typelist_element *args1 = t1->u.fn.argtypes->first;
-	      struct typelist_element *args2 = t2->u.fn.argtypes->first;
-	      type argtype;
+          if (t1->u.fn.oldstyle && t2->u.fn.oldstyle)
+            {
+              args = NULL;
+              oldstyle = TRUE;
+              varargs = FALSE;
+            }
+          else if (t1->u.fn.oldstyle)
+            {
+              args = t2->u.fn.argtypes;
+              oldstyle = FALSE;
+              varargs = t2->u.fn.varargs;
+            }
+          else if (t2->u.fn.oldstyle)
+            {
+              args = t1->u.fn.argtypes;
+              oldstyle = FALSE;
+              varargs = t1->u.fn.varargs;
+            }
+          else
+            {
+              /* If both args specify argument types, we must merge the two
+                 lists, argument by argument.  */
+              struct typelist_element *args1 = t1->u.fn.argtypes->first;
+              struct typelist_element *args2 = t2->u.fn.argtypes->first;
+              type argtype;
 
-	      oldstyle = FALSE;
-	      varargs = t1->u.fn.varargs;
-	      args = new_typelist(t1->u.fn.argtypes->r);
+              oldstyle = FALSE;
+              varargs = t1->u.fn.varargs;
+              args = new_typelist(t1->u.fn.argtypes->r);
 
-	      while (args1)
-		{
-		  (void) ((argtype = weird_common_parameter(args1->t, args2->t)) ||
-			  (argtype = weird_common_parameter(args2->t, args1->t)) ||
-			  (argtype = common_type(args1->t, args2->t)));
-		  typelist_append(args, argtype);
+              while (args1)
+                {
+                  (void) ((argtype = weird_common_parameter(args1->t, args2->t)) ||
+                          (argtype = weird_common_parameter(args2->t, args1->t)) ||
+                          (argtype = common_type(args1->t, args2->t)));
+                  typelist_append(args, argtype);
 
-		  args1 = args1->next;
-		  args2 = args2->next;
-		}
+                  args1 = args1->next;
+                  args2 = args2->next;
+                }
 
-	    }
-	  rtype = make_function_type(valtype, args, varargs, oldstyle);
-	  /* Hack up the function kind */
-	  rtype->u.fn.fkind = t1->u.fn.fkind;
-	  break;
-	}
+            }
+          rtype = make_function_type(valtype, args, varargs, oldstyle);
+          /* Hack up the function kind */
+          rtype->u.fn.fkind = t1->u.fn.fkind;
+          break;
+        }
 
       default:
-	assert(0); return NULL;
+        assert(0); return NULL;
       }
 
   rtype = qualify_type2(rtype, t1, t2);
@@ -1506,7 +1506,7 @@ static type_element qualifier2ast(region r, location loc, int keyword, type_elem
 }
 
 static type_element qualifiers2ast(region r, location loc, type_quals quals,
-				   type_element rest)
+                                   type_element rest)
 {
   if (quals & volatile_qualifier)
     rest = qualifier2ast(r, loc, volatile_qualifier, rest);
@@ -1516,7 +1516,7 @@ static type_element qualifiers2ast(region r, location loc, type_quals quals,
 }
 
 static type_element primitive2ast(region r, location loc, int primitive,
-				  type_element rest)
+                                  type_element rest)
 {
   bool isunsigned = FALSE;
   int keyword;
@@ -1585,20 +1585,20 @@ void name_tag(tag_declaration tag)
 
       sprintf(tagname, UNNAMED_STRUCT_PREFIX "%ld", nextid++);
       tag->definition->word1 = new_word(parse_region, dummy_location,
-					str2cstring(parse_region, tagname));
+                                        str2cstring(parse_region, tagname));
       tag->name = tag->definition->word1->cstring.data;
     }
 }
 
 static type_element tag2ast(region r, location loc, tag_declaration tag,
-			    type_element rest)
+                            type_element rest)
 {
   tag_ref tr;
 
   name_tag(tag);
   tr = newkind_tag_ref(r, tag->kind, loc, 
-		       new_word(r, loc, str2cstring(r, tag->name)),
-		       NULL, NULL, FALSE);
+                       new_word(r, loc, str2cstring(r, tag->name)),
+                       NULL, NULL, FALSE);
 
   tr->tdecl = tag;
   tr->next = CAST(node, rest);
@@ -1629,7 +1629,7 @@ static type_element tag2ast(region r, location loc, tag_declaration tag,
 }
 
 static type_element typevar2ast(region r, location loc, data_declaration tvar,
-				type_element rest)
+                                type_element rest)
 {
   type_element tname;
 
@@ -1662,7 +1662,7 @@ static declaration parameter2ast(region r, location loc, type t)
 /* Build AST nodes such that "MODIFIERS D" represents the declaration of
    "T INSIDE", at location loc, allocating in region r */
 void type2ast(region r, location loc, type t, declarator inside,
-	      declarator *d, type_element *modifiers)
+              declarator *d, type_element *modifiers)
 {
   /* XXX: De-recursify */
   type_element qualifiers = qualifiers2ast(r, loc, t->qualifiers, NULL);
@@ -1687,8 +1687,8 @@ void type2ast(region r, location loc, type t, declarator inside,
       break;
     case tk_complex:
       *modifiers =
-	rid2ast(r, loc, RID_COMPLEX, 
-	primitive2ast(r, loc, t->u.primitive, qualifiers));
+        rid2ast(r, loc, RID_COMPLEX, 
+        primitive2ast(r, loc, t->u.primitive, qualifiers));
       *d = inside;
       break;
     case tk_tagged:
@@ -1701,50 +1701,50 @@ void type2ast(region r, location loc, type t, declarator inside,
       break;
     case tk_pointer:
       if (qualifiers)
-	inside = CAST(declarator,
-		      new_qualified_declarator(r, loc, inside, qualifiers));
+        inside = CAST(declarator,
+                      new_qualified_declarator(r, loc, inside, qualifiers));
       inside = CAST(declarator,
-		    new_pointer_declarator(r, loc, inside));
+                    new_pointer_declarator(r, loc, inside));
       type2ast(r, loc, t->u.pointsto, inside, d, modifiers);
       break;
     case tk_array:
       assert(qualifiers == NULL);
       inside = CAST(declarator,
-		    new_array_declarator(r, loc, inside, t->u.array.size));
+                    new_array_declarator(r, loc, inside, t->u.array.size));
       type2ast(r, loc, t->u.array.arrayof, inside, d, modifiers);
       break;
     case tk_function: {
       declaration parms;
 
       assert(t->u.fn.fkind == tkf_c); /* XXX: not done for nesC stuff yet
-					 (not needed yet) */
+                                         (not needed yet) */
       /* XXX: doesn't rebuild fn qualifiers. Are we generating C here
-	 or not ? */
+         or not ? */
       /* XXX: Should build environment for parameters */
       if (t->u.fn.oldstyle)
-	parms = NULL;
+        parms = NULL;
       else if (empty_typelist(t->u.fn.argtypes))
-	parms = parameter2ast(r, loc, void_type);
+        parms = parameter2ast(r, loc, void_type);
       else
-	{
-	  struct typelist_element *args = t->u.fn.argtypes->first;
-	  declaration *lastparm = &parms;
+        {
+          struct typelist_element *args = t->u.fn.argtypes->first;
+          declaration *lastparm = &parms;
 
-	  while (args)
-	    {
-	      *lastparm = parameter2ast(r, loc, args->t);
-	      lastparm = (declaration *)&(*lastparm)->next;
-	      args = args->next;
-	    }
-	  if (t->u.fn.varargs)
-	    {
-	      *lastparm = CAST(declaration, new_ellipsis_decl(r, loc));
-	      lastparm = (declaration *)&(*lastparm)->next;
-	    }
-	  *lastparm = NULL;
-	}
+          while (args)
+            {
+              *lastparm = parameter2ast(r, loc, args->t);
+              lastparm = (declaration *)&(*lastparm)->next;
+              args = args->next;
+            }
+          if (t->u.fn.varargs)
+            {
+              *lastparm = CAST(declaration, new_ellipsis_decl(r, loc));
+              lastparm = (declaration *)&(*lastparm)->next;
+            }
+          *lastparm = NULL;
+        }
       inside = CAST(declarator,
-		    new_function_declarator(r, loc, inside, parms, NULL, NULL, NULL));
+                    new_function_declarator(r, loc, inside, parms, NULL, NULL, NULL));
       type2ast(r, loc, t->u.fn.returns, inside, d, modifiers);
       break;
     }
@@ -1805,9 +1805,9 @@ type type_default_conversion(type from)
     {
       /* Traditionally, unsignedness is preserved in default promotions. */
       if (flag_traditional && type_unsigned(from))
-	return unsigned_int_type;
+        return unsigned_int_type;
       else
-	return int_type;
+        return int_type;
     }
   /* Note: if we had a type of same size as int, but of lesser rank, we should be
      returning one of int/unsigned int here, but we don't support that kind of
@@ -1827,11 +1827,11 @@ type type_default_conversion(type from)
       data_declaration vdecl = type_variable_decl(from);
 
       switch (vdecl->typevar_kind)
-	{
-	case typevar_integer: return unknown_int_type;
-	case typevar_number: return unknown_number_type;
-	default: break;
-	}
+        {
+        case typevar_integer: return unknown_int_type;
+        case typevar_number: return unknown_number_type;
+        default: break;
+        }
     }
 
   return from;
@@ -2168,7 +2168,7 @@ type instantiate_type(type t)
     {
     case tk_tagged:
       if (t->u.tag->instantiation)
-	newt = make_tagged_type(t->u.tag->instantiation);
+        newt = make_tagged_type(t->u.tag->instantiation);
       break;
 
     case tk_pointer:
@@ -2180,7 +2180,7 @@ type instantiate_type(type t)
       typelist args = NULL;
 
       if (t->u.fn.argtypes)
-	args = instantiate_typelist(t->u.fn.argtypes);
+        args = instantiate_typelist(t->u.fn.argtypes);
 
       newt = make_function_type(ret, args, t->u.fn.varargs, t->u.fn.oldstyle);
       newt->u.fn.fkind = t->u.fn.fkind;
@@ -2188,23 +2188,23 @@ type instantiate_type(type t)
     }
     case tk_array:
       newt = make_array_type(instantiate_type(t->u.array.arrayof),
-			     !t->u.array.size ? NULL :
-			     CAST(expression, t->u.array.size->instantiation));
+                             !t->u.array.size ? NULL :
+                             CAST(expression, t->u.array.size->instantiation));
       break;
 
     case tk_iref:
       if (t->u.iref->instantiation)
-	newt = make_interface_type(t->u.iref->instantiation);
+        newt = make_interface_type(t->u.iref->instantiation);
       break;
 
     case tk_cref:
       if (t->u.cref->instantiation)
-	newt = make_component_type(t->u.cref->instantiation);
+        newt = make_component_type(t->u.cref->instantiation);
       break;
 
     case tk_variable:
       if (t->u.tdecl->instantiation)
-	newt = t->u.tdecl->instantiation->type;
+        newt = t->u.tdecl->instantiation->type;
       break;
 
     default:
@@ -2261,8 +2261,8 @@ static const char *add_qualifiers(region r, type_quals qs, const char *to)
   for (q = 1; q < last_qualifier; q <<= 1)
     if (qs & q)
       {
-	to = rconcat(r, " ", to);
-	to = rconcat(r, qualifier_name(q), to);
+        to = rconcat(r, " ", to);
+        to = rconcat(r, qualifier_name(q), to);
       }
 
   return to;
@@ -2276,7 +2276,7 @@ static const char *add_parens(region r, const char *to)
 }
 
 static void split_type_name(region r, type t, const char **prefix,
-			    const char **decls, bool decls_is_star)
+                            const char **decls, bool decls_is_star)
 {
   const char *basic;
 
@@ -2302,7 +2302,7 @@ static void split_type_name(region r, type t, const char **prefix,
     case tk_array:
       /* can't have qualifiers here - see make_qualified_type */
       if (decls_is_star)
-	*decls = add_parens(r, *decls);
+        *decls = add_parens(r, *decls);
       *decls = rconcat(r, *decls, "[]");
       split_type_name(r, t->u.array.arrayof, &basic, decls, FALSE);
       break;
@@ -2310,29 +2310,29 @@ static void split_type_name(region r, type t, const char **prefix,
       const char *args= "";
 
       if (!t->u.fn.oldstyle)
-	{
-	  typelist_scanner scanargs;
-	  type argt;
-	  bool first = TRUE;
+        {
+          typelist_scanner scanargs;
+          type argt;
+          bool first = TRUE;
 
-	  typelist_scan(t->u.fn.argtypes, &scanargs);
-	  while ((argt = typelist_next(&scanargs)))
-	    {
-	      if (!first)
-		args = rconcat(r, args, ", ");
-	      args = rconcat(r, args, type_name(r, argt));
-	      first = FALSE;
-	    }
-	  if (t->u.fn.varargs)
-	    args = rconcat(r, args, ", ...");
-	}
+          typelist_scan(t->u.fn.argtypes, &scanargs);
+          while ((argt = typelist_next(&scanargs)))
+            {
+              if (!first)
+                args = rconcat(r, args, ", ");
+              args = rconcat(r, args, type_name(r, argt));
+              first = FALSE;
+            }
+          if (t->u.fn.varargs)
+            args = rconcat(r, args, ", ...");
+        }
 
       if (decls_is_star)
-	*decls = add_parens(r, *decls);
+        *decls = add_parens(r, *decls);
 
       if (t->qualifiers)
-	/* This isn't legal C syntax, but seems the reasonable rep */
-	*decls = add_parens(r, add_qualifiers(r, t->qualifiers, *decls));
+        /* This isn't legal C syntax, but seems the reasonable rep */
+        *decls = add_parens(r, add_qualifiers(r, t->qualifiers, *decls));
 
       *decls = rconcat(r, *decls, add_parens(r, args));
 
@@ -2345,14 +2345,14 @@ static void split_type_name(region r, type t, const char **prefix,
       basic = rconcat(r, tagkind_name(tdecl->kind), " ");
 
       if (tdecl->container)
-	{
-	  basic = rconcat(r, basic, tdecl->container->name);
-	  basic = rconcat(r, basic, ".");
-	}
+        {
+          basic = rconcat(r, basic, tdecl->container->name);
+          basic = rconcat(r, basic, ".");
+        }
       if (tdecl->name)
-	basic = rconcat(r, basic, tdecl->name);
+        basic = rconcat(r, basic, tdecl->name);
       else
-	basic = rconcat(r, basic, "/*anon*/");
+        basic = rconcat(r, basic, "/*anon*/");
       basic = add_qualifiers(r, t->qualifiers, basic);
       break;
     }
@@ -2405,30 +2405,30 @@ void nxml_type(type t)
       xml_tag_end();
       xnewline();
       if (tdef)
-	{
-	  nxml_typedef(tdef);
-	  tdef = NULL;
-	}
+        {
+          nxml_typedef(tdef);
+          tdef = NULL;
+        }
     }
     
   switch (t->kind)
     {
     case tk_primitive:
       if (t->u.primitive < tp_first_floating)
-	xml_tag_start("type-int");
+        xml_tag_start("type-int");
       else
-	xml_tag_start("type-float");
+        xml_tag_start("type-float");
       xml_attr("cname", primname[t->u.primitive]);
       xml_attr_bool("unsigned", type_unsigned(t));
       break;
     case tk_complex:
       if (t->u.primitive < tp_first_floating)
-	{
-	  xml_tag_start("type-complex-int");
-	  xml_attr_bool("unsigned", type_unsigned(primitive_types[t->u.primitive]));
-	}
+        {
+          xml_tag_start("type-complex-int");
+          xml_attr_bool("unsigned", type_unsigned(primitive_types[t->u.primitive]));
+        }
       else
-	xml_tag_start("type-complex-float");
+        xml_tag_start("type-complex-float");
       xml_attr("cname", primname[t->u.primitive]);
       break;
     case tk_void:
@@ -2491,7 +2491,7 @@ void nxml_type(type t)
       xnewline(); xindent();
       nxml_type(t->u.fn.returns);
       if (!t->u.fn.oldstyle)
-	nxml_typelist("function-parameters", t->u.fn.argtypes);
+        nxml_typelist("function-parameters", t->u.fn.argtypes);
       xunindent();
       break;
     case tk_tagged:
@@ -2606,38 +2606,38 @@ bool type_contains(type parent, type child)
     case tk_complex:
       /* true if child is primitive or complex and same base primitive type */
       return (child->kind == tk_primitive || child->kind == tk_complex) &&
-	parent->u.primitive == child->u.primitive;
+        parent->u.primitive == child->u.primitive;
 
     case tk_tagged: {
       /* Same tags -> yes. Otherwise, for structs, unions: true if parent
-	 has a field type that contains child */
+         has a field type that contains child */
       field_declaration field;
 
       if (child->kind == tk_tagged && parent->u.tag == child->u.tag)
-	return TRUE;
+        return TRUE;
 
       if (parent->u.tag->kind == kind_enum_ref)
-	return FALSE;
+        return FALSE;
 
       for (field = parent->u.tag->fieldlist; field; field = field->next)
-	if (type_contains(field->type, child))
-	  return TRUE;
+        if (type_contains(field->type, child))
+          return TRUE;
 
       return FALSE;
     }
 
     case tk_pointer:
       /* base types must match, but can have different qualifiers
-	 (this is different from type_equal) */
+         (this is different from type_equal) */
       return 
-	child->kind == tk_pointer &&
-	type_equal_unqualified(parent->u.pointsto, child->u.pointsto);
+        child->kind == tk_pointer &&
+        type_equal_unqualified(parent->u.pointsto, child->u.pointsto);
 
     case tk_array: {
       type base_parent = parent;
     
       while (base_parent->kind == tk_array)
-	base_parent = base_parent->u.array.arrayof;
+        base_parent = base_parent->u.array.arrayof;
 
       return type_contains(base_parent, child);
     }
@@ -2713,22 +2713,22 @@ type type_for_mode(const char *mode, bool isunsigned)
   for (i = 0; i < sizeof modes / sizeof *modes; i++)
     if (is_attr_name(mode, modes[i].name))
       {
-	type t;
+        type t;
 
-	switch (modes[i].m)
-	  {
-	  case m_int: case m_cint:
-	    t = lookup_primitive(tp_error, modes[i].s, 0, isunsigned);
-	    break;
-	  case m_float: case m_cfloat:
-	    t = lookup_float(modes[i].s);
-	    break;
-	  }
-	if (t->u.primitive == tp_error)
-	  return NULL;
-	if (modes[i].m == m_cint || modes[i].m == m_cfloat)
-	  t = make_complex_type(t);
-	return t;
+        switch (modes[i].m)
+          {
+          case m_int: case m_cint:
+            t = lookup_primitive(tp_error, modes[i].s, 0, isunsigned);
+            break;
+          case m_float: case m_cfloat:
+            t = lookup_float(modes[i].s);
+            break;
+          }
+        if (t->u.primitive == tp_error)
+          return NULL;
+        if (modes[i].m == m_cint || modes[i].m == m_cfloat)
+          t = make_complex_type(t);
+        return t;
       }
   return NULL;
 }

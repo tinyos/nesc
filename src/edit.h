@@ -28,8 +28,8 @@ Boston, MA 02111-1307, USA. */
    this approach.
    Return it's declaration */
 data_decl build_declaration(region r, struct environment *e,
-			    type t, const char *name, expression init,
-			    data_declaration *oddecl);
+                            type t, const char *name, expression init,
+                            data_declaration *oddecl);
 
 /* Declare a new temporary that can be assigned a value of type t.
    Place the declaration at the start of block. 
@@ -40,6 +40,6 @@ word build_word(region r, const char *cword);
 
 expression build_string(region r, location loc, const char *s);
 expression build_function_call(region r, location loc,
-			       expression fn, expression arglist);
+                               expression fn, expression arglist);
 
 #endif

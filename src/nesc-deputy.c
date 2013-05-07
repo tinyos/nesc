@@ -37,7 +37,7 @@ static void dwalk(struct deputy_data *dd, void *p)
 }
 
 static AST_walker_result deputy_identifier(AST_walker unused, void *data,
-					   identifier *p)
+                                           identifier *p)
 {
   identifier id = *p;
   struct deputy_data *dd = data;
@@ -50,21 +50,21 @@ static AST_walker_result deputy_identifier(AST_walker unused, void *data,
       /* not doing make_identifier's error message suppression */
 
       if (dd->in_struct &&
-	  env_lookup(dd->in_struct->fields, name, TRUE))
-	realdecl = bad_decl; /* prevent renaming of field refs */
+          env_lookup(dd->in_struct->fields, name, TRUE))
+        realdecl = bad_decl; /* prevent renaming of field refs */
       if (!realdecl)
-	realdecl = env_lookup(dd->env->id_env, name, FALSE);
+        realdecl = env_lookup(dd->env->id_env, name, FALSE);
 
       if (realdecl)
-	id->ddecl = realdecl;
+        id->ddecl = realdecl;
       else
-	error_with_location(id->location, "`%s' undeclared", name);
+        error_with_location(id->location, "`%s' undeclared", name);
     }
   return aw_done;
 }
 
 static AST_walker_result deputy_nesc_attribute(AST_walker unused, void *data,
-					       nesc_attribute *p)
+                                               nesc_attribute *p)
 {
   nesc_attribute na = *p;
   struct deputy_data ndd = *(struct deputy_data *)data;
@@ -76,7 +76,7 @@ static AST_walker_result deputy_nesc_attribute(AST_walker unused, void *data,
 }
 
 static AST_walker_result deputy_tag_ref(AST_walker unused, void *data,
-					tag_ref *p)
+                                        tag_ref *p)
 {
   tag_ref tref = *p;
   struct deputy_data ndd = *(struct deputy_data *)data;
@@ -89,7 +89,7 @@ static AST_walker_result deputy_tag_ref(AST_walker unused, void *data,
 }
 
 static AST_walker_result deputy_fdeclarator(AST_walker unused, void *data,
-					    function_declarator *p)
+                                            function_declarator *p)
 {
   function_declarator fd = *p;
   struct deputy_data ndd = *(struct deputy_data *)data;
@@ -107,7 +107,7 @@ static AST_walker_result deputy_fdeclarator(AST_walker unused, void *data,
 }
 
 static AST_walker_result deputy_function_decl(AST_walker unused, void *data,
-					      function_decl *p)
+                                              function_decl *p)
 {
   function_decl fdecl = *p;
   function_declarator fd = get_fdeclarator(fdecl->declarator);
@@ -126,7 +126,7 @@ static AST_walker_result deputy_function_decl(AST_walker unused, void *data,
 }
 
 static AST_walker_result deputy_data_decl(AST_walker unused, void *data,
-					  data_decl *p)
+                                          data_decl *p)
 {
   data_decl dd = *p;
   declaration first;
@@ -157,7 +157,7 @@ static AST_walker_result deputy_data_decl(AST_walker unused, void *data,
 }
 
 static AST_walker_result deputy_compound_stmt(AST_walker unused, void *data,
-					      compound_stmt *p)
+                                              compound_stmt *p)
 {
   compound_stmt cs = *p;
   struct deputy_data ndd;
@@ -171,7 +171,7 @@ static AST_walker_result deputy_compound_stmt(AST_walker unused, void *data,
 }
 
 static AST_walker_result deputy_implementation(AST_walker unused, void *data,
-					       implementation *p)
+                                               implementation *p)
 {
   implementation impl = *p;
   struct deputy_data ndd;
@@ -232,11 +232,11 @@ static void attr_decl_unsafe(nesc_attribute attr, data_declaration ddecl)
 void init_deputy(void)
 {
   define_internal_attribute("deputy_scope", NULL, NULL, attr_dscope_tdecl, NULL,
-			    NULL, NULL);
+                            NULL, NULL);
   define_internal_attribute("safe", attr_ndecl_safe, attr_decl_safe, NULL,
-			    NULL, NULL, NULL);
+                            NULL, NULL, NULL);
   define_internal_attribute("unsafe", attr_ndecl_unsafe, attr_decl_unsafe, NULL,
-			    NULL, NULL, NULL);
+                            NULL, NULL, NULL);
 
   deputy_walker = new_AST_walker(permanent);
   AST_walker_handle(deputy_walker, kind_identifier, deputy_identifier);

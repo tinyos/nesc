@@ -106,7 +106,7 @@ bool nesc_filename(const char *name)
   if (dot)
     {
       if (!strcmp(dot, ".nc"))
-	return TRUE;
+        return TRUE;
     }
   return FALSE; /* C by default */
 }
@@ -149,7 +149,7 @@ const char *language_name(source_language l)
 }
 
 node compile(location loc, nesc_declaration container,
-	     const char *name, bool name_is_path)
+             const char *name, bool name_is_path)
 {
   source_language l = container ? container->kind : l_c;
   const char *path =
@@ -163,7 +163,7 @@ node compile(location loc, nesc_declaration container,
   else
     {
       if (flag_verbose)
-	fprintf(stderr, "preprocessing %s\n", path);
+        fprintf(stderr, "preprocessing %s\n", path);
 
       current.file = container;
       current.fileregion = newregion();
@@ -171,9 +171,9 @@ node compile(location loc, nesc_declaration container,
       ok = start_lex(l, path);
       save_pp_file_start(path);
       if (!ok)
-	error_with_location(loc, "failed to preprocess %s", path);
+        error_with_location(loc, "failed to preprocess %s", path);
       else
-	parse_tree = parse();
+        parse_tree = parse();
       deleteregion_ptr(&current.fileregion);
       end_lex();
       save_pp_file_end();
@@ -194,14 +194,14 @@ nesc_decl dummy_nesc_decl(location loc, nesc_declaration d)
     case l_component: {
       environment env = new_environment(parse_region, global_env, TRUE, FALSE);
       implementation impl = CAST(implementation,
-	new_module(parse_region, loc, env, NULL));
+        new_module(parse_region, loc, env, NULL));
       nd = CAST(nesc_decl,
-		new_component(parse_region, dummy_location, wname, NULL, FALSE, NULL, NULL, impl));
+                new_component(parse_region, dummy_location, wname, NULL, FALSE, NULL, NULL, impl));
       break;
     }
     case l_interface:
       nd = CAST(nesc_decl,
-		new_interface(parse_region, loc, wname, NULL, NULL));
+                new_interface(parse_region, loc, wname, NULL, NULL));
       break;
     default:
       assert(0);
@@ -241,7 +241,7 @@ void build(nesc_decl ast)
 }
 
 nesc_declaration load(source_language sl, location l,
-		      const char *name, bool name_is_path)
+                      const char *name, bool name_is_path)
 {
   /* The l_any stuff is a bit of a hack. It's for use from nesc-main.c
      only, to allow loading something whose "kind" is not yet known.
@@ -269,15 +269,15 @@ nesc_declaration load(source_language sl, location l,
       actual_name = ast->word1->cstring.data;
       badkind = sl != l_any && ast->cdecl->kind != sl;
       if (badkind || strcmp(element, actual_name))
-	warning_or_error_with_location(!badkind, ast->location,
-	  "expected %s `%s', but got %s '%s'",
-	  language_name(sl), element,
-	  language_name(ast->cdecl->kind), actual_name);
+        warning_or_error_with_location(!badkind, ast->location,
+          "expected %s `%s', but got %s '%s'",
+          language_name(sl), element,
+          language_name(ast->cdecl->kind), actual_name);
 
       /* Force creation of dummy AST if we get wrong kind (this avoids
          a duplicate error message in require) */
       if (badkind)
-	ast = NULL;
+        ast = NULL;
     }
 
   if (!ast)
@@ -372,7 +372,7 @@ data_declaration get_function_ddecl(expression e)
       identifier id = CAST(identifier, e);
 
       if (id->ddecl->kind == decl_function)
-	return id->ddecl;
+        return id->ddecl;
     }
   else if (is_interface_deref(e))
     return CAST(interface_deref, e)->ddecl;
@@ -398,14 +398,14 @@ data_declaration declare_function(location loc, const char *name, type signature
   if (fdecl)
     {
       if (fdecl->kind != decl_function ||
-	  !(fdecl->ftype == function_normal || fdecl->ftype == function_static))
-	error_with_location(loc, "function `%s' is not a C function",
-			    name);
+          !(fdecl->ftype == function_normal || fdecl->ftype == function_static))
+        error_with_location(loc, "function `%s' is not a C function",
+                            name);
       else if (!type_compatible_unqualified(fdecl->type, signature))
-	error_with_location(loc, "function `%s' does not have the right signature",
-			    name);
+        error_with_location(loc, "function `%s' does not have the right signature",
+                            name);
       else
-	ok = TRUE;
+        ok = TRUE;
     }
   else
     {
@@ -429,14 +429,14 @@ void handle_combine_attribute(location loc, const char *combiner, type *t)
 {
   data_declaration cdecl = 
     declare_function(loc, combiner,
-		     build_function_type(parse_region, *t, *t, *t, NULL));
+                     build_function_type(parse_region, *t, *t, *t, NULL));
 
   if (cdecl)
     *t = make_combiner_type(*t, cdecl);
 }
 
 void handle_nxbase_attribute(location loc, bool be, bool allow_bf, const char *basename,
-			     data_declaration ddecl)
+                             data_declaration ddecl)
 {
   region r = parse_region;
   char *encoder_name, *decoder_name;
@@ -449,11 +449,11 @@ void handle_nxbase_attribute(location loc, bool be, bool allow_bf, const char *b
 
   ddecl->encoder = /* takes buffer and original value. returns original value */
     declare_function(loc, encoder_name,
-		     build_function_type(r, t, ptr_void_type, t, NULL));
+                     build_function_type(r, t, ptr_void_type, t, NULL));
 
   ddecl->decoder = /* takes buffer and returns decoded value */
     declare_function(loc, decoder_name,
-		     build_function_type(r, t, const_ptr_void_type, NULL));
+                     build_function_type(r, t, const_ptr_void_type, NULL));
 
   if (allow_bf)
     {
@@ -464,12 +464,12 @@ void handle_nxbase_attribute(location loc, bool be, bool allow_bf, const char *b
 
       /* bitfields take additional offset, length fields */
       ddecl->bf_encoder =
-	declare_function(loc, encoder_name,
-			 build_function_type(r, t, ptr_void_type, unsigned_int_type, unsigned_char_type, t, NULL));
+        declare_function(loc, encoder_name,
+                         build_function_type(r, t, ptr_void_type, unsigned_int_type, unsigned_char_type, t, NULL));
 
       ddecl->bf_decoder =
-	declare_function(loc, decoder_name,
-			 build_function_type(r, t, const_ptr_void_type, unsigned_int_type, unsigned_char_type, NULL));
+        declare_function(loc, decoder_name,
+                         build_function_type(r, t, const_ptr_void_type, unsigned_int_type, unsigned_char_type, NULL));
     }
   ddecl->isbe = be;
 
@@ -483,7 +483,7 @@ void handle_nxbase_attribute(location loc, bool be, bool allow_bf, const char *b
    Returns the declaration for the parameter.
 */
 declaration declare_template_parameter(declarator d, type_element elements,
-				       attribute attributes)
+                                       attribute attributes)
 {
   /* There must be at least a declarator or some form of type specification */
   location l = d ? d->location : elements->location;
@@ -501,8 +501,8 @@ declaration declare_template_parameter(declarator d, type_element elements,
   type parm_type;
 
   parse_declarator(elements, vd->declarator, FALSE, FALSE,
-		   &class, &scf, NULL, &name, &parm_type,
-		   &defaulted_int, NULL, &extra_attr);
+                   &class, &scf, NULL, &name, &parm_type,
+                   &defaulted_int, NULL, &extra_attr);
   vd->declared_type = parm_type;
 
   /* Storage class checks */
@@ -510,34 +510,34 @@ declaration declare_template_parameter(declarator d, type_element elements,
     {
       /* Detect "typedef t", to declare a type parameter */
       if (class == RID_TYPEDEF && defaulted_int &&
-	  is_identifier_declarator(d))
-	return declare_type_parameter(d->location,
-				      CAST(identifier_declarator, d)->cstring,
-				      attributes, extra_attr);
+          is_identifier_declarator(d))
+        return declare_type_parameter(d->location,
+                                      CAST(identifier_declarator, d)->cstring,
+                                      attributes, extra_attr);
       else if (class == RID_TYPEDEF && d == NULL) 
-	{
-	  /* Recognise "typedef TYPENAME", and declare TYPENAME as a 
-	     type parameter (i.e., we're shadowing a global typedef) */
-	  type_element elem;
-	  typename tname;
-	  bool ok = TRUE;
+        {
+          /* Recognise "typedef TYPENAME", and declare TYPENAME as a 
+             type parameter (i.e., we're shadowing a global typedef) */
+          type_element elem;
+          typename tname;
+          bool ok = TRUE;
 
-	  /* Check there's only a typedef and a typename */
-	  scan_type_element (elem, elements)
-	    if (is_typename(elem))
-	      tname = CAST(typename, elem);
-	    else if (!(is_attribute(elem) ||
-		       (is_rid(elem) && CAST(rid, elem)->id == RID_TYPEDEF)))
-	      ok = FALSE;
+          /* Check there's only a typedef and a typename */
+          scan_type_element (elem, elements)
+            if (is_typename(elem))
+              tname = CAST(typename, elem);
+            else if (!(is_attribute(elem) ||
+                       (is_rid(elem) && CAST(rid, elem)->id == RID_TYPEDEF)))
+              ok = FALSE;
 
-	  if (ok && tname)
-	    {
-	      cstring cname = make_cstring(parse_region, tname->ddecl->name,
-					   strlen(tname->ddecl->name));
-	      return
-		declare_type_parameter(l, cname, attributes, extra_attr);
-	    }
-	}
+          if (ok && tname)
+            {
+              cstring cname = make_cstring(parse_region, tname->ddecl->name,
+                                           strlen(tname->ddecl->name));
+              return
+                declare_type_parameter(l, cname, attributes, extra_attr);
+            }
+        }
     }
 
   if (!name)
@@ -576,7 +576,7 @@ declaration declare_template_parameter(declarator d, type_element elements,
 }
 
 declaration declare_type_parameter(location l, cstring id, attribute attribs,
-				   dd_list extra_attr)
+                                   dd_list extra_attr)
 {
   type_parm_decl d = new_type_parm_decl(parse_region, l, id, NULL);
   data_declaration ddecl;
@@ -588,7 +588,7 @@ declaration declare_type_parameter(location l, cstring id, attribute attribs,
       struct data_declaration tempdecl;
 
       init_data_declaration(&tempdecl, CAST(declaration, d), id.data,
-			    error_type);
+                            error_type);
       tempdecl.kind = decl_typedef;
       tempdecl.typevar_kind = typevar_normal;
       tempdecl.definition = tempdecl.ast;
@@ -673,7 +673,7 @@ static void attr_spontaneous_decl(nesc_attribute attr, data_declaration ddecl)
     {
       /* The test avoids overriding the effect of atomic_hwevent */
       if (!ddecl->spontaneous)
-	ddecl->spontaneous = c_call_nonatomic;
+        ddecl->spontaneous = c_call_nonatomic;
     }
 }
 
@@ -688,9 +688,9 @@ static void attr_combine_decl(nesc_attribute attr, data_declaration ddecl)
       (fn_name = ddecl2str(parse_region, fn_name_ddecl)))
     {
       if (ddecl->kind == decl_typedef)
-	handle_combine_attribute(attr->location, fn_name, &ddecl->type);
+        handle_combine_attribute(attr->location, fn_name, &ddecl->type);
       else
-	error_with_location(attr->location, "@combine(\"function-name\") can only be used with typedef");
+        error_with_location(attr->location, "@combine(\"function-name\") can only be used with typedef");
     }
   else
     error_with_location(attr->location, "usage is @combine(\"function-name\")");
@@ -709,8 +709,8 @@ static void attr_macro_tdecl(nesc_attribute attr, tag_declaration tdecl)
     }
 
   if (!(macro_name_init && macro_name_init->kind == iv_base &&
-	(macro_name_ddecl = string_ddecl(macro_name_init->u.base.expr)) &&
-	(macro_name = ddecl2str(parse_region, macro_name_ddecl))))
+        (macro_name_ddecl = string_ddecl(macro_name_init->u.base.expr)) &&
+        (macro_name = ddecl2str(parse_region, macro_name_ddecl))))
     goto bad;
 
   /* Check that the symbol name is a valid macro name (C symbol) */
@@ -731,18 +731,18 @@ static void attr_macro_tdecl(nesc_attribute attr, tag_declaration tdecl)
 void init_internal_nesc_attributes(void)
 {
   define_internal_attribute("C", NULL, attr_C_decl, attr_C_tdecl, NULL, NULL,
-			    NULL);
+                            NULL);
   define_internal_attribute("hwevent", NULL, attr_hwevent_decl, NULL, NULL,
-			    NULL, NULL);
+                            NULL, NULL);
   define_internal_attribute("atomic_hwevent", NULL, attr_atomic_hwevent_decl,
-			    NULL, NULL, NULL, NULL);
+                            NULL, NULL, NULL, NULL);
   define_internal_attribute("spontaneous", NULL, attr_spontaneous_decl, NULL,
-			    NULL, NULL, NULL);
+                            NULL, NULL, NULL);
   define_internal_attribute("combine", NULL, attr_combine_decl, NULL, NULL,
-			    NULL,
-			    "fn", make_pointer_type(char_type), NULL);
+                            NULL,
+                            "fn", make_pointer_type(char_type), NULL);
   define_internal_attribute("macro", NULL, NULL, attr_macro_tdecl, NULL, NULL,
-			    "macro_name", make_pointer_type(char_type), NULL);
+                            "macro_name", make_pointer_type(char_type), NULL);
 }
 
 void check_name(const char *name)
@@ -766,12 +766,12 @@ void check_name(const char *name)
       static int first = 1;
 
       warning("symbol `%s' contains the separator `%s' used in generated code",
-	      name, sep);
+              name, sep);
       if (first)
-	{
-	  warning("This can cause bugs or compile errors when the C code");
-	  warning("generated by nesC is passed to the underlying C compiler");
-	  first = FALSE;
-	}
+        {
+          warning("This can cause bugs or compile errors when the C code");
+          warning("generated by nesC is passed to the underlying C compiler");
+          first = FALSE;
+        }
     }
 }

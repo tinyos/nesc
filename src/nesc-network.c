@@ -75,7 +75,7 @@ static void validate_network_lvalue(expression e)
       (type_network_base_type(cond->arg1->type) ||
        type_network_base_type(cond->arg2->type)))
     error_with_location(e->location,
-			"Conditional assignment not supported for network types");
+                        "Conditional assignment not supported for network types");
 }
 
 /* Check if expression e is of network base type.  Parameters whose address
@@ -89,8 +89,8 @@ static bool really_network_base(expression e)
       data_declaration ddecl = id->ddecl;
 
       if (ddecl->kind == decl_variable && ddecl->isparameter &&
-	  !(ddecl->use_summary & c_addressed))
-	return FALSE;
+          !(ddecl->use_summary & c_addressed))
+        return FALSE;
     }
   return e->type && type_network_base_type(e->type);
 }
@@ -105,7 +105,7 @@ static data_declaration add_network_temporary(function_decl fn, type t)
 }
 
 static AST_walker_result network_expression(AST_walker spec, void *data,
-					    expression *n)
+                                            expression *n)
 {
   expression e = *n;
   function_decl fn = data;
@@ -118,7 +118,7 @@ static AST_walker_result network_expression(AST_walker spec, void *data,
 }
 
 static AST_walker_result network_assignment(AST_walker spec, void *data,
-					    assignment *n)
+                                            assignment *n)
 {
   assignment a = *n;
   function_decl fn = data;
@@ -126,13 +126,13 @@ static AST_walker_result network_assignment(AST_walker spec, void *data,
   if (really_network_base(a->arg1))
     {
       if (a->kind != kind_assign) /* op= reads too */
-	{
-	  ntoh_used(a->arg1, fn);
-	  /* See problem/ugly hack comment in network_increment */
-	  /* op= needs a temp */
-	  if (!a->temp1)
-	    a->temp1 = add_network_temporary(fn, uchar_ptr_type);
-	}
+        {
+          ntoh_used(a->arg1, fn);
+          /* See problem/ugly hack comment in network_increment */
+          /* op= needs a temp */
+          if (!a->temp1)
+            a->temp1 = add_network_temporary(fn, uchar_ptr_type);
+        }
       hton_used(a->arg1, fn);
     }
 
@@ -142,7 +142,7 @@ static AST_walker_result network_assignment(AST_walker spec, void *data,
 }
 
 static AST_walker_result network_increment(AST_walker spec, void *data,
-					   increment *n)
+                                           increment *n)
 {
   increment i = *n;
   function_decl fn = data;
@@ -153,18 +153,18 @@ static AST_walker_result network_increment(AST_walker spec, void *data,
       hton_used(i->arg1, fn);
 
       /* Problem: adding the declarations for the temporaries changes the
-	 AST as we're walking through it. If we add a temporary while
-	 walking through the first declaration, we'll revisit this
-	 declaration. Oops.  Ugly hack fix: don't create the temporaries if
-	 they've already been created. Note that this could lead to
-	 duplicate error messages from validate_network_lvalue, but that's
-	 for use of a deprecated gcc feature which is going away soon. */
+         AST as we're walking through it. If we add a temporary while
+         walking through the first declaration, we'll revisit this
+         declaration. Oops.  Ugly hack fix: don't create the temporaries if
+         they've already been created. Note that this could lead to
+         duplicate error messages from validate_network_lvalue, but that's
+         for use of a deprecated gcc feature which is going away soon. */
       if (!i->temp1)
-	{
-	  /* we use 2 temps */
-	  i->temp1 = add_network_temporary(fn, uchar_ptr_type);
-	  i->temp2 = add_network_temporary(fn, type_network_platform_type(i->type));
-	}
+        {
+          /* we use 2 temps */
+          i->temp1 = add_network_temporary(fn, uchar_ptr_type);
+          i->temp2 = add_network_temporary(fn, type_network_platform_type(i->type));
+        }
     }
 
   validate_network_lvalue(i->arg1);
@@ -173,7 +173,7 @@ static AST_walker_result network_increment(AST_walker spec, void *data,
 }
 
 static AST_walker_result network_fdecl(AST_walker spec, void *data,
-				       function_decl *fd)
+                                       function_decl *fd)
 {
   AST_walk_children(spec, *fd, CAST(node, *fd));
   return aw_done;
@@ -243,7 +243,7 @@ static bool prt_network_lvalue(expression e)
   if (isbf)
     {
       /* Network bitfields have no name in the generated code. Just
-	 print the structure. We'll add the offset and size later. */
+         print the structure. We'll add the offset and size later. */
       output("(unsigned char *)&");
       prt_expression(CAST(field_ref, e)->arg1, P_CALL);
     }
@@ -262,7 +262,7 @@ static void prt_network_bitfield_info(expression e)
   field_declaration fdecl = fref->fdecl;
 
   output(", %llu, %llu",
-	 cval_uint_value(fdecl->offset), cval_uint_value(fdecl->bitwidth));
+         cval_uint_value(fdecl->offset), cval_uint_value(fdecl->bitwidth));
 }
 
 static void prt_network_full_lvalue(expression e)
@@ -313,12 +313,12 @@ static bool prt_network_assignment(expression e)
       output_hton_expr(a->arg1);
       output("(%s", temp);
       if (bitfield)
-	prt_network_bitfield_info(a->arg1);
+        prt_network_bitfield_info(a->arg1);
       output(", ");
       output_ntoh_expr(a->arg1);
       output("(%s", temp);
       if (bitfield)
-	prt_network_bitfield_info(a->arg1);
+        prt_network_bitfield_info(a->arg1);
       output(") %s ", selfassign);
       prt_expression(a->arg2, P_TIMES);
       output("))");
@@ -379,7 +379,7 @@ static bool prt_network_increment(expression e)
 static bool prt_network_read(expression e)
 {
   if (!(really_network_base(e) &&
-	(e->context & c_read) && !(e->context & c_write)))
+        (e->context & c_read) && !(e->context & c_write)))
     return FALSE;
 
   output_ntoh_expr(e);
@@ -406,20 +406,20 @@ bool prt_network_typedef(data_decl d, variable_decl vd)
       type basetype = vd->ddecl->basetype;
 
       if (!type_size_cc(basetype) && cval_isinteger(type_size(basetype)))
-	error_with_location(vd->location, "network base type `%s' is of unknown size", vd->ddecl->name);
+        error_with_location(vd->location, "network base type `%s' is of unknown size", vd->ddecl->name);
       else
-	{
-	  set_location(vd->location);
-	  output("typedef struct { unsigned char nxdata[%d]; } __attribute__((packed)) %s;",
-		 (int)type_size_int(basetype), vd->ddecl->name);
-	}
+        {
+          set_location(vd->location);
+          output("typedef struct { unsigned char nxdata[%d]; } __attribute__((packed)) %s;",
+                 (int)type_size_int(basetype), vd->ddecl->name);
+        }
       return TRUE;
     }
   return FALSE;
 }
 
 static bool prt_network_parameter_copy(declaration parm, bool copies,
-				       bool init)
+                                       bool init)
 {
   if (is_data_decl(parm))
     {
@@ -428,26 +428,26 @@ static bool prt_network_parameter_copy(declaration parm, bool copies,
       data_declaration ddecl = vd->ddecl;
 
       if (ddecl && type_network_base_type(ddecl->type) &&
-	  (ddecl->use_summary & c_addressed))
-	{
-	  /* We need a real network type copy. */
-	  if (!init)
-	    {
-	      if (!copies)
-		{
-		  outputln("{");
-		  indent();
-		}
-	      prt_data_decl(dd);
-	    }
-	  else
-	    {
-	      output_hton(ddecl->type);
-	      outputln("(%s.nxdata, %s%s);", ddecl->name, NXBASE_PREFIX, ddecl->name);
-	    }
+          (ddecl->use_summary & c_addressed))
+        {
+          /* We need a real network type copy. */
+          if (!init)
+            {
+              if (!copies)
+                {
+                  outputln("{");
+                  indent();
+                }
+              prt_data_decl(dd);
+            }
+          else
+            {
+              output_hton(ddecl->type);
+              outputln("(%s.nxdata, %s%s);", ddecl->name, NXBASE_PREFIX, ddecl->name);
+            }
 
-	  return TRUE;
-	}
+          return TRUE;
+        }
     }
   return copies;
 }
@@ -486,7 +486,7 @@ static void network_align_to(largest_uint offset, struct network_state *ns)
 {
   if (ns->offset < offset) /* There's a gap. Fill it. */
     outputln("unsigned char __nesc_filler%lu[%llu];",
-	     filler_count++, offset - ns->offset);
+             filler_count++, offset - ns->offset);
 }
 
 void prt_network_field_data_decl(data_decl d, struct network_state *ns)
@@ -502,39 +502,39 @@ void prt_network_field_data_decl(data_decl d, struct network_state *ns)
 
       /* bitfields just show up as filler */
       if (cval_istop(fdecl->bitwidth))
-	{
-	  if (!cval_isinteger(fdecl->offset))
-	    error_with_location(fdd->location, "unsupported network type");
-	  else 
-	    {
-	      largest_uint offset = cval_uint_value(fdecl->offset) / BITSPERBYTE;
+        {
+          if (!cval_isinteger(fdecl->offset))
+            error_with_location(fdd->location, "unsupported network type");
+          else 
+            {
+              largest_uint offset = cval_uint_value(fdecl->offset) / BITSPERBYTE;
 
-	      network_align_to(offset, ns);
-	      if (type_size_cc(fdecl->type))
-		ns->offset = offset + type_size_int(fdecl->type);
-	    }
-	    
-	  if (ns->isextension)
-	    output("__extension__ ");
-	  prt_type_elements(d->modifiers, opts);
-	  opts |= psd_duplicate;
-	  prt_field_decl(fdd);
-	  outputln(";");
-	}
+              network_align_to(offset, ns);
+              if (type_size_cc(fdecl->type))
+                ns->offset = offset + type_size_int(fdecl->type);
+            }
+            
+          if (ns->isextension)
+            output("__extension__ ");
+          prt_type_elements(d->modifiers, opts);
+          opts |= psd_duplicate;
+          prt_field_decl(fdd);
+          outputln(";");
+        }
     }
   /* If there's an unnamed struct/union field, we need to print it and 
      account for its size in ns */
   if (!(opts & psd_duplicate))
     scan_type_element (interesting, d->modifiers)
       if (is_tag_ref(interesting))
-	{
-	  tag_ref tr = CAST(tag_ref, interesting);
+        {
+          tag_ref tr = CAST(tag_ref, interesting);
 
-	  prt_type_element(interesting, opts);
-	  outputln(";");
-	  if (cval_isinteger(tr->tdecl->size))
-	    ns->offset += cval_uint_value(tr->tdecl->size);	  
-	}
+          prt_type_element(interesting, opts);
+          outputln(";");
+          if (cval_isinteger(tr->tdecl->size))
+            ns->offset += cval_uint_value(tr->tdecl->size);          
+        }
 }
 
 void prt_network_field_declaration(declaration d, struct network_state *ns)

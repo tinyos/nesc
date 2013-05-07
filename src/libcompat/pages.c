@@ -138,24 +138,24 @@ static void addbyaddress(struct page *p)
   if (p > last_add)
     {
       for (address_scan = pages_byaddress.prev_address; ;
-	   address_scan = address_scan->prev_address)
-	if (p > address_scan || address_scan == &pages_byaddress)
-	  {
-	    last_add = p;
-	    insertafter_address(p, address_scan);
-	    return;
-	  }
+           address_scan = address_scan->prev_address)
+        if (p > address_scan || address_scan == &pages_byaddress)
+          {
+            last_add = p;
+            insertafter_address(p, address_scan);
+            return;
+          }
     }
   else
     {
       for (address_scan = pages_byaddress.next_address; ;
-	   address_scan = address_scan->next_address)
-	if (p < address_scan || address_scan == &pages_byaddress)
-	  {
-	    last_add = p;
-	    insertbefore_address(p, address_scan);
-	    return;
-	  }
+           address_scan = address_scan->next_address)
+        if (p < address_scan || address_scan == &pages_byaddress)
+          {
+            last_add = p;
+            insertbefore_address(p, address_scan);
+            return;
+          }
     }
 }
 
@@ -314,14 +314,14 @@ void set_page_region(pageid pagenb, region r)
 
       rmap = (region *)malloc(sizeof(region) * (1 << MEMSLICE3));
       if (!rmap)
-	{
-	  if (nomem_h)
-	    nomem_h();
-	  abort();
-	}
+        {
+          if (nomem_h)
+            nomem_h();
+          abort();
+        }
       __regiontable[offset2] = rmap;
       for (i = 0; i < (1 << MEMSLICE3); i++) {
-	rmap[i] = NULL;
+        rmap[i] = NULL;
       }
     }
   rmap[offset3] = r;
@@ -407,7 +407,7 @@ struct page *alloc_new(int n, struct page *next)
   if (!newp)
     {
       if (nomem_h)
-	nomem_h();
+        nomem_h();
       abort();
     }
   assert(!((long)newp & (RPAGESIZE - 1)));
@@ -429,7 +429,7 @@ struct page *alloc_pages(int n, struct page *next)
   for (;;)
     {
       if (!scan)
-	return alloc_new(n, next);
+        return alloc_new(n, next);
 
       if (scan->pagecount >= n) break;
       scan = scan->next;
@@ -442,13 +442,13 @@ struct page *alloc_pages(int n, struct page *next)
     {
       scan = scan->next;
       if (!scan)
-	return alloc_split(best, n, next);
+        return alloc_split(best, n, next);
 
       if (scan->pagecount >=n && scan->pagecount < bestn)
-	{
-	  best = scan;
-	  bestn = scan->pagecount;
-	}
+        {
+          best = scan;
+          bestn = scan->pagecount;
+        }
     }
 }
 
@@ -518,7 +518,7 @@ static void add_single_pages(struct page *base)
       base->next = single_pages;
       single_pages = base;
       if (--n == 0)
-	break;
+        break;
       next = (struct page *)((char *)base + RPAGESIZE);
       base->next_address = next;
       base = next;
@@ -542,26 +542,26 @@ void scavenge_single_pages(int n)
   while (scan)
     {
       /* The pages < K can't be used for anything but single pages so we
-	 might as well grab them even if they are a little too big */
+         might as well grab them even if they are a little too big */
       if (scan->pagecount <= n || scan->pagecount < K)
-	{
-	  struct page *adding = scan;
+        {
+          struct page *adding = scan;
 
-	  scan = scan->next;
-	  n -= adding->pagecount;
-	  unlink_page(&unused_pages, adding);
-	  add_single_pages(adding);
-	  if (n <= 0) return;
-	}
+          scan = scan->next;
+          n -= adding->pagecount;
+          unlink_page(&unused_pages, adding);
+          add_single_pages(adding);
+          if (n <= 0) return;
+        }
       else
-	{
-	  if (scan->pagecount < bestn)
-	    {
-	      bestn = scan->pagecount;
-	      best = scan;
-	    }
-	  scan = scan->next;
-	}
+        {
+          if (scan->pagecount < bestn)
+            {
+              bestn = scan->pagecount;
+              best = scan;
+            }
+          scan = scan->next;
+        }
     }
   /* Still not enough. Split the best block if there is one, allocate
      new pages otherwise */

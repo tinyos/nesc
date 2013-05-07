@@ -27,7 +27,7 @@ Boston, MA 02111-1307, USA. */
 
 /* Untyped to make declaration easier. Actual signature is
      AST_walker_result AST_walker_fn(AST_walker spec, void *data,
-  				     <your node type> *n);
+                                       <your node type> *n);
    Note: the aw_walk and aw_call_parent results will be applied to
    *n after the walker function returns, not to the orignal node.
 */
@@ -64,6 +64,6 @@ void AST_walk_children(AST_walker spec, void *data, node n);
 
 /* Just execute the walker function for node-type 'kind' */
 AST_walker_result AST_walker_call(AST_walker spec, AST_kind kind,
-				  void *data, node *n);
+                                  void *data, node *n);
 
 #endif

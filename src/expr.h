@@ -37,7 +37,7 @@ expression make_alignof_type(location loc, asttype t);
 expression make_cast(location loc, asttype t, expression e);
 expression make_binary(location loc, int binop, expression e1, expression e2);
 expression make_conditional(location loc, expression cond,
-			    expression true, expression false);
+                            expression true, expression false);
 expression make_assign(location loc, int assignop, expression left, expression right);
 expression make_identifier(location loc, cstring id, bool maybe_implicit);
 expression make_compound_expr(location loc, statement block);
@@ -47,7 +47,7 @@ expression make_offsetof(location loc, asttype t, dd_list fields);
 expression make_array_ref(location loc, expression array, expression index);
 expression make_field_ref(location loc, expression object, cstring field);
 expression make_field_indirectref(location loc, expression object,
-				  cstring field);
+                                  cstring field);
 expression make_postincrement(location loc, expression e);
 expression make_preincrement(location loc, expression e);
 expression make_postdecrement(location loc, expression e);
@@ -55,12 +55,12 @@ expression make_predecrement(location loc, expression e);
 
 /* Return TRUE if no error and lhstype and rhstype are not error_type */
 bool check_assignment(type lhstype, type rhstype, expression rhs,
-		      const char *context, data_declaration fundecl,
-		      int parmnum);
+                      const char *context, data_declaration fundecl,
+                      int parmnum);
 
 bool check_conversion(type to, type from);
 bool check_arguments(type fntype, expression arglist,
-		     data_declaration fundecl, bool generic_call);
+                     data_declaration fundecl, bool generic_call);
 
 type default_conversion(expression e);
 type default_function_array_conversion(expression e);

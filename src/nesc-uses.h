@@ -32,7 +32,7 @@ typedef enum {
 typedef struct use
 {
   location l;
-  data_declaration fn;		/* function containing use */
+  data_declaration fn;                /* function containing use */
   context c;
 } *use;
 

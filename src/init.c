@@ -36,8 +36,8 @@ Boston, MA 02111-1307, USA. */
 static type set_array_length(type t, largest_int length)
 {
   return make_array_type(type_array_of(t),
-			 build_uint_constant(parse_region, dummy_location,
-					     size_t_type, length));
+                         build_uint_constant(parse_region, dummy_location,
+                                             size_t_type, length));
 }
 
 static largest_int string_constant_length(expression e)
@@ -89,9 +89,9 @@ struct spelling
 #define SPELLING_MEMBER 2
 #define SPELLING_BOUNDS 3
 
-static struct spelling *spelling;	/* Next stack element (unused).  */
-static struct spelling *spelling_base;	/* Spelling stack base.  */
-static int spelling_size;		/* Size of the spelling stack.  */
+static struct spelling *spelling;        /* Next stack element (unused).  */
+static struct spelling *spelling_base;        /* Spelling stack base.  */
+static int spelling_size;                /* Size of the spelling stack.  */
 
 /* Macros to save and restore the spelling stack around push_... functions.
    Alternative to SAVE_SPELLING_STACK.  */
@@ -101,36 +101,36 @@ static int spelling_size;		/* Size of the spelling stack.  */
 
 /* Save and restore the spelling stack around arbitrary C code.  */
 
-#define SAVE_SPELLING_DEPTH(code)		\
-{						\
-  int __depth = SPELLING_DEPTH ();		\
-  code;						\
-  RESTORE_SPELLING_DEPTH (__depth);		\
+#define SAVE_SPELLING_DEPTH(code)                \
+{                                                \
+  int __depth = SPELLING_DEPTH ();                \
+  code;                                                \
+  RESTORE_SPELLING_DEPTH (__depth);                \
 }
 
 /* Push an element on the spelling stack with type KIND and assign VALUE
    to MEMBER.  */
 
-#define PUSH_SPELLING(KIND, VALUE, MEMBER)				\
-{									\
-  int depth = SPELLING_DEPTH ();					\
-									\
-  if (depth >= spelling_size)						\
-    {									\
-      spelling_size += 10;						\
-      if (spelling_base == 0)						\
-	spelling_base							\
-	  = (struct spelling *) xmalloc (spelling_size * sizeof (struct spelling));	\
-      else								\
-        spelling_base							\
-	  = (struct spelling *) xrealloc (spelling_base,		\
-					  spelling_size * sizeof (struct spelling));	\
-      RESTORE_SPELLING_DEPTH (depth);					\
-    }									\
-									\
-  spelling->kind = (KIND);						\
-  spelling->MEMBER = (VALUE);						\
-  spelling++;								\
+#define PUSH_SPELLING(KIND, VALUE, MEMBER)                                \
+{                                                                        \
+  int depth = SPELLING_DEPTH ();                                        \
+                                                                        \
+  if (depth >= spelling_size)                                                \
+    {                                                                        \
+      spelling_size += 10;                                                \
+      if (spelling_base == 0)                                                \
+        spelling_base                                                        \
+          = (struct spelling *) xmalloc (spelling_size * sizeof (struct spelling));        \
+      else                                                                \
+        spelling_base                                                        \
+          = (struct spelling *) xrealloc (spelling_base,                \
+                                          spelling_size * sizeof (struct spelling));        \
+      RESTORE_SPELLING_DEPTH (depth);                                        \
+    }                                                                        \
+                                                                        \
+  spelling->kind = (KIND);                                                \
+  spelling->MEMBER = (VALUE);                                                \
+  spelling++;                                                                \
 }
 
 /* Push STRING on the stack.  Printed literally.  */
@@ -164,9 +164,9 @@ static int spelling_length(void)
   for (p = spelling_base; p < spelling; p++)
     {
       if (p->kind == SPELLING_BOUNDS)
-	size += 25;
+        size += 25;
       else
-	size += strlen (p->u.s) + 1;
+        size += strlen (p->u.s) + 1;
     }
 
   return size;
@@ -184,16 +184,16 @@ print_spelling (buffer)
   for (p = spelling_base; p < spelling; p++)
     if (p->kind == SPELLING_BOUNDS)
       {
-	sprintf (d, "[%ld]", (long)p->u.i);
-	d += strlen (d);
+        sprintf (d, "[%ld]", (long)p->u.i);
+        d += strlen (d);
       }
     else
       {
-	const char *s;
-	if (p->kind == SPELLING_MEMBER)
-	  *d++ = '.';
-	for (s = p->u.s; (*d = *s++); d++)
-	  ;
+        const char *s;
+        if (p->kind == SPELLING_MEMBER)
+          *d++ = '.';
+        for (s = p->u.s; (*d = *s++); d++)
+          ;
       }
   *d++ = '\0';
   return buffer;
@@ -278,38 +278,38 @@ static bool digest_init(type t, expression init)
       type typ1 = type_array_of(t);
 
       if ((type_char(typ1) || type_equal_unqualified(typ1, wchar_type))
-	  && is_string(init))
-	{
-	  type init_chartype = type_array_of(itype);
-	  cval tcsize;
+          && is_string(init))
+        {
+          type init_chartype = type_array_of(itype);
+          cval tcsize;
 
-	  if (type_compatible_unqualified(t, itype))
-	    return TRUE;
+          if (type_compatible_unqualified(t, itype))
+            return TRUE;
 
-	  if (!type_char(init_chartype) && type_char(typ1))
-	    {
-	      error_init ("char-array initialized from wide string");
-	      return FALSE;
-	    }
-	  if (type_char(init_chartype) && !type_char(typ1))
-	    {
-	      error_init ("int-array initialized from non-wide string");
-	      return FALSE;
-	    }
+          if (!type_char(init_chartype) && type_char(typ1))
+            {
+              error_init ("char-array initialized from wide string");
+              return FALSE;
+            }
+          if (type_char(init_chartype) && !type_char(typ1))
+            {
+              error_init ("int-array initialized from non-wide string");
+              return FALSE;
+            }
 
-	  tcsize = type_array_size_cval(t);
-	  if (!cval_istop(tcsize))
-	    {
-	      largest_uint tsize = cval_uint_value(tcsize);
-	      data_declaration sdecl = CAST(string, init)->ddecl;
+          tcsize = type_array_size_cval(t);
+          if (!cval_istop(tcsize))
+            {
+              largest_uint tsize = cval_uint_value(tcsize);
+              data_declaration sdecl = CAST(string, init)->ddecl;
 
-	      /* Don't count the null char (char x[1] = "a" is ok) */
-	      if (tsize && tsize < sdecl->schars.length / type_size_int(type_array_of(sdecl->type)))
-		pedwarn_init ("initializer-string for array of chars is too long");
-	    }
+              /* Don't count the null char (char x[1] = "a" is ok) */
+              if (tsize && tsize < sdecl->schars.length / type_size_int(type_array_of(sdecl->type)))
+                pedwarn_init ("initializer-string for array of chars is too long");
+            }
 
-	  return TRUE;
-	}
+          return TRUE;
+        }
     }
 
   /* Any type can be initialized
@@ -321,29 +321,29 @@ static bool digest_init(type t, expression init)
       type_compatible(t, type_default_conversion_for_assignment(itype)))
     {
       if (type_pointer(t))
-	itype = default_conversion_for_assignment(init);
+        itype = default_conversion_for_assignment(init);
 
 #if 0
       if (require_constant /*&& !flag_isoc99*/ && is_cast_list(init))
-	{
-	  /* As an extension, allow initializing objects with static storage
-	     duration with compound literals (which are then treated just as
-	     the brace enclosed list they contain).  */
-	  init = CAST(cast_list, init)->init_expr;
-	  itype = init->type;
-	}
+        {
+          /* As an extension, allow initializing objects with static storage
+             duration with compound literals (which are then treated just as
+             the brace enclosed list they contain).  */
+          init = CAST(cast_list, init)->init_expr;
+          itype = init->type;
+        }
 #endif
 
       if (type_array(t) && !(is_string(init) || is_init_list(init)))
-	{
-	  error_init ("array initialized from non-constant array expression");
-	  return FALSE;
-	}
+        {
+          error_init ("array initialized from non-constant array expression");
+          return FALSE;
+        }
 
       /* Note: gcc allows "static int a = (1,2)" if -pedantic is
-	 specified even though it doesn't allow case (1,2) when
-	 -pedantic is specified. For the sake of consistency,
-	 I'm not allowing either when -pedantic is specified. */
+         specified even though it doesn't allow case (1,2) when
+         -pedantic is specified. For the sake of consistency,
+         I'm not allowing either when -pedantic is specified. */
 
       return TRUE;
     }
@@ -362,26 +362,26 @@ static bool digest_init(type t, expression init)
       bool changed = FALSE;
 
       while (type_array(t) || type_aggregate(t))
-	{
-	  changed = TRUE;
-	  if (type_array(t))
-	    t = type_array_of(t);
-	  else
-	    {
-	      tag_declaration tdecl = type_tag(t);
+        {
+          changed = TRUE;
+          if (type_array(t))
+            t = type_array_of(t);
+          else
+            {
+              tag_declaration tdecl = type_tag(t);
 
-	      if (tdecl->fieldlist)
-		t = tdecl->fieldlist->type;
-	      else
-		{
-		  error_init ("invalid initializer");
-		  return FALSE;
-		}
-	    }
-	}
+              if (tdecl->fieldlist)
+                t = tdecl->fieldlist->type;
+              else
+                {
+                  error_init ("invalid initializer");
+                  return FALSE;
+                }
+            }
+        }
 
       if (changed)
-	return digest_init(t, init);
+        return digest_init(t, init);
     }
   error_init("invalid initializer");
   return FALSE;
@@ -528,8 +528,8 @@ static void pop_exhausted_levels(void)
   /* If we've exhausted any levels that didn't have braces,
      pop them now.  */
   while (constructor_stack->implicit &&
-	 ((constructor_kind == c_aggregate && constructor_fields == 0) ||
-	  (constructor_kind == c_array && constructor_max_index < constructor_index)))
+         ((constructor_kind == c_aggregate && constructor_fields == 0) ||
+          (constructor_kind == c_array && constructor_max_index < constructor_index)))
     pop_implicit_level();
 }
 
@@ -742,13 +742,13 @@ void push_init_level(int implicit)
     {
       /* Don't die if there are extra init elts at the end.  */
       if (constructor_fields == 0)
-	constructor_type = 0;
+        constructor_type = 0;
       else
-	{
-	  constructor_type = constructor_fields->type;
-	  push_member_name(constructor_fields);
-	  constructor_depth++;
-	}
+        {
+          constructor_type = constructor_fields->type;
+          push_member_name(constructor_fields);
+          constructor_depth++;
+        }
     }
   else if (constructor_kind == c_array)
     {
@@ -805,9 +805,9 @@ static bool new_constructor_type(void)
 
       constructor_kind = c_array;
       if (cval_istop(max))
-	constructor_max_index = -1;
+        constructor_max_index = -1;
       else
-	constructor_max_index = cval_sint_value(max) - 1;
+        constructor_max_index = cval_sint_value(max) - 1;
       constructor_index = constructor_array_size = 0;
       constructor_value = new_ivalue(parse_region, iv_array, constructor_type);
     }
@@ -843,20 +843,20 @@ static type pop_init_level(void)
       && !type_array_size(constructor_type))
     {
       /* Silently discard empty initializations.  The parser will
-	 already have pedwarned for empty brackets.  */
+         already have pedwarned for empty brackets.  */
       if (constructor_count > 0)
-	{
-	  if (constructor_depth > 2)
-	    error_init("initialization of flexible array member in a nested context");
-	  else if (pedantic)
-	    pedwarn_init("initialization of a flexible array member");
+        {
+          if (constructor_depth > 2)
+            error_init("initialization of flexible array member in a nested context");
+          else if (pedantic)
+            pedwarn_init("initialization of a flexible array member");
 
-	  /* We have already issued an error message for the existence
-	     of a flexible array member not at the end of the structure.
-	     Discard the initializer so that we do not abort later.  */
-	  if (constructor_fields->next)
-	    constructor_type = NULL;
-	}
+          /* We have already issued an error message for the existence
+             of a flexible array member not at the end of the structure.
+             Discard the initializer so that we do not abort later.  */
+          if (constructor_fields->next)
+            constructor_type = NULL;
+        }
     }
 
 #if 0
@@ -866,20 +866,20 @@ static type pop_init_level(void)
       && TREE_CODE (constructor_type) == RECORD_TYPE
       && constructor_unfilled_fields)
     {
-	/* Do not warn for flexible array members or zero-length arrays.  */
-	while (constructor_unfilled_fields
-	       && (! DECL_SIZE (constructor_unfilled_fields)
-		   || integer_zerop (DECL_SIZE (constructor_unfilled_fields))))
-	  constructor_unfilled_fields = TREE_CHAIN (constructor_unfilled_fields);
+        /* Do not warn for flexible array members or zero-length arrays.  */
+        while (constructor_unfilled_fields
+               && (! DECL_SIZE (constructor_unfilled_fields)
+                   || integer_zerop (DECL_SIZE (constructor_unfilled_fields))))
+          constructor_unfilled_fields = TREE_CHAIN (constructor_unfilled_fields);
 
-	/* Do not warn if this level of the initializer uses member
-	   designators; it is likely to be deliberate.  */
-	if (constructor_unfilled_fields && !constructor_designated)
-	  {
-	    push_member_name (constructor_unfilled_fields);
-	    warning_init ("missing initializer");
-	    RESTORE_SPELLING_DEPTH (constructor_depth);
-	  }
+        /* Do not warn if this level of the initializer uses member
+           designators; it is likely to be deliberate.  */
+        if (constructor_unfilled_fields && !constructor_designated)
+          {
+            push_member_name (constructor_unfilled_fields);
+            warning_init ("missing initializer");
+            RESTORE_SPELLING_DEPTH (constructor_depth);
+          }
     }
 #endif
 
@@ -925,10 +925,10 @@ static bool set_designator(bool array)
   if (!designator_depth)
     {
       if (constructor_range_stack)
-	abort ();
+        abort ();
 
       /* Designator list starts at the level of closest explicit
-	 braces.  */
+         braces.  */
       pop_all_implicit_levels();
       constructor_designated = 1;
       return FALSE;
@@ -996,7 +996,7 @@ static void push_range_stack(expression range_end)
 designator set_init_index(location loc, expression first, expression last)
 {
   designator d = CAST(designator,
-		      new_designate_index(parse_region, loc, first, last));
+                      new_designate_index(parse_region, loc, first, last));
 
   if (set_designator(TRUE))
     return d;
@@ -1010,7 +1010,7 @@ designator set_init_index(location loc, expression first, expression last)
   else if (constructor_kind != c_array)
     error_init("array index in non-array initializer");
   else if (constructor_max_index >= 0
-	   && constructor_max_index < constant_sint_value(first->cst))
+           && constructor_max_index < constant_sint_value(first->cst))
     error_init("array index in initializer exceeds array bounds");
   else
     {
@@ -1019,30 +1019,30 @@ designator set_init_index(location loc, expression first, expression last)
       constructor_index = fval;
 
       if (last)
-	{
-	  largest_int lval = constant_sint_value(last->cst);
+        {
+          largest_int lval = constant_sint_value(last->cst);
 
-	  if (fval == lval)
-	    last = 0;
-	  else if (lval < fval)
-	    {
-	      error_init("empty index range in initializer");
-	      last = 0;
-	    }
-	  else
-	    {
-	      if (constructor_max_index >= 0 && constructor_max_index < lval)
-		{
-		  error_init("array index range in initializer exceeds array bounds");
-		  last = 0;
-		}
-	    }
-	}
+          if (fval == lval)
+            last = 0;
+          else if (lval < fval)
+            {
+              error_init("empty index range in initializer");
+              last = 0;
+            }
+          else
+            {
+              if (constructor_max_index >= 0 && constructor_max_index < lval)
+                {
+                  error_init("array index range in initializer exceeds array bounds");
+                  last = 0;
+                }
+            }
+        }
 
       designator_depth++;
       designator_erroneous = 0;
       if (constructor_range_stack || last)
-	push_range_stack(last);
+        push_range_stack(last);
     }
 
   return d;
@@ -1053,7 +1053,7 @@ designator set_init_index(location loc, expression first, expression last)
 designator set_init_label(location loc, cstring fieldname)
 {
   designator d = CAST(designator,
-		      new_designate_field(parse_region, loc, fieldname));
+                      new_designate_field(parse_region, loc, fieldname));
   field_declaration tail;
   tag_declaration tdecl;
 
@@ -1078,7 +1078,7 @@ designator set_init_label(location loc, cstring fieldname)
       designator_depth++;
       designator_erroneous = 0;
       if (constructor_range_stack)
-	push_range_stack(NULL);
+        push_range_stack(NULL);
     }
 
   return d;
@@ -1125,10 +1125,10 @@ void check_init_element(expression init)
     {
       constant_overflow_warning(c);
       if (init->ivalue)
-	{
-	  assert(init->ivalue->kind == iv_base);
-	  init->ivalue->u.base.value = cval_cast(c->cval, init->ivalue->type);
-	}
+        {
+          assert(init->ivalue->kind == iv_base);
+          init->ivalue->u.base.value = cval_cast(c->cval, init->ivalue->type);
+        }
     }
 }
 
@@ -1152,9 +1152,9 @@ static void output_init_element(expression init, type t)
     {
       check_init_element(init);
       /* If we haven't checked it yet then we'll need the spelling later
-	 (see nesc-constants.c) */
+         (see nesc-constants.c) */
       if (!init->cst_checked)
-	save_expression_spelling(init);
+        save_expression_spelling(init);
     }
 }
 
@@ -1188,10 +1188,10 @@ void process_init_element(expression value)
       constructor_kind = c_scalar;
       constructor_index = 0;
       if (!type_array_size(constructor_type))
-	constructor_type = constructor_value->type =
-	  set_string_length(constructor_type, value);
+        constructor_type = constructor_value->type =
+          set_string_length(constructor_type, value);
       /* XXX: maybe this should stay as a iv_array, and the string should
-	 be broken down into characters? */
+         be broken down into characters? */
       constructor_value->kind = iv_base;
       constructor_value->u.base.expr = NULL;
       constructor_value->u.base.value = cval_top;
@@ -1212,92 +1212,92 @@ void process_init_element(expression value)
       type elttype = error_type;
 
       switch (constructor_kind)
-	{
-	case c_aggregate:
-	  if (constructor_fields == 0)
-	    {
-	      pedwarn_init("excess elements in struct or union initializer");
-	      break;
-	    }
-	  elttype = constructor_fields->type;
+        {
+        case c_aggregate:
+          if (constructor_fields == 0)
+            {
+              pedwarn_init("excess elements in struct or union initializer");
+              break;
+            }
+          elttype = constructor_fields->type;
 
-	  /* Error for non-static initialization of a flexible array member.  */
-	  if (type_array(elttype)
-	      && !require_constant_value
-	      && (type_array_size(elttype) && definite_zero(type_array_size(elttype)))
-	      && !constructor_fields->next)
-	    {
-	      error_init("non-static initialization of a flexible array member");
-	      break;
-	    }
-	  push_member_name (constructor_fields);
+          /* Error for non-static initialization of a flexible array member.  */
+          if (type_array(elttype)
+              && !require_constant_value
+              && (type_array_size(elttype) && definite_zero(type_array_size(elttype)))
+              && !constructor_fields->next)
+            {
+              error_init("non-static initialization of a flexible array member");
+              break;
+            }
+          push_member_name (constructor_fields);
 
-	  break;
-	case c_array:
-	  if (constructor_max_index >= 0
-	      && constructor_max_index < constructor_index)
-	    {
-	      pedwarn_init("excess elements in array initializer");
-	      break;
-	    }
+          break;
+        case c_array:
+          if (constructor_max_index >= 0
+              && constructor_max_index < constructor_index)
+            {
+              pedwarn_init("excess elements in array initializer");
+              break;
+            }
 
-	  elttype = type_array_of(constructor_type);
-	  push_array_bounds(constructor_index);
-	  if (type_array(elttype) && !type_array_size(elttype))
-	    {
-	      elttype = error_type;
-	      error_init("array type has incomplete element type");
-	    }
-	  break;
-	case c_scalar:
-	  if (constructor_count == 0)
-	    elttype = constructor_type;
-	  else if (constructor_count == 1) /* Only warn once */
-	    pedwarn_init("excess elements in scalar initializer");
-	  break;
-	default: assert(0); break;
-	}
+          elttype = type_array_of(constructor_type);
+          push_array_bounds(constructor_index);
+          if (type_array(elttype) && !type_array_size(elttype))
+            {
+              elttype = error_type;
+              error_init("array type has incomplete element type");
+            }
+          break;
+        case c_scalar:
+          if (constructor_count == 0)
+            elttype = constructor_type;
+          else if (constructor_count == 1) /* Only warn once */
+            pedwarn_init("excess elements in scalar initializer");
+          break;
+        default: assert(0); break;
+        }
 
       /* Accept a string constant to initialize a subarray.  */
       if (type_array(elttype) && type_integer(type_array_of(elttype))
-	  && string_flag)
-	;
+          && string_flag)
+        ;
       /* Otherwise, if we have come to a subaggregate,
-	 and we don't have an element of its type, push into it.  */
+         and we don't have an element of its type, push into it.  */
       else if ((constructor_kind == c_array || constructor_kind == c_aggregate) &&
-	       value->type != error_type
-	       && !type_equal_unqualified(value->type, elttype)
-	       && (type_aggregate(elttype) || type_array(elttype)))
-	{
-	  push_init_level(1);
-	  goto tryagain;
-	}
+               value->type != error_type
+               && !type_equal_unqualified(value->type, elttype)
+               && (type_aggregate(elttype) || type_array(elttype)))
+        {
+          push_init_level(1);
+          goto tryagain;
+        }
 
       /* This is here rather than in the previous switch because of
-	 the tryagain ("walk-into-array-or-aggregate") case */
+         the tryagain ("walk-into-array-or-aggregate") case */
       if (elttype != error_type)
-	{
-	  ivalue valueholder = NULL;
+        {
+          ivalue valueholder = NULL;
 
-	  switch (constructor_kind)
-	    {
-	    case c_aggregate:
-	      valueholder = new_ivalue(parse_region, iv_base, elttype);
-	      add_ivalue_field(constructor_value, constructor_fields, valueholder);
-	      break;
-	    case c_array:
-	      valueholder = new_ivalue(parse_region, iv_base, elttype);
-	      add_ivalue_array(constructor_value, constructor_index, valueholder);
-	      break;
-	    case c_scalar:
-	      valueholder = constructor_value;
-	      break;
-	    default: assert(0); break;
-	    }
-	  value->ivalue = valueholder;
-	}
+          switch (constructor_kind)
+            {
+            case c_aggregate:
+              valueholder = new_ivalue(parse_region, iv_base, elttype);
+              add_ivalue_field(constructor_value, constructor_fields, valueholder);
+              break;
+            case c_array:
+              valueholder = new_ivalue(parse_region, iv_base, elttype);
+              add_ivalue_array(constructor_value, constructor_index, valueholder);
+              break;
+            case c_scalar:
+              valueholder = constructor_value;
+              break;
+            default: assert(0); break;
+            }
+          value->ivalue = valueholder;
+        }
       else
-	value->ivalue = new_ivalue(parse_region, iv_base, error_type);
+        value->ivalue = new_ivalue(parse_region, iv_base, error_type);
 
       output_init_element (value, elttype);
     }
@@ -1308,39 +1308,39 @@ void process_init_element(expression value)
     {
     case c_aggregate:
       if (value)
-	RESTORE_SPELLING_DEPTH (constructor_depth);
+        RESTORE_SPELLING_DEPTH (constructor_depth);
 
       if (!type_union(constructor_type))
-	{
-	  if (constructor_fields)
-	    constructor_fields = skip_unnamed_bitfields(constructor_fields->next);
-	}
+        {
+          if (constructor_fields)
+            constructor_fields = skip_unnamed_bitfields(constructor_fields->next);
+        }
       else
-	{
-	  /* Warn that traditional C rejects initialization of unions.
-	     We skip the warning if the value is zero.  This is done
-	     under the assumption that the zero initializer in user
-	     code appears conditioned on e.g. __STDC__ to avoid
-	     "missing initializer" warnings and relies on default
-	     initialization to zero in the traditional C case.
-	     We also skip the warning if the initializer is designated,
-	     again on the assumption that this must be conditional on
-	     __STDC__ anyway (and we've already complained about the
-	     member-designator already).  */
-	  if (value && warn_traditional &&
-	      !value->location->in_system_header &&
-	      !constructor_designated && !definite_zero(value))
-	    warning("traditional C rejects initialization of unions");
+        {
+          /* Warn that traditional C rejects initialization of unions.
+             We skip the warning if the value is zero.  This is done
+             under the assumption that the zero initializer in user
+             code appears conditioned on e.g. __STDC__ to avoid
+             "missing initializer" warnings and relies on default
+             initialization to zero in the traditional C case.
+             We also skip the warning if the initializer is designated,
+             again on the assumption that this must be conditional on
+             __STDC__ anyway (and we've already complained about the
+             member-designator already).  */
+          if (value && warn_traditional &&
+              !value->location->in_system_header &&
+              !constructor_designated && !definite_zero(value))
+            warning("traditional C rejects initialization of unions");
 
-	  constructor_fields = 0;
-	}
+          constructor_fields = 0;
+        }
       break;
     case c_array:
       if (value)
-	RESTORE_SPELLING_DEPTH (constructor_depth);
+        RESTORE_SPELLING_DEPTH (constructor_depth);
       constructor_index++;
       if (constructor_index > constructor_array_size)
-	constructor_array_size = constructor_index;
+        constructor_array_size = constructor_index;
       break;
     case c_scalar: /* the weird {"foo"} case above */
       break;
@@ -1357,12 +1357,12 @@ void process_init_element(expression value)
 
       /* First pop back to the level at which the designator ended */
       while (constructor_stack != range_stack->stack)
-	pop_implicit_level();
+        pop_implicit_level();
 
       /* Then pop back up all the designators (note that the topmost one
-	 does not have an implicit level) */
+         does not have an implicit level) */
       for (p = range_stack; p->prev; p = p->prev)
-	pop_implicit_level();
+        pop_implicit_level();
     }
 
   // XXX: mem dealloc for range stack

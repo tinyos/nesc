@@ -174,7 +174,7 @@ unsigned long gcd(unsigned long x, unsigned long y)
   for (;;)
     {
       if (y == 0)
-	return x;
+        return x;
       
       z = x % y; x = y; y = z;
     }
@@ -197,7 +197,7 @@ int ilog2(largest_uint x)
       v <<= 1;
       log2++;
       if (!v)
-	return -1;
+        return -1;
     }
 
   return v == x ? log2 : -1;
@@ -222,7 +222,7 @@ int wcs_mb_size(const wchar_t *wstr)
       int mblen = wctomb(tmp, *wstr++);
 
       if (mblen < 0)
-	return -1;
+        return -1;
       len += mblen;
     }
 
@@ -315,25 +315,25 @@ char *realpath(const char *path, char *resolved_path)
   if (isalpha(path[0]) && path[1] == ':')
     if (path[2] == '/' || path[2] == '\\')
       {
-	if (strlen(path) >= PATH_MAX - 1)
-	  return NULL;
-	strcpy(resolved_path, path); /* absolute path */
+        if (strlen(path) >= PATH_MAX - 1)
+          return NULL;
+        strcpy(resolved_path, path); /* absolute path */
       }
     else
       {
-	/* drive relative path */
-	if (!_getdcwd(tolower(path[0] - 'a' + 1), resolved_path, PATH_MAX))
-	  return NULL;
-	if (!pathcat(resolved_path, path + 2))
-	  return NULL;
+        /* drive relative path */
+        if (!_getdcwd(tolower(path[0] - 'a' + 1), resolved_path, PATH_MAX))
+          return NULL;
+        if (!pathcat(resolved_path, path + 2))
+          return NULL;
       }
   else
     {
       /* fully relative path */
       if (!getcwd(resolved_path, PATH_MAX))
-	return NULL;
+        return NULL;
       if (!pathcat(resolved_path, path))
-	return NULL;
+        return NULL;
     }
 
   if (!absolute_path(resolved_path))
@@ -349,21 +349,21 @@ char *realpath(const char *path, char *resolved_path)
       /* Find next slash or end of path */
       slash = last + 1;
       while (*slash != '/' && *slash)
-	slash++;
+        slash++;
 
       if (slash == last + 1 || /* empty dir spec */
-	  (slash == last + 2 && last[1] == '.')) /* or . */
-	memmove(last, slash, strlen(slash) + 1);
+          (slash == last + 2 && last[1] == '.')) /* or . */
+        memmove(last, slash, strlen(slash) + 1);
       else if (slash == last + 3 &&
-	       last[1] == '.' && last[2] == '.') /* .. */
-	{
-	  /* look backwards for directory to squash */
-	  while (last >= resolved_path + 2 && *--last != '/')
-	    ;
-	  memmove(last, slash, strlen(slash) + 1);
-	}
+               last[1] == '.' && last[2] == '.') /* .. */
+        {
+          /* look backwards for directory to squash */
+          while (last >= resolved_path + 2 && *--last != '/')
+            ;
+          memmove(last, slash, strlen(slash) + 1);
+        }
       else
-	last = slash;
+        last = slash;
     }
   while (*last);
 

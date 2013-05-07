@@ -93,9 +93,9 @@ void *env_lookup(env e, const char *s, bool this_level_only)
     {
       found = dhlookup(e->table, &lookup);
       if (found)
-	return found->value;
+        return found->value;
       if (this_level_only || !e->parent) 
-	return NULL;
+        return NULL;
       e = e->parent;
     }
 }

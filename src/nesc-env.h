@@ -22,7 +22,7 @@ Boston, MA 02111-1307, USA.  */
    components, loads them on demand */
 
 nesc_declaration new_nesc_declaration(region r, source_language kind,
-				      const char *name);
+                                      const char *name);
 
 void init_nesc_env(region r);
 env get_nesc_env(void);

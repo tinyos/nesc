@@ -13,7 +13,7 @@
 void ignored_attribute(attribute attr)
 {
   warning_with_location(attr->location, "`%s' attribute directive ignored",
-			attr->word1->cstring.data);
+                        attr->word1->cstring.data);
 }
 
 void ignored_gcc_attribute(gcc_attribute attr)
@@ -55,7 +55,7 @@ const char *gcc_attr_get_word(gcc_attribute attr)
     return CAST(identifier, attr->args)->cstring.data;
 
   error_with_location(attr->location, "wrong number of arguments specified for `%s' attribute",
-		      attr->word1->cstring.data);
+                      attr->word1->cstring.data);
 
   return NULL;
 }
@@ -131,7 +131,7 @@ bool handle_gcc_type_attribute(gcc_attribute attr, type *t)
       const char *word = gcc_attr_get_word(attr);
 
       if (word)
-	handle_combine_attribute(attr->location, word, t);
+        handle_combine_attribute(attr->location, word, t);
       return TRUE;
     }
   else if (is_attr_name(name, "aligned"))
@@ -139,7 +139,7 @@ bool handle_gcc_type_attribute(gcc_attribute attr, type *t)
       cval arg = get_alignment(attr);
 
       if (cval_isinteger(arg))
-	*t = align_type(*t, arg);
+        *t = align_type(*t, arg);
       return TRUE;
     }
   else 
@@ -153,67 +153,67 @@ void handle_gcc_decl_attribute(gcc_attribute attr, data_declaration ddecl)
   if (is_attr_name(name, "transparent_union"))
     {
       if (attr->args)
-	error_with_location(attr->location, "wrong number of arguments specified for `transparent_union' attribute");
+        error_with_location(attr->location, "wrong number of arguments specified for `transparent_union' attribute");
 
       if (ddecl->kind == decl_variable && ddecl->isparameter &&
-	  type_union(ddecl->type))
-	transparent_union_argument(ddecl);
+          type_union(ddecl->type))
+        transparent_union_argument(ddecl);
       else if (ddecl->kind == decl_typedef && type_union(ddecl->type))
-	transparent_union_argument(ddecl);
+        transparent_union_argument(ddecl);
       else
-	ignored_gcc_attribute(attr);
+        ignored_gcc_attribute(attr);
     }
   else if (is_attr_name(name, "aligned"))
     {
       cval arg = get_alignment(attr);
 
       if (cval_isinteger(arg))
-	{
-	  if (ddecl->kind == decl_variable || ddecl->kind == decl_typedef)
-	    ddecl->type = align_type(ddecl->type, arg);
-	  else
-	    ignored_gcc_attribute(attr);
-	}
+        {
+          if (ddecl->kind == decl_variable || ddecl->kind == decl_typedef)
+            ddecl->type = align_type(ddecl->type, arg);
+          else
+            ignored_gcc_attribute(attr);
+        }
     }
   else if (is_attr_name(name, "mode"))
     {
       const char *word = gcc_attr_get_word(attr);
 
       if (word)
-	if (!handle_mode_attribute(attr->location, ddecl, word))
-	  ignored_gcc_attribute(attr);
+        if (!handle_mode_attribute(attr->location, ddecl, word))
+          ignored_gcc_attribute(attr);
     }
   else if (is_attr_name(name, "C"))
     {
       if (!ddecl->isexternalscope)
-	error_with_location(attr->location, "`C' attribute is for symbols with external scope only");
+        error_with_location(attr->location, "`C' attribute is for symbols with external scope only");
       else
-	ddecl->Cname = TRUE;
+        ddecl->Cname = TRUE;
     }
   else if (is_attr_name(name, "spontaneous"))
     {
       if (require_function(attr, ddecl))
-	{
-	  /* The test avoids overriding the effect of atomic_hwevent */
-	  if (!ddecl->spontaneous)
-	    ddecl->spontaneous = c_call_nonatomic;
-	}
+        {
+          /* The test avoids overriding the effect of atomic_hwevent */
+          if (!ddecl->spontaneous)
+            ddecl->spontaneous = c_call_nonatomic;
+        }
     }
   else if (is_attr_name(name, "atomic_hwevent"))
     {
       if (require_function(attr, ddecl))
-	{
-	  ddecl->async = TRUE;
-	  ddecl->spontaneous = c_call_atomic;
-	}
+        {
+          ddecl->async = TRUE;
+          ddecl->spontaneous = c_call_atomic;
+        }
     }
   else if (is_attr_name(name, "hwevent"))
     {
       if (require_function(attr, ddecl))
-	{
-	  ddecl->async = TRUE;
-	  ddecl->spontaneous = c_call_nonatomic;
-	}
+        {
+          ddecl->async = TRUE;
+          ddecl->spontaneous = c_call_nonatomic;
+        }
     }
   else if (is_attr_name(name, "noinline"))
     {
@@ -224,13 +224,13 @@ void handle_gcc_decl_attribute(gcc_attribute attr, data_declaration ddecl)
       const char *word = gcc_attr_get_word(attr);
 
       if (ddecl->kind != decl_typedef)
-	error_with_location(attr->location, "`%s' attribute can only be applied to typedefs", name);
+        error_with_location(attr->location, "`%s' attribute can only be applied to typedefs", name);
       else if (word)
-	handle_nxbase_attribute(attr->location, is_attr_name(name, "nx_base_be"), TRUE, word, ddecl);
+        handle_nxbase_attribute(attr->location, is_attr_name(name, "nx_base_be"), TRUE, word, ddecl);
     }
   else if (!(target->decl_attribute &&
-	     target->decl_attribute(attr, ddecl)) &&
-	   !handle_gcc_type_attribute(attr, &ddecl->type))
+             target->decl_attribute(attr, ddecl)) &&
+           !handle_gcc_type_attribute(attr, &ddecl->type))
     /*ignored_gcc_attribute(attr)*/;
 }
 
@@ -246,10 +246,10 @@ void handle_gcc_field_attribute(gcc_attribute attr, field_declaration fdecl)
       cval arg = get_alignment(attr);
 
       if (cval_isinteger(arg))
-	fdecl->type = align_type(fdecl->type, arg);
+        fdecl->type = align_type(fdecl->type, arg);
     }
   else if (!(target->field_attribute &&
-	     target->field_attribute(attr, fdecl)))
+             target->field_attribute(attr, fdecl)))
     /*ignored_gcc_attribute(attr)*/;
 }
 
@@ -260,15 +260,15 @@ void handle_gcc_tag_attribute(gcc_attribute attr, tag_declaration tdecl)
   if (is_attr_name(name, "transparent_union"))
     {
       if (attr->args)
-	error_with_location(attr->location, "wrong number of arguments specified for `transparent_union' attribute");
+        error_with_location(attr->location, "wrong number of arguments specified for `transparent_union' attribute");
 
       if (tdecl->kind == kind_union_ref)
-	{
-	  tdecl->transparent_union = TRUE;
-	  /* XXX: Missing validity checks (need cst folding I think) */
-	}
+        {
+          tdecl->transparent_union = TRUE;
+          /* XXX: Missing validity checks (need cst folding I think) */
+        }
       else
-	ignored_gcc_attribute(attr);
+        ignored_gcc_attribute(attr);
     }
   else if (is_attr_name(name, "packed"))
     tdecl->packed = TRUE;
@@ -277,17 +277,17 @@ void handle_gcc_tag_attribute(gcc_attribute attr, tag_declaration tdecl)
       cval arg = get_alignment(attr);
 
       if (cval_isinteger(arg))
-	tdecl->user_alignment = arg;
+        tdecl->user_alignment = arg;
     }
   else if (is_attr_name(name, "C"))
     {
       if (tdecl->container_function)
-	error_with_location(attr->location, "`C' attribute is for symbols with external scope only");
+        error_with_location(attr->location, "`C' attribute is for symbols with external scope only");
       else
-	tdecl->Cname = TRUE;
+        tdecl->Cname = TRUE;
     }
   else if (!(target->tag_attribute &&
-	     target->tag_attribute(attr, tdecl)))
+             target->tag_attribute(attr, tdecl)))
     /*ignored_gcc_attribute(attr)*/;
 }
 
@@ -327,7 +327,7 @@ bool handle_type_attribute(attribute attr, type *t)
   else
     {
       /* nesC attributes don't have a broken syntax, so don't need
-	 to flow up to the declaration */
+         to flow up to the declaration */
       handle_nesc_type_attribute(CAST(nesc_attribute, attr), t);
       return TRUE;
     }

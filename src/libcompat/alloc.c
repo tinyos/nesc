@@ -37,8 +37,8 @@
 
 static
 void alloc_block(region r, struct allocator *a, struct ablock *blk,
-		 void **p1, int s1, int a1, void **p2, int s2, int a2,
-		 size_t blksize, int needsclear)
+                 void **p1, int s1, int a1, void **p2, int s2, int a2,
+                 size_t blksize, int needsclear)
 {
   struct page *newp;
   char *mem1, *mem2;
@@ -51,23 +51,23 @@ void alloc_block(region r, struct allocator *a, struct ablock *blk,
   if (mem2 + s2 >= blk->end)
     {
       if (blksize == RPAGESIZE)
-	{
-	  newp = alloc_single_page(a->pages);
-	  a->pages = newp;
-	  blk->allocfrom = (char *)newp + offsetof(struct page, previous);
-	  set_region(newp, 1, r);
-	}
+        {
+          newp = alloc_single_page(a->pages);
+          a->pages = newp;
+          blk->allocfrom = (char *)newp + offsetof(struct page, previous);
+          set_region(newp, 1, r);
+        }
       else
-	{
-	  newp = alloc_pages(blksize >> RPAGELOG, a->bigpages);
-	  a->bigpages = newp;
-	  blk->allocfrom = (char *)newp + offsetof(struct page, previous);
-	  set_region(newp, blksize >> RPAGELOG, r);
-	}
+        {
+          newp = alloc_pages(blksize >> RPAGELOG, a->bigpages);
+          a->bigpages = newp;
+          blk->allocfrom = (char *)newp + offsetof(struct page, previous);
+          set_region(newp, blksize >> RPAGELOG, r);
+        }
       blk->end = (char *)newp + blksize;
 
       if (needsclear)
-	preclear(blk->allocfrom, blksize - (blk->allocfrom - (char *)newp));
+        preclear(blk->allocfrom, blksize - (blk->allocfrom - (char *)newp));
       mem1 = PALIGN(blk->allocfrom, a1);
       mem2 = PALIGN(mem1 + s1, a2);
     }
@@ -81,7 +81,7 @@ void alloc_block(region r, struct allocator *a, struct ablock *blk,
 
 static inline 
 void qalloc(region r, struct allocator *a, void **p1, int s1, int a1,
-	    void **p2, int s2, int a2, int needsclear)
+            void **p2, int s2, int a2, int needsclear)
 {
   struct page *p;
   char *mem;
@@ -99,26 +99,26 @@ void qalloc(region r, struct allocator *a, void **p1, int s1, int a1,
        valid) */
     if (mem2 + s2 < a->page.end)
       {
-	ASSERT_INUSE(blk->end - blksize, r);
-	a->page.allocfrom = mem2 + s2;
+        ASSERT_INUSE(blk->end - blksize, r);
+        a->page.allocfrom = mem2 + s2;
 
-	*p1 = mem1;
-	*p2 = mem2;
-	return;
+        *p1 = mem1;
+        *p2 = mem2;
+        return;
       }
   }
 
   if (n <= RPAGESIZE / K)
     {
       alloc_block(r, a, &a->page, p1, s1, a1, p2, s2, a2, RPAGESIZE,
-		  needsclear);
+                  needsclear);
       return;
     }
 #if K >= 2
   if (n <= RPAGESIZE)
     {
       alloc_block(r, a, &a->superpage, p1, s1, a1, p2, s2, a2,
-		  K * RPAGESIZE, needsclear);
+                  K * RPAGESIZE, needsclear);
       return;
     }
 #endif
@@ -126,7 +126,7 @@ void qalloc(region r, struct allocator *a, void **p1, int s1, int a1,
   if (n <= RPAGESIZE * K)
     {
       alloc_block(r, a, &a->hyperpage, p1, s1, a1, p2, s2, a2,
-		  K * K * RPAGESIZE, needsclear);
+                  K * K * RPAGESIZE, needsclear);
       return;
     }
 #endif

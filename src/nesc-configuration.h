@@ -30,7 +30,7 @@ typelist endpoint_args(struct endp *p);
 void component_scan(data_declaration cref, env_scanner *scan);
 
 void connect_interface(location l, cgraph cg, cgraph userg,
-		       struct endp from, struct endp to,
-		       bool reverse);
+                       struct endp from, struct endp to,
+                       bool reverse);
 
 #endif

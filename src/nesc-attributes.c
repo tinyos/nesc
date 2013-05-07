@@ -12,15 +12,15 @@ typedef struct internal_attribute
   const char *name;
 
   void (*handle_ndecl)(nesc_attribute attr,
-		       nesc_declaration ndecl);
+                       nesc_declaration ndecl);
   void (*handle_decl)(nesc_attribute attr,
-		      data_declaration ddecl);
+                      data_declaration ddecl);
   void (*handle_tag)(nesc_attribute attr,
-		     tag_declaration tdecl);
+                     tag_declaration tdecl);
   void (*handle_field)(nesc_attribute attr,
-		       field_declaration fdecl);
+                       field_declaration fdecl);
   void (*handle_type)(nesc_attribute attr,
-		      type *t);
+                      type *t);
 } *iattr;
 
 static env internal_attributes;
@@ -30,12 +30,12 @@ static env internal_attributes;
 tag_ref lookup_attribute(word tag)
 {
   tag_ref tref = newkind_tag_ref(parse_region, kind_attribute_ref,
-				 tag->location, tag, NULL, NULL, FALSE);
+                                 tag->location, tag, NULL, NULL, FALSE);
   tag_declaration tdecl = lookup_tag(tref, FALSE);
 
   if (!tdecl)
     error_with_location(tag->location, "unknown attribute `%s'",
-			tag->cstring.data);
+                        tag->cstring.data);
   tref->tdecl = tdecl;
 
   return tref;
@@ -46,7 +46,7 @@ nesc_attribute start_attribute_use(word name)
   /* Prepare to read an initialiser for the attribute definition 
      specified by name */
   nesc_attribute attr = new_nesc_attribute(parse_region, name->location, name,
-					   NULL);
+                                           NULL);
   tag_ref aref = lookup_attribute(name); /* XXX: aref leaks */
   type atype = error_type;
 
@@ -61,7 +61,7 @@ nesc_attribute start_attribute_use(word name)
     {
       atype = make_tagged_type(aref->tdecl);
       if (aref->tdecl->deputy_scope)
-	current.env->deputy_scope = TRUE;
+        current.env->deputy_scope = TRUE;
     }
 
   start_init(NULL, attr);
@@ -80,17 +80,17 @@ attribute finish_attribute_use(nesc_attribute attr, expression init)
 }
 
 void define_internal_attribute(const char *name,
-			       void (*handle_ndecl)(nesc_attribute attr,
-						    nesc_declaration ndecl),
-			       void (*handle_decl)(nesc_attribute attr,
-						   data_declaration ddecl),
-			       void (*handle_tag)(nesc_attribute attr,
-						  tag_declaration tdecl),
-			       void (*handle_field)(nesc_attribute attr,
-						    field_declaration fdecl),
-			       void (*handle_type)(nesc_attribute attr,
-						   type *t),
-			       ...)
+                               void (*handle_ndecl)(nesc_attribute attr,
+                                                    nesc_declaration ndecl),
+                               void (*handle_decl)(nesc_attribute attr,
+                                                   data_declaration ddecl),
+                               void (*handle_tag)(nesc_attribute attr,
+                                                  tag_declaration tdecl),
+                               void (*handle_field)(nesc_attribute attr,
+                                                    field_declaration fdecl),
+                               void (*handle_type)(nesc_attribute attr,
+                                                   type *t),
+                               ...)
 {
   va_list args;
   field_declaration *next_field;
@@ -117,7 +117,7 @@ void define_internal_attribute(const char *name,
       field_declaration field;
 
       if (!field_name)
-	break;
+        break;
       field = ralloc(parse_region, struct field_declaration);
       field->containing_tag = attr_decl;
       *next_field = field;
@@ -176,9 +176,9 @@ void handle_nesc_type_attribute(nesc_attribute attr, type *t)
   if (handler)
     {
       if (handler->handle_type)
-	handler->handle_type(attr, t);
+        handler->handle_type(attr, t);
       else
-	ignored_nesc_attribute(attr);
+        ignored_nesc_attribute(attr);
     }
   /* In the future, we might want to record the attribute on the type,
      and support dumping this information in nesc-dump.c. For now,
@@ -193,9 +193,9 @@ void handle_nesc_decl_attribute(nesc_attribute attr, data_declaration ddecl)
   if (handler)
     {
       if (handler->handle_decl)
-	handler->handle_decl(attr, ddecl);
+        handler->handle_decl(attr, ddecl);
       else
-	ignored_nesc_attribute(attr);
+        ignored_nesc_attribute(attr);
     }
   else
     save_user_attribute(attr, &ddecl->attributes);
@@ -208,9 +208,9 @@ void handle_nesc_field_attribute(nesc_attribute attr, field_declaration fdecl)
   if (handler)
     {
       if (handler->handle_field)
-	handler->handle_field(attr, fdecl);
+        handler->handle_field(attr, fdecl);
       else
-	ignored_nesc_attribute(attr);
+        ignored_nesc_attribute(attr);
     }
   else
     save_user_attribute(attr, &fdecl->attributes);
@@ -223,9 +223,9 @@ void handle_nesc_tag_attribute(nesc_attribute attr, tag_declaration tdecl)
   if (handler)
     {
       if (handler->handle_tag)
-	handler->handle_tag(attr, tdecl);
+        handler->handle_tag(attr, tdecl);
       else
-	ignored_nesc_attribute(attr);
+        ignored_nesc_attribute(attr);
     }
   else
   save_user_attribute(attr, &tdecl->attributes);
@@ -238,9 +238,9 @@ void handle_nesc_nescdecl_attribute(nesc_attribute attr, nesc_declaration ndecl)
   if (handler)
     {
       if (handler->handle_ndecl)
-	handler->handle_ndecl(attr, ndecl);
+        handler->handle_ndecl(attr, ndecl);
       else
-	ignored_nesc_attribute(attr);
+        ignored_nesc_attribute(attr);
     }
   else
     save_user_attribute(attr, &ndecl->attributes);

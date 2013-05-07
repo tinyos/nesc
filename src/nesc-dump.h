@@ -43,7 +43,7 @@ bool dump_selected(void);
  */
 
 void dump_info(nesc_declaration program, cgraph cg, cgraph userg,
-	       dd_list modules, dd_list components);
+               dd_list modules, dd_list components);
 /* Effects: Dump selected information.
  */
 

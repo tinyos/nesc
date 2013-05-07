@@ -56,8 +56,8 @@ struct dhash_table
 };
 
 dhash_table new_dhash_table(region r, unsigned long initial_size,
-			    int (*compare)(void *key, void *y),
-			    unsigned long (*hash)(void *x))
+                            int (*compare)(void *key, void *y),
+                            unsigned long (*hash)(void *x))
 {
   dhash_table h = ralloc(r, struct dhash_table);
 
@@ -103,12 +103,12 @@ void *dhlookup(dhash_table h, void *x)
       void *bucket = h->elements[i];
 
       if (!bucket)
-	return NULL;
+        return NULL;
       if (h->compare(x, bucket))
-	return bucket;
+        return bucket;
 
       if (++i >= h->size)
-	i = 0;
+        i = 0;
     }
 }
 
@@ -129,20 +129,20 @@ void dhadd(dhash_table h, void *x)
 
       /* Rehash old entries */
       for (j = 0; j < oldsize; j++)
-	if (oldelements[j])
-	  {
-	    unsigned long newi = dhash(h, oldelements[j]);
-		    
-	    while (h->elements[newi])
-	      {
-		newi++;
-		if (newi >= h->size)
-		  newi = 0;
-	      }
-	    h->elements[newi] = oldelements[j];
-	    if (j == i)
-	      i = newi;
-	  }
+        if (oldelements[j])
+          {
+            unsigned long newi = dhash(h, oldelements[j]);
+                    
+            while (h->elements[newi])
+              {
+                newi++;
+                if (newi >= h->size)
+                  newi = 0;
+              }
+            h->elements[newi] = oldelements[j];
+            if (j == i)
+              i = newi;
+          }
     }
 
   i = dhash(h, x);
@@ -150,13 +150,13 @@ void dhadd(dhash_table h, void *x)
   for (;;)
     {
       if (!h->elements[i])
-	{
-	  h->elements[i] = x;
-	  return;
-	}
+        {
+          h->elements[i] = x;
+          return;
+        }
 
       if (++i >= h->size)
-	i = 0;
+        i = 0;
     }
 }
 
@@ -191,10 +191,10 @@ void *dhnext(dhash_scan *iterator)
       void *x;
 
       if (iterator->index >= h->size)
-	return NULL;
+        return NULL;
       x = h->elements[iterator->index++];
       if (x)
-	return x;
+        return x;
     }
 }
 

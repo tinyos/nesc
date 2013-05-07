@@ -34,10 +34,10 @@ struct ivalue {
   ivalue instantiation;
 
   union {
-    struct {			/* for iv_base */
-      expression expr;		/* not an init_list */
+    struct {                        /* for iv_base */
+      expression expr;                /* not an init_list */
       bool require_constant_value;
-      cval value; 		/* value if constant, cval_top otherwise */
+      cval value;                 /* value if constant, cval_top otherwise */
     } base;
     struct ivalue_array *array; /* for iv_array */
     struct ivalue_field *structured; /* for iv_structured */

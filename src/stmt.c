@@ -95,7 +95,7 @@ void check_return(expression e)
   if (type_void(ret))
     {
       if (pedantic || !type_void(e->type))
-	warning("`return' with a value, in function returning void");
+        warning("`return' with a value, in function returning void");
     }
   else
     {
@@ -115,8 +115,8 @@ statement make_return(location loc, expression arg)
 
       pushlevel(FALSE);
       temp = CAST(declaration,
-		  build_declaration(parse_region, current.env, current_return_type(),
-				    "__nesc_temp", arg, &ddecl));
+                  build_declaration(parse_region, current.env, current_return_type(),
+                                    "__nesc_temp", arg, &ddecl));
       arg = build_identifier(parse_region, loc, ddecl);
     }
 
@@ -126,7 +126,7 @@ statement make_return(location loc, expression arg)
 
   if (temp)
     ret = CAST(statement,
-	       new_compound_stmt(parse_region, loc, NULL, temp, ret, poplevel()));
+               new_compound_stmt(parse_region, loc, NULL, temp, ret, poplevel()));
 
   return ret;
 }
@@ -160,14 +160,14 @@ void lookup_label(id_label label)
   if (!current.function_decl)
     {
       error ("label %s referenced outside of any function",
-	     label->cstring.data);
+             label->cstring.data);
       /* A dummy decl to make everybody happy. */
       label->ldecl = new_label_declaration(parse_region, label->cstring.data, label);
       return;
     }
 
   ldecl = env_lookup(current.function_decl->scoped_labels, label->cstring.data,
-		     FALSE);
+                     FALSE);
 
   /* Only explicitly declared labels are visible in nested functions */
   if (ldecl && !ldecl->explicitly_declared &&
@@ -182,7 +182,7 @@ void lookup_label(id_label label)
   else
     if (ldecl->containing_atomic != current.in_atomic)
       error("label %s is referenced in different atomic statements",
-	    label->cstring.data);
+            label->cstring.data);
 
   label->ldecl = ldecl;
 }
@@ -197,9 +197,9 @@ static void duplicate_label_error(id_label label)
 {
   error("duplicate label declaration `%s'", label->cstring.data);
   error_with_location(label->ldecl->definition ?
-		      label->ldecl->definition->location :
-		      label->ldecl->firstuse->location,
-		      "this is a previous declaration");
+                      label->ldecl->definition->location :
+                      label->ldecl->firstuse->location,
+                      "this is a previous declaration");
 }
 
 void define_label(id_label label)
@@ -241,11 +241,11 @@ void check_labels(void)
       label_declaration ldecl = ld;
 
       if (!ldecl->definition)
-	error_with_location(ldecl->firstuse->location,
-			    "label `%s' used but not defined", lname);
+        error_with_location(ldecl->firstuse->location,
+                            "label `%s' used but not defined", lname);
       else if (!ldecl->used && warn_unused)
-	warning_with_location(ldecl->firstuse->location,
-			      "label `%s' defined but not used", lname);
+        warning_with_location(ldecl->firstuse->location,
+                              "label `%s' defined but not used", lname);
     }
 }
 
@@ -279,16 +279,16 @@ static statement containing_switch(label l)
 
       /* XXX: no duplicate case check */
       while (*last)
-	{
-	  if (is_default_label(*last) && lisdefault)
-	    {
-	      error("multiple default labels in one switch");
-	      error_with_location((*last)->location,
-				  "this is the first default label");
-	      lisdefault = FALSE; /* Only one error */
-	    }
-	  last = &(*last)->next_label;
-	}
+        {
+          if (is_default_label(*last) && lisdefault)
+            {
+              error("multiple default labels in one switch");
+              error_with_location((*last)->location,
+                                  "this is the first default label");
+              lisdefault = FALSE; /* Only one error */
+            }
+          last = &(*last)->next_label;
+        }
 
       fail_different_atomic(sw->containing_atomic);
 
@@ -303,7 +303,7 @@ void check_case_value(expression e)
   if (check_constant_once(e, cst_numerical))
     if (!e->cst || !(e->type == error_type || type_integer(e->type)))
       error_with_location(e->location,
-			  "case label does not reduce to an integer constant");
+                          "case label does not reduce to an integer constant");
 }
 
 void check_case(label label0)

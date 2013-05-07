@@ -36,7 +36,7 @@ typedef struct {
 
   /* A Keil C for 8051 special... */
   declaration (*keilc_definition)(location loc, cstring keyword, cstring name,
-				  expression address);
+                                  expression address);
 
   /* Called once when compilation starts. Should:
      - setup system-specific include paths

@@ -54,7 +54,7 @@ static void account_for_newlines (const unsigned char *, size_t);
 static void print_line (source_location, const char *);
 static void maybe_print_line (source_location);
 static void save_pp_define(cpp_reader *pfile, source_location line,
-			    cpp_hashnode *node);
+                            cpp_hashnode *node);
 static void save_pp_undef(source_location line, cpp_hashnode *node);
 
 void save_cpp_option(const char *option, const char *arg)
@@ -127,21 +127,21 @@ void preprocess_init(void)
 
   /* Process saved options */
   cpp_cbacks->file_change(reader, linemap_add(current.lex.line_map, LC_RENAME, 0,
-					      "<command-line>", 0));
+                                              "<command-line>", 0));
 
   for (opt = saved_options; opt; opt = opt->next)
     {
       if (opt->opt[0] == 'D')
-	cpp_define(reader, opt->arg);
+        cpp_define(reader, opt->arg);
       else if (opt->opt[0] == 'U')
-	cpp_undef(reader, opt->arg);
+        cpp_undef(reader, opt->arg);
       else if (opt->opt[0] == 'A')
-	{
-	  if (opt->arg[0] == '-')
-	    cpp_unassert(reader, opt->arg + 1);
-	  else
-	    cpp_assert(reader, opt->arg);
-	}
+        {
+          if (opt->arg[0] == '-')
+            cpp_unassert(reader, opt->arg + 1);
+          else
+            cpp_assert(reader, opt->arg);
+        }
     }
   if (use_nido)
     {
@@ -156,7 +156,7 @@ void preprocess_init(void)
 }
 
 static void cb_define(cpp_reader *reader, source_location loc, 
-		      cpp_hashnode *macro)
+                      cpp_hashnode *macro)
 {
   char *def = rstrdup(permanent, (char *)cpp_macro_definition(reader, macro));
   char *firstspace = strchr(def, ' ');
@@ -169,7 +169,7 @@ static void cb_define(cpp_reader *reader, source_location loc,
 }
 
 static void cb_undef(cpp_reader *reader, source_location loc,
-		     cpp_hashnode *macro)
+                     cpp_hashnode *macro)
 {
   macro_set(NODE_NAME(macro), NULL);
   save_pp_undef(loc, macro);
@@ -232,7 +232,7 @@ void save_pp_file_start(const char *path)
 
   const char *fname = lbasename(path);
   char *pp_path = rstralloc(current.fileregion,
-			    strlen(cpp_save_dir) + strlen(fname) + 2);
+                            strlen(cpp_save_dir) + strlen(fname) + 2);
 
   sprintf(pp_path, "%s/%s", cpp_save_dir, fname);
   current.lex.pp.outf = fopen(pp_path, "w");
@@ -241,7 +241,7 @@ void save_pp_file_start(const char *path)
       static int first = 1;
 
       if (first)
-	warning("cannot create preprocessed output file `%s'", pp_path);
+        warning("cannot create preprocessed output file `%s'", pp_path);
       first = FALSE;
       return;
     }
@@ -280,9 +280,9 @@ void save_pp_token(const cpp_token *token)
     {
       current.lex.pp.avoid_paste = true;
       if (current.lex.pp.source == NULL
-	  || (!(current.lex.pp.source->flags & PREV_WHITE)
-	      && token->val.source == NULL))
-	current.lex.pp.source = token->val.source;
+          || (!(current.lex.pp.source->flags & PREV_WHITE)
+              && token->val.source == NULL))
+        current.lex.pp.source = token->val.source;
       return;
     }
 
@@ -293,12 +293,12 @@ void save_pp_token(const cpp_token *token)
   if (current.lex.pp.avoid_paste)
     {
       if (current.lex.pp.source == NULL)
-	current.lex.pp.source = token;
+        current.lex.pp.source = token;
       if (current.lex.pp.source->flags & PREV_WHITE
-	  || (current.lex.pp.prev
-	      && cpp_avoid_paste(pfile, current.lex.pp.prev, token))
-	  || (current.lex.pp.prev == NULL && token->type == CPP_HASH))
-	putc(' ', current.lex.pp.outf);
+          || (current.lex.pp.prev
+              && cpp_avoid_paste(pfile, current.lex.pp.prev, token))
+          || (current.lex.pp.prev == NULL && token->type == CPP_HASH))
+        putc(' ', current.lex.pp.outf);
     }
   else if (token->flags & PREV_WHITE)
     putc(' ', current.lex.pp.outf);
@@ -338,10 +338,10 @@ static void maybe_print_line(source_location src_loc)
   if (src_line >= current.lex.pp.src_line && src_line < current.lex.pp.src_line + 8)
     {
       while (src_line > current.lex.pp.src_line)
-	{
-	  putc('\n', current.lex.pp.outf);
-	  current.lex.pp.src_line++;
-	}
+        {
+          putc('\n', current.lex.pp.outf);
+          current.lex.pp.src_line++;
+        }
     }
   else
     print_line(src_loc, "");
@@ -368,18 +368,18 @@ static void print_line(source_location src_loc, const char *special_flags)
       current.lex.pp.src_line = SOURCE_LINE(map, src_loc);
 
       /* cpp_quote_string does not nul-terminate, so we have to do it
-	 ourselves.  */
+         ourselves.  */
       p = cpp_quote_string(to_file_quoted,
-			    (unsigned char *) map->to_file, to_file_len);
+                            (unsigned char *) map->to_file, to_file_len);
       *p = '\0';
       fprintf(current.lex.pp.outf, "# %u \"%s\"%s",
-	       current.lex.pp.src_line == 0 ? 1 : current.lex.pp.src_line,
-	       to_file_quoted, special_flags);
+               current.lex.pp.src_line == 0 ? 1 : current.lex.pp.src_line,
+               to_file_quoted, special_flags);
 
       if (map->sysp == 2)
-	fputs(" 3 4", current.lex.pp.outf);
+        fputs(" 3 4", current.lex.pp.outf);
       else if (map->sysp == 1)
-	fputs(" 3", current.lex.pp.outf);
+        fputs(" 3", current.lex.pp.outf);
 
       putc('\n', current.lex.pp.outf);
     }
@@ -410,12 +410,12 @@ void save_pp_line_change(cpp_reader *pfile, const cpp_token *token)
       current.lex.pp.printed = 1;
 
       while (-- spaces >= 0)
-	putc(' ', current.lex.pp.outf);
+        putc(' ', current.lex.pp.outf);
     }
 }
 
 static void save_pp_define(cpp_reader *pfile, source_location line,
-			   cpp_hashnode *node)
+                           cpp_hashnode *node)
 {
   if (!current.lex.pp.outf)
     return;
@@ -423,7 +423,7 @@ static void save_pp_define(cpp_reader *pfile, source_location line,
   maybe_print_line (line);
 
   fprintf(current.lex.pp.outf, "#define %s\n",
-	  (const char *)cpp_macro_definition(pfile, node));
+          (const char *)cpp_macro_definition(pfile, node));
 
   if (linemap_lookup(current.lex.line_map, line)->to_line != 0)
     current.lex.pp.src_line++;

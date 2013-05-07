@@ -15,8 +15,8 @@
 
 #define ALIGN(x, n) (((x) + ((n) - 1)) & ~((n) - 1))
 
-#define BLOCK_SIZE 8172		/* Should probably be chosen w/ respect to
-				   malloc implementation */
+#define BLOCK_SIZE 8172                /* Should probably be chosen w/ respect to
+                                   malloc implementation */
 #define BIG_SIZE 16364
 
 typedef double max_aligned_type;
@@ -29,8 +29,8 @@ struct region_
 struct block
 {
 #ifndef USEMALLOC
-  char *pos;			/* Where next to allocate from */
-  char *end;			/* End of block */
+  char *pos;                        /* Where next to allocate from */
+  char *end;                        /* End of block */
 #endif
   struct block *previous;
   max_aligned_type data[1];
@@ -166,19 +166,19 @@ static void *allocate(region b, unsigned long size)
       struct block *newp;
 
       if (size < BLOCK_SIZE / 4)
-	bsize = BLOCK_SIZE;
+        bsize = BLOCK_SIZE;
       else if (size >= BIG_SIZE)
-	bsize = size;
+        bsize = size;
       else
-	bsize = size * 4;
+        bsize = size * 4;
       newp = make_block(bsize);
 
       if (!newp)
-	{
-	  nomem_h();
-	  abort();
-	  return NULL;
-	}
+        {
+          nomem_h();
+          abort();
+          return NULL;
+        }
 
       newp->previous = blk;
       b->current = newp;
@@ -232,7 +232,7 @@ char *rstrdup(region r, const char *s)
 }
 
 static char *internal_rstrextend(region r, const char *old, size_t newsize,
-				 int needsclear)
+                                 int needsclear)
 {
   abort();
 }

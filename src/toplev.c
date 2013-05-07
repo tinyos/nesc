@@ -164,18 +164,18 @@ static bool c_option(char *p)
     {
       extra_warnings = 1;
       /* We save the value of warn_uninitialized, since if they put
-	 -Wuninitialized on the command line, we need to generate a
-	 warning about not using it without also specifying -O.  */
+         -Wuninitialized on the command line, we need to generate a
+         warning about not using it without also specifying -O.  */
       if (warn_uninitialized != 1)
-	warn_uninitialized = 2;
+        warn_uninitialized = 2;
     }
   else if (!strcmp (p, "-Wall"))
     {
       /* We save the value of warn_uninitialized, since if they put
-	 -Wuninitialized on the command line, we need to generate a
-	 warning about not using it without also specifying -O.  */
+         -Wuninitialized on the command line, we need to generate a
+         warning about not using it without also specifying -O.  */
       if (warn_uninitialized != 1)
-	warn_uninitialized = 2;
+        warn_uninitialized = 2;
       warn_implicit_int = 1;
       mesg_implicit_function_declaration = 1;
       warn_return_type = 1;
@@ -186,7 +186,7 @@ static bool c_option(char *p)
       warn_parentheses = 1;
       warn_missing_braces = 1;
       /* We set this to 2 here, but 1 in -Wmain, so -ffreestanding can turn
-	 it off only if it's not explicit.  */
+         it off only if it's not explicit.  */
       warn_main = 2;
 
       warn_trigraphs = 1;
@@ -263,9 +263,9 @@ int region_main(int argc, char **argv) deletes
   p = argv[0] + strlen (argv[0]);
   while (p != argv[0] && p[-1] != '/'
 #ifdef DIR_SEPARATOR
-	 && p[-1] != DIR_SEPARATOR
+         && p[-1] != DIR_SEPARATOR
 #endif
-	 )
+         )
     --p;
   progname = p;
 
@@ -280,84 +280,84 @@ int region_main(int argc, char **argv) deletes
       int j;
 
       if (c_option(argv[i]) || nesc_option(argv[i]))
-	i++;
+        i++;
       else if (argv[i][0] == '-' && argv[i][1] != 0)
-	{
-	  char *str = argv[i++] + 1;
-	  char *arg = NULL;
+        {
+          char *str = argv[i++] + 1;
+          char *arg = NULL;
 
-	  if (strchr(OPTS_WITH_ARGS, str[0]))
-	    {
-	      if (!str[1])
-		if (i < argc)
-		  arg = argv[i++];
-		else
-		  {
-		    str = "";
-		    error("argument to `-%c' is missing", str[0]);
-		  }
-	      else
-		arg = str + 1;
-	    }
+          if (strchr(OPTS_WITH_ARGS, str[0]))
+            {
+              if (!str[1])
+                if (i < argc)
+                  arg = argv[i++];
+                else
+                  {
+                    str = "";
+                    error("argument to `-%c' is missing", str[0]);
+                  }
+              else
+                arg = str + 1;
+            }
 
-	  for (j = 0; j < sizeof opts_with_args / sizeof *opts_with_args; j++)
-	    if (!strcmp(str, opts_with_args[j]))
-	      {
-		if (i < argc)
-		  arg = argv[i++];
-		else
-		  {
-		    str = "";
-		    error("argument to `-%s' is missing", str);
-		  }
-		break;
-	      }
+          for (j = 0; j < sizeof opts_with_args / sizeof *opts_with_args; j++)
+            if (!strcmp(str, opts_with_args[j]))
+              {
+                if (i < argc)
+                  arg = argv[i++];
+                else
+                  {
+                    str = "";
+                    error("argument to `-%s' is missing", str);
+                  }
+                break;
+              }
 
-	  if (str[0] == 'o')
-	    targetfile = arg;
-	  else if (str[0] == 'I')
-	    add_nesc_dir(arg, CHAIN_BRACKET);
-	  else if (str[0] == 'D' || str[0] == 'U' || str[0] == 'A')
-	    save_cpp_option(str, arg);
-	  else if (str[0] == 'f' || str[0] == 'W')
-	    {
-	      char kind = str[0];
-	      char *p = &str[1];
+          if (str[0] == 'o')
+            targetfile = arg;
+          else if (str[0] == 'I')
+            add_nesc_dir(arg, CHAIN_BRACKET);
+          else if (str[0] == 'D' || str[0] == 'U' || str[0] == 'A')
+            save_cpp_option(str, arg);
+          else if (str[0] == 'f' || str[0] == 'W')
+            {
+              char kind = str[0];
+              char *p = &str[1];
 
-	      /* Some kind of -f or -W option.
-		 p's value is the option sans -f/W.
-		 Search for it in the table of options.  */
-	      for (j = 0;
-		   j < sizeof (fW_options) / sizeof (fW_options[0]);
-		   j++)
-		{
-		  if (kind == fW_options[j].c &&
-		      !strcmp (p, fW_options[j].string))
-		    {
-		      *fW_options[j].variable = fW_options[j].on_value;
-		      break;
-		    }
-		  if (kind == fW_options[j].c &&
-		      p[0] == 'n' && p[1] == 'o' && p[2] == '-' &&
-		      !strcmp (p+3, fW_options[j].string))
-		    {
-		      *fW_options[j].variable = ! fW_options[j].on_value;
-		      break;
-		    }
-		}
-	    }
-	  else if (!strcmp(str, "include"))
-	    add_nesc_include(arg, TRUE);
-	}
+              /* Some kind of -f or -W option.
+                 p's value is the option sans -f/W.
+                 Search for it in the table of options.  */
+              for (j = 0;
+                   j < sizeof (fW_options) / sizeof (fW_options[0]);
+                   j++)
+                {
+                  if (kind == fW_options[j].c &&
+                      !strcmp (p, fW_options[j].string))
+                    {
+                      *fW_options[j].variable = fW_options[j].on_value;
+                      break;
+                    }
+                  if (kind == fW_options[j].c &&
+                      p[0] == 'n' && p[1] == 'o' && p[2] == '-' &&
+                      !strcmp (p+3, fW_options[j].string))
+                    {
+                      *fW_options[j].variable = ! fW_options[j].on_value;
+                      break;
+                    }
+                }
+            }
+          else if (!strcmp(str, "include"))
+            add_nesc_include(arg, TRUE);
+        }
       else
-	filename = argv[i++];
+        filename = argv[i++];
     }
 
   /* Pass options on to the target too (this a bit hacky, but fine so far) */
   if (target->handle_option)
     for (i = 1; i < argc; i++)
       if (argv[i][0] == '-' && argv[i][1] != 0)
-	target->handle_option(argv[i]);
+        target->handle_option(argv[i]);
 
   if (target->preinit)
     target->preinit();

@@ -27,11 +27,11 @@ Boston, MA 02111-1307, USA. */
 */
 typedef struct {
   enum {
-    cval_variable,		    /* not a constant */
-    cval_unk_number,		    /* some unknown number */
-    cval_unk_address,		    /* an unknown symbol with unknown offset */
+    cval_variable,                    /* not a constant */
+    cval_unk_number,                    /* some unknown number */
+    cval_unk_address,                    /* an unknown symbol with unknown offset */
     cval_address_unk_offset,        /* known symbol with unknown offset */
-    cval_address,		    /* symbol with offset */
+    cval_address,                    /* symbol with offset */
     cval_float, cval_float_complex, /* a (complex) floating point number */
     cval_uint, cval_uint_complex,   /* a (complex) unsigned number */
     cval_sint, cval_sint_complex    /* a (complex) signed number */
@@ -44,16 +44,16 @@ typedef struct {
     struct {
       size_t isize;
       union {
-	largest_int si;
-	largest_uint ui;
+        largest_int si;
+        largest_uint ui;
       };
       union {
-	largest_int si_i;
-	largest_uint ui_i;
-	struct { /* for cval_address, cval_address_unk_offset */
-	  struct data_declaration *ddecl;
-	  struct label_declaration *ldecl;
-	};
+        largest_int si_i;
+        largest_uint ui_i;
+        struct { /* for cval_address, cval_address_unk_offset */
+          struct data_declaration *ddecl;
+          struct label_declaration *ldecl;
+        };
       };
     };
   };
@@ -71,9 +71,9 @@ extern cval cval_top; /* The non-constant value */
 extern cval cval_unknown_number; /* The unknown number value */
 extern cval cval_unknown_address; /* The unknown address value */
 extern cval cval_zero; /* A zero value. Use cval_cast to make the desired 
-			  kind of constant */
+                          kind of constant */
 extern cval cval_one; /* A one value. Use cval_cast to make the desired 
-			  kind of constant */
+                          kind of constant */
 extern cval cval_bitsperbyte; /* BITSPERBYTE, unsigned */
 
 void cval_init(void);
@@ -91,7 +91,7 @@ cval make_type_cval(size_t s);
 cval make_cval_float(long double d);
 cval make_cval_complex(cval r, cval i);
 cval make_cval_address(data_declaration ddecl, label_declaration ldecl,
-		       largest_int offset);
+                       largest_int offset);
 
 cval make_cval_address_unknown_offset(cval c);
 /* Requires: cval_isaddress(c)

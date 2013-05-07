@@ -83,11 +83,11 @@ void warning_or_error(bool iswarning, const char *format, ...);
 
 /* Report warning msg at decl */
 void warning_or_error_with_decl(bool iswarning, declaration d,
-				const char *format, ...);
+                                const char *format, ...);
 
 /* Report warning msg at l */
 void warning_or_error_with_location(bool iswarning, location l,
-				    const char *format, ...);
+                                    const char *format, ...);
 
 /* Report pedantic warning or error msg at current filename, lineno */
 void pedwarn(const char *format, ...);

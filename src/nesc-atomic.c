@@ -57,7 +57,7 @@ static atomic_t aaccess(type t)
       cval tsize = type_size(t);
 
       if (cval_isinteger(tsize) && cval_uint_value(tsize) == 1)
-	return ATOMIC_SINGLE;
+        return ATOMIC_SINGLE;
     }
   return NOT_ATOMIC;
 }
@@ -160,7 +160,7 @@ static atomic_t acall(data_declaration ddecl)
     {
       a = acall_connected(ddecl);
       if (!ddecl->definition || ddecl->suppress_definition) /* no default */
-	return a;
+        return a;
     }
   else
     a = ATOMIC_ANY;
@@ -203,10 +203,10 @@ static atomic_t isatomic_expr(expression expr)
 
       a = isatomic_expr(fref->arg1);
       /* Bit field r/w's are not atomic. Could try and be more
-	 optimistic (e.g., non-byte-boundary crossing bitfield reads
-	 are presumably atomic) */
+         optimistic (e.g., non-byte-boundary crossing bitfield reads
+         are presumably atomic) */
       if (!cval_istop(fref->fdecl->bitwidth))
-	a = NOT_ATOMIC;
+        a = NOT_ATOMIC;
       break;
     }
     case kind_interface_deref:
@@ -222,17 +222,17 @@ static atomic_t isatomic_expr(expression expr)
       a2 = isatomic_expr(ce->arg2);
 
       if (ce->condition->cst)
-	{
-	  if (definite_zero(ce->condition))
-	    a = a2;
-	  else
-	    a = a1;
-	}
+        {
+          if (definite_zero(ce->condition))
+            a = a2;
+          else
+            a = a1;
+        }
       else
-	a = aseq(ac, aalt(a1, a2));
+        a = aseq(ac, aalt(a1, a2));
       break;
     }
-	
+        
     case kind_array_ref: {
       array_ref are = CAST(array_ref, expr);
       atomic_t a1, a2;
@@ -251,14 +251,14 @@ static atomic_t isatomic_expr(expression expr)
 
       /* Some heuristics for atomicity of & */
       while (is_field_ref(arg) || is_extension_expr(arg))
-	arg = CAST(unary, arg)->arg1;
+        arg = CAST(unary, arg)->arg1;
 
       if (is_dereference(arg))
-	a = isatomic_expr(CAST(dereference, arg)->arg1);
+        a = isatomic_expr(CAST(dereference, arg)->arg1);
       else if (is_identifier(arg))
-	a = ATOMIC_ANY;
+        a = ATOMIC_ANY;
       else
-	a = isatomic_expr(arg);
+        a = isatomic_expr(arg);
       break;
     }
 
@@ -286,14 +286,14 @@ static atomic_t isatomic_expr(expression expr)
       expression called = fce->arg1;
 
       if (is_generic_call(called))
-	called = CAST(generic_call, called)->arg1;
+        called = CAST(generic_call, called)->arg1;
 
       if (is_identifier(called))
-	a = acall(CAST(identifier, called)->ddecl);
+        a = acall(CAST(identifier, called)->ddecl);
       else if (is_interface_deref(called))
-	a = acall(CAST(interface_deref, called)->ddecl);
+        a = acall(CAST(interface_deref, called)->ddecl);
       else
-	a = NOT_ATOMIC;
+        a = NOT_ATOMIC;
 
       a = aseq(a, isatomic_children(expr));
       break;
@@ -344,14 +344,14 @@ static atomic_t isatomic_stmt(statement stmt)
       a2 = isatomic_stmt(is->stmt2);
 
       if (is->condition->cst)
-	{
-	  if (definite_zero(is->condition))
-	    a = a2;
-	  else
-	    a = a1;
-	}
+        {
+          if (definite_zero(is->condition))
+            a = a2;
+          else
+            a = a1;
+        }
       else
-	a = aseq(ac, aalt(a1, a2));
+        a = aseq(ac, aalt(a1, a2));
       break;
     }
     case kind_while_stmt: case kind_dowhile_stmt: case kind_switch_stmt: {
@@ -362,10 +362,10 @@ static atomic_t isatomic_stmt(statement stmt)
       as = isatomic_stmt(cs->stmt);
 
       if (cs->condition->cst && stmt->kind == kind_while_stmt &&
-	  definite_zero(cs->condition))
-	a = ATOMIC_ANY;
+          definite_zero(cs->condition))
+        a = ATOMIC_ANY;
       else
-	a = amany(aseq(ac, as));
+        a = amany(aseq(ac, as));
       break;
     }
     case kind_for_stmt: {
@@ -378,9 +378,9 @@ static atomic_t isatomic_stmt(statement stmt)
       as = isatomic_stmt(fs->stmt);
 
       if (fs->arg2 && fs->arg2->cst && definite_zero(fs->arg2))
-	a = ATOMIC_ANY;
+        a = ATOMIC_ANY;
       else
-	a = amany(aseq(a2, aseq(as, a3)));
+        a = amany(aseq(a2, aseq(as, a3)));
 
       a = aseq(a1, a);
       break;
@@ -402,7 +402,7 @@ static atomic_t isatomic_stmt(statement stmt)
 }
 
 static AST_walker_result isatomic_ast_expr(AST_walker spec, void *data,
-					   expression *e)
+                                           expression *e)
 {
   atomic_t *a = data;
   *a = aseq(*a, isatomic_expr(*e));
@@ -410,7 +410,7 @@ static AST_walker_result isatomic_ast_expr(AST_walker spec, void *data,
 }
 
 static AST_walker_result isatomic_ast_stmt(AST_walker spec, void *data,
-					   statement *s)
+                                           statement *s)
 {
   atomic_t *a = data;
   *a = aseq(*a, isatomic_stmt(*s));
@@ -418,7 +418,7 @@ static AST_walker_result isatomic_ast_stmt(AST_walker spec, void *data,
 }
 
 static AST_walker_result isatomic_ast_vdecl(AST_walker spec, void *data,
-					    variable_decl *vdp)
+                                            variable_decl *vdp)
 {
   variable_decl vd = *vdp;
   atomic_t *a = data, ainit;
@@ -446,17 +446,17 @@ void isatomic(cgraph g)
     {
       data_declaration fn = NODE_GET(endp, n)->function;
       if (fn->definition)
-	CAST(function_decl, fn->definition)->stmt->isatomic = ATOMIC_ANY;
+        CAST(function_decl, fn->definition)->stmt->isatomic = ATOMIC_ANY;
     }
   do
     {
       dirty = FALSE;
       graph_scan_nodes (n, cg)
-	{
-	  data_declaration fn = NODE_GET(endp, n)->function;
-	  if (fn->definition)
-	    isatomic_stmt(CAST(function_decl, fn->definition)->stmt);
-	}
+        {
+          data_declaration fn = NODE_GET(endp, n)->function;
+          if (fn->definition)
+            isatomic_stmt(CAST(function_decl, fn->definition)->stmt);
+        }
     }
   while (dirty);
 }

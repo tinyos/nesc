@@ -46,7 +46,7 @@ void init_nesc_env(region r)
 }
 
 nesc_declaration new_nesc_declaration(region r, source_language kind,
-				      const char *name)
+                                      const char *name)
 {
   nesc_declaration new = ralloc(r, struct nesc_declaration);
 
@@ -76,7 +76,7 @@ void preload(source_language sl, location l, const char *name)
   if (!nesc_lookup(name))
     load(sl, l, name, FALSE);
 }
-				    
+                                    
 nesc_declaration require(source_language sl, location l, const char *name)
 {
   nesc_declaration d = nesc_lookup(name);
@@ -93,13 +93,13 @@ nesc_declaration require(source_language sl, location l, const char *name)
       nd = dummy_nesc_decl(l, d);
 
       error_with_location(l, "expected %s `%s', but got %s %s",
-			  language_name(sl), name,
-			  d->kind == l_interface ? "an" : "a",
-			  language_name(d->kind));
+                          language_name(sl), name,
+                          d->kind == l_interface ? "an" : "a",
+                          language_name(d->kind));
     }
   return d;
 }
-				    
+                                    
 void require_c(location l, const char *name)
 {
   static int dummy;

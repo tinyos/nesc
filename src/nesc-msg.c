@@ -80,37 +80,37 @@ static void dump_fields(region r, const char *prefix, field_declaration fields)
   while (fields)
     {
       if (fields->name) /* skip anon fields */
-	{
-	  type t = fields->type;
+        {
+          type t = fields->type;
 
-	  printf("  %s%s ", prefix, fields->name);
-	  while (type_array(t))
-	    {
-	      type base = type_array_of(t);
-	      expression size = type_array_size(t);
+          printf("  %s%s ", prefix, fields->name);
+          while (type_array(t))
+            {
+              type base = type_array_of(t);
+              expression size = type_array_size(t);
 
-	      printf("[%lu]", (unsigned long)constant_uint_value(size->cst));
-	      t = base;
-	    }
-	  dump_type(t);
+              printf("[%lu]", (unsigned long)constant_uint_value(size->cst));
+              t = base;
+            }
+          dump_type(t);
 
-	  assert(cval_isinteger(fields->offset));
-	  printf(" %lu %lu\n", (unsigned long)cval_uint_value(fields->offset),
-		 (unsigned long)
-		 (!cval_istop(fields->bitwidth) ?
-		  cval_uint_value(fields->bitwidth) :
-		  BITSPERBYTE * cval_uint_value(type_size(t))));
+          assert(cval_isinteger(fields->offset));
+          printf(" %lu %lu\n", (unsigned long)cval_uint_value(fields->offset),
+                 (unsigned long)
+                 (!cval_istop(fields->bitwidth) ?
+                  cval_uint_value(fields->bitwidth) :
+                  BITSPERBYTE * cval_uint_value(type_size(t))));
 
-	  if (type_aggregate(t))
-	    {
-	      tag_declaration tdecl = type_tag(t);
-	      char *newprefix = rarrayalloc(r, strlen(prefix) + strlen(fields->name) + 2, char);
+          if (type_aggregate(t))
+            {
+              tag_declaration tdecl = type_tag(t);
+              char *newprefix = rarrayalloc(r, strlen(prefix) + strlen(fields->name) + 2, char);
 
-	      sprintf(newprefix, "%s%s.", prefix, fields->name);
-	      dump_fields(r, newprefix, tdecl->fieldlist);
-	      printf("  %s%s AX\n", prefix, fields->name);
-	    }
-	}
+              sprintf(newprefix, "%s%s.", prefix, fields->name);
+              dump_fields(r, newprefix, tdecl->fieldlist);
+              printf("  %s%s AX\n", prefix, fields->name);
+            }
+        }
       fields = fields->next;
     }
 }
@@ -154,9 +154,9 @@ static void dump_layout(tag_declaration tdecl)
   
 
   printf("%s %s %lu %d\n", tagkind_name(tdecl->kind),
-	 tdecl->name,
-	 (unsigned long)cval_uint_value(tdecl->size),
-	 am_type(r, tdecl));
+         tdecl->name,
+         (unsigned long)cval_uint_value(tdecl->size),
+         am_type(r, tdecl));
 
   dump_fields(r, "", tdecl->fieldlist);
 
@@ -182,27 +182,27 @@ void dump_msg_layout(void)
       tdecl = env_lookup(global_env->tag_env, selected_type, FALSE);
 
       if (!tdecl)
-	{
-	  fprintf(stderr, "error: tag %s not found\n", selected_type);
-	  exit(1);
-	}
+        {
+          fprintf(stderr, "error: tag %s not found\n", selected_type);
+          exit(1);
+        }
 
       if (tdecl->kind == kind_enum_ref)
-	{
-	  fprintf(stderr, "error: %s is an enum\n", selected_type);
-	  exit(1);
-	}
+        {
+          fprintf(stderr, "error: %s is an enum\n", selected_type);
+          exit(1);
+        }
 
       if (cval_istop(tdecl->size))
-	{
-	  fprintf(stderr, "error: %s is variable size\n", selected_type);
-	  exit(1);
-	}
+        {
+          fprintf(stderr, "error: %s is variable size\n", selected_type);
+          exit(1);
+        }
 
       if (type_contains_pointers(make_tagged_type(tdecl)))
-	{
-	  fprintf(stderr, "warning: %s contains pointers\n", selected_type);
-	}
+        {
+          fprintf(stderr, "warning: %s contains pointers\n", selected_type);
+        }
 
       dump_layout(tdecl);
 
@@ -216,24 +216,24 @@ void dump_msg_layout(void)
 
       env_scan(global_env->id_env, &scan_global);
       while (env_next(&scan_global, &name, &vdecl))
-	{
-	  data_declaration ddecl = vdecl;
+        {
+          data_declaration ddecl = vdecl;
 
-	  if (ddecl->kind == decl_constant)
-	    {
-	      known_cst val = ddecl->value;
+          if (ddecl->kind == decl_constant)
+            {
+              known_cst val = ddecl->value;
 
-	      printf("%s \"%s\" ", name, ddecl->definition->location->filename);
-	      dump_type(val->type);
-	      putchar(' ');
+              printf("%s \"%s\" ", name, ddecl->definition->location->filename);
+              dump_type(val->type);
+              putchar(' ');
 
-	      if (cval_knownvalue(val->cval))
-		cval_print(stdout, val->cval);
-	      else
-		puts(" UNKNOWN");
-	      putchar('\n');
-	    }
-	}
+              if (cval_knownvalue(val->cval))
+                cval_print(stdout, val->cval);
+              else
+                puts(" UNKNOWN");
+              putchar('\n');
+            }
+        }
     }
 }
 

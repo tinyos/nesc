@@ -71,10 +71,10 @@ int count_error(int warningp)
       static int warning_message = 0;
 
       if (warningp && !warning_message)
-	{
-	  fprintf (stderr, "%s: warnings being treated as errors\n", progname);
-	  warning_message = 1;
-	}
+        {
+          fprintf (stderr, "%s: warnings being treated as errors\n", progname);
+          warning_message = 1;
+        }
       errorcount++;
     }
 
@@ -98,18 +98,18 @@ void print_error_function(const char *file)
   if (last_error_function != current.function_decl)
     {
       if (file)
-	fprintf (stderr, "%s: ", file);
+        fprintf (stderr, "%s: ", file);
 
       if (current.function_decl == NULL)
-	fprintf (stderr, "At top level:\n");
+        fprintf (stderr, "At top level:\n");
       else
-	{
-	  const char *name, *iname;
+        {
+          const char *name, *iname;
 
-	  declarator_name(current.function_decl->declarator, &name, &iname);
-	  fprintf (stderr, "In function `%s%s%s':\n",
-		   iname ? iname : "", iname ? "." : "", name);
-	}
+          declarator_name(current.function_decl->declarator, &name, &iname);
+          fprintf (stderr, "In function `%s%s%s':\n",
+                   iname ? iname : "", iname ? "." : "", name);
+        }
 
       last_error_function = current.function_decl;
     }
@@ -123,11 +123,11 @@ void print_current_nesc_instance(void)
   if (last_container != current.container)
     {
       if (current.container)
-	fprintf(stderr, "In %s `%s':\n", 
-		language_name(current.container->kind),
-		current.container->instance_name);
+        fprintf(stderr, "In %s `%s':\n", 
+                language_name(current.container->kind),
+                current.container->instance_name);
       else
-	fprintf(stderr, "In C file:\n");
+        fprintf(stderr, "In C file:\n");
       last_container = current.container;
     }
 }
@@ -146,11 +146,11 @@ void report_error_function(const char *file)
     {
       fprintf (stderr, "In file included");
       for (p = current.lex.input->next; p; p = p->next)
-	{
-	  fprintf (stderr, " from %s:%lu", p->l.filename, p->l.lineno);
-	  if (p->next)
-	    fprintf (stderr, ",\n                ");
-	}
+        {
+          fprintf (stderr, " from %s:%lu", p->l.filename, p->l.lineno);
+          if (p->next)
+            fprintf (stderr, ",\n                ");
+        }
       fprintf (stderr, ":\n");
       last_error_tick = input_file_stack_tick;
     }
@@ -329,7 +329,7 @@ void warning_or_error(bool iswarning, const char *format, ...)
 
 /* Report warning msg at decl */
 void warning_or_error_with_decl(bool iswarning, declaration d,
-				const char *format, ...)
+                                const char *format, ...)
 {
   va_list args;
 
@@ -343,7 +343,7 @@ void warning_or_error_with_decl(bool iswarning, declaration d,
 
 /* Report warning msg at l */
 void warning_or_error_with_location(bool iswarning, location l,
-				    const char *format, ...)
+                                    const char *format, ...)
 {
   va_list args;
 

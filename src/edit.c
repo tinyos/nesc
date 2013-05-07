@@ -33,8 +33,8 @@ Boston, MA 02111-1307, USA. */
    this approach.
    Return it's declaration */
 data_decl build_declaration(region r, struct environment *e,
-			    type t, const char *name, expression init,
-			    data_declaration *oddecl)
+                            type t, const char *name, expression init,
+                            data_declaration *oddecl)
 {
   struct data_declaration tempdecl;
   identifier_declarator id;
@@ -136,7 +136,7 @@ expression build_string(region r, location loc, const char *str)
 }
 
 expression build_function_call(region r, location loc,
-			       expression fn, expression arglist)
+                               expression fn, expression arglist)
 {
   expression result = CAST(expression, new_function_call(r, loc, fn, arglist, NULL, normal_call));
   type fntype = type_default_conversion(fn->type), rettype;

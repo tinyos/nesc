@@ -35,35 +35,35 @@ typedef struct nesc_declaration {
   struct environment *env;
   struct docstring doc;
 
-  bool abstract;		/* true for abstract components and
-				   generic interfaces */
-  bool dumped;			/* true if already added to dump list */
-  bool printed;			/* true if declarations already printed */
-  declaration parameters;	/* Parameters for generic components and
-				   interfaces */
-  expression arguments;		/* Arguments for instantiations of generic 
-				   components and interfaces */
+  bool abstract;                /* true for abstract components and
+                                   generic interfaces */
+  bool dumped;                        /* true if already added to dump list */
+  bool printed;                        /* true if declarations already printed */
+  declaration parameters;        /* Parameters for generic components and
+                                   interfaces */
+  expression arguments;                /* Arguments for instantiations of generic 
+                                   components and interfaces */
   struct environment *parameter_env;
   struct nesc_declaration *original; /* For instances: the "original" component
-					or interface */
+                                        or interface */
   /* All '@'-style attributes attached to this declaration */
   dd_list/*nesc_attribute*/ attributes;
 
   /* for components */
   /* Binary components are mostly treated like modules. */
 
-  bool configuration;		/* TRUE for configurations, FALSE for modules
-				   (needed before impl is set) and binary
-				   components. */
-  bool safe;			/* TRUE if safety checks should be performed in here */
+  bool configuration;                /* TRUE for configurations, FALSE for modules
+                                   (needed before impl is set) and binary
+                                   components. */
+  bool safe;                        /* TRUE if safety checks should be performed in here */
   implementation impl;
   struct cgraph *connections;
   struct cgraph *user_connections; /* interfaces are not expanded */
-  dd_list local_statics;	/* Local static variables (for nido) */
-  size_t instance_count;	/* For abstract components, the
-				   instance count (used to give each
-				   instance a unique name) */
-  int folded;			/* number of last constant folding pass */
+  dd_list local_statics;        /* Local static variables (for nido) */
+  size_t instance_count;        /* For abstract components, the
+                                   instance count (used to give each
+                                   instance a unique name) */
+  int folded;                        /* number of last constant folding pass */
 } *nesc_declaration;
 
 #endif

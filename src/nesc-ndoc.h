@@ -26,12 +26,12 @@ struct docstring
 
 struct doctag
 {
-  int lineno;			/* relative to start of string, first line=0 */
-  const char *tag;		/* @param, @result, etc */
-  const char *args[];		/* arguments to key:
-				   @param(1): parameter name or declaration
-				   @result(1): result type or empty string
-				*/
+  int lineno;                        /* relative to start of string, first line=0 */
+  const char *tag;                /* @param, @result, etc */
+  const char *args[];                /* arguments to key:
+                                   @param(1): parameter name or declaration
+                                   @result(1): result type or empty string
+                                */
 };
 
 bool get_latest_docstring(struct docstring *doc, region tags_r, dd_list *tags);
@@ -39,9 +39,9 @@ bool get_latest_docstring(struct docstring *doc, region tags_r, dd_list *tags);
 struct data_declaration;
 struct AST_function_declarator;
 void handle_ddecl_doc_tags(location docloc, struct data_declaration *ddecl,
-			   dd_list tags);
+                           dd_list tags);
 void handle_fdecl_doc_tags(location docloc, struct data_declaration *ddecl,
-			   struct AST_function_declarator *fd, dd_list tags);
+                           struct AST_function_declarator *fd, dd_list tags);
 
 void ignored_doctag(location docloc, struct doctag *tag);
 void ignored_doctags(location docloc, dd_list tags);

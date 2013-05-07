@@ -91,30 +91,30 @@ static void connect_graph(cgraph master, cgraph component)
       gnode mfrom = endpoint_lookup(master, from);
 
       graph_scan_out (connection, n)
-	{
-	  endp to = NODE_GET(endp, graph_edge_to(connection));
-	  gnode mto = endpoint_lookup(master, to);
+        {
+          endp to = NODE_GET(endp, graph_edge_to(connection));
+          gnode mto = endpoint_lookup(master, to);
 
-	  graph_add_edge(mfrom, mto, EDGE_GET(location, connection));
-	}
+          graph_add_edge(mfrom, mto, EDGE_GET(location, connection));
+        }
     }
 }
 
 static void connect(location loc, nesc_declaration cdecl, cgraph cg,
-		    cgraph userg, dd_list modules, dd_list components)
+                    cgraph userg, dd_list modules, dd_list components)
 {
   nesc_declaration loop;
 
   if ((loop = abstract_recursion()))
     {
       /* We can help the programmer find the loop by showing the 
-	 instantiation path that causes it. loop's instance name is a prefix
-	 of cdecl's, the looping path is loop's abstract component name
-	 followed by the difference between loop's and cdecl's instance name.
+         instantiation path that causes it. loop's instance name is a prefix
+         of cdecl's, the looping path is loop's abstract component name
+         followed by the difference between loop's and cdecl's instance name.
       */
       error_with_location(loc, "component instantiation loop `%s%s'",
-			  original_component(loop)->name,
-			  cdecl->instance_name + strlen(loop->instance_name));
+                          original_component(loop)->name,
+                          cdecl->instance_name + strlen(loop->instance_name));
     }
   else if (!dd_find(components, cdecl))
     {
@@ -123,29 +123,29 @@ static void connect(location loc, nesc_declaration cdecl, cgraph cg,
       connect_graph(userg, cdecl->user_connections);
 
       if (!cdecl->configuration)
-	dd_add_last(regionof(modules), modules, cdecl);
+        dd_add_last(regionof(modules), modules, cdecl);
       else
-	{
-	  configuration c = CAST(configuration, cdecl->impl);
-	  declaration d;
+        {
+          configuration c = CAST(configuration, cdecl->impl);
+          declaration d;
 
-	  scan_declaration (d, c->decls)
-	    if (is_component_ref(d))
-	      {
-		component_ref comp = CAST(component_ref, d);
+          scan_declaration (d, c->decls)
+            if (is_component_ref(d))
+              {
+                component_ref comp = CAST(component_ref, d);
 
-		push_instance(comp->cdecl);
-		if (comp->cdecl->original)
-		  instantiate(comp->cdecl, comp->args);
-		connect(comp->location, comp->cdecl, cg, userg, modules, components);
-		pop_instance();
-	      }
-	}
+                push_instance(comp->cdecl);
+                if (comp->cdecl->original)
+                  instantiate(comp->cdecl, comp->args);
+                connect(comp->location, comp->cdecl, cg, userg, modules, components);
+                pop_instance();
+              }
+        }
     }
 }
 
 static void connect_graphs(region r, nesc_declaration program, nesc_declaration scheduler,
-			   cgraph *cg, cgraph *userg, dd_list *modules, dd_list *components)
+                           cgraph *cg, cgraph *userg, dd_list *modules, dd_list *components)
 {
   *cg = new_cgraph(r);
   *userg = new_cgraph(r);
@@ -299,14 +299,14 @@ int nesc_option(char *p)
 
       /* <inputdir>,<outputdir> or <outputdir> only for original */
       if (comma)
-	{
-	  diff_input = rstralloc(permanent, comma - dirs + 1);
-	  strncpy(diff_input, dirs, comma - dirs);
-	  diff_input[comma - dirs] = '\0';
-	  diff_output = comma + 1;
-	}
+        {
+          diff_input = rstralloc(permanent, comma - dirs + 1);
+          strncpy(diff_input, dirs, comma - dirs);
+          diff_input[comma - dirs] = '\0';
+          diff_output = comma + 1;
+        }
       else
-	diff_output = dirs;
+        diff_output = dirs;
     }
   else if (!strncmp(p, "fnesc-separator=", strlen("fnesc-separator=")))
     set_function_separator(p + 16);
@@ -323,16 +323,16 @@ static void destroy_target(const char *name)
   if (name)
     {
       /* unlink would be nicer, but would have nasty consequences for
-	 -o /dev/null when run by root... */
+         -o /dev/null when run by root... */
       int fd = creat(name, 0666);
 
       if (fd < 0)
-	{
-	  fprintf(stderr, "%s: ", name);
-	  perror("failed to truncate target");
-	}
+        {
+          fprintf(stderr, "%s: ", name);
+          perror("failed to truncate target");
+        }
       else
-	close(fd);
+        close(fd);
     }
 
 }
@@ -396,7 +396,7 @@ void nesc_compile(const char *filename, const char *target_name)
     {
       connect_graphs(parse_region, program, scheduler, &cg, &userg, &modules, &components);
       if (errorcount)
-	return;
+        return;
       current.container = NULL;
       fold_program(program, scheduler);
       gencode = TRUE;
@@ -415,11 +415,11 @@ void nesc_compile(const char *filename, const char *target_name)
   if (docs_requested())
     {
       if (generic_used)
-	error("documentation system does not yet support generic components and interfaces");
+        error("documentation system does not yet support generic components and interfaces");
       else if (program)
-	generate_docs(filename, cg);
+        generate_docs(filename, cg);
       else
-	error("documentation requested on a C file ");
+        error("documentation requested on a C file ");
       gencode = FALSE;
     }
   if (layout_requested())
@@ -433,6 +433,6 @@ void nesc_compile(const char *filename, const char *target_name)
     generate_c_code(target_name, program, cg, modules, components);
   else if (flag_c)
     generate_c_code(target_name, NULL,
-		    new_cgraph(permanent), dd_new_list(permanent),
-		    dd_new_list(permanent));
+                    new_cgraph(permanent), dd_new_list(permanent),
+                    dd_new_list(permanent));
 }

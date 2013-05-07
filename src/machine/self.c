@@ -64,10 +64,10 @@ static void self_handle_option(const char *arg)
 static machine_spec self_machine = {
   "pc", SELF_HANDLE_OPTION,
 
-  FALSE,			/* big_endian, set in preinit */
+  FALSE,                        /* big_endian, set in preinit */
 
   /* pcc_bitfield_type_matters */
-  sizeof(struct self_pcc1) != sizeof(struct self_pcc2),	
+  sizeof(struct self_pcc1) != sizeof(struct self_pcc2),        
 
   /* empty field boundary */
   sizeof(struct self_efb) * BITSPERBYTE, 
@@ -75,29 +75,29 @@ static machine_spec self_machine = {
   /* structure size boundary */
   sizeof(struct self_smallest) * BITSPERBYTE, 
 
-  sizeof(myword),				     /* word size */
-  { sizeof(void *),      __alignof__(void *) },	     /* pointer type */
-  { sizeof(float),       __alignof__(float) },	     /* float */
-  { sizeof(double),      __alignof__(double) },	     /* double */
+  sizeof(myword),                                     /* word size */
+  { sizeof(void *),      __alignof__(void *) },             /* pointer type */
+  { sizeof(float),       __alignof__(float) },             /* float */
+  { sizeof(double),      __alignof__(double) },             /* double */
   { sizeof(long double), __alignof__(long double) }, /* long double */
-  { sizeof(short),       __alignof__(short) },	     /* short */
-  { sizeof(int),         __alignof__(int) },	     /* int */
-  { sizeof(long),        __alignof__(long) },	     /* long */
+  { sizeof(short),       __alignof__(short) },             /* short */
+  { sizeof(int),         __alignof__(int) },             /* int */
+  { sizeof(long),        __alignof__(long) },             /* long */
   { sizeof(long long),   __alignof__(long long) },   /* long long */
   __alignof__(myint1), __alignof__(myint2),
-  __alignof__(myint4), __alignof__(myint8),	     /* int1/2/4/8 align */
-  sizeof(wchar_t), sizeof(size_t),		     /* wchar_t, size_t size */
-  (char)-1 < 0, (wchar_t)-1 < 0,		     /* char, wchar_t signed */
-  NULL,				/* no attribute for async functions */
+  __alignof__(myint4), __alignof__(myint8),             /* int1/2/4/8 align */
+  sizeof(wchar_t), sizeof(size_t),                     /* wchar_t, size_t size */
+  (char)-1 < 0, (wchar_t)-1 < 0,                     /* char, wchar_t signed */
+  NULL,                                /* no attribute for async functions */
 
-  SELF_ADJUST_FIELD_ALIGN,			     /* adjust_field_align */
+  SELF_ADJUST_FIELD_ALIGN,                             /* adjust_field_align */
 
-  NULL, NULL, NULL, NULL,	/* No special attributes */
-  self_preinit, NULL,		/* init */
-  NULL,				/* token */
-  NULL,				/* keil special */
-  gcc_global_cpp_init,		/* global cpp support */
-  NULL				/* per-file cpp support */
+  NULL, NULL, NULL, NULL,        /* No special attributes */
+  self_preinit, NULL,                /* init */
+  NULL,                                /* token */
+  NULL,                                /* keil special */
+  gcc_global_cpp_init,                /* global cpp support */
+  NULL                                /* per-file cpp support */
 };
 
 static void self_preinit(void)

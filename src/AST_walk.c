@@ -25,7 +25,7 @@ struct AST_walker
 };
 
 static AST_walker_result default_walker(AST_walker spec, void *data,
-					node *n)
+                                        node *n)
 {
   return aw_walk;
 }
@@ -87,16 +87,16 @@ void AST_walk(AST_walker spec, void *data, node *n)
       AST_kind k = (*n)->kind;
 
       switch (AST_walker_call(spec, k, data, n))
-	{
-	case aw_done: return;
-	case aw_call_parent:
-	  k = AST_parent_kind[k - kind_node];
-	  if (!k)
-	    return;
-	  break;
-	case aw_walk:
-	  AST_walk_children(spec, data, *n);
-	  return;
-	}
+        {
+        case aw_done: return;
+        case aw_call_parent:
+          k = AST_parent_kind[k - kind_node];
+          if (!k)
+            return;
+          break;
+        case aw_walk:
+          AST_walk_children(spec, data, *n);
+          return;
+        }
     }
 }

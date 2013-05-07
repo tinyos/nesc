@@ -24,7 +24,7 @@ Boston, MA 02111-1307, USA. */
 #define C_LEX_H
 
 typedef enum { l_c, l_interface, l_component, l_implementation,
-	       l_parameter, l_type, l_any } source_language;
+               l_parameter, l_type, l_any } source_language;
 
 typedef struct location
 { 

@@ -46,9 +46,9 @@ declarator make_interface_ref_declarator(location l, cstring w1, cstring w2)
     new_identifier_declarator(parse_region, l, w2);
 
   return CAST(declarator,
-	      new_interface_ref_declarator(parse_region, l,
-					   CAST(declarator, id),
-					   make_word(l, w1)));
+              new_interface_ref_declarator(parse_region, l,
+                                           CAST(declarator, id),
+                                           make_word(l, w1)));
 }
 
 expression make_interface_deref(location loc, expression object, cstring field)
@@ -82,10 +82,10 @@ static void check_function_implemented(data_declaration fndecl, void *data)
   if (fndecl->defined && !fndecl->definition)
     {
       if (idecl)
-	error_with_location(*loc, "`%s.%s' not implemented",
-			    idecl->name, fndecl->name);
+        error_with_location(*loc, "`%s.%s' not implemented",
+                            idecl->name, fndecl->name);
       else
-	error_with_location(*loc, "`%s' not implemented", fndecl->name);
+        error_with_location(*loc, "`%s' not implemented", fndecl->name);
     }
 }
 
@@ -93,7 +93,7 @@ static void check_function_implemented(data_declaration fndecl, void *data)
 static void check_complete_implementation(module m)
 {
   component_functions_iterate(m->cdecl, check_function_implemented,
-			      &m->location);
+                              &m->location);
 }
 
 void process_module(module m)

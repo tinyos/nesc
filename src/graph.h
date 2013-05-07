@@ -51,8 +51,8 @@ ggraph new_graph(region r);
 */
 
 void delete_graph(ggraph g,
-		  void (*delete_node)(gnode n),
-		  void (*delete_edge)(gedge e));
+                  void (*delete_node)(gnode n),
+                  void (*delete_edge)(gedge e));
 /* Effects: Deletes graph g. Calls functions delete_node & delete_edge
      on nodes and edges before deleting them. All edges of a node
      are deleted before it is.
