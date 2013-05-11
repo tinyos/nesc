@@ -1,4 +1,3 @@
-
 The current version of nescc can be obtained via:
 
 	git://github.com/tinyos/nesc.git, master branch
@@ -10,6 +9,8 @@ autoconf 2.64 or 2.69 or later
     2.67 and 2.68 are known not to work (problem with libiberty)
 emacs
 gperf
+bison
+flex
 
 Directions: in this directory
 ./Bootstrap (once only after checkout)
