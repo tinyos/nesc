@@ -456,7 +456,7 @@ bool check_assignment(type lhstype, type rhstype, expression rhs,
 	      ptrconversion_warnings(ttl, ttr, rhs, context, fundecl, parmnum,
 				     FALSE);
 	    }
-	  
+
 	  if (pedantic && !(fundecl && fundecl->in_system_header))
 	    pedwarn("ANSI C prohibits argument conversion to union type");
 
@@ -621,7 +621,7 @@ expression make_extension_expr(location loc, expression e)
   result->bitfield = e->bitfield;
   result->isregister = e->isregister;
   result->static_address = e->static_address;
-  
+
   return result;
 }
 
@@ -802,7 +802,7 @@ expression make_cast(location loc, asttype t, expression e)
 {
   expression result = CAST(expression, new_cast(parse_region, loc, e, t));
   type castto = t->type;
-  
+
   if (castto == error_type || type_void(castto))
     ; /* Do nothing */
   else if (type_array(castto))
@@ -845,7 +845,7 @@ expression make_cast(location loc, asttype t, expression e)
 	  if (!ufield)
 	    error("cast to union type from type not present in union");
 	}
-      else 
+      else
 	{
 	  /* Optionally warn about potentially worrisome casts.  */
 
@@ -965,7 +965,7 @@ type check_binary(int binop, expression e1, expression e2)
 	common = TRUE;
       break;
 
-    case kind_minus: 
+    case kind_minus:
       if (type_pointer(t1) && type_integer(t2))
 	rtype = pointer_int_sum(t1, t2);
       else if (type_pointer(t1) && type_pointer(t2) &&
@@ -1144,7 +1144,7 @@ expression make_binary(location loc, int binop, expression e1, expression e2)
 
       /* Similarly, check for cases like 1<=i<=10 that are probably errors.  */
       /* This was under extra_warnings in 3.4.x, but under warn_parentheses in 4.? */
-      if (unsafe_comparison(result) 
+      if (unsafe_comparison(result)
 	  && (unsafe_comparison(e1) || unsafe_comparison(e2)))
 	warning("comparisons like X<=Y<=Z do not have their mathematical meaning");
     }
@@ -1200,7 +1200,7 @@ expression make_conditional(location loc, expression cond,
     ttype = true->type;
   else
     ttype = default_conversion(true);
-  
+
   if (type_void(false->type))
     ftype = false->type;
   else
@@ -1257,7 +1257,7 @@ expression make_conditional(location loc, expression cond,
       error("type mismatch in conditional expression");
       rtype = error_type;
     }
-  
+
   /* Qualifiers depend on both types */
   if (rtype != error_type)
     rtype = qualify_type2(rtype, ttype, ftype);
@@ -1436,7 +1436,7 @@ bool check_arguments(type fntype, expression arglist,
       if (parmtype)
 	{
 	  if (fundecl)
-	    error("too few %ss to function `%s'", argname, 
+	    error("too few %ss to function `%s'", argname,
 		  decl_printname(fundecl));
 	  else
 	    error("too few %ss to function", argname);
@@ -1609,7 +1609,7 @@ expression make_array_ref(location loc, expression array, expression index)
   if (type_integer(atype))
     {
       type temp = atype;
-      atype = itype; 
+      atype = itype;
       itype = temp;
     }
 
@@ -1684,7 +1684,7 @@ static expression finish_increment(unary result, char *name)
 
   if (!type_scalar(etype))
     error("wrong type argument to %s", name);
-  else 
+  else
     {
       if (type_incomplete(etype))
 	error("%s of pointer to unknown structure or union", name);
