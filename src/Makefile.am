@@ -43,7 +43,7 @@ endif
 
 ncclibdir=$(libdir)/ncc
 
-INCLUDES = $(regionflags) -I$(srcdir)/$(regiondir) -I$(srcdir)/../libcpp/include -I$(srcdir)/../libcpp -I$(srcdir)/../include $(extra_inc)
+AM_CPPFLAGS = $(regionflags) -I$(srcdir)/$(regiondir) -I$(srcdir)/../libcpp/include -I$(srcdir)/../libcpp -I$(srcdir)/../include $(extra_inc)
 
 noinst_LIBRARIES = libparser.a
 ncclib_PROGRAMS = nesc1

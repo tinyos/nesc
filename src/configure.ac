@@ -27,7 +27,7 @@ AC_PREREQ(2.50)
 AC_INIT(nesc, 1.3.4)
 AC_CONFIG_AUX_DIR(../config-aux)
 AC_CONFIG_SRCDIR(c-parse.y)
-AM_CONFIG_HEADER(autoconf.h)
+AC_CONFIG_HEADERS(autoconf.h)
 AM_INIT_AUTOMAKE
 
 : ${CFLAGS=-g}
