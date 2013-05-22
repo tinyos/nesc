@@ -107,7 +107,7 @@ static void connect(location loc, nesc_declaration cdecl, cgraph cg,
 
   if ((loop = abstract_recursion()))
     {
-      /* We can help the programmer find the loop by showing the 
+      /* We can help the programmer find the loop by showing the
 	 instantiation path that causes it. loop's instance name is a prefix
 	 of cdecl's, the looping path is loop's abstract component name
 	 followed by the difference between loop's and cdecl's instance name.
@@ -172,92 +172,53 @@ int nesc_option(char *p)
 
   /* Yes, using here strlen is evil. But who *really* cares? */
   if (!strncmp (p, "fnesc-nido-tosnodes=", strlen("fnesc-nido-tosnodes=")))
-    {
-      nido_num_nodes = p + strlen("fnesc-nido-tosnodes=");
-    }
+    nido_num_nodes = p + strlen("fnesc-nido-tosnodes=");
   else if (!strncmp (p, "fnesc-nido-motenumber=", strlen("fnesc-nido-motenumber=")))
-    {
-      nido_mote_number = p + strlen("fnesc-nido-motenumber=");
-    }
+    nido_mote_number = p + strlen("fnesc-nido-motenumber=");
   else if (!strncmp (p, "fnesc-include=", strlen("fnesc-include=")))
-    {
-      add_nesc_include(p + strlen("fnesc-include="), FALSE);
-    }
+    add_nesc_include(p + strlen("fnesc-include="), FALSE);
   else if (!strncmp (p, "fnesc-path=", strlen("fnesc-path=")))
-    {
-      add_nesc_path(p + strlen("fnesc-path="), CHAIN_BRACKET);
-    }
+    add_nesc_path(p + strlen("fnesc-path="), CHAIN_BRACKET);
   else if (!strncmp (p, "fnesc-msg=", strlen("fnesc-msg=")))
-    {
-      select_nesc_msg(p + strlen("fnesc-msg="));
-    }
+    /* Internal use only option. - for nescc-mig */
+    select_nesc_msg(p + strlen("fnesc-msg="));
   else if (!strcmp (p, "fnesc-csts"))
-    {
-      select_nesc_csts();
-    }
+    /* Internal use only option. - for nescc-ncg */
+    select_nesc_csts();
   else if (!strncmp (p, "fnesc-dump=", strlen("fnesc-dump=")))
-    {
-      select_dump(p + strlen("fnesc-dump="));
-    }
+    select_dump(p + strlen("fnesc-dump="));
   else if (!strncmp (p, "fnesc-dumpfile=", strlen("fnesc-dumpfile=")))
-    {
-      select_dumpfile(p + strlen("fnesc-dumpfile="));
-    }
+    select_dumpfile(p + strlen("fnesc-dumpfile="));
   else if (!strncmp (p, "fnesc-target=", strlen("fnesc-target=")))
-    {
-      select_target(p + strlen("fnesc-target="));
-    }
+    select_target(p + strlen("fnesc-target="));
   else if (!strcmp (p, "fnesc-simulate"))
-    {
-      use_nido = TRUE;
-    }
+    use_nido = TRUE;
   else if (!strncmp (p, "fnesc-gcc=", strlen("fnesc-gcc=")))
-    {
-      target_compiler = p + strlen("fnesc-gcc=");
-    }
+    target_compiler = p + strlen("fnesc-gcc=");
   else if (!strcmp (p, "fnesc-mingw-gcc"))
-    {
-      flag_mingw_gcc = 1;
-    }
+    flag_mingw_gcc = 1;
   else if (!strcmp (p, "fnesc-no-debug"))
-    {
-      flag_no_debug = 1;
-    }
+    flag_no_debug = 1;
   else if (!strcmp (p, "fnesc-no-inline"))
-    {
-      flag_no_inline++;
-    }
+    flag_no_inline++;
   else if (!strcmp (p, "fnesc-verbose"))
-    {
-      flag_verbose = 2;
-    }
+    flag_verbose = 2;
   else if (!strcmp (p, "fnesc-save-macros"))
-    {
-      flag_save_macros = 1;
-    }
+    warning("option -fnesc-save-macros is deprecated and should not be used.");
   else if (!strncmp (p, "fnesc-scheduler=", strlen("fnesc-scheduler=")))
-    {
-      set_scheduler(p + strlen("fnesc-scheduler="));
-    }
+    set_scheduler(p + strlen("fnesc-scheduler="));
   else if (!strncmp (p, "fnesc-docdir=", strlen("fnesc-docdir=")))
-    {
-      doc_set_outdir(p + strlen("fnesc-docdir="));
-    }
+    doc_set_outdir(p + strlen("fnesc-docdir="));
   else if (!strncmp (p, "fnesc-topdir=", strlen("fnesc-topdir=")))
-    {
-      doc_add_topdir(p + strlen("fnesc-topdir="));
-    }
+    doc_add_topdir(p + strlen("fnesc-topdir="));
   else if (!strncmp (p, "fnesc-is-app", strlen("fnesc-is-app")))
-    {
-      doc_is_app(TRUE);
-    }
+    doc_is_app(TRUE);
   else if (!strncmp (p, "fnesc-docs-use-graphviz", strlen("fnesc-docs-use-graphviz")))
-    {
-      doc_use_graphviz(TRUE);
-    }
+    doc_use_graphviz(TRUE);
   else if (!strcmp (p, "fnesc-optimize-atomic"))
     nesc_optimise_atomic = 1;
   else if (!strncmp (p, "fnesc-genprefix=", strlen("fnesc-genprefix=")))
+    /* Internal use only option. - for deputy (see nesc-compile) */
     unparse_prefix(p + strlen("fnesc-genprefix="));
   else if (!strcmp (p, "fnesc-deputy"))
     flag_deputy = 1;
@@ -298,6 +259,8 @@ int nesc_option(char *p)
   else if (!strcmp (p, "Wnesc-error"))
     nesc_error = TRUE;
   else if (!strncmp(p, "fnesc-diff=", strlen("fnesc-diff=")))
+    /* Internal use only option. - for nescc-diff */
+    /* As of version 1.3.4 this feature is not complete. */
     {
       char *dirs = p + 11, *comma = strchr(dirs, ',');
 
@@ -405,7 +368,7 @@ void nesc_compile(const char *filename, const char *target_name)
       fold_program(program, scheduler);
       gencode = TRUE;
     }
-  else 
+  else
     /* The "program" is a C file, interface or abstract component */
     fold_program(NULL, NULL);
 
