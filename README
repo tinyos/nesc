@@ -7,25 +7,10 @@ TinyOS is an event-driven operating system designed for sensor network nodes
 that have very limited resources (e.g., 8K bytes of program memory, 512 bytes
 of RAM). 
 
-Requirements
-------------
-
-To build nesC from source requires the following packages:
-
-- automake
-- autoconf (2.64 or 2.69 or later. 2.67 and 2.68 are known not to work.)
-- emacs (not version 24.3)
-- gperf
-- bison
-- flex
-
 Install
 -------
 
-    ./Bootstrap
-    ./configure
-    make
-    make install
+Please reference INSTALL.
 
 Usage
 -----
