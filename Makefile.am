@@ -25,3 +25,4 @@ dist-hook:
 	  (cd $$i; make distclean); \
 	  tar cf - -X $$i/.distignore $$i | tar xf - -C $(distdir); \
 	done
+	rm -f $(distdir)/README.md
