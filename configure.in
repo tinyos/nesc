@@ -38,6 +38,23 @@ if test -z "$pathperl" ; then
   AC_MSG_ERROR(I can't find perl); 
 fi
 
+# Only check if emacs, flex, bison and gperf are installed if
+# there is a Bootstrap file present.
+AC_CHECK_FILE([Bootstrap])
+if test "$ac_cv_file_Bootstrap" == yes ; then
+  AM_PATH_LISPDIR
+  AS_IF([test "$EMACS" = no], [AC_MSG_ERROR([cannot find emacs])])
+
+  AC_PATH_PROG(pathgperf, gperf, [no])
+  AS_IF([test "$pathgperf" = no], [AC_MSG_ERROR([cannot find gperf])])
+
+  AC_PATH_PROG(pathbison, bison, [no])
+  AS_IF([test "$pathbison" = no], [AC_MSG_ERROR([cannot find bison])])
+
+  AC_PATH_PROG(pathflex, flex, [no])
+  AS_IF([test "$pathflex" = no], [AC_MSG_ERROR([cannot find flex])])
+fi
+
 AC_OUTPUT(
 	Makefile
 	doc/Makefile
