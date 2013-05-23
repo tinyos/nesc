@@ -38,6 +38,7 @@ Boston, MA 02111-1307, USA. */
 #include "machine.h"
 #include "attributes.h"
 #include "nesc-task.h"
+#include "unparse.h"
 
 /* Predefined __builtin_va_list type */
 type builtin_va_list_type;
@@ -160,7 +161,13 @@ void init_data_declaration(data_declaration dd, declaration ast,
 
 data_declaration lookup_id(const char *s, bool this_level_only)
 {
-  return env_lookup(current.env->id_env, s, this_level_only);
+  /* Check if s is prefaced with __nesc_keyword_ meaning we want to
+   * check if the remainder of the function string is defined, as this prefix
+   * will be removed in the final output. */
+  if (strncmp(s, NESC_KEYWORD_PREFIX, NESC_KEYWORD_PREFIX_LEN) == 0)
+    return env_lookup(current.env->id_env, s + NESC_KEYWORD_PREFIX_LEN, this_level_only);
+  else
+    return env_lookup(current.env->id_env, s, this_level_only);
 }
 
 data_declaration lookup_global_id(const char *s)
@@ -202,7 +209,7 @@ data_declaration declare(environment b, data_declaration from,
 	      if (shadowed->isparameter)
 		warnstring = "declaration of `%s' shadows a parameter";
 	      else
-		warnstring = "declaration of `%s' shadows a symbol from the parameter list"; 
+		warnstring = "declaration of `%s' shadows a symbol from the parameter list";
 	    }
 	  /* Maybe warn if shadowing something else.  */
 	  else if (warn_shadow && !ignore_shadow)
@@ -645,7 +652,7 @@ void check_array_size(expression size, const char *printname)
     }
 }
 
-void parse_declarator(type_element modifiers, declarator d, bool bitfield, 
+void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 		      bool require_parm_names,
 		      int *oclass, scflags *oscf,
 		      const char **ointf, const char **oname,
@@ -699,7 +706,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 		break;
 
 	      case RID_LONG: /* long long detection */
-		if (specbits & 1 << RID_LONG) 
+		if (specbits & 1 << RID_LONG)
 		  {
 		    if (longlong)
 		      error_with_location(spec->location,
@@ -725,7 +732,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	  {
 	    qualifier q = CAST(qualifier, spec);
 	    int id = q->id;
-            
+
 	    check_duplicate_qualifiers1(loc, id, specquals);
 	    specquals |= id;
 	    break;
@@ -1031,7 +1038,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 
 	    if (newstyle)
 	      {
-		bool definition = require_parm_names && 
+		bool definition = require_parm_names &&
 		  d && d->kind == kind_identifier_declarator;
 		bool varargs;
 		typelist argtypes = make_arg_types(definition, fd->parms,
@@ -1270,7 +1277,7 @@ int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
      except if traditional and in different binding levels */
   if (newdecl->kind != olddecl->kind)
     {
-      bool iswarning = 
+      bool iswarning =
 	(flag_traditional && different_binding_level) || olddecl->islimbo;
 
       warning_or_error(iswarning,
@@ -1494,7 +1501,7 @@ int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
 	  if (!type_const(oldtype) && type_const(newtype))
 	    warning("const declaration for `%s' follows non-const", decl_printname(olddecl));
 	  /* These bits are logically part of the type, for variables. */
-	  else if (pedantic && 
+	  else if (pedantic &&
 		   (type_const(oldtype) != type_const(newtype)
 		    || type_volatile(oldtype) != type_volatile(newtype)))
 	    {
@@ -1529,7 +1536,7 @@ int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
 
   /* If either of the decls says noinline, make sure that none of the
      declerations are made inline. */
-  if (newdecl->noinlinep || olddecl->noinlinep) 
+  if (newdecl->noinlinep || olddecl->noinlinep)
     newdecl->noinlinep = olddecl->noinlinep = TRUE;
 
   if (different_binding_level)
@@ -1603,7 +1610,7 @@ int duplicate_decls(data_declaration newdecl, data_declaration olddecl,
   else if (newdecl->kind == decl_variable)
     {
       /* static overrides extern (the combinations with register
-	 are errors anyway) */ 
+	 are errors anyway) */
       if (olddecl->vtype != variable_static)
 	olddecl->vtype = variable_static;
     }
@@ -1798,7 +1805,7 @@ static tag_declaration make_anonymous_struct(void)
 
 static void declare_builtin_types(void)
 {
-  builtin_va_list_type = 
+  builtin_va_list_type =
     make_pointer_type(make_tagged_type(make_anonymous_struct()));
   declare_builtin_type("__builtin_va_list", builtin_va_list_type);
 }
@@ -1955,7 +1962,7 @@ bool start_function(type_element elements, declarator d, attribute attribs,
 	pedwarn("invalid storage class for function `%s'", name);
       class = 0;
     }
-  
+
   if (class == RID_COMMAND || class == RID_EVENT || class == RID_TASK)
     {
       if (nested)
@@ -2163,7 +2170,7 @@ data_declaration implicitly_declare(identifier fnid)
   return declare(current.env, &tempdecl, FALSE);
 }
 
-/* Declare parameters, either from new style declarations in the 
+/* Declare parameters, either from new style declarations in the
    declarator, or from old_parms */
 void store_parm_decls(declaration old_parms)
 {
@@ -2269,7 +2276,7 @@ void declarator_name(declarator d, const char **oname, const char **iname)
 }
 
 const char *nice_declarator_name(declarator d)
-/* Returns: a user-friendly name for declarator d, allocated in 
+/* Returns: a user-friendly name for declarator d, allocated in
      current.fileregion if necessary
 */
 {
@@ -2353,7 +2360,7 @@ static bool error_signature(type fntype)
   return typelist_next(&stl) == error_type && !typelist_next(&stl);
 }
 
-/* Start definition of variable 'elements d' with attributes attributes, 
+/* Start definition of variable 'elements d' with attributes attributes,
    asm specification astmt.
    If initialised is true, the variable has an initialiser.
    Returns the declaration for the variable.
@@ -2361,7 +2368,7 @@ static bool error_signature(type fntype)
 declaration start_decl(declarator d, asm_stmt astmt, type_element elements,
 		       bool initialised, attribute attributes)
 {
-  variable_decl vd = 
+  variable_decl vd =
     new_variable_decl(parse_region, d->location, d, attributes, NULL,
 		      astmt, NULL);
   dd_list extra_attr;
@@ -2802,13 +2809,13 @@ void allow_parameter_redeclaration(declaration parms, bool mark_forward)
       {
 	data_decl pd = CAST(data_decl, parm);
 	variable_decl vd = CAST(variable_decl, pd->decls);
-	
+
 	if (mark_forward)
 	  vd->forward = TRUE;
 	if (vd->ddecl)
 	  {
 	    vd->ddecl->isused = FALSE;
-	    /* This being non-NULL is used to detect redeclarations 
+	    /* This being non-NULL is used to detect redeclarations
 	       in handle_fdecl_doc_tags - it being non-NULL is an indication
 	       that we're not working on a "fresh" (just-parsed) AST */
 	    assert(vd->ddecl->ast->parent == NULL);
@@ -2969,7 +2976,7 @@ void layout_struct(tag_declaration tdecl)
 
   offset = size = make_type_cval(0);
   alignment = cval_bitsperbyte;
-  
+
   // We scan all the fields of the struct (field), but we also need to scan
   // the declaration of the struct to handle anonymous struct/union
   // boundaries (maybe we should have saved markers?). To do the latter,
@@ -3064,7 +3071,7 @@ void layout_struct(tag_declaration tdecl)
 	    falign = target->adjust_field_align(fdecl, falign);
 
 	  if (cval_istop(bitwidth)) /* regular field */
-	    offset = cval_align_to(offset, falign); 
+	    offset = cval_align_to(offset, falign);
 	  else if (cval_isunknown(bitwidth))
 	    {
 	      if (!cval_istop(offset))
@@ -3096,7 +3103,7 @@ void layout_struct(tag_declaration tdecl)
 		     align struct to falign (note the inconsistency with
 		     the 0-width bitfield). */
 
-		  /* This tests 
+		  /* This tests
 		     ((offset + bitwidth + falign - 1) / falign -
 		     offset / falign) > fsize / falign
 		  */
@@ -3129,7 +3136,7 @@ void layout_struct(tag_declaration tdecl)
 		    }
 
 		  // more gcc fun
-		  if (type_realigned(field_type)) 
+		  if (type_realigned(field_type))
 		    offset = cval_align_to(offset, falign);
 		  else // don't align, don't affect struct alignment
 		    falign = cval_bitsperbyte;
@@ -3266,7 +3273,7 @@ type_element finish_struct(type_element t, declaration fields,
 		error_with_location(floc, "field `%s' declared void", printname);
 		field_type = error_type;
 	      }
-	    else if (type_incomplete(field_type)) 
+	    else if (type_incomplete(field_type))
 	      {
 		error_with_location(floc, "field `%s' has incomplete type", printname);
 		field_type = error_type;
@@ -3400,7 +3407,7 @@ void layout_enum_end(tag_declaration tdecl)
 
       /* We use int as the enum type if that fits, except if both:
 	 - the values fit in a (strictly) smaller type
-	 - the packed attribute was specified 
+	 - the packed attribute was specified
       */
       if (cval_inrange(smallest, int_type) && cval_inrange(largest, int_type) &&
 	  !(tdecl->packed && type_size_int(enum_reptype) < type_size_int(int_type)))
@@ -3530,7 +3537,7 @@ declaration make_enumerator(location loc, cstring id, expression value)
       error("enumerator value for `%s' not integer constant", id.data);
       value = NULL;
     }
-  
+
   ast = CAST(declaration, new_enumerator(parse_region, loc, id, value, NULL));
   init_data_declaration(&tempdecl, ast, id.data, int_type);
   tempdecl.kind = decl_constant;
@@ -3586,7 +3593,7 @@ asttype make_type(type_element elements, declarator d)
   dd_list extra_attr;
 
   parse_declarator(t->qualifiers, t->declarator, FALSE, FALSE,
-		   &class, &scf, NULL, &name, 
+		   &class, &scf, NULL, &name,
 		   &t->type, &defaulted_int, NULL, &extra_attr);
   assert(t->type && !(class || scf || name));
 
@@ -3673,7 +3680,7 @@ void init_semantics(void)
   bad_decl->type = error_type;
   bad_decl->ast = new_error_decl(parse_region, dummy_location);
 
-  dummy_function_declarator = 
+  dummy_function_declarator =
     new_function_declarator(parse_region, dummy_location, NULL, NULL, NULL, NULL,   NULL);
 
   implicit_function_type = make_function_type(int_type, NULL, FALSE, TRUE);
