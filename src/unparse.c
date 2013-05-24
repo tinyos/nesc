@@ -205,14 +205,11 @@ void copy_file_to_output(char *filename)
   fclose(infile);
 }
 
-#define STRIP_PREFIX "__nesc_keyword_"
-#define STRIP_PREFIX_LEN (sizeof(STRIP_PREFIX) - 1)
-
 void output_stripped_cstring(cstring s)
 {
   output_indent_if_needed();
-  if (strncmp(s.data, STRIP_PREFIX, STRIP_PREFIX_LEN) == 0)
-    fwrite(s.data + STRIP_PREFIX_LEN, s.length - STRIP_PREFIX_LEN, 1, of);
+  if (strncmp(s.data, NESC_KEYWORD_PREFIX, NESC_KEYWORD_PREFIX_LEN) == 0)
+    fwrite(s.data + NESC_KEYWORD_PREFIX_LEN, s.length - NESC_KEYWORD_PREFIX_LEN, 1, of);
   else
     fwrite(s.data, s.length, 1, of);
 }
@@ -231,8 +228,8 @@ void output_string(const char *s)
 
 void print_stripped_string(FILE *f, const char *s)
 {
-  if (strncmp(s, STRIP_PREFIX, STRIP_PREFIX_LEN) == 0)
-    fputs(s + STRIP_PREFIX_LEN, f);
+  if (strncmp(s, NESC_KEYWORD_PREFIX, NESC_KEYWORD_PREFIX_LEN) == 0)
+    fputs(s + NESC_KEYWORD_PREFIX_LEN, f);
   else
     fputs(s, f);
 }

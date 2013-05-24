@@ -126,4 +126,7 @@ void prt_function_body(function_decl d);
 
 void prt_diff_info(data_declaration ddecl);
 
+#define NESC_KEYWORD_PREFIX "__nesc_keyword_"
+#define NESC_KEYWORD_PREFIX_LEN (sizeof(NESC_KEYWORD_PREFIX) - 1)
+
 #endif
