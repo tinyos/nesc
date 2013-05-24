@@ -202,12 +202,9 @@ extern int flag_parse_only;
    varargs functions */
 extern int flag_no_debug;
 
-/* Nonzero to suppress automatic addition of inline keywords 
+/* Nonzero to suppress automatic addition of inline keywords
    (but the "wiring" functions are still marked inline) */
 extern int flag_no_inline;
-
-/* Nonzero means to output macro defs in the generated C file (a la -dD) */
-extern int flag_save_macros;
 
 /* Nonzero means modify identifier and declaration output during code
    generation to accomodate nido */
@@ -244,7 +241,7 @@ extern int warn_implicit_connection;
    are treated as errors */
 extern int nesc_error;
 
-/* diff processing enabled if diff_output is not NULL 
+/* diff processing enabled if diff_output is not NULL
    (diff_input is NULL for orignal program, non-NULL to reduce diff size) */\
 extern char *diff_input, *diff_output;
 
