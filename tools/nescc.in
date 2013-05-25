@@ -2,21 +2,21 @@
 # -*- perl -*-
 
 # This file is part of the nesC compiler.
-# 
+#
 # This file is derived from the RC Compiler. It is thus
 #    Copyright (C) 2000-2001 The Regents of the University of California.
 # Changes for nesC are
 #    Copyright (C) 2002 Intel Corporation
-# 
+#
 # The attached "nesC" software is provided to you under the terms and
 # conditions of the GNU General Public License Version 2 as published by the
 # Free Software Foundation.
-# 
+#
 # nesC is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with nesC; see the file COPYING.  If not, write to
 # the Free Software Foundation, 59 Temple Place - Suite 330,
@@ -49,9 +49,9 @@ for ($i = 0; $i <= $#ARGV; $i++) {
 	    $verbose = 1;
 	}
 
-	if (/^-docdir=(.*)/) {
+	if (/^-(fnesc-)?docdir=(.*)/) {
             $docdir = $1;
-	} elsif (/^-topdir=(.*)/) {
+	} elsif (/^-(fnesc-)?topdir=(.*)/) {
             push @topdirs, $1;
 	} elsif (/^-graphviz=(.*)/) {
             if($1 =~ /^y/i) {
@@ -59,11 +59,13 @@ for ($i = 0; $i <= $#ARGV; $i++) {
             } else {
                 $use_graphviz = 0;
             }
+        } elsif (/^-fnesc-docs-use-graphviz$/) {
+            $use_graphviz = 1;
 	} elsif (/^--version$/) {
 	    $print_version = 1;
 	} elsif (/^-(fnesc-)?gcc=(.*)/) {
 	    $gcc = $2;
-	} elsif (/^-mingw-gcc$/) {
+	} elsif (/^-(fnesc-)?mingw-gcc$/) {
 	    $mingw_gcc = 1;
 	    push @nescc_args, "-fnesc-mingw-gcc";
 	} elsif (/^-conly$/) {
@@ -139,7 +141,7 @@ unshift @nescc_args, "-fnesc-include=nesc_nx";
 if (defined($docdir)) {
     # add the doc output dir
     push @nescc_args, "-fnesc-docdir=$docdir";
-    
+
     # add top level dirs, to strip out of package names
     foreach my $dir (@topdirs) {
         push @nescc_args, "-fnesc-topdir=$dir";
@@ -204,7 +206,7 @@ foreach (@nescc_args) {
     $_ = quotemeta $_;
     s/\\([-=,\.\/])/\1/g;
 }
-    
+
 $ENV{NESCC_ARGS} = join(' ', @nescc_args);
 $ENV{NESCC_GCC} = $gcc;
 
