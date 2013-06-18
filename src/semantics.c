@@ -164,7 +164,7 @@ data_declaration lookup_id(const char *s, bool this_level_only)
   /* Check if s is prefaced with __nesc_keyword_ meaning we want to
    * check if the remainder of the function string is defined, as this prefix
    * will be removed in the final output. */
-  if (strncmp(s, NESC_KEYWORD_PREFIX, NESC_KEYWORD_PREFIX_LEN) == 0)
+  if (s && strncmp(s, NESC_KEYWORD_PREFIX, NESC_KEYWORD_PREFIX_LEN) == 0)
     return env_lookup(current.env->id_env, s + NESC_KEYWORD_PREFIX_LEN, this_level_only);
   else
     return env_lookup(current.env->id_env, s, this_level_only);

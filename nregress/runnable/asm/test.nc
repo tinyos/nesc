@@ -1,4 +1,4 @@
-int oops(void) __asm ("""_main") __attribute((__nothrow__));
+int oops(void) __asm ("main") __attribute((__nothrow__));
 
 module test {}
 implementation {
