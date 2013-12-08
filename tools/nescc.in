@@ -33,7 +33,7 @@ $ENV{"NCDIR"} = $NCDIR;
 
 # Have fun with the arguments
 
-$gcc = "gcc";
+$gcc = "@CC@";
 
 undef $ENV{NESCC_ARGS};
 undef $ENV{NESCC_CFILE};
