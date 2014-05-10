@@ -28,33 +28,33 @@
 (deffield info "void *" ())
 (deffield filter_index int ())
 
-(deftype nd_option nil (name args count)
+(defntype nd_option nil (name args count)
   "the dump option NAME(ARGS).
 ARGS may be NULL
 COUNT is the number of elements in ARGS")
 
-(deftype nd_arg nil (next)
+(defntype nd_arg nil (next)
   "supertype for arguments")
 
-(deftype nd_int nd_arg (val)
+(defntype nd_int nd_arg (val)
   "an integer argument VAL")
 
-(deftype nd_token nd_arg (str)
+(defntype nd_token nd_arg (str)
   "some token argument STR")
 
-(deftype nd_filter nd_arg ()
+(defntype nd_filter nd_arg ()
   "a filter")
 
-(deftype ndf_and nd_filter (filter1 filter2)
+(defntype ndf_and nd_filter (filter1 filter2)
   "FILTER1 & FILTER2")
 
-(deftype ndf_or nd_filter (filter1 filter2)
+(defntype ndf_or nd_filter (filter1 filter2)
   "FILTER1 | FILTER2")
 
-(deftype ndf_not nd_filter (filter1)
+(defntype ndf_not nd_filter (filter1)
   "!FILTER1")
 
-(deftype ndf_op nd_filter (name args count info filter_index)
+(defntype ndf_op nd_filter (name args count info filter_index)
   "the basic filter NAME(ARGS).
 COUNT is the number of elements in ARGS (>= 1)
 INFO can be used to save extra information (e.g., compiled regexp info)")

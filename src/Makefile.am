@@ -262,7 +262,7 @@ EXTRA_DIST = 					\
 
 BISON = bison
 FLEX = flex
-EMACS = emacs
+EMACS = emacs -Q
 M4 = m4
 GPERF = gperf
 

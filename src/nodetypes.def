@@ -24,7 +24,7 @@
 ;; AST definition
 
 ;; (deffield FIELD-NAME C-TYPE (ATTRIBUTES))
-;; (deftype TYPE-NAME SUPER-TYPE (FIELDS) "DOCUMENTATION")
+;; (defntype TYPE-NAME SUPER-TYPE (FIELDS) "DOCUMENTATION")
 ;; (defnode NODE-NAME TYPE-NAME "DOCUMENTATION")
 
 ;; deffield:
@@ -153,13 +153,13 @@
 ;; Base types
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftype node nil (location next parent parent_ptr instantiation)
+(defntype node nil (location next parent parent_ptr instantiation)
   "The common supertype of all AST nodes")
 
-(deftype declaration node ()
+(defntype declaration node ()
   "The common type of all definitions")
 
-(deftype statement node (parent_loop containing_atomic isatomic)
+(defntype statement node (parent_loop containing_atomic isatomic)
   "The common type of all statements
 PARENT_LOOP: 
   - for break and continue: the containing for/while/do-while/switch
@@ -179,7 +179,7 @@ ISATOMIC is
     variable, and that access is guaranteed to be atomic (e.g., a single byte)
   NOT_ATOMIC otherwise")
 
-(deftype expression node (lvalue side_effects cst bitfield isregister
+(defntype expression node (lvalue side_effects cst bitfield isregister
 			  type static_address converted_to_pointer
 			  cst_checked spelling parens ivalue context
 			  isatomic)
@@ -212,13 +212,13 @@ ISATOMIC is
     variable, and that access is guaranteed to be atomic (e.g., a single byte)
   NOT_ATOMIC otherwise")
 
-(deftype type_element node ()
+(defntype type_element node ()
   "A common super-type for all type-building elements (qualifiers, etc)")
 
-(deftype declarator node ()
+(defntype declarator node ()
   "A common super-type for all declarator elements")
 
-(deftype label node (next_label)
+(defntype label node (next_label)
   "A common super-type for all labels.
 NEXT_LABEL points to the next case or default label of a switch 
 (for case or default labels only)")
@@ -229,26 +229,26 @@ NEXT_LABEL points to the next case or default label of a switch
 
 (defnode error_decl declaration "Placeholder for erroneous declarations")
 
-(deftype asm_decl declaration (asm_stmt)
+(defntype asm_decl declaration (asm_stmt)
   "Asm statement STMT at the top level of a file (GCC)")
 
-(deftype data_decl declaration (modifiers decls)
+(defntype data_decl declaration (modifiers decls)
   "The declaration MODIFIERS DECLS;
 DECLS is a list")
 
-(deftype extension_decl declaration (decl)
+(defntype extension_decl declaration (decl)
   "__extension__ DECL; (GCC)")
 
-(deftype ellipsis_decl declaration ()
+(defntype ellipsis_decl declaration ()
   "A pseudo-declaration to represent ... in a function argument list")
 
-(deftype enumerator declaration (cstring arg1 ddecl)
+(defntype enumerator declaration (cstring arg1 ddecl)
   "The enumeration element CSTRING = ARG1. CSTRING is optional")
 
-(deftype oldidentifier_decl declaration (cstring ddecl)
+(defntype oldidentifier_decl declaration (cstring ddecl)
   "CSTRING in an old-style parameter list")
 
-(deftype function_decl declaration (declarator modifiers attributes old_parms stmt
+(defntype function_decl declaration (declarator modifiers attributes old_parms stmt
 				    parent_function ddecl fdeclarator
 				    declared_type undeclared_variables
 				    base_labels scoped_labels current_loop
@@ -256,11 +256,11 @@ DECLS is a list")
   "A function declaration with body STMT
 OLD_PARMS is the old-style parameter declaration list.")
 
-(deftype implicit_decl declaration (ident)
+(defntype implicit_decl declaration (ident)
   "Used as the AST node for implicit declarations. IDENT points to the
 identifier node that implicitly declared the function")
 
-(deftype variable_decl declaration (declarator attributes arg1 asm_stmt
+(defntype variable_decl declaration (declarator attributes arg1 asm_stmt
 				    ddecl declared_type forward)
   "Declaration of DECLARATOR ASM_STMT ATTRIBUTES = ARG1.
 ATTRIBUTES is a list. ASM_STMT is optional (GCC specific).
@@ -270,7 +270,7 @@ DECLARED_TYPE is the type in this declaration (which may be different than that
 in DDECL->TYPE)
 FORWARD is true for parameters that are forward declarations")
 
-(deftype field_decl declaration (declarator attributes arg1 type_checked fdecl)
+(defntype field_decl declaration (declarator attributes arg1 type_checked fdecl)
   "Declaration of field DECLARATOR ATTRIBUTES : ARG1.
 QUALIFIERS and ATTRIBUTEES are lists. ARG1 is an optional bitfield specifier
 TYPE_CHECKED is set to true once it has been checked that this field is of
@@ -281,32 +281,32 @@ FDECL is this field's declaration")
 ;; Types and type elements
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftype asttype node (declarator qualifiers type)
+(defntype asttype node (declarator qualifiers type)
   "The source-level type QUALIFIERS DECLARATOR")
 
-(deftype typename type_element (ddecl)
+(defntype typename type_element (ddecl)
   "typedef-type with declaration DDECL. The name is ddecl->name")
 
-(deftype typeof_expr type_element (arg1)
+(defntype typeof_expr type_element (arg1)
   "typeof ARG1")
 
-(deftype typeof_type type_element (asttype)
+(defntype typeof_type type_element (asttype)
   "typeof(ASTTYPE)")
 
-(deftype attribute type_element (word1)
+(defntype attribute type_element (word1)
   "base type for gcc and nesc attributes")
 
-(deftype gcc_attribute attribute (args)
+(defntype gcc_attribute attribute (args)
   "The (gcc) attribute WORD1(ARGS). args can be empty, and may not be
 semantically valid")
 
-(deftype rid type_element (id)
+(defntype rid type_element (id)
   "Storage class specifier, type specifier or type qualifier ID (see RID_xxx)")
 
-(deftype qualifier type_element (id)
+(defntype qualifier type_element (id)
   "Type or function qualifier ID (see qualifiers.h and type_quals in types.h)")
 
-(deftype tag_ref type_element (word1 attributes fields defined
+(defntype tag_ref type_element (word1 attributes fields defined
                                tdecl)
   "struct/union/enum WORD1 { FIELDS; }  ATTRIBUTES
 ATTRIBUTES and FIELDS are lists.
@@ -316,9 +316,9 @@ DEFINED == FALSE => FIELDS == NULL
 
 TDECL points to the internal declaration node for this type")
 
-(deftype struct_ref tag_ref () "A struct")
+(defntype struct_ref tag_ref () "A struct")
 (defnode attribute_ref tag_ref "An attribute definition")
-(deftype union_ref tag_ref () "A union")
+(defntype union_ref tag_ref () "A union")
 (defnode enum_ref tag_ref "An enum")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -329,29 +329,29 @@ TDECL points to the internal declaration node for this type")
 ;;   NULL_NODE in absolute declarations
 ;;   an identifier_decl otherwise
 
-(deftype nested_declarator declarator (declarator)
+(defntype nested_declarator declarator (declarator)
   "A common supertype for function/pointer/array declarator which includes
 the nested DECLARATOR")
 
-(deftype function_declarator nested_declarator (parms gparms qualifiers env
+(defntype function_declarator nested_declarator (parms gparms qualifiers env
 						return_type)
   "Function declarator DECLARATOR(PARMS). PARMS is a list of declarations.
 ENV is the environment for parms
 GPARMS is the list of declarations of generic parameters (commands, events only)
 RETURN_TYPE (optional) contains an overridden return type from nesdoc")
 
-(deftype pointer_declarator nested_declarator ()
+(defntype pointer_declarator nested_declarator ()
   "Pointer declarator *DECLARATOR")
 
-(deftype qualified_declarator nested_declarator (modifiers)
+(defntype qualified_declarator nested_declarator (modifiers)
   "Declarator MODIFIERS DECLARATOR. The MODIFIERS are qualifiers
 or attributes.
 Note: MODIFIERS is never NULL")
 
-(deftype array_declarator nested_declarator (arg1)
+(defntype array_declarator nested_declarator (arg1)
   "Array declarator DECLARATOR[ARG1]. ARG1 is optional")
 
-(deftype identifier_declarator declarator (cstring)
+(defntype identifier_declarator declarator (cstring)
   "Declaration of CSTRING")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -360,52 +360,52 @@ Note: MODIFIERS is never NULL")
 
 (defnode error_stmt statement "Placeholder for erroneous statements")
 
-(deftype asm_stmt statement (arg1 asm_operands1 asm_operands2 asm_clobbers qualifiers)
+(defntype asm_stmt statement (arg1 asm_operands1 asm_operands2 asm_clobbers qualifiers)
   "The statement asm QUALIFIERS (ARG1 : ASM_OPERANDS1 : ASM_OPERANDS2 : ASM_CLOBBERS) 
 where ASM_OPERANDS1, ASM_OPERANDS2, QUALIFIERS are optional, ASM_CLOBBERS is a list (GCC)")
 
-(deftype compound_stmt statement (id_labels decls stmts env)
+(defntype compound_stmt statement (id_labels decls stmts env)
   "{ ID_LABELS DECLS STMTS }. The ID_LABELS are GCC-specific. ID_LABELS, DECLS,
 STMTS are lists
 ENV is the environment for the block")
 
-(deftype if_stmt statement (condition stmt1 stmt2)
+(defntype if_stmt statement (condition stmt1 stmt2)
   "IF (CONDITION) STMT1 ELSE STMT2. STMT2 is optional")
 
-(deftype labeled_stmt statement (label stmt)
+(defntype labeled_stmt statement (label stmt)
   "LABEL: STMT")
 
-(deftype expression_stmt statement (arg1)
+(defntype expression_stmt statement (arg1)
   "EXPR;")
 
 
-(deftype conditional_stmt statement (condition stmt)
+(defntype conditional_stmt statement (condition stmt)
   "Basic type for all conditional statements")
 (defnode while_stmt conditional_stmt "WHILE (CONDITION) STMT")
 (defnode dowhile_stmt conditional_stmt "DO STMT WHILE (CONDITION")
-(deftype switch_stmt conditional_stmt (next_label) 
+(defntype switch_stmt conditional_stmt (next_label) 
   "SWITCH (CONDITION) STMT.
 NEXT_LABEL points to the switches first label")
 
-(deftype for_stmt statement (arg1 arg2 arg3 stmt)
+(defntype for_stmt statement (arg1 arg2 arg3 stmt)
   "FOR (ARG1; ARG2; ARG3) STMT. ARG1, ARG2, ARG3 are optional")
 
-(deftype break_stmt statement ()
+(defntype break_stmt statement ()
   "BREAK;")
 
-(deftype continue_stmt statement ()
+(defntype continue_stmt statement ()
   "CONTINUE;")
 
-(deftype return_stmt statement (arg1)
+(defntype return_stmt statement (arg1)
   "RETURN ARG1. ARG1 is optional")
 
-(deftype goto_stmt statement (id_label)
+(defntype goto_stmt statement (id_label)
   "GOTO ID_LABEL")
 
-(deftype computed_goto_stmt statement (arg1)
+(defntype computed_goto_stmt statement (arg1)
   "GOTO *ARG1 (GCC)")
 
-(deftype empty_stmt statement ()
+(defntype empty_stmt statement ()
   ";")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -414,42 +414,42 @@ NEXT_LABEL points to the switches first label")
 
 (defnode error_expr expression "Placeholder for erroneous expressions")
 
-(deftype unary expression (arg1)
+(defntype unary expression (arg1)
   "Unary expression nodes, kind defines operator")
 
-(deftype binary expression (arg1 arg2)
+(defntype binary expression (arg1 arg2)
   "Binary expression nodes, kind defines operator")
 
-(deftype comma expression (arg1)
+(defntype comma expression (arg1)
   "A comma separated list of expressions ARG1")
 
-(deftype sizeof_type expression (asttype)
+(defntype sizeof_type expression (asttype)
   "sizeof (ASTTYPE)")
 
-(deftype alignof_type expression (asttype)
+(defntype alignof_type expression (asttype)
   "__alignof (ASTTYPE) (GCC)")
 
-(deftype label_address expression (id_label)
+(defntype label_address expression (id_label)
   "&&ID_LABEL (GCC)")
 
-(deftype cast unary (asttype)
+(defntype cast unary (asttype)
   "(ASTTYPE)ARG1")
 
-(deftype cast_list expression (asttype init_expr)
+(defntype cast_list expression (asttype init_expr)
   "(ASTTYPE){INIT_EXPR} (GCC)")
 
-(deftype conditional expression (condition arg1 arg2)
+(defntype conditional expression (condition arg1 arg2)
   "CONDITION ? ARG1 : ARG2
    GCC specific: ARG1 is optional")
 
-(deftype identifier expression (cstring ddecl)
+(defntype identifier expression (cstring ddecl)
   "The identrifier CSTRING
 DEAD_USE is true for identifiers used as the target of a regular assignment")
 
-(deftype compound_expr expression (stmt)
+(defntype compound_expr expression (stmt)
   "({stmt}) (GCC)")
 
-(deftype function_call expression (arg1 args va_arg_call call_kind)
+(defntype function_call expression (arg1 args va_arg_call call_kind)
   "ARG1(ARGS). ARGS is a list of expressions
 If VA_ARG_CALL is non-null, this is actually a call to the pseudo-function
 __builtin_va_arg(args, va_arg_call) (where va_arg_call is a type). In 
@@ -458,7 +458,7 @@ CALL_KIND is one of normal_call, post_task, command_call or event_signal.")
 
 (defnode array_ref binary "ARG1[ARG2]")
 
-(deftype field_ref unary (cstring fdecl)
+(defntype field_ref unary (cstring fdecl)
   "ARG1.CSTRING
 The field_declaration is saved in FDECL")
 
@@ -475,7 +475,7 @@ The field_declaration is saved in FDECL")
 (defnode bitnot unary "~ARG1")
 (defnode not unary "!ARG1")
 
-(deftype increment unary (temp1 temp2)
+(defntype increment unary (temp1 temp2)
   "parent for increment nodes")
 (defnode preincrement increment "++ARG1")
 (defnode predecrement increment "--ARG1")
@@ -490,7 +490,7 @@ The field_declaration is saved in FDECL")
 (defnode lshift binary "ARG1 << ARG2")
 (defnode rshift binary "ARG1 >> ARG2")
 
-(deftype comparison binary () "binary comparison ops")
+(defntype comparison binary () "binary comparison ops")
 (defnode leq comparison "ARG1 <= ARG2")
 (defnode geq comparison "ARG1 >= ARG2")
 (defnode lt comparison "ARG1 < ARG2")
@@ -504,7 +504,7 @@ The field_declaration is saved in FDECL")
 (defnode andand binary "ARG1 && ARG2")
 (defnode oror binary "ARG1 || ARG2")
 
-(deftype assignment binary (temp1) "ARG1 <assignop> ARG2")
+(defntype assignment binary (temp1) "ARG1 <assignop> ARG2")
 (defnode assign assignment "ARG1 = ARG2")
 (defnode plus_assign assignment "ARG1 += ARG2")
 (defnode minus_assign assignment "ARG1 -= ARG2")
@@ -519,24 +519,24 @@ The field_declaration is saved in FDECL")
 
 ;; Initialiser expressions (not allowed in most contexts)
 
-(deftype init_list expression (args)
+(defntype init_list expression (args)
   "{ ARGS }. ARGS is a list of expressions
 The type of the init_list is the type of the initialised entity.
 If this entity is an incomplete array type, the type of the init_list
 is the actual array size deduced from the initialiser.")
 
-(deftype init_specific expression (designator init_expr)
+(defntype init_specific expression (designator init_expr)
   "DESIGNATOR = INIT_EXPR in an init_list.
 DESIGNATOR is a list
 The type is not set in init_specific nodes")
 
-(deftype designator node ()
+(defntype designator node ()
   "Base type for designators")
 
-(deftype designate_field designator (cstring)
+(defntype designate_field designator (cstring)
   ". CSTRING in an initialisation designator")
 
-(deftype designate_index designator (arg1 arg2)
+(defntype designate_index designator (arg1 arg2)
   "[ARG1] or [ARG1 ... ARG2] in a designator. ARG2 is optional.
 ARG2 is a GCC extension")
 
@@ -544,16 +544,16 @@ ARG2 is a GCC extension")
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftype lexical_cst expression (cstring)
+(defntype lexical_cst expression (cstring)
   "A constant represented as in its unparsed lexical form CSTRING. These
 appear in the AST.")
 
-(deftype string_cst lexical_cst ()
+(defntype string_cst lexical_cst ()
   "A single lexical string - a sequence of these gets concatenated to
 form a string. The source form of the constant can be found in
 CSTRING.")
 
-(deftype string expression (strings ddecl)
+(defntype string expression (strings ddecl)
   "A list of STRINGS forming a single string constant.
 DDECL is the magic_string declaration for this string.")
  
@@ -562,23 +562,23 @@ DDECL is the magic_string declaration for this string.")
 ;; Labels
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftype id_label label (cstring ldecl)
+(defntype id_label label (cstring ldecl)
   "The label CSTRING:")
 
-(deftype case_label label (arg1 arg2)
+(defntype case_label label (arg1 arg2)
   "CASE ARG1 ... ARG2: ARG2 is optional, it's presence is GCC-specific")
 
-(deftype default_label label ()
+(defntype default_label label ()
   "DEFAULT:")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Miscellaneous
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftype word node (cstring)
+(defntype word node (cstring)
   "The identifier CSTRING used uninterpreted")
 
-(deftype asm_operand node (word1 string arg1)
+(defntype asm_operand node (word1 string arg1)
   "STRING(EXPR) or [WORD1] STRING(EXPR) (GCC)")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -589,57 +589,57 @@ DDECL is the magic_string declaration for this string.")
 ;; the different kinds of files
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftype nesc_decl declaration (word1 attributes cdecl)
+(defntype nesc_decl declaration (word1 attributes cdecl)
   "a supertype for interface/component declarations of WORD1
 CDECL is the declaration for this interface/component
 ATTRIBUTES are its attributes")
 
-(deftype interface nesc_decl (decls)
+(defntype interface nesc_decl (decls)
   "interface WORD1 { DECLS }")
 
-(deftype component nesc_decl (abstract parms decls implementation)
+(defntype component nesc_decl (abstract parms decls implementation)
   "ABSTRACT configuration/module WORD1 PARMS { DECLS } IMPLEMENTATION
 If ABSTRACT is true, this is a generic component, and PARMS is its
 parameters.")
 
-(deftype implementation node (ienv cdecl)
+(defntype implementation node (ienv cdecl)
   "a base type for module and configuration implementations
 IENV is the implementation's environment
 CDECL is the declaration for this component")
 
-(deftype configuration implementation (decls)
+(defntype configuration implementation (decls)
   "configuration implementation { DECLS }
 where DECLS include regular declarations, component_refs and connections")
 
-(deftype module implementation (decls)
+(defntype module implementation (decls)
   "module implementation { DECLS }'")
 
-(deftype binary_component implementation ()
+(defntype binary_component implementation ()
   "binary component implementation placeholder")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; component definition types
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftype rp_interface declaration (required decls)
+(defntype rp_interface declaration (required decls)
   "a required or provided function or interface declaration (DECL is
 either a data_decl or an interface_ref). REQUIRED is true for 'requires',
 false for 'provides' clauses")
 
-(deftype interface_ref declaration (word1 args word2 gparms attributes ddecl)
+(defntype interface_ref declaration (word1 args word2 gparms attributes ddecl)
   "an interface which is required or provided by a component:
 interface WORD1 < ARGS > WORD2 [ GPARMS ] ATTRIBUTES
 ARGS is a list of type_arguments for template interfaces
 WORD2 is optional, GPARMS, ARGS, ATTRIBUTES are optional")
 
-(deftype component_ref declaration (word1 word2 abstract args cdecl)
+(defntype component_ref declaration (word1 word2 abstract args cdecl)
   "a reference to component WORD1 'as' WORD2
 WORD2 is optional
 ABSTRACT is true for abstract component instantiations, false otherwise
 ARGS is the argument list for abstract component instantiations
 CDECL is filled in to point to the loaded component")
 
-(deftype connection declaration (ep1 ep2)
+(defntype connection declaration (ep1 ep2)
   "A connection between interfaces EP1 and EP2")
 
 (defnode rp_connection connection
@@ -651,48 +651,48 @@ neither EP1 and EP2 are interfaces of the component")
   "EP1 = EP2, where both interfaces are either required or provided.
 Legal if exactly one of EP1 and EP2 are interfaces of the component")
 
-(deftype endpoint node (ids)
+(defntype endpoint node (ids)
   "a list of parameterised_identifier in IDS")
 
-(deftype parameterised_identifier node (word1 args)
+(defntype parameterised_identifier node (word1 args)
   "WORD1[ARGS] if ARGS != null, just WORD1 otherwise")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; types for extensions to the regular C syntax
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftype generic_declarator declarator (declarator parms)
+(defntype generic_declarator declarator (declarator parms)
   "parameterised declaration DECLARATOR [ PARMS ]")
 
-(deftype generic_call expression (arg1 args)
+(defntype generic_call expression (arg1 args)
   "ARG1[ARGS]. ARGS is a list of expressions, ARG1 is a generic function")
 
-(deftype interface_ref_declarator nested_declarator (word1)
+(defntype interface_ref_declarator nested_declarator (word1)
   "WORD1 . DECLARATOR in a declarator (for defining commands, events in component
 implementations
 For now at least, DECLARATOR is always an identifier_declarator")
 
-(deftype interface_deref unary (cstring ddecl)
+(defntype interface_deref unary (cstring ddecl)
   "ARG1.CSTRING where ARG1 is an interface_ref.
 DDECL is the command or event's declaration")
 
-(deftype component_deref unary (cstring ddecl)
+(defntype component_deref unary (cstring ddecl)
   "ARG1.CSTRING where ARG1 is a component_ref.
 component_deref is *not* used for references to typedefed types in components.
 DDECL is the specification element's declaration")
 
-(deftype component_typeref typename (cstring)
+(defntype component_typeref typename (cstring)
   "CSTRING . typedef-name, a typedef-from-component-type 
 with declaration DDECL. The typedef-name is in ddecl->name")
 
-(deftype atomic_stmt statement (stmt)
+(defntype atomic_stmt statement (stmt)
   "ATOMIC stmt
 An atomic_stmt is not made for lexically nested atomic statements")
 
 (defnode nx_struct_ref struct_ref "A network struct")
 (defnode nx_union_ref union_ref "A network union")
 
-(deftype nesc_attribute attribute (arg1 tdecl)
+(defntype nesc_attribute attribute (arg1 tdecl)
   "@WORD1(ARG1), a nesC attribute. ARG1 is an init_list.
 TDECL is the reference to the declaration of attribute WORD1")
 
@@ -703,8 +703,8 @@ TDECL is the reference to the declaration of attribute WORD1")
 ;; types for the polymorphic extensions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftype type_parm_decl declaration (cstring ddecl)
+(defntype type_parm_decl declaration (cstring ddecl)
   "A declaration of type parameter CSTRING")
 
-(deftype type_argument expression (asttype)
+(defntype type_argument expression (asttype)
   "ASTTYPE used as a template argument")

@@ -30,8 +30,8 @@
 (defmacro deffield (field-name c-type attributes)
   `(deffield* ',field-name ',c-type ',attributes))
 
-(defmacro deftype (type-name super-type fields documentation)
-  `(deftype* ',type-name ',super-type ',fields ',documentation))
+(defmacro defntype (type-name super-type fields documentation)
+  `(defntype* ',type-name ',super-type ',fields ',documentation))
 
 (defmacro defnode (node-name type-name documentation)
   `(defnode* ',node-name ',type-name ',documentation))
@@ -45,50 +45,49 @@
 (defun deffield* (field-name c-type attributes)
   (setq attributes (attributes-ok field-name attributes))
   (if (assoc field-name fields)
-      (message (format "Field %s already defined" field-name))
+      (error "Field %s already defined" field-name)
     (setq fields (cons (list field-name c-type attributes) fields))))
 
-(defun deftype* (type-name super-type fields documentation)
-    (if (or (assoc type-name types) (assoc type-name nodes))
-      (message (format "Name %s already used for a type or node" type-name))
+(defun defntype* (type-name super-type fields documentation)
+  (if (or (assoc type-name types) (assoc type-name nodes))
+      (error "Name %s already used for a type or node" type-name)
     (setq types (cons (list type-name super-type fields documentation) types))))
 
 
 (defun defnode* (node-name type-name documentation)
-    (if (or (assoc node-name types) (assoc node-name nodes))
-      (message (format "Name %s already used for a type or node" node-name))
+  (if (or (assoc node-name types) (assoc node-name nodes))
+      (error "Name %s already used for a type or node" node-name)
     (setq nodes (cons (list node-name type-name documentation) nodes))))
 
 
 (setq legal-attributes '(init tree nodump noprint default dump-special print-special format))
 
 (defun attributes-ok (field-name attrs)
-  (mapcar '(lambda (attr)
-	     (let* ((realattr (if (listp attr) attr (list attr)))
-		    (aname (car realattr)))
-	       (if (not (member aname legal-attributes))
-		   (message (format "Unknown attribute %s in field %s"
-				  aname field-name)))
-	       realattr)) attrs))
+  (mapcar #'(lambda (attr)
+	      (let* ((realattr (if (listp attr) attr (list attr)))
+		     (aname (car realattr)))
+		(if (not (member aname legal-attributes))
+		    (error "Unknown attribute %s in field %s" aname field-name))
+		realattr)) attrs))
 
 (defun check-defs ()
   (setq types (reverse types))
   (setq nodes (reverse nodes))
-  (check-types)
+  (check-ntypes)
   (check-nodes))
 
-(defun check-types ()
-  (mapcar #'check-type types))
+(defun check-ntypes ()
+  (mapcar #'check-ntype types))
 
-(defun check-type (type)
-  (mapcar '(lambda (field-name)
-	     (if (not (assoc field-name fields))
-		 (message (format "Unknown field %s in %s" field-name (car type)))))
+(defun check-ntype (type)
+  (mapcar #'(lambda (field-name)
+	      (if (not (assoc field-name fields))
+		  (error "Unknown field %s in %s" field-name (car type))))
 	  (type-fields type))
   (if (and (type-super-type type)
 	   (not (assoc (type-super-type type) types)))
-      (message (format "Unknown super-type %s in %s"
-		       (type-super-type type) (type-name type)))))
+      (error "Unknown super-type %s in %s"
+	     (type-super-type type) (type-name type))))
 
 
 (defun check-nodes ()
@@ -96,8 +95,7 @@
 
 (defun check-node (node)
   (if (not (assoc (node-type node) types))
-      (message (format "Unknown type %s in node %s"
-		       (node-type node) (node-name node)))))
+      (error "Unknown type %s in node %s" (node-type node) (node-name node))))
 
 (defun build-file (name)
   (setq name (concat basename "_" name))

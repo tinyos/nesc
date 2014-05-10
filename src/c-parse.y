@@ -27,7 +27,7 @@ Boston, MA 02111-1307, USA. */
 /* To whomever it may concern: I have heard that such a thing was once
    written by AT&T, but I have never seen it.  */
 
-%pure_parser
+%pure-parser
 %expect 12
 
 %{
@@ -1159,7 +1159,7 @@ primary:
 	  IDENTIFIER
 		{ 
 		  if (yychar == YYEMPTY)
-		    yychar = YYLEX;
+		    yychar = yylex(&yylval);
 		  $$ = make_identifier($1.location, $1.id, yychar == '('); 
 		}
 	| CONSTANT { $$ = CAST(expression, $1); }
