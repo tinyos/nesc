@@ -18,7 +18,7 @@
 # the Free Software Foundation, 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-AM_CPPFLAGS = -DNMEMDEBUG -DNDEBUG -O9
+AM_CPPFLAGS = -DNMEMDEBUG -DNDEBUG -O2
 
 noinst_LIBRARIES = libregions.a
 
