@@ -11,10 +11,10 @@
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    Library General Public License for more details.
 
-   You should have received a copy of the GNU Library General Public
-   License along with this library; see the file COPYING.LIB.  If not,
-   write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-   Boston, MA 02111-1307, USA.  */
+   You should have received a copy of the GNU General Public License
+   along with nesC; see the file COPYING.  If not, write to
+   the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+   Boston, MA 02110-1301 USA. */
 
 /* Match STRING against the filename pattern PATTERN, returning zero if
    it matches, nonzero if not.  */
