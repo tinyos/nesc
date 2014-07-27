@@ -75,7 +75,8 @@
 #define ALIGN(x, n) (((x) + ((n) - 1)) & ~((n) - 1))
 #define PALIGN(x, n) ((void *)ALIGN((__rcintptr)(x), n))
 #ifdef __GNUC__
-#define RALIGNMENT __alignof(double)
+// Alignment of allocated objects. Mac OS X needs long double (aka 16).
+#define RALIGNMENT __alignof(long double)
 #define PTRALIGNMENT __alignof(void *)
 #define ALIGNMENT_LONG __alignof(unsigned long)
 #else
