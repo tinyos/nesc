@@ -380,9 +380,9 @@ sub gen() {
 	      print "    def getString_$pythonfield(self):\n";
 	      print "        carr = \"\";\n";
 	      print "        for i in range(0, 4000):\n";
-	      print "            if self.getElement_$pythonfield(i) == chr(0):\n";
+	      print "            if self.getElement_$pythonfield(i) == 0:\n";
 	      print "                break\n";
-	      print "            carr += self.getElement_$pythonfield(i)\n";
+	      print "            carr += chr(self.getElement_$pythonfield(i))\n";
               print "        return carr\n";
 	      print "    \n";
 	  }
