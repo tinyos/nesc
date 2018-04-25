@@ -217,7 +217,7 @@ void handle_task_declaration(variable_decl vdecl)
 void load_scheduler(void)
 {
   scheduler = load(l_component, toplevel_location, scheduler_name, FALSE);
-  if (scheduler_name)
+  if (scheduler)
     {
       data_declaration intf = env_lookup(scheduler->env->id_env,
 					 scheduler_interface_name, TRUE);

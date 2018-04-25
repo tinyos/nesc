@@ -17,7 +17,7 @@ typedef struct {
 
   size_t word_size;
   machine_type_spec tptr, tfloat, tdouble, tlong_double, tshort, tint,
-    tlong, tlong_long;
+    tlong, tlong_long, t_Bool;
   size_t int1_align, int2_align, int4_align, int8_align;
   size_t wchar_t_size, size_t_size;
   bool char_signed, wchar_t_signed;

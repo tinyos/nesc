@@ -36,6 +36,7 @@ static machine_spec msp430_machine = {
   { 2, 2 },			/* int */
   { 4, 2 },			/* long */
   { 8, 2 },			/* long long */
+  { 1, 1 },			/* _Bool */
   1, 2, 2, 2,			/* int1/2/4/8 align */
   2, 2,				/* wchar_t, size_t size */
   TRUE, TRUE,			/* char, wchar_t signed */

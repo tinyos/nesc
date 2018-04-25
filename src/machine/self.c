@@ -84,6 +84,7 @@ static machine_spec self_machine = {
   { sizeof(int),         __alignof__(int) },	     /* int */
   { sizeof(long),        __alignof__(long) },	     /* long */
   { sizeof(long long),   __alignof__(long long) },   /* long long */
+  { sizeof(_Bool),       __alignof__(_Bool) },       /* _Bool */
   __alignof__(myint1), __alignof__(myint2),
   __alignof__(myint4), __alignof__(myint8),	     /* int1/2/4/8 align */
   sizeof(wchar_t), sizeof(size_t),		     /* wchar_t, size_t size */

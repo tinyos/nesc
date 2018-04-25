@@ -46,6 +46,7 @@ static machine_spec env_machine = {
   {2, 1},		/* int */
   {4, 1},		/* long */
   {8, 1},		/* long_long */
+  {1, 1},		/* _Bool */
   1, 1, 1, 1,		/* int1248_align */
   2, 2,			/* wchar_size_size */
   TRUE, TRUE,		/* char_wchar_signed */
@@ -125,6 +126,7 @@ static bool scan_env_machine(machine_spec * machine, const char *envname)
     { "int", &(machine->tint) },
     { "long", &(machine->tlong) },
     { "long_long", &(machine->tlong_long) },
+    { "_Bool", &(machine->t_Bool) },
     { NULL, NULL }
   };
 

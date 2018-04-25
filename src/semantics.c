@@ -695,6 +695,7 @@ void parse_declarator(type_element modifiers, declarator d, bool bitfield,
 	      case RID_CHAR: newtype = char_type; break;
 	      case RID_FLOAT: newtype = float_type; break;
 	      case RID_DOUBLE: newtype = double_type; break;
+	      case RID_BOOL: newtype = _Bool_type; break;
 	      case RID_VOID: newtype = void_type; break;
 	      case RID_AUTO: case RID_STATIC: case RID_EXTERN:
 	      case RID_REGISTER: case RID_TYPEDEF: case RID_COMMAND:
@@ -3612,6 +3613,7 @@ static char *rid_name_int(int id)
     case RID_UNSIGNED: return "unsigned";
     case RID_SHORT: return "short";
     case RID_LONG: return "long";
+    case RID_BOOL: return "_Bool";
     case RID_AUTO: return "auto";
     case RID_STATIC: return "static";
     case RID_EXTERN: return "extern";
