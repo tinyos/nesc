@@ -631,7 +631,7 @@ static void prt_prefix(location loc, data_declaration ddecl,
 	    if (pinline)
 	      continue;
 	    break;
-	  case RID_REGISTER: case RID_TYPEDEF:
+	  case RID_REGISTER: case RID_TYPEDEF: case RID_NORETURN:
 	    break;
 	  }
 	set_location(r->location);

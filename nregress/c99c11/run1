@@ -1,0 +1,18 @@
+keep=
+if [ -z "$NESC1" ]; then
+  NESC1=../../../src/nesc1
+  keep=1
+fi
+cd $1
+cfile=/tmp/c99c11.$$.c
+exe=/tmp/c99c11.out.$$
+$NESC1 -fnesc-separator=__ test.nc -o $cfile && \
+gcc -Wall -g -o $exe $cfile && \
+$exe
+ok=$?
+if [ -z "$keep" ]; then
+  rm -f $cfile $exe
+else
+  echo C file is $cfile, executable is $exe
+fi
+exit $ok
