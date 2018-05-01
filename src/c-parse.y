@@ -110,7 +110,7 @@ void yyerror();
 /* the reserved words */
 /* SCO include files test "ASM", so use something else. */
 %token <u.itoken> SIZEOF ENUM STRUCT UNION IF ELSE WHILE DO FOR SWITCH CASE DEFAULT
-%token <u.itoken> BREAK CONTINUE RETURN GOTO ASM_KEYWORD TYPEOF ALIGNOF
+%token <u.itoken> BREAK CONTINUE RETURN GOTO ASM_KEYWORD TYPEOF ALIGNOF NORETURN
 %token <u.itoken> ATTRIBUTE EXTENSION LABEL
 %token <u.itoken> REALPART IMAGPART VA_ARG OFFSETOF
 
