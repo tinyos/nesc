@@ -267,6 +267,14 @@ known_cst fold_binary(type t, expression e)
 	      bool c2val = constant_boolvalue(c2);
 	      if (b->kind == kind_andand ? !c2val : c2val)
 		return make_signed_cst(c2val, t);
+	      if (constant_knownbool(c1))
+		{
+		  bool c1val = constant_boolvalue(c1);
+		  return make_signed_cst(b->kind == kind_andand
+					 ? (c1val && c2val)
+					 : (c1val || c2val),
+					 t);
+		}
 	    }
 
 	  if (constant_unknown_number(c2))
