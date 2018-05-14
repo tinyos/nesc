@@ -28,7 +28,8 @@ typedef enum {
   scf_inline = 1,
   scf_default = 2,
   scf_async = 4,
-  scf_norace = 8
+  scf_norace = 8,
+  scf_noreturn = 16
 } scflags;
 
 /* Predefined __builtin_va_list type */

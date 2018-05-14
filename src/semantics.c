@@ -594,6 +594,8 @@ scflags parse_scflags(int specbits)
     scf |= scf_async;
   if (specbits & 1 << RID_NORACE)
     scf |= scf_norace;
+  if (specbits & 1 << RID_NORETURN)
+    scf |= scf_noreturn;
 
   return scf;
 }
@@ -601,20 +603,16 @@ scflags parse_scflags(int specbits)
 void check_variable_scflags(scflags scf,
 			    location l, const char *kind, const char *name)
 {
-  const char *badqual = NULL;
-  void (*msg)(location l, const char *format, ...) = error_with_location;
+  static const char fmt_msg[] = "%s `%s' declared `%s'";
 
   /* default already covered in parse_declarator */
+  /* gcc just warns inline and _Noreturn for variable. */
   if (scf & scf_inline)
-    {
-      badqual = "inline";
-      msg = pedwarn_with_location; /* this is what gcc does */
-    }
+    pedwarn_with_location(l, fmt_msg, kind, name, "inline");
+  if (scf & scf_noreturn)
+    pedwarn_with_location(l, fmt_msg, kind, name, "_Noreturn");
   if (scf & scf_async)
-    badqual = "async";
-
-  if (badqual)
-    msg(l, "%s `%s' declared `%s'", kind, name, badqual);
+    error_with_location(l, fmt_msg, kind, name, "async");
 }
 
 void check_array_size(expression size, const char *printname)
@@ -3628,6 +3626,7 @@ static char *rid_name_int(int id)
     case RID_TASK: return "task";
     case RID_DEFAULT: return "default";
     case RID_NORACE: return "norace";
+    case RID_NORETURN: return "_Noreturn";
     default: assert(0); return NULL;
     }
 }
