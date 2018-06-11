@@ -1,4 +1,16 @@
-This is version 1.3.6 of the nesC compiler.
+This is version 1.4.0 of the nesC compiler.
+
+Changes in nesC 1.4.0
+=====================
+- properly handle restrict keyword (pull #42)
+  handling the restrict keyword let's nesc work properly with
+  gcc versions later than 4.9.
+- Add _Noreturn keyword (pull #44)
+- Fix logical operator constant folding (pull #46)
+- Fix building with -Werror=format-security (issue #40)
+- Bug in mig's python class generation (issue #39)
+  fixed generation of getString_* method.
+- simplified vim file type detection for nesc files (issue #30)
 
 Changes in nesC 1.3.6
 =====================
