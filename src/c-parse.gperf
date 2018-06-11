@@ -73,6 +73,7 @@ long, TYPESPEC, RID_LONG
 offsetof, OFFSETOF, NORID
 __builtin_offsetof, OFFSETOF, NORID
 register, SCSPEC, RID_REGISTER
+restrict, TYPE_QUAL, restrict_qualifier
 return, RETURN, NORID
 short, TYPESPEC, RID_SHORT
 signed, TYPESPEC, RID_SIGNED
