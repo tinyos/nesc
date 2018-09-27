@@ -23,7 +23,7 @@
 -->
 <language id="nc" _name="NesC" version="2.0" _section="Sources">
     <metadata>
-      <property name="mimetypes">application/x-netcdf;text/x-chdr;text/x-csrc;text/plain</property>
+      <property name="mimetypes">application/x-netcdf;text/x-chdr;text/x-csrc</property>
       <property name="globs">*.nc</property>
       <property name="line-comment-start">//</property>
       <property name="block-comment-start">/*</property>
