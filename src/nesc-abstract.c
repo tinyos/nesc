@@ -942,6 +942,11 @@ void set_parameter_values(nesc_declaration cdecl, expression args)
 		  if (args->type != error_type)
 		    error_with_location(l, "component arguments must be constants");
 		}
+	      else if (type_Bool(vd->ddecl->type))
+		{
+		  if (!constant_knownbool(args->cst))
+		    error_with_location(l, "bool constant expected");
+		}
 	      else if (type_integer(vd->ddecl->type))
 		{
 		  if (!constant_integral(args->cst))

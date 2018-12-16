@@ -1,12 +1,11 @@
-keep=
-if [ -z "$NESC1" ]; then
-  NESC1=../../../src/nesc1
-  keep=1
-fi
+[ -z "$NESC1" ] && keep=1
+: ${NESC:=../../..}
+: ${TOOLS:=$NESC/tools}
+: ${NESC1:=../../../src/nesc1}
 cd $1
 cfile=/tmp/c99c11.$$.c
 exe=/tmp/c99c11.out.$$
-$NESC1 -fnesc-separator=__ test.nc -o $cfile && \
+$NESC1 -fnesc-separator=__ -I$TOOLS -fnesc-include=deputy_nodeputy -fnesc-include=nesc_nx test.nc -o $cfile && \
 gcc -Wall -g -o $exe $cfile && \
 $exe
 ok=$?

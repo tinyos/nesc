@@ -267,7 +267,15 @@ bool check_conversion(type to, type from)
   if (type_void(to))
     return TRUE;
 
-  if (type_integer(to))
+  if (type_Bool(to))
+    {
+      if (!(type_scalar(from) || type_floating(to) || type_pointer(from)))
+        {
+	  error("aggregate value used where a _Bool was expected");
+	  return FALSE;
+        }
+    }
+  else if (type_integer(to))
     {
       if (!type_scalar(from))
 	{
@@ -488,6 +496,10 @@ bool check_assignment(type lhstype, type rhstype, expression rhs,
       if (!zerorhs)
 	warn_for_assignment("%s makes pointer from integer without a cast",
 			    context, fundecl, parmnum);
+      return check_conversion(lhstype, rhstype);
+    }
+  else if (type_Bool(lhstype) && type_pointer(rhstype))
+    {
       return check_conversion(lhstype, rhstype);
     }
   else if (type_integral(lhstype) && type_pointer(rhstype))

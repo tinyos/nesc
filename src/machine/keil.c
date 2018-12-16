@@ -98,6 +98,7 @@ static machine_spec keil_machine = {
   { 2, 1 },			/* int */
   { 4, 1 },			/* long */
   { 8, 1 },			/* long long (unsupported in avr-gcc) */
+  { 1, 1 },			/* _Bool */
   1, 1, 1, 1,			/* int1/2/4/8 align */
   2, 2,				/* wchar_t, size_t size */
   TRUE, TRUE,			/* char, wchar_t signed */

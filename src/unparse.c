@@ -311,6 +311,27 @@ static void output_complex(known_cst c)
   assert(0);
 }
 
+static bool is_null_constant(known_cst c)
+{
+  return type_pointer(c->type) && is_zero_constant(c);
+}
+
+static asttype get_constant_type(known_cst c, location l)
+{
+  declarator d;
+  type_element qualifiers;
+
+  type2ast(unparse_region, l, c->type, NULL, &d, &qualifiers);
+  return new_asttype(unparse_region, l, d, qualifiers);
+}
+
+static void output_null_constant(asttype asttype)
+{
+  output("(");
+  prt_asttype(asttype);
+  output(")0");
+}
+
 void output_constant(known_cst c)
 /* Requires: (constant_integral(c) || constant_float(c)) &&
 	     type_arithmetic(c->type)
@@ -1678,7 +1699,12 @@ void prt_identifier(identifier e, int context_priority)
 
   set_location(e->location);
   if (decl->kind == decl_constant && decl->substitute)
-    output_constant(decl->value);
+    {
+      if (is_null_constant(decl->value))
+        output_null_constant(get_constant_type(decl->value, e->location));
+      else
+        output_constant(decl->value);
+    }
   else if (decl->kind == decl_error) /* attributes have bad code... */
     output_cstring(e->cstring);
   else

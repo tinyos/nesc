@@ -50,6 +50,7 @@ __typeof__, TYPEOF, NORID
 __volatile, TYPE_QUAL, volatile_qualifier
 __volatile__, TYPE_QUAL, volatile_qualifier
 __builtin_va_arg, VA_ARG, NORID
+_Bool, TYPESPEC, RID_BOOL
 _Noreturn, SCSPEC, RID_NORETURN
 asm, ASM_KEYWORD, NORID
 auto, SCSPEC, RID_AUTO

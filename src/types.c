@@ -61,7 +61,7 @@ struct type
 	      - the integral types are ordered by "rank" (see c9x std) and
 	        unsignedness (unsigned > signed) (common_primitive_type
 		relies on this order)
-	      - The tp_[u]int<n> types must be before tp_char (for the 
+	      - The tp_[u]int<n> types must be before tp_Bool (for the
 	        assert in common_primitive_type). These types are only
 		used when the corresponding size is not available amongst
 		short/int/long/long long
@@ -75,7 +75,7 @@ struct type
 
 	   tp_int2, tp_uint2, tp_int4, tp_uint4, tp_int8, tp_uint8,
 
-           tp_char, 
+	   tp_Bool, tp_char,
 	   tp_signed_char, tp_unsigned_char,
 	   tp_short, tp_unsigned_short,
 	   tp_int, tp_unsigned_int,
@@ -192,7 +192,7 @@ type float_type, double_type, long_double_type,
   int_type, unsigned_int_type, long_type, unsigned_long_type,
   long_long_type, unsigned_long_long_type, short_type, unsigned_short_type,
   char_type, char_array_type, wchar_type, wchar_array_type,
-  unsigned_char_type, signed_char_type, void_type, ptr_void_type,
+  unsigned_char_type, signed_char_type, _Bool_type, void_type, ptr_void_type,
   const_ptr_void_type,
   size_t_type, ptrdiff_t_type, intptr_type,
   int2_type, uint2_type, int4_type, uint4_type, int8_type, uint8_type,
@@ -460,6 +460,7 @@ void init_types(void)
   unsigned_long_long_type = make_primitive
     (tp_unsigned_long_long, target->tlong_long.size, target->tlong_long.align);
 
+  _Bool_type = make_primitive(tp_Bool, target->t_Bool.size, target->t_Bool.align);
   signed_char_type = make_primitive(tp_signed_char, 1, target->int1_align);
   unsigned_char_type = make_primitive(tp_unsigned_char, 1, target->int1_align);
   char_type = make_primitive(tp_char, 1, target->int1_align);
@@ -586,6 +587,7 @@ bool type_unsigned(type t)
     switch (t->u.primitive)
       {
       case tp_char: return !flag_signed_char;
+      case tp_Bool: // see c99 std 6.2.5.6.
       case tp_unsigned_char:
       case tp_unsigned_short:
       case tp_unsigned_int:
@@ -687,6 +689,11 @@ bool type_unknown_number(type t)
 bool type_unknown(type t) /* unknown_int or unknown_number */
 {
   return type_unknown_int(t) || type_unknown_number(t);
+}
+
+bool type_Bool(type t)
+{
+  return t->kind == tk_primitive && t->u.primitive == tp_Bool;
 }
 
 bool type_char(type t)
@@ -945,7 +952,9 @@ bool type_self_promoting(type t)
 
   switch (t->u.primitive)
     {
-    case tp_float: case tp_char: case tp_unsigned_char: case tp_signed_char:
+    case tp_float:
+    case tp_Bool:
+    case tp_char: case tp_unsigned_char: case tp_signed_char:
     case tp_short: case tp_unsigned_short:
       return FALSE;
     default:
@@ -1259,11 +1268,11 @@ static int common_primitive_type(type t1, type t2)
 
       /* The pain starts, see 6.3.1.8 of c9x */
       /* If the sizes are the same, then we can't have a tp_[u]int<n> or a 
-	 tp_char/short/int/long/etc pair (as we only have tp_[u]int<n> if there
+	 tp_Bool/char/short/int/long/etc pair (as we only have tp_[u]int<n> if there
 	 is no corresponding integer type of the same size. So we can compare rank
 	 by comparing pk1 and pk2 */
-      assert(!((pk1 < tp_char && pk2 >= tp_char) ||
-	       (pk1 >= tp_char && pk2 < tp_char)));
+      assert(!((pk1 < tp_Bool && pk2 >= tp_Bool) ||
+	       (pk1 >= tp_Bool && pk2 < tp_Bool)));
 
       /* the higher rank wins, and if either of the types is unsigned, the
 	 result is unsigned (thus unsigned short + int == unsigned int if
@@ -1523,6 +1532,9 @@ static type_element primitive2ast(region r, location loc, int primitive,
 
   switch (primitive)
     {
+    case tp_Bool:
+      keyword = RID_BOOL;
+      break;
     case tp_unsigned_char:
       isunsigned = TRUE;
     case tp_char:

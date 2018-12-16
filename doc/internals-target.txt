@@ -9,7 +9,7 @@ A machine target is specified by filling in a '''machine_spec''' structure, defi
 * machine_name: name of the target
 * handle_option: a function that gets to inspect options passed to nesc1 and take appropriate action (example: the '''self''' target adjusts double alignment based on the -malign-double gcc flag).
 * big_endian: must be true for big-endian targets, false for little-endian ones
-* tptr, tfloat, tdouble, tlong_double, tshort, tint, tlong, tlong_long: size and alignment of the corresponding C types.
+* tptr, tfloat, tdouble, tlong_double, tshort, tint, tlong, tlong_long, t_Bool: size and alignment of the corresponding C types.
 * int1_align, int2_align, int4_align, int8_align: with gcc, you can ask for specific size ints (see gcc's mode attribute, and the '''type_for_mode''' function in types.c). On some platforms, some of these sizes may not correspond to any of the normal basic C types, so you get to specify the alignments for those missing sizes here...
 * wchar_t_size: size of the wchar_t type
 * size_t_size: size of the size_t type (actually this should be the C type, knowing just the size can cause problems)

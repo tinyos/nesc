@@ -154,7 +154,7 @@ cval make_cval_address(data_declaration ddecl, label_declaration ldecl,
 
 cval make_cval_address_unknown_offset(cval c)
 /* Requires: cval_isaddress(c)
-   Returns: a constant identical to c except that the offset is now unknowjn
+   Returns: a constant identical to c except that the offset is now unknown
 */
 {
   assert(cval_isaddress(c));
@@ -392,6 +392,10 @@ cval cval_cast(cval c, type to)
 	  return c;
 	default:assert(0); return c;
 	}
+    }
+  else if (type_Bool(to) && cval_knownbool(c))
+    {
+      return cval_boolvalue(c) ? cval_one : cval_zero;
     }
   else
     {
@@ -1040,9 +1044,8 @@ void cval_print(FILE *f, cval c)
 {
   switch (c.kind)
     {
-    case cval_float:
-    case cval_float_complex:
-      break;
+    case cval_float: fprintf(f, "%Lf", c.d); break;
+    case cval_float_complex: fprintf(f, "%Lf %Lf", c.d, c.d_i); break;
     case cval_uint: fprintf(f, "%llu", c.ui); break;
     case cval_uint_complex: fprintf(f, "%llu %llu", c.ui, c.ui_i); break;
     case cval_sint: fprintf(f, "%lld", c.si); break;
@@ -1071,6 +1074,7 @@ void cval_debug(cval c)
       else
 	printf(" - %lld", -c.si);
       printf(">");
+      break;
     default:
       printf("[size: %u]", (unsigned)c.isize);
       cval_print(stdout, c);
